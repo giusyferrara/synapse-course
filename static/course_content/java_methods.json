@@ -1,0 +1,1604 @@
+{
+  "course_id": "java_methods",
+  "title": "Java Methods",
+  "description": "Master reusable code blocks in Java -- defining methods, parameters, return types, overloading, scope, and recursion -- with 60 hands-on exercises designed for neurodivergent learners.",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 12,
+  "prerequisites": [
+    "java_syntax_output",
+    "java_variables_datatypes",
+    "java_operators",
+    "java_conditions",
+    "java_loops"
+  ],
+  "learning_outcomes": [
+    "Define methods with correct syntax: access modifier, return type, name, and parameters",
+    "Write void methods that perform actions without returning values",
+    "Write methods that return values of any type (int, double, String, boolean, arrays)",
+    "Pass arguments to methods by value and understand how Java handles parameter passing",
+    "Use method overloading to create multiple versions of the same method with different parameters",
+    "Understand variable scope -- local variables, parameters, and their lifetime",
+    "Apply the DRY principle (Don't Repeat Yourself) by extracting repeated code into methods",
+    "Write recursive methods that call themselves to solve problems",
+    "Design methods with single responsibility -- each method does ONE thing well",
+    "Build complete programs by composing multiple small, well-named methods"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies like recipes, vending machines, and factory workers. Never judges. Celebrates small wins. Explains method calls by tracing the flow step by step.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Hey! Methods can feel confusing at first because the code jumps around. Want me to trace the flow? I will show you: main calls methodA, which runs, returns a value, then main continues.",
+      "idle_90_seconds": "No rush! Think of a method like a recipe card. It has a NAME (what it is called), INGREDIENTS (parameters), INSTRUCTIONS (body), and a RESULT (return value). Which part are you stuck on?",
+      "idle_180_seconds": "Still here for you! Methods are a huge concept -- they change how you think about code. Let me break it into tiny pieces. First, just write the method signature (name + parameters). We will fill in the body together.",
+      "first_error": "Not quite right, but methods are tricky at first! The most common mistake is mismatching return types. Let me trace through your code and show where it went off track.",
+      "repeated_errors": "This one is challenging! Let me try a completely different explanation. Think of a method as a MACHINE: you feed it INPUT (parameters), it does WORK (body), and it gives you OUTPUT (return). What goes in? What comes out?",
+      "after_success": "Brilliant! You wrote a clean, reusable method. This is how professional code is built -- small pieces that snap together. You are thinking like a real developer!"
+    },
+    "encouragement_phrases": [
+      "Great method design! Clean, focused, reusable.",
+      "You nailed the parameters and return type!",
+      "Well done! That method does one thing and does it well.",
+      "Perfect! Your method signature is spot on.",
+      "Excellent! The DRY principle in action -- no repeated code!",
+      "Nice work! Parameters and arguments matched perfectly.",
+      "Awesome! You traced the method call correctly.",
+      "Great progress! Methods are a big milestone in programming.",
+      "That is professional-level code organisation!",
+      "Fantastic! Ready for more complex method patterns!"
+    ],
+    "explanation_styles": {
+      "analogy": "A method is like a vending machine. You INSERT coins (arguments), PRESS a button (call the method), and GET a product (return value). The machine does its work internally -- you do not need to know how.",
+      "visual": "I draw the call flow: main() -> greet('Alice') -> enters greet method -> name='Alice' -> prints 'Hello Alice' -> returns to main. Like following arrows on a map.",
+      "step_by_step": "Step 1: Java sees the method CALL. Step 2: It JUMPS to the method definition. Step 3: Parameters get their values. Step 4: Body runs. Step 5: Return sends a value back. Step 6: Execution continues where it left off.",
+      "code_trace": "I highlight each line as it runs. main line 1: calls add(3,5). JUMP to add method. a=3, b=5. return 3+5=8. JUMP BACK to main. result=8.",
+      "comparison": "Without methods: 50 lines of repeated code. With methods: 10 lines + 5 reusable methods. Side by side shows the power of DRY."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "java_methods_lesson_1",
+      "title": "Java Methods -- Building Reusable Code",
+      "theory": {
+        "introduction": "Methods are where programming goes from 'writing code' to 'building software.' A method is a named, reusable block of code that performs a specific task. You write it once and call it as many times as you need, with different inputs each time.\n\nReal-world analogy: Imagine you run a bakery. Instead of explaining the pancake recipe from scratch every morning, you write it on a card: 'Pancake Recipe: mix flour, eggs, milk. Pour on griddle. Flip at 2 minutes. Serves 4.' Now anyone can follow the card. They can double the ingredients (different parameters) or make it every day (call it many times). The recipe is the METHOD.\n\nWithout methods, every program would be one giant main() with hundreds of lines of tangled code. With methods, you break problems into small, named, testable pieces that snap together like building blocks.\n\nIn this lesson, you will learn to define your own methods, pass data in through parameters, get results back with return values, organise code with scope rules, create flexible interfaces with overloading, and even have methods call themselves with recursion. By the end, you will write code like a professional -- clean, organised, and reusable.",
+        "why_important": "Methods are the most important organisational tool in programming. Here is why mastering them transforms your coding:\n\n1. REUSABILITY: Write code once, call it everywhere. A calculateTax method works for every customer, every order, every time.\n\n2. READABILITY: Well-named methods make code self-documenting. main() reads like a story: readInput(), validateData(), processOrder(), printReceipt().\n\n3. DEBUGGING: When something breaks, you know which method is responsible. Fix it there, and every call site is fixed automatically.\n\n4. TESTING: Small methods are easy to test. Does add(3,5) return 8? Does isValid(-1) return false? Quick to check.\n\n5. TEAMWORK: Different developers can write different methods. They agree on signatures (name + parameters + return type) and work independently.\n\n6. ABSTRACTION: Callers do not need to know HOW a method works -- just WHAT it does. Like using a vending machine without knowing its internal mechanics.",
+        "key_concepts": [
+          {
+            "concept": "What is a Method? -- Reusable Code Blocks",
+            "explanation": "A method is a named block of code that performs a specific task. You write it ONCE and call it as many times as you need. Methods are the building blocks of organised, professional code.\n\nReal-world analogy: Think of a recipe card. A recipe for pancakes has a NAME ('Pancakes'), INGREDIENTS (flour, eggs, milk), STEPS (mix, pour, flip), and a RESULT (pancakes). You do not rewrite the recipe every time you want pancakes -- you just follow the card. Methods work the same way.\n\nWhy methods matter:\n  1. DRY (Don't Repeat Yourself): Write code once, call many times\n  2. Organisation: Break a big problem into small, manageable pieces\n  3. Readability: Well-named methods make code self-documenting\n  4. Testing: Small methods are easy to test and debug\n  5. Reuse: Use the same method in different parts of your program\n\nEvery Java program starts with a method: public static void main(String[] args). Now you will learn to write your own.\n\nPractice tip: If you find yourself copying and pasting code, that is a sign you need a method.",
+            "example": "public class MethodIntro {\n    // Method definition\n    static void sayHello() {\n        System.out.println(\"Hello!\");\n    }\n    public static void main(String[] args) {\n        sayHello();  // Method call\n        sayHello();  // Call again -- reuse!\n        sayHello();  // Call a third time\n    }\n}",
+            "ai_hint": "Method = reusable recipe. Define once, call many times. If you are copy-pasting code, make a method!"
+          },
+          {
+            "concept": "Method Anatomy -- The Four Parts",
+            "explanation": "Every method has four key parts:\n\n1. ACCESS + MODIFIERS: static (for now) -- who can use this method\n2. RETURN TYPE: what the method gives back (void = nothing, int = a number, String = text, etc.)\n3. NAME: what you call it (use camelCase, verbs like calculateTotal, printReport, isValid)\n4. PARAMETERS: what the method needs to work (in parentheses)\n\nFormat: static returnType methodName(paramType paramName) { body }\n\nExamples:\n  static void greet() -- returns nothing, needs nothing\n  static int add(int a, int b) -- returns int, needs two ints\n  static boolean isEven(int n) -- returns true/false, needs one int\n  static String formatName(String first, String last) -- returns String, needs two Strings\n\nThe method SIGNATURE is the combination of name + parameter types. Java uses this to identify which method to call.\n\nNaming convention: Methods should be verbs or verb phrases that describe what they DO. Good: calculateArea, printReport, isValid. Bad: data, thing, process1.",
+            "example": "public class Anatomy {\n    // returnType name(params)\n    static int add(int a, int b) {\n        return a + b;\n    }\n    static void printResult(int value) {\n        System.out.println(\"Result: \" + value);\n    }\n    public static void main(String[] args) {\n        int sum = add(3, 5);\n        printResult(sum);\n    }\n}",
+            "ai_hint": "Four parts: modifier, return type, name, parameters. Name methods with verbs: calculateX, printY, isZ."
+          },
+          {
+            "concept": "void Methods -- Do Something, Return Nothing",
+            "explanation": "A void method performs an ACTION but does not give back a value. It is like asking someone to 'turn off the lights' -- they do the task, but they do not hand you anything back.\n\nUse void when: printing output, modifying a display, logging information, or performing any side effect where no result is needed.\n\nKey rules:\n  - void methods CANNOT be used in expressions: int x = printHello(); is ILLEGAL\n  - void methods CAN have an early return; (no value) to exit early\n  - void methods are called as standalone statements: printHello();\n\nCommon beginner mistake: Trying to save the result of a void method. System.out.println() is void -- you cannot do String x = System.out.println('hi');\n\nPractice tip: If your method just needs to DO something (print, log, display), use void. If it needs to GIVE something back (a number, a string, true/false), use a return type.",
+            "example": "public class VoidDemo {\n    static void greet(String name) {\n        System.out.println(\"Hello, \" + name + \"!\");\n    }\n    static void printLine(int length) {\n        for (int i = 0; i < length; i++) System.out.print(\"-\");\n        System.out.println();\n    }\n    public static void main(String[] args) {\n        greet(\"Alice\");\n        printLine(20);\n        greet(\"Bob\");\n    }\n}",
+            "ai_hint": "void = does something but returns nothing. Use for printing, logging, displaying. Cannot assign result to a variable."
+          },
+          {
+            "concept": "Return Values -- Give Something Back",
+            "explanation": "A non-void method COMPUTES something and gives it back to the caller using the return keyword. The caller can store the returned value, use it in an expression, or pass it to another method.\n\nReal-world analogy: Asking a calculator 'What is 3 + 5?' The calculator RETURNS 8. You can then use that 8 however you want -- write it down, add more to it, or tell someone else.\n\nKey rules:\n  - The return type in the signature MUST match what return actually gives back\n  - return immediately exits the method -- code after return is unreachable\n  - Every path through the method MUST return a value (except void)\n  - You can return expressions: return a + b; return x > 0;\n\nCommon mistake: Forgetting to capture the return value. add(3, 5); works but WASTES the result. Use: int sum = add(3, 5);\n\nAnother mistake: method says it returns int but some paths do not return. Java will give a compile error: 'missing return statement.'",
+            "example": "public class ReturnDemo {\n    static int square(int n) {\n        return n * n;\n    }\n    static double average(int a, int b) {\n        return (a + b) / 2.0;\n    }\n    static boolean isAdult(int age) {\n        return age >= 18;\n    }\n    public static void main(String[] args) {\n        System.out.println(\"5 squared = \" + square(5));\n        System.out.println(\"Avg = \" + average(7, 13));\n        System.out.println(\"Adult? \" + isAdult(20));\n    }\n}",
+            "ai_hint": "return gives a value back to the caller. The type MUST match the signature. Every code path must return."
+          },
+          {
+            "concept": "Parameters and Arguments -- Feeding the Method",
+            "explanation": "PARAMETERS are the variables declared in the method definition (the recipe ingredients). ARGUMENTS are the actual values you pass when calling the method (the actual flour and eggs you use).\n\nFormat: static int add(int a, int b) -- a and b are PARAMETERS\n        add(3, 5) -- 3 and 5 are ARGUMENTS\n\nJava is PASS-BY-VALUE: when you pass an argument, Java copies the value into the parameter. Changing the parameter inside the method does NOT change the original variable outside.\n\nMultiple parameters are separated by commas. The ORDER matters: the first argument goes to the first parameter, second to second, etc.\n\nType matching: If a method expects int, you must pass int (or something that auto-promotes to int). Passing a String where int is expected causes a compile error.\n\nPractice tip: Think of parameters as INPUT slots. Each slot has a TYPE and a NAME. When you call the method, you fill each slot with a matching value.",
+            "example": "public class ParamDemo {\n    static void introduce(String name, int age, String city) {\n        System.out.println(name + \", age \" + age + \", from \" + city);\n    }\n    static int multiply(int x, int y) {\n        return x * y;\n    }\n    public static void main(String[] args) {\n        introduce(\"Alice\", 25, \"London\");\n        int result = multiply(6, 7);\n        System.out.println(\"6 x 7 = \" + result);\n    }\n}",
+            "ai_hint": "Parameters = slots in definition. Arguments = values at call. Java copies values (pass-by-value). Order matters!"
+          },
+          {
+            "concept": "Method Overloading -- Same Name, Different Parameters",
+            "explanation": "Method overloading means having MULTIPLE methods with the SAME name but DIFFERENT parameter lists. Java picks the right one based on what arguments you pass.\n\nReal-world analogy: A print shop has a 'print' service. Print(document) prints a document. Print(photo, size) prints a photo at a specific size. Print(poster, size, quantity) prints posters in bulk. Same name, different inputs.\n\nRules:\n  - Methods MUST differ in: number of parameters, OR types of parameters, OR order of types\n  - Return type alone is NOT enough to overload (you cannot have two methods with same params but different return types)\n  - Java resolves overloading at COMPILE time (not runtime)\n\nExamples that WORK: add(int, int) and add(double, double) and add(int, int, int)\nExamples that FAIL: add(int a, int b) and add(int x, int y) -- same parameter TYPES, different names is NOT overloading\n\nThe most common overloaded method you already use: System.out.println() accepts String, int, double, boolean, char, and more!",
+            "example": "public class OverloadDemo {\n    static int add(int a, int b) { return a + b; }\n    static double add(double a, double b) { return a + b; }\n    static int add(int a, int b, int c) { return a + b + c; }\n    public static void main(String[] args) {\n        System.out.println(add(3, 5));       // calls int,int\n        System.out.println(add(1.5, 2.5));   // calls double,double\n        System.out.println(add(1, 2, 3));    // calls int,int,int\n    }\n}",
+            "ai_hint": "Same name, different parameters = overloading. Java picks by argument types. println() is overloaded too!"
+          },
+          {
+            "concept": "Variable Scope -- Where Variables Live and Die",
+            "explanation": "Scope is the region of code where a variable exists and can be accessed. In Java:\n\n1. LOCAL VARIABLES: Declared inside a method. Live only during that method call. Die when the method returns. Cannot be accessed from other methods.\n\n2. PARAMETERS: Like local variables -- they live only during the method call.\n\n3. BLOCK SCOPE: Variables declared inside { } (like inside a for loop or if block) exist only within those braces.\n\nReal-world analogy: A hotel room key. Your key (local variable) works only in YOUR room (method). It does not work in other rooms. When you check out (method returns), the key is deactivated.\n\nKey rules:\n  - Two methods CAN have variables with the same name -- they are completely independent\n  - Variables declared in a for loop header exist only inside that loop\n  - You CANNOT access a variable before it is declared\n  - Method parameters are NOT the same as the arguments passed in -- they are copies\n\nCommon mistake: Trying to use a variable from one method inside another method. Each method has its own 'room.'",
+            "example": "public class ScopeDemo {\n    static void methodA() {\n        int x = 10; // x lives only in methodA\n        System.out.println(\"A: x = \" + x);\n    }\n    static void methodB() {\n        int x = 99; // DIFFERENT x, lives only in methodB\n        System.out.println(\"B: x = \" + x);\n    }\n    public static void main(String[] args) {\n        methodA(); // prints 10\n        methodB(); // prints 99\n        // System.out.println(x); // ERROR: x not in scope here!\n    }\n}",
+            "ai_hint": "Variables live inside their method/block only. Like hotel keys -- they only work in their own room."
+          },
+          {
+            "concept": "Pass-by-Value -- Java Copies, Never Shares",
+            "explanation": "Java is ALWAYS pass-by-value. When you pass an argument to a method, Java makes a COPY of the value. The method works on the copy. The original is UNCHANGED.\n\nReal-world analogy: You photocopy a document and give the copy to a colleague. They can write on the copy all they want -- your original document is untouched.\n\nThis means: if you pass int x = 5 to a method that does param = 10, x is STILL 5 after the call.\n\nFor objects (arrays, Strings), Java passes a copy of the REFERENCE (the address). The method can modify the object THROUGH the reference (like changing items in an array), but it cannot make the original variable point to a different object.\n\nKey insight: Primitive types (int, double, boolean) are fully independent copies. Object references are copies of the address -- the object itself IS shared.",
+            "example": "public class PassByVal {\n    static void tryChange(int n) {\n        n = 999; // changes the COPY only\n        System.out.println(\"Inside: n = \" + n);\n    }\n    static void changeArray(int[] arr) {\n        arr[0] = 999; // changes the ACTUAL array\n    }\n    public static void main(String[] args) {\n        int x = 5;\n        tryChange(x);\n        System.out.println(\"Outside: x = \" + x); // still 5!\n        int[] nums = {1, 2, 3};\n        changeArray(nums);\n        System.out.println(\"Array[0] = \" + nums[0]); // 999!\n    }\n}",
+            "ai_hint": "Java copies values. Primitives: fully independent. Arrays/objects: reference is copied, so the OBJECT can be changed."
+          },
+          {
+            "concept": "The DRY Principle -- Don't Repeat Yourself",
+            "explanation": "DRY means: if you write the same (or very similar) code more than once, extract it into a method. Repeated code is a bug waiting to happen -- if you fix it in one place but forget another, you have inconsistent behaviour.\n\nBefore DRY (bad):\n  System.out.println('====================');\n  // ... code ...\n  System.out.println('====================');\n  // ... more code ...\n  System.out.println('====================');\n\nAfter DRY (good):\n  static void printLine() { System.out.println('===================='); }\n  printLine(); code(); printLine(); moreCode(); printLine();\n\nHow to spot DRY violations:\n  1. Copy-pasting code? Extract a method.\n  2. Same logic with different values? Make a method with parameters.\n  3. Same pattern in multiple places? One method, many calls.\n\nBenefits: Fix bugs in ONE place. Change behaviour in ONE place. Test in ONE place. Read in ONE place.",
+            "example": "public class DRYDemo {\n    static void printHeader(String title) {\n        System.out.println(\"=\" .repeat(30));\n        System.out.println(\"  \" + title);\n        System.out.println(\"=\" .repeat(30));\n    }\n    public static void main(String[] args) {\n        printHeader(\"Student Report\");\n        System.out.println(\"Alice: 85%\");\n        printHeader(\"Summary\");\n        System.out.println(\"Average: 85%\");\n    }\n}",
+            "ai_hint": "Repeating code? Extract into a method. Fix once, works everywhere. DRY = professional programming."
+          },
+          {
+            "concept": "Recursion -- Methods That Call Themselves",
+            "explanation": "Recursion is when a method calls ITSELF. It sounds circular, but it works because each call handles a SMALLER version of the problem until it reaches a BASE CASE (the simplest version that can be answered directly).\n\nReal-world analogy: Russian nesting dolls (Matryoshka). Open the biggest doll -- there is a smaller one inside. Open that -- even smaller. Keep going until you reach the tiniest doll that does not open (base case). Then you start putting them back together (returning).\n\nTwo requirements:\n  1. BASE CASE: A condition where the method returns WITHOUT calling itself. Without this, infinite recursion!\n  2. RECURSIVE CASE: The method calls itself with a SIMPLER input that moves toward the base case.\n\nClassic example: factorial(5) = 5 * factorial(4) = 5 * 4 * factorial(3) = ... = 5 * 4 * 3 * 2 * 1 = 120\n\nWhen to use recursion: tree structures, divide-and-conquer, mathematical definitions (factorial, Fibonacci), backtracking problems.\n\nWhen NOT to use: simple loops. Recursion uses more memory (call stack) and is slower for simple counting.",
+            "example": "public class RecursionDemo {\n    static int factorial(int n) {\n        if (n <= 1) return 1;       // base case\n        return n * factorial(n - 1); // recursive case\n    }\n    public static void main(String[] args) {\n        System.out.println(\"5! = \" + factorial(5));\n    }\n}",
+            "ai_hint": "Recursion = method calls itself with simpler input. MUST have base case or it runs forever (StackOverflow!)."
+          },
+          {
+            "concept": "Method Design -- Single Responsibility",
+            "explanation": "Each method should do ONE thing well. This is the Single Responsibility Principle (SRP).\n\nBAD: A method that reads input, validates it, processes it, and prints the result. That is FOUR responsibilities.\n\nGOOD: readInput() -> validateInput() -> processData() -> printResult(). Four focused methods that work together.\n\nGuidelines:\n  - If your method name needs 'and' (readAndProcess), split it\n  - If the method body is longer than 15-20 lines, consider splitting\n  - A method should be describable in ONE sentence\n  - Input through PARAMETERS, output through RETURN values (avoid side effects)\n\nBenefits: Each method is easy to understand, easy to test, easy to reuse, and easy to modify. Bugs are easier to find because each method is small.\n\nPractice tip: Before writing code, plan your methods. What does each one DO? What does it NEED (parameters)? What does it GIVE BACK (return)?",
+            "example": "public class SRPDemo {\n    static double calculateArea(double r) { return Math.PI * r * r; }\n    static double calculateCircumference(double r) { return 2 * Math.PI * r; }\n    static String formatResult(String label, double value) {\n        return String.format(\"%s: %.2f\", label, value);\n    }\n    public static void main(String[] args) {\n        double r = 5;\n        System.out.println(formatResult(\"Area\", calculateArea(r)));\n        System.out.println(formatResult(\"Circumference\", calculateCircumference(r)));\n    }\n}",
+            "ai_hint": "One method, one job. If it needs 'and' in the name, split it. Small methods = clean code."
+          },
+          {
+            "concept": "The Call Stack -- How Methods Execute",
+            "explanation": "When a method is called, Java pushes a new FRAME onto the call stack. The frame holds the method's local variables and parameters. When the method returns, its frame is POPPED off the stack.\n\nReal-world analogy: A stack of cafeteria trays. Each method call puts a new tray on top. When a method finishes, its tray is removed. You always work with the TOP tray (current method).\n\nCall flow for main() -> a() -> b():\n  Stack: [main] -> [main, a] -> [main, a, b] -> [main, a] -> [main] -> empty\n\nStackOverflowError: If recursion has no base case (or recurses too deeply), the stack runs out of space. Java throws StackOverflowError. This is like stacking trays until the ceiling -- eventually you run out of room.\n\nDebugging tip: When you see an error, the stack trace shows you the chain of method calls that led to the error. Read it bottom-to-top: the bottom is where it started, the top is where it crashed.",
+            "example": "public class StackDemo {\n    static void c() { System.out.println(\"In c()\"); }\n    static void b() { System.out.println(\"In b()\"); c(); System.out.println(\"Back in b()\"); }\n    static void a() { System.out.println(\"In a()\"); b(); System.out.println(\"Back in a()\"); }\n    public static void main(String[] args) {\n        System.out.println(\"In main()\");\n        a();\n        System.out.println(\"Back in main()\");\n    }\n}",
+            "ai_hint": "Call stack: each method call adds a frame. Return pops it. Too deep = StackOverflowError."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Simple void Method",
+          "description": "Method that prints a greeting.",
+          "difficulty": "beginner",
+          "code": "public class Ex1 {\n    static void greet(String name) {\n        System.out.println(\"Hello, \" + name + \"! Welcome.\");\n    }\n    public static void main(String[] args) {\n        greet(\"Alice\");\n        greet(\"Bob\");\n        greet(\"Charlie\");\n    }\n}",
+          "output": "Hello, Alice! Welcome.\nHello, Bob! Welcome.\nHello, Charlie! Welcome.",
+          "ai_explanation": "greet is defined once but called three times with different arguments. Each call: name gets the value passed, prints the personalised greeting, then returns to main. void means no return value.\n\nKey takeaway: Define once, call many times with different arguments. That is the power of methods. This pattern appears constantly in real applications -- any time you need the same action with different data.",
+          "ai_challenge": "Add a second parameter 'role' (String) so it prints 'Hello, Alice! Welcome, you are a Student.' Can you overload greet with 1-param and 2-param versions?"
+        },
+        {
+          "title": "Example 2: Method with Return Value",
+          "description": "Method that computes and returns a result.",
+          "difficulty": "beginner",
+          "code": "public class Ex2 {\n    static int add(int a, int b) {\n        int sum = a + b;\n        return sum;\n    }\n    static int multiply(int a, int b) {\n        return a * b;\n    }\n    public static void main(String[] args) {\n        int s = add(10, 20);\n        int p = multiply(5, 6);\n        System.out.println(\"Sum: \" + s);\n        System.out.println(\"Product: \" + p);\n        System.out.println(\"Combined: \" + add(s, p));\n    }\n}",
+          "output": "Sum: 30\nProduct: 30\nCombined: 60",
+          "ai_explanation": "add returns an int. The caller stores it in s. multiply also returns int. The returned value can be used directly in another call: add(s, p) passes 30 and 30 to add.\n\nKey takeaway: Return values let methods PRODUCE data that the caller can use however it wants -- store, print, pass to another method.",
+          "ai_challenge": "Write a subtract and divide method. Handle division by zero in divide (return 0 or print error)."
+        },
+        {
+          "title": "Example 3: boolean Return -- Validation",
+          "description": "Method that checks and returns true/false.",
+          "difficulty": "beginner",
+          "code": "public class Ex3 {\n    static boolean isEven(int n) {\n        return n % 2 == 0;\n    }\n    static boolean isInRange(int n, int min, int max) {\n        return n >= min && n <= max;\n    }\n    static boolean isValidAge(int age) {\n        return isInRange(age, 0, 150);\n    }\n    public static void main(String[] args) {\n        System.out.println(\"4 even? \" + isEven(4));\n        System.out.println(\"7 even? \" + isEven(7));\n        System.out.println(\"25 in 1-100? \" + isInRange(25, 1, 100));\n        System.out.println(\"Valid age 25? \" + isValidAge(25));\n        System.out.println(\"Valid age -5? \" + isValidAge(-5));\n    }\n}",
+          "output": "4 even? true\n7 even? false\n25 in 1-100? true\nValid age 25? true\nValid age -5? false",
+          "ai_explanation": "Boolean methods return true/false. Notice isValidAge CALLS isInRange -- methods calling methods is normal and powerful! The 'is' prefix naming convention tells you it returns boolean.\n\nKey takeaway: Name boolean methods with is/has/can prefixes. They are perfect for conditions and validation.",
+          "ai_challenge": "Write isPositive, isNegative, and isZero. Then write classifyNumber that uses all three."
+        },
+        {
+          "title": "Example 4: Method Overloading",
+          "description": "Same method name, different parameter lists.",
+          "difficulty": "intermediate",
+          "code": "public class Ex4 {\n    static double area(double radius) {\n        return Math.PI * radius * radius;\n    }\n    static double area(double width, double height) {\n        return width * height;\n    }\n    static double area(double a, double b, double c) {\n        double s = (a + b + c) / 2;\n        return Math.sqrt(s * (s-a) * (s-b) * (s-c));\n    }\n    public static void main(String[] args) {\n        System.out.printf(\"Circle: %.2f%n\", area(5.0));\n        System.out.printf(\"Rectangle: %.2f%n\", area(4.0, 6.0));\n        System.out.printf(\"Triangle: %.2f%n\", area(3.0, 4.0, 5.0));\n    }\n}",
+          "output": "Circle: 78.54\nRectangle: 24.00\nTriangle: 6.00",
+          "ai_explanation": "Three methods all named 'area' but with 1, 2, and 3 parameters. Java picks the right one based on arguments. area(5.0) calls circle. area(4.0, 6.0) calls rectangle. area(3.0, 4.0, 5.0) calls triangle (Heron's formula).\n\nKey takeaway: Overloading lets you use one intuitive name for related operations. The compiler picks the right version automatically.",
+          "ai_challenge": "Add area(double side) for a square. How does Java distinguish it from circle area(double radius)? It cannot -- same signature! You would need a different name like squareArea."
+        },
+        {
+          "title": "Example 5: Scope Demonstration",
+          "description": "Variables live only in their method.",
+          "difficulty": "intermediate",
+          "code": "public class Ex5 {\n    static int x = 100; // class-level (accessible everywhere)\n    static void method1() {\n        int y = 10; // local to method1\n        System.out.println(\"method1: x=\" + x + \" y=\" + y);\n    }\n    static void method2() {\n        int y = 20; // DIFFERENT y, local to method2\n        System.out.println(\"method2: x=\" + x + \" y=\" + y);\n    }\n    public static void main(String[] args) {\n        method1();\n        method2();\n        System.out.println(\"main: x=\" + x);\n        // System.out.println(y); // ERROR: y not in scope\n    }\n}",
+          "output": "method1: x=100 y=10\nmethod2: x=100 y=20\nmain: x=100",
+          "ai_explanation": "x is class-level (static field) -- accessible everywhere. Each method has its own y -- they are completely separate variables. main cannot access y from method1 or method2.\n\nKey takeaway: Local variables are private to their method. Class-level variables are shared. Keep variables as LOCAL as possible for clean code.",
+          "ai_challenge": "Try declaring int z inside main and accessing it from method1. What happens? Compile error -- scope violation."
+        },
+        {
+          "title": "Example 6: Pass-by-Value Proof",
+          "description": "Show that primitives are copied.",
+          "difficulty": "intermediate",
+          "code": "public class Ex6 {\n    static void tryToChange(int num, String text) {\n        num = 999;\n        text = \"CHANGED\";\n        System.out.println(\"Inside: num=\" + num + \" text=\" + text);\n    }\n    public static void main(String[] args) {\n        int myNum = 42;\n        String myText = \"original\";\n        tryToChange(myNum, myText);\n        System.out.println(\"After: num=\" + myNum + \" text=\" + myText);\n    }\n}",
+          "output": "Inside: num=999 text=CHANGED\nAfter: num=42 text=original",
+          "ai_explanation": "Inside the method, num and text are COPIES. Changing them to 999 and 'CHANGED' only affects the copies. The originals myNum and myText are untouched. String is immutable so even though it is an object, reassigning the parameter does not change the original.\n\nKey takeaway: Java always passes copies. Changing a parameter inside a method never changes the original variable outside.",
+          "ai_challenge": "Now try passing an int[] array and changing arr[0] inside the method. The change STICKS because the array object is shared via the reference copy."
+        },
+        {
+          "title": "Example 7: Methods Calling Methods",
+          "description": "Building complex behaviour from simple methods.",
+          "difficulty": "intermediate",
+          "code": "public class Ex7 {\n    static double celsiusToFahrenheit(double c) {\n        return c * 9.0 / 5.0 + 32;\n    }\n    static String tempCategory(double c) {\n        if (c < 0) return \"Freezing\";\n        if (c < 15) return \"Cold\";\n        if (c < 25) return \"Mild\";\n        return \"Hot\";\n    }\n    static void printWeather(double celsius) {\n        double f = celsiusToFahrenheit(celsius);\n        String cat = tempCategory(celsius);\n        System.out.printf(\"%.1fC = %.1fF (%s)%n\", celsius, f, cat);\n    }\n    public static void main(String[] args) {\n        printWeather(22);\n        printWeather(-5);\n        printWeather(35);\n    }\n}",
+          "output": "22.0C = 71.6F (Mild)\n-5.0C = 23.0F (Freezing)\n35.0C = 95.0F (Hot)",
+          "ai_explanation": "printWeather calls two helper methods: celsiusToFahrenheit and tempCategory. Each method does ONE thing. Together they create a rich output. This is method COMPOSITION.\n\nKey takeaway: Build complex behaviour by composing simple methods. Each method is small, focused, and testable.",
+          "ai_challenge": "Add a windChill method and incorporate it into printWeather when temperature is below 10C."
+        },
+        {
+          "title": "Example 8: Array as Parameter and Return",
+          "description": "Passing and returning arrays.",
+          "difficulty": "intermediate",
+          "code": "public class Ex8 {\n    static int findMax(int[] arr) {\n        int max = arr[0];\n        for (int i = 1; i < arr.length; i++) {\n            if (arr[i] > max) max = arr[i];\n        }\n        return max;\n    }\n    static int[] doubleAll(int[] arr) {\n        int[] result = new int[arr.length];\n        for (int i = 0; i < arr.length; i++) {\n            result[i] = arr[i] * 2;\n        }\n        return result;\n    }\n    public static void main(String[] args) {\n        int[] nums = {3, 7, 1, 9, 4};\n        System.out.println(\"Max: \" + findMax(nums));\n        int[] doubled = doubleAll(nums);\n        for (int n : doubled) System.out.print(n + \" \");\n    }\n}",
+          "output": "Max: 9\n6 14 2 18 8 ",
+          "ai_explanation": "findMax takes an array, returns a single int (the maximum). doubleAll takes an array, returns a NEW array with doubled values. The original nums array is unchanged.\n\nKey takeaway: Methods can accept and return arrays. Create NEW arrays for results to avoid modifying the original.",
+          "ai_challenge": "Write findMin and a method that returns only the even elements as a new array."
+        },
+        {
+          "title": "Example 9: Recursion -- Factorial",
+          "description": "Classic recursive function.",
+          "difficulty": "intermediate",
+          "code": "public class Ex9 {\n    static long factorial(int n) {\n        if (n <= 1) return 1;          // base case\n        return n * factorial(n - 1);   // recursive case\n    }\n    public static void main(String[] args) {\n        for (int i = 0; i <= 10; i++) {\n            System.out.println(i + \"! = \" + factorial(i));\n        }\n    }\n}",
+          "output": "0! = 1\n1! = 1\n2! = 2\n3! = 6\n4! = 24\n5! = 120\n6! = 720\n7! = 5040\n8! = 40320\n9! = 362880\n10! = 3628800",
+          "ai_explanation": "factorial(5): 5*factorial(4) -> 5*4*factorial(3) -> 5*4*3*factorial(2) -> 5*4*3*2*factorial(1) -> 5*4*3*2*1 = 120. Each call simplifies the problem. Base case (n<=1) stops the recursion.\n\nKey takeaway: Recursion needs: base case (when to stop) + recursive case (call with simpler input).",
+          "ai_challenge": "Write recursive sum(n) that returns 1+2+...+n. What is the base case? What is the recursive step?"
+        },
+        {
+          "title": "Example 10: Recursion -- Fibonacci",
+          "description": "Fibonacci with recursion.",
+          "difficulty": "intermediate",
+          "code": "public class Ex10 {\n    static int fib(int n) {\n        if (n <= 0) return 0;\n        if (n == 1) return 1;\n        return fib(n - 1) + fib(n - 2);\n    }\n    public static void main(String[] args) {\n        for (int i = 0; i <= 10; i++) {\n            System.out.print(fib(i) + \" \");\n        }\n    }\n}",
+          "output": "0 1 1 2 3 5 8 13 21 34 55 ",
+          "ai_explanation": "fib(5) = fib(4)+fib(3) = (fib(3)+fib(2))+(fib(2)+fib(1)) = ... Each call branches into two more calls. This is simple but SLOW for large n (exponential time). A loop version is much faster.\n\nKey takeaway: Recursion is elegant but can be slow. Fibonacci is a classic case where loop version is much more efficient.",
+          "ai_challenge": "Time fib(30) vs fib(40). Notice the massive slowdown? Write an iterative (loop) version and compare speed."
+        },
+        {
+          "title": "Example 11: Helper Methods -- Clean main()",
+          "description": "Organising a program with methods.",
+          "difficulty": "intermediate",
+          "code": "public class Ex11 {\n    static void printHeader(String title) {\n        System.out.println(\"=\" .repeat(30));\n        System.out.println(\"  \" + title.toUpperCase());\n        System.out.println(\"=\" .repeat(30));\n    }\n    static double calcAvg(int[] scores) {\n        int sum = 0;\n        for (int s : scores) sum += s;\n        return (double) sum / scores.length;\n    }\n    static String getGrade(double avg) {\n        if (avg >= 90) return \"A\";\n        if (avg >= 80) return \"B\";\n        if (avg >= 70) return \"C\";\n        if (avg >= 60) return \"D\";\n        return \"F\";\n    }\n    public static void main(String[] args) {\n        int[] scores = {85, 92, 78, 90, 88};\n        printHeader(\"Student Report\");\n        double avg = calcAvg(scores);\n        System.out.printf(\"Average: %.1f%n\", avg);\n        System.out.println(\"Grade: \" + getGrade(avg));\n    }\n}",
+          "output": "==============================\n  STUDENT REPORT\n==============================\nAverage: 86.6\nGrade: B",
+          "ai_explanation": "main is clean and readable: print header, calculate average, get grade, display. Each method is small and focused. If you need to change grading rules, change ONE method. If you need a different header style, change ONE method.\n\nKey takeaway: A clean main() method reads like a story. Helper methods do the actual work. This is professional code structure.",
+          "ai_challenge": "Add a printScores method that prints each score with its rank. Then add findHighest and findLowest methods."
+        },
+        {
+          "title": "Example 12: Varargs -- Variable Arguments",
+          "description": "Methods accepting any number of arguments.",
+          "difficulty": "intermediate",
+          "code": "public class Ex12 {\n    static int sum(int... numbers) {\n        int total = 0;\n        for (int n : numbers) total += n;\n        return total;\n    }\n    static String join(String separator, String... words) {\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < words.length; i++) {\n            if (i > 0) sb.append(separator);\n            sb.append(words[i]);\n        }\n        return sb.toString();\n    }\n    public static void main(String[] args) {\n        System.out.println(sum(1, 2, 3));\n        System.out.println(sum(10, 20, 30, 40, 50));\n        System.out.println(join(\", \", \"Alice\", \"Bob\", \"Charlie\"));\n    }\n}",
+          "output": "6\n150\nAlice, Bob, Charlie",
+          "ai_explanation": "int... numbers means 'zero or more ints'. Inside the method, numbers is an array. You can pass any count of arguments. Varargs must be the LAST parameter.\n\nKey takeaway: Varargs (Type... name) lets a method accept any number of arguments. Treated as an array inside.",
+          "ai_challenge": "Write a method max(int... numbers) that returns the largest. What about min and average?"
+        },
+        {
+          "title": "Example 13: Method Chaining Concept",
+          "description": "Using return values as arguments.",
+          "difficulty": "intermediate",
+          "code": "public class Ex13 {\n    static String trim(String s) { return s.trim(); }\n    static String upper(String s) { return s.toUpperCase(); }\n    static String addBang(String s) { return s + \"!\"; }\n    public static void main(String[] args) {\n        String input = \"  hello world  \";\n        // Step by step\n        String trimmed = trim(input);\n        String uppered = upper(trimmed);\n        String result = addBang(uppered);\n        System.out.println(result);\n        // Chained (one line)\n        System.out.println(addBang(upper(trim(input))));\n    }\n}",
+          "output": "HELLO WORLD!\nHELLO WORLD!",
+          "ai_explanation": "The return value of one method feeds directly into another: addBang(upper(trim(input))). This reads inside-out: trim first, then upper, then addBang. Both approaches give the same result.\n\nKey takeaway: When methods return values, you can chain them. Each method transforms the data and passes it along.",
+          "ai_challenge": "Add a method replace(String s, String old, String newStr). Chain it to replace 'WORLD' with 'JAVA'."
+        },
+        {
+          "title": "Example 14: Complete Mini-Program",
+          "description": "All concepts combined in one program.",
+          "difficulty": "advanced",
+          "code": "public class Ex14 {\n    static boolean isPrime(int n) {\n        if (n < 2) return false;\n        for (int i = 2; i * i <= n; i++) {\n            if (n % i == 0) return false;\n        }\n        return true;\n    }\n    static int countPrimes(int limit) {\n        int count = 0;\n        for (int i = 2; i <= limit; i++) {\n            if (isPrime(i)) count++;\n        }\n        return count;\n    }\n    static int[] getPrimes(int limit) {\n        int count = countPrimes(limit);\n        int[] primes = new int[count];\n        int idx = 0;\n        for (int i = 2; i <= limit; i++) {\n            if (isPrime(i)) primes[idx++] = i;\n        }\n        return primes;\n    }\n    static void printArray(int[] arr) {\n        for (int i = 0; i < arr.length; i++) {\n            if (i > 0) System.out.print(\", \");\n            System.out.print(arr[i]);\n        }\n        System.out.println();\n    }\n    public static void main(String[] args) {\n        int limit = 50;\n        System.out.println(\"Primes up to \" + limit + \":\");\n        printArray(getPrimes(limit));\n        System.out.println(\"Count: \" + countPrimes(limit));\n    }\n}",
+          "output": "Primes up to 50:\n2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47\nCount: 15",
+          "ai_explanation": "Four focused methods: isPrime (checks one number), countPrimes (counts primes up to limit), getPrimes (collects primes into array), printArray (formats output). main is clean and readable. Each method does ONE thing.\n\nKey takeaway: Professional programs are built from many small, focused methods that call each other.",
+          "ai_challenge": "Add sumPrimes and averagePrime methods. Then add a method to find twin primes (primes that differ by 2, like 11 and 13)."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Java Methods -- Code Organisation Visual Guide",
+        "content": "<div style=\"font-family:monospace;line-height:1.8;font-size:14px;\">\n<span style=\"font-size:20px;font-weight:bold;color:#2c3e50;\">JAVA METHODS -- COMPLETE VISUAL GUIDE</span>\n<span style=\"color:#95a5a6;\">How Java organises code into reusable blocks</span>\n\n<span style=\"color:#e74c3c;font-weight:bold;font-size:16px;\">======== [1] METHOD ANATOMY ========</span>\n\n  <span style=\"background:#9b59b6;color:white;padding:3px 8px;border-radius:4px;\">static</span> <span style=\"background:#3498db;color:white;padding:3px 8px;border-radius:4px;\">int</span> <span style=\"background:#2ecc71;color:white;padding:3px 8px;border-radius:4px;\">add</span><span style=\"background:#f39c12;color:white;padding:3px 8px;border-radius:4px;\">(int a, int b)</span> {\n      <span style=\"color:#9b59b6;\">modifier</span>  <span style=\"color:#3498db;\">return</span>  <span style=\"color:#2ecc71;\">name</span>   <span style=\"color:#f39c12;\">parameters</span>\n      return a + b;  <span style=\"color:#95a5a6;\"><-- body (the work)</span>\n  }\n\n<span style=\"color:#3498db;font-weight:bold;font-size:16px;\">======== [2] METHOD CALL FLOW ========</span>\n\n  <span style=\"background:#3498db;color:white;padding:4px 12px;border-radius:4px;\">main()</span>\n      |  <span style=\"color:#2ecc71;\">calls add(3, 5)</span>\n      v\n  <span style=\"background:#2ecc71;color:white;padding:4px 12px;border-radius:4px;\">add(a=3, b=5)</span>\n      | computes 3+5=8\n      | <span style=\"color:#f39c12;\">return 8</span>\n      v\n  <span style=\"background:#3498db;color:white;padding:4px 12px;border-radius:4px;\">main()</span> receives 8\n\n<span style=\"color:#2ecc71;font-weight:bold;font-size:16px;\">======== [3] void vs RETURN ========</span>\n\n  <span style=\"background:#e74c3c;color:white;padding:3px 8px;border-radius:4px;\">void</span>        Does action, returns NOTHING\n                  greet(\"Alice\") -> prints, done\n  <span style=\"background:#2ecc71;color:white;padding:3px 8px;border-radius:4px;\">int/String/etc</span> Does work, returns VALUE\n                  add(3,5) -> returns 8 to caller\n\n<span style=\"color:#f39c12;font-weight:bold;font-size:16px;\">======== [4] OVERLOADING ========</span>\n\n  <span style=\"color:#f39c12;\">add(int, int)</span>       -> Java picks by argument types\n  <span style=\"color:#f39c12;\">add(double, double)</span> -> different param types = OK\n  <span style=\"color:#f39c12;\">add(int, int, int)</span>  -> different param count = OK\n  <span style=\"color:#e74c3c;\">add(int x, int y)</span>  -> same types, diff names = NOT overloading!\n\n<span style=\"color:#9b59b6;font-weight:bold;font-size:16px;\">======== [5] SCOPE ========</span>\n\n  <span style=\"background:#3498db;color:white;padding:3px 8px;border-radius:4px;\">Class level</span>  static int x = 10;    <span style=\"color:#95a5a6;\">accessible everywhere</span>\n  <span style=\"background:#2ecc71;color:white;padding:3px 8px;border-radius:4px;\">Method level</span> int y = 5;            <span style=\"color:#95a5a6;\">only inside this method</span>\n  <span style=\"background:#f39c12;color:white;padding:3px 8px;border-radius:4px;\">Block level</span>  for(int i...) { }     <span style=\"color:#95a5a6;\">only inside these braces</span>\n\n<span style=\"color:#e67e22;font-weight:bold;font-size:16px;\">======== [6] PASS-BY-VALUE ========</span>\n\n  <span style=\"color:#e67e22;\">Primitives (int, double, boolean):</span>\n    Value is COPIED. Changes inside method do NOT affect original.\n\n  <span style=\"color:#e67e22;\">Objects (arrays, Strings):</span>\n    Reference is COPIED. Object itself IS shared.\n    Array contents CAN be changed. String is immutable.\n\n<span style=\"color:#1abc9c;font-weight:bold;font-size:16px;\">======== [7] RECURSION ========</span>\n\n  <span style=\"background:#1abc9c;color:white;padding:4px 12px;border-radius:4px;\">factorial(5)</span>\n      = 5 * <span style=\"color:#1abc9c;\">factorial(4)</span>\n      = 5 * 4 * <span style=\"color:#1abc9c;\">factorial(3)</span>\n      = 5 * 4 * 3 * <span style=\"color:#1abc9c;\">factorial(2)</span>\n      = 5 * 4 * 3 * 2 * <span style=\"color:#1abc9c;\">factorial(1)</span>\n      = 5 * 4 * 3 * 2 * <span style=\"background:#e74c3c;color:white;padding:2px 6px;border-radius:3px;\">1 (BASE CASE)</span>\n      = <span style=\"color:#2ecc71;font-weight:bold;\">120</span>\n\n<span style=\"color:#e74c3c;font-weight:bold;font-size:16px;\">======== [8] METHOD DESIGN RULES ========</span>\n\n  <span style=\"color:#2ecc71;\">*</span> One method = one job (Single Responsibility)\n  <span style=\"color:#2ecc71;\">*</span> Name with verbs: calculate, print, is, has, get, set\n  <span style=\"color:#2ecc71;\">*</span> Keep methods short (under 20 lines ideal)\n  <span style=\"color:#2ecc71;\">*</span> Input through parameters, output through return\n  <span style=\"color:#2ecc71;\">*</span> Avoid side effects -- methods should be predictable\n  <span style=\"color:#2ecc71;\">*</span> Test each method independently\n\n<span style=\"color:#e74c3c;font-weight:bold;font-size:16px;\">======== [9] COMMON BUGS ========</span>\n\n  <span style=\"color:#e74c3c;\">BUG:</span> Missing return statement\n  <span style=\"color:#2ecc71;\">FIX:</span> Every code path must return (or method is void)\n\n  <span style=\"color:#e74c3c;\">BUG:</span> Return type mismatch\n  <span style=\"color:#2ecc71;\">FIX:</span> return 3.14 in an int method -> error. Use double.\n\n  <span style=\"color:#e74c3c;\">BUG:</span> Forgetting to capture return\n  <span style=\"color:#2ecc71;\">FIX:</span> add(3,5); wastes result. Use: int x = add(3,5);\n\n  <span style=\"color:#e74c3c;\">BUG:</span> Using = instead of == in boolean return\n  <span style=\"color:#2ecc71;\">FIX:</span> return x = 5; assigns. return x == 5; compares.\n\n  <span style=\"color:#e74c3c;\">BUG:</span> Infinite recursion\n  <span style=\"color:#2ecc71;\">FIX:</span> No base case -> StackOverflowError. Always check base first.\n\n  <span style=\"color:#e74c3c;\">BUG:</span> Variable not in scope\n  <span style=\"color:#2ecc71;\">FIX:</span> Variable from one method cannot be used in another.\n\n  <span style=\"color:#e74c3c;\">BUG:</span> Wrong argument order\n  <span style=\"color:#2ecc71;\">FIX:</span> add(name, age) vs add(age, name) -- order must match params.\n\n<span style=\"background:#2ecc71;color:white;padding:6px 16px;border-radius:4px;font-weight:bold;\">[REMEMBER]</span>\n  <span style=\"color:#2ecc71;\">*</span> Methods = reusable code blocks. Define once, call many times.\n  <span style=\"color:#2ecc71;\">*</span> void = no return. int/String/etc = returns a value.\n  <span style=\"color:#2ecc71;\">*</span> Parameters are COPIES (pass-by-value).\n  <span style=\"color:#2ecc71;\">*</span> Overloading = same name, different parameter types/count.\n  <span style=\"color:#2ecc71;\">*</span> Scope: variables die when their block/method ends.\n  <span style=\"color:#2ecc71;\">*</span> Recursion needs a BASE CASE or it runs forever.\n  <span style=\"color:#2ecc71;\">*</span> DRY: if you copy-paste code, make a method instead.\n\n<span style=\"color:#3498db;font-weight:bold;font-size:16px;\">======== WHEN TO CREATE A METHOD ========</span>\n\n  <span style=\"color:#2ecc71;\">YES, make a method when:</span>\n    * Code appears more than once\n    * Logic is complex and deserves a name\n    * You want to test a piece of logic independently\n    * main() is getting longer than 20 lines\n    * You can describe the task in one sentence\n  <span style=\"color:#e74c3c;\">NO, skip when:</span>\n    * Code runs once and is trivially simple\n    * Creating a method adds more complexity than it removes\n    * The method would have 10+ parameters (design smell)\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Simple Greeting",
+          "description": "Write a void method that prints a greeting. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "beginner",
+          "category": "void Methods",
+          "estimated_minutes": 3,
+          "ai_intro": "Your very first method! Just print a message. You have got this!",
+          "starter_code": "public class Ex01 {\n    // TODO: Write a static void method called greet that prints \"Hello, World!\"\n    \n    public static void main(String[] args) {\n        greet();\n    }\n}",
+          "expected_output": "Hello, World!",
+          "hints": [
+            {
+              "message": "static void greet() { System.out.println(...); }"
+            },
+            {
+              "message": "void means no return. Just print inside the method body."
+            },
+            {
+              "message": "static void greet() {\n    System.out.println(\"Hello, World!\");\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Greeting with Name",
+          "description": "Write a void method with a String parameter. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "beginner",
+          "category": "void Methods",
+          "estimated_minutes": 3,
+          "ai_intro": "Add a parameter to personalise the greeting!",
+          "starter_code": "public class Ex02 {\n    // TODO: static void greet(String name) that prints \"Hello, <name>!\"\n    \n    public static void main(String[] args) {\n        greet(\"Alice\");\n        greet(\"Bob\");\n    }\n}",
+          "expected_output": "Hello, Alice!\nHello, Bob!",
+          "hints": [
+            {
+              "message": "static void greet(String name) { println(\"Hello, \" + name + \"!\"); }"
+            },
+            {
+              "message": "name is the parameter. It receives the value from the call: greet(\"Alice\") -> name=\"Alice\"."
+            },
+            {
+              "message": "static void greet(String name) {\n    System.out.println(\"Hello, \" + name + \"!\");\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Print Line Separator",
+          "description": "Write a method that prints a line of dashes. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "beginner",
+          "category": "void Methods",
+          "estimated_minutes": 3,
+          "ai_intro": "A reusable separator -- call it whenever you need a visual break!",
+          "starter_code": "public class Ex03 {\n    // TODO: static void printLine(int length) prints that many dashes\n    \n    public static void main(String[] args) {\n        printLine(20);\n        System.out.println(\"Report\");\n        printLine(20);\n    }\n}",
+          "expected_output": "--------------------\nReport\n--------------------",
+          "hints": [
+            {
+              "message": "Use a for loop inside: for(int i=0;i<length;i++) print('-');"
+            },
+            {
+              "message": "After the loop, println() for a newline."
+            },
+            {
+              "message": "static void printLine(int length) {\n    for(int i=0;i<length;i++) System.out.print(\"-\");\n    System.out.println();\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Print Box",
+          "description": "Draw a box of a given size. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "beginner",
+          "category": "void Methods",
+          "estimated_minutes": 4,
+          "ai_intro": "Combine a loop with your method to draw a box!",
+          "starter_code": "public class Ex04 {\n    // TODO: static void printBox(int width, int height) prints * border\n    \n    public static void main(String[] args) {\n        printBox(6, 4);\n    }\n}",
+          "expected_output": "******\n*    *\n*    *\n******",
+          "hints": [
+            {
+              "message": "Row 1 and last: all stars. Middle rows: star + spaces + star."
+            },
+            {
+              "message": "for each row: if first/last row, print all stars. Else star + (width-2) spaces + star."
+            },
+            {
+              "message": "static void printBox(int w, int h) {\n    for(int r=0;r<h;r++) {\n        for(int c=0;c<w;c++) {\n            if(r==0||r==h-1||c==0||c==w-1) System.out.print(\"*\");\n            else System.out.print(\" \");\n        }\n        System.out.println();\n    }\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Print Array",
+          "description": "Write a method to print array contents. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "beginner",
+          "category": "void Methods",
+          "estimated_minutes": 3,
+          "ai_intro": "No more writing the print loop every time -- make a method!",
+          "starter_code": "public class Ex05 {\n    // TODO: static void printArray(int[] arr) prints [1, 2, 3]\n    \n    public static void main(String[] args) {\n        int[] nums = {10, 20, 30, 40};\n        printArray(nums);\n    }\n}",
+          "expected_output": "[10, 20, 30, 40]",
+          "hints": [
+            {
+              "message": "Print '[', then loop with comma separator, then ']'."
+            },
+            {
+              "message": "if(i>0) print(\", \") before each element after the first."
+            },
+            {
+              "message": "static void printArray(int[] arr) {\n    System.out.print(\"[\");\n    for(int i=0;i<arr.length;i++) {\n        if(i>0) System.out.print(\", \");\n        System.out.print(arr[i]);\n    }\n    System.out.println(\"]\");\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Repeat Message",
+          "description": "Print a message n times. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "beginner",
+          "category": "void Methods",
+          "estimated_minutes": 3,
+          "ai_intro": "Repetition + methods = super useful combo!",
+          "starter_code": "public class Ex06 {\n    // TODO: static void repeat(String msg, int times)\n    \n    public static void main(String[] args) {\n        repeat(\"Java!\", 3);\n    }\n}",
+          "expected_output": "Java!\nJava!\nJava!",
+          "hints": [
+            {
+              "message": "for(int i=0; i<times; i++) println(msg);"
+            },
+            {
+              "message": "Simple loop inside the method. Two parameters: what to print and how many times."
+            },
+            {
+              "message": "static void repeat(String msg, int times) {\n    for(int i=0;i<times;i++) System.out.println(msg);\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Print Multiplication Table",
+          "description": "Print times table for a number. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "beginner",
+          "category": "void Methods",
+          "estimated_minutes": 4,
+          "ai_intro": "Wrap the multiplication table in a reusable method!",
+          "starter_code": "public class Ex07 {\n    // TODO: static void timesTable(int n) prints n x 1 through n x 12\n    \n    public static void main(String[] args) {\n        timesTable(7);\n    }\n}",
+          "expected_output": "7 x 1 = 7\n7 x 2 = 14\n7 x 3 = 21\n7 x 4 = 28\n7 x 5 = 35\n7 x 6 = 42\n7 x 7 = 49\n7 x 8 = 56\n7 x 9 = 63\n7 x 10 = 70\n7 x 11 = 77\n7 x 12 = 84",
+          "hints": [
+            {
+              "message": "for(int i=1;i<=12;i++) println(n+\" x \"+i+\" = \"+(n*i));"
+            },
+            {
+              "message": "Straightforward loop. n is the parameter, i is the multiplier."
+            },
+            {
+              "message": "static void timesTable(int n) {\n    for(int i=1;i<=12;i++)\n        System.out.println(n+\" x \"+i+\" = \"+(n*i));\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Print Stars Triangle",
+          "description": "Print a right triangle of stars. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "beginner",
+          "category": "void Methods",
+          "estimated_minutes": 4,
+          "ai_intro": "Reuse your loop skills inside a method!",
+          "starter_code": "public class Ex08 {\n    // TODO: static void triangle(int rows)\n    \n    public static void main(String[] args) {\n        triangle(5);\n    }\n}",
+          "expected_output": "*\n**\n***\n****\n*****",
+          "hints": [
+            {
+              "message": "for(int i=1;i<=rows;i++){for(int j=0;j<i;j++)print('*');println();}"
+            },
+            {
+              "message": "Nested loop: outer for rows, inner for stars per row."
+            },
+            {
+              "message": "static void triangle(int rows) {\n    for(int i=1;i<=rows;i++) {\n        for(int j=0;j<i;j++) System.out.print(\"*\");\n        System.out.println();\n    }\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Swap Array Elements",
+          "description": "Write a void method to swap two array elements. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "void Methods",
+          "estimated_minutes": 4,
+          "ai_intro": "Arrays are passed by reference -- changes inside the method stick!",
+          "starter_code": "public class Ex09 {\n    // TODO: static void swap(int[] arr, int i, int j)\n    \n    public static void main(String[] args) {\n        int[] arr = {10, 20, 30, 40};\n        swap(arr, 0, 3);\n        for(int n : arr) System.out.print(n + \" \");\n    }\n}",
+          "expected_output": "40 20 30 10 ",
+          "hints": [
+            {
+              "message": "int temp = arr[i]; arr[i] = arr[j]; arr[j] = temp;"
+            },
+            {
+              "message": "Arrays are objects -- the method modifies the ACTUAL array, not a copy."
+            },
+            {
+              "message": "static void swap(int[] arr, int i, int j) {\n    int temp=arr[i]; arr[i]=arr[j]; arr[j]=temp;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: void with Early Return",
+          "description": "Use return in a void method to exit early. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "void Methods",
+          "estimated_minutes": 4,
+          "ai_intro": "void methods can use return; (no value) to exit early -- like a guard clause!",
+          "starter_code": "public class Ex10 {\n    // TODO: static void printPositive(int n) -- only print if n > 0\n    \n    public static void main(String[] args) {\n        printPositive(5);\n        printPositive(-3);\n        printPositive(0);\n        printPositive(10);\n    }\n}",
+          "expected_output": "5 is positive\n10 is positive",
+          "hints": [
+            {
+              "message": "if(n <= 0) return; then println(n + \" is positive\");"
+            },
+            {
+              "message": "return; (no value) exits the void method immediately. Guard clause pattern."
+            },
+            {
+              "message": "static void printPositive(int n) {\n    if(n<=0) return;\n    System.out.println(n+\" is positive\");\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Add Two Numbers",
+          "description": "Return the sum of two integers. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "beginner",
+          "category": "Return Values",
+          "estimated_minutes": 3,
+          "ai_intro": "The classic first return method!",
+          "starter_code": "public class Ex11 {\n    // TODO: static int add(int a, int b)\n    \n    public static void main(String[] args) {\n        System.out.println(add(3, 5));\n        System.out.println(add(10, -3));\n    }\n}",
+          "expected_output": "8\n7",
+          "hints": [
+            {
+              "message": "static int add(int a, int b) { return a + b; }"
+            },
+            {
+              "message": "return sends the computed value back to the caller."
+            },
+            {
+              "message": "static int add(int a, int b) {\n    return a + b;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Maximum of Two",
+          "description": "Return the larger of two numbers. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "beginner",
+          "category": "Return Values",
+          "estimated_minutes": 3,
+          "ai_intro": "Compare and return the winner!",
+          "starter_code": "public class Ex12 {\n    // TODO: static int max(int a, int b)\n    \n    public static void main(String[] args) {\n        System.out.println(max(10, 20));\n        System.out.println(max(50, 30));\n    }\n}",
+          "expected_output": "20\n50",
+          "hints": [
+            {
+              "message": "return (a > b) ? a : b; or use if/else."
+            },
+            {
+              "message": "Ternary is clean for simple 2-way returns."
+            },
+            {
+              "message": "static int max(int a, int b) {\n    return (a > b) ? a : b;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Is Even Check",
+          "description": "Return boolean for even check. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "beginner",
+          "category": "Return Values",
+          "estimated_minutes": 3,
+          "ai_intro": "Boolean returns are perfect for validation!",
+          "starter_code": "public class Ex13 {\n    // TODO: static boolean isEven(int n)\n    \n    public static void main(String[] args) {\n        System.out.println(isEven(4));\n        System.out.println(isEven(7));\n    }\n}",
+          "expected_output": "true\nfalse",
+          "hints": [
+            {
+              "message": "return n % 2 == 0; -- the comparison IS the boolean."
+            },
+            {
+              "message": "Do not write if(n%2==0) return true; else return false; -- that is redundant."
+            },
+            {
+              "message": "static boolean isEven(int n) {\n    return n % 2 == 0;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Circle Area",
+          "description": "Calculate and return circle area. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "beginner",
+          "category": "Return Values",
+          "estimated_minutes": 3,
+          "ai_intro": "Use Math.PI in your return calculation!",
+          "starter_code": "public class Ex14 {\n    // TODO: static double circleArea(double radius)\n    \n    public static void main(String[] args) {\n        System.out.printf(\"%.2f%n\", circleArea(5));\n        System.out.printf(\"%.2f%n\", circleArea(10));\n    }\n}",
+          "expected_output": "78.54\n314.16",
+          "hints": [
+            {
+              "message": "return Math.PI * radius * radius;"
+            },
+            {
+              "message": "PI * r^2. Math.PI gives 3.14159..."
+            },
+            {
+              "message": "static double circleArea(double radius) {\n    return Math.PI * radius * radius;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Celsius to Fahrenheit",
+          "description": "Convert temperature and return result. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "beginner",
+          "category": "Return Values",
+          "estimated_minutes": 3,
+          "ai_intro": "Formula: F = C * 9/5 + 32. Return the result!",
+          "starter_code": "public class Ex15 {\n    // TODO: static double toFahrenheit(double celsius)\n    \n    public static void main(String[] args) {\n        System.out.printf(\"%.1f%n\", toFahrenheit(0));\n        System.out.printf(\"%.1f%n\", toFahrenheit(100));\n    }\n}",
+          "expected_output": "32.0\n212.0",
+          "hints": [
+            {
+              "message": "return celsius * 9.0 / 5.0 + 32;"
+            },
+            {
+              "message": "Use 9.0/5.0 for double division, not 9/5 (integer division!)."
+            },
+            {
+              "message": "static double toFahrenheit(double celsius) {\n    return celsius * 9.0 / 5.0 + 32;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Count Vowels",
+          "description": "Return the number of vowels in a string. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Return Values",
+          "estimated_minutes": 5,
+          "ai_intro": "Loop through chars, count matches, return the count!",
+          "starter_code": "public class Ex16 {\n    // TODO: static int countVowels(String s)\n    \n    public static void main(String[] args) {\n        System.out.println(countVowels(\"Hello World\"));\n        System.out.println(countVowels(\"rhythm\"));\n    }\n}",
+          "expected_output": "3\n0",
+          "hints": [
+            {
+              "message": "int count=0; for each char: if 'aeiouAEIOU' contains it, count++. Return count."
+            },
+            {
+              "message": "Use String.indexOf(ch) >= 0 to check if char is a vowel."
+            },
+            {
+              "message": "static int countVowels(String s) {\n    int c=0;\n    for(char ch:s.toCharArray()) if(\"aeiouAEIOU\".indexOf(ch)>=0) c++;\n    return c;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Power Calculator",
+          "description": "Return base raised to exponent. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Return Values",
+          "estimated_minutes": 4,
+          "ai_intro": "Repeated multiplication in a loop, return the result!",
+          "starter_code": "public class Ex17 {\n    // TODO: static long power(int base, int exp)\n    \n    public static void main(String[] args) {\n        System.out.println(power(2, 10));\n        System.out.println(power(3, 5));\n    }\n}",
+          "expected_output": "1024\n243",
+          "hints": [
+            {
+              "message": "long result=1; for(int i=0;i<exp;i++) result*=base; return result;"
+            },
+            {
+              "message": "Use long to handle big results. Start at 1 not 0!"
+            },
+            {
+              "message": "static long power(int base, int exp) {\n    long r=1;\n    for(int i=0;i<exp;i++) r*=base;\n    return r;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Reverse String",
+          "description": "Return a reversed copy of a string. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Return Values",
+          "estimated_minutes": 4,
+          "ai_intro": "Build the result string backwards and return it!",
+          "starter_code": "public class Ex18 {\n    // TODO: static String reverse(String s)\n    \n    public static void main(String[] args) {\n        System.out.println(reverse(\"Hello\"));\n        System.out.println(reverse(\"Java\"));\n    }\n}",
+          "expected_output": "olleH\navaJ",
+          "hints": [
+            {
+              "message": "String rev=\"\"; for(int i=s.length()-1;i>=0;i--) rev+=s.charAt(i); return rev;"
+            },
+            {
+              "message": "Loop backwards, append each character to build reversed string."
+            },
+            {
+              "message": "static String reverse(String s) {\n    String r=\"\";\n    for(int i=s.length()-1;i>=0;i--) r+=s.charAt(i);\n    return r;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Array Sum",
+          "description": "Return the sum of all elements in an array. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Return Values",
+          "estimated_minutes": 4,
+          "ai_intro": "Accumulator pattern inside a method!",
+          "starter_code": "public class Ex19 {\n    // TODO: static int arraySum(int[] arr)\n    \n    public static void main(String[] args) {\n        System.out.println(arraySum(new int[]{1,2,3,4,5}));\n        System.out.println(arraySum(new int[]{10,20,30}));\n    }\n}",
+          "expected_output": "15\n60",
+          "hints": [
+            {
+              "message": "int sum=0; for(int n:arr) sum+=n; return sum;"
+            },
+            {
+              "message": "Classic accumulator. for-each is cleanest here."
+            },
+            {
+              "message": "static int arraySum(int[] arr) {\n    int s=0; for(int n:arr) s+=n; return s;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Find in Array",
+          "description": "Return index of value, or -1 if not found. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Return Values",
+          "estimated_minutes": 5,
+          "ai_intro": "Search pattern: loop, check, return index or -1!",
+          "starter_code": "public class Ex20 {\n    // TODO: static int indexOf(int[] arr, int target)\n    \n    public static void main(String[] args) {\n        int[] nums = {10, 20, 30, 40, 50};\n        System.out.println(indexOf(nums, 30));\n        System.out.println(indexOf(nums, 99));\n    }\n}",
+          "expected_output": "2\n-1",
+          "hints": [
+            {
+              "message": "for(int i=0;i<arr.length;i++) if(arr[i]==target) return i; return -1;"
+            },
+            {
+              "message": "return inside loop exits immediately when found. -1 at end means not found."
+            },
+            {
+              "message": "static int indexOf(int[] arr, int target) {\n    for(int i=0;i<arr.length;i++) if(arr[i]==target) return i;\n    return -1;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Is Palindrome",
+          "description": "Return whether a string is a palindrome. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Return Values",
+          "estimated_minutes": 5,
+          "ai_intro": "Compare first with last, second with second-last!",
+          "starter_code": "public class Ex21 {\n    // TODO: static boolean isPalindrome(String s)\n    \n    public static void main(String[] args) {\n        System.out.println(isPalindrome(\"racecar\"));\n        System.out.println(isPalindrome(\"hello\"));\n    }\n}",
+          "expected_output": "true\nfalse",
+          "hints": [
+            {
+              "message": "for(int i=0;i<s.length()/2;i++) if(s.charAt(i)!=s.charAt(s.length()-1-i)) return false; return true;"
+            },
+            {
+              "message": "Any mismatch -> return false immediately. If loop finishes, all matched -> true."
+            },
+            {
+              "message": "static boolean isPalindrome(String s) {\n    for(int i=0;i<s.length()/2;i++)\n        if(s.charAt(i)!=s.charAt(s.length()-1-i)) return false;\n    return true;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Grade Assigner",
+          "description": "Return letter grade from score. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Return Values",
+          "estimated_minutes": 4,
+          "ai_intro": "Multiple return statements for different ranges!",
+          "starter_code": "public class Ex22 {\n    // TODO: static String getGrade(int score)\n    \n    public static void main(String[] args) {\n        System.out.println(getGrade(95));\n        System.out.println(getGrade(73));\n        System.out.println(getGrade(45));\n    }\n}",
+          "expected_output": "A\nC\nF",
+          "hints": [
+            {
+              "message": "if(score>=90) return \"A\"; if(score>=80) return \"B\"; ..."
+            },
+            {
+              "message": "Each return exits the method. No need for else after return."
+            },
+            {
+              "message": "static String getGrade(int score) {\n    if(score>=90) return \"A\";\n    if(score>=80) return \"B\";\n    if(score>=70) return \"C\";\n    if(score>=60) return \"D\";\n    return \"F\";\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Overloaded add",
+          "description": "Two versions: int and double. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Method Overloading",
+          "estimated_minutes": 4,
+          "ai_intro": "Same name, different types -- Java picks the right one!",
+          "starter_code": "public class Ex23 {\n    // TODO: static int add(int a, int b)\n    // TODO: static double add(double a, double b)\n    \n    public static void main(String[] args) {\n        System.out.println(add(3, 5));\n        System.out.println(add(1.5, 2.5));\n    }\n}",
+          "expected_output": "8\n4.0",
+          "hints": [
+            {
+              "message": "Write two separate methods. Java matches by argument type."
+            },
+            {
+              "message": "add(3,5) -> int version. add(1.5,2.5) -> double version."
+            },
+            {
+              "message": "static int add(int a, int b) { return a+b; }\nstatic double add(double a, double b) { return a+b; }"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Overloaded max",
+          "description": "max for 2 and 3 parameters. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Method Overloading",
+          "estimated_minutes": 4,
+          "ai_intro": "Find the maximum of 2 OR 3 numbers with the same method name!",
+          "starter_code": "public class Ex24 {\n    // TODO: static int max(int a, int b)\n    // TODO: static int max(int a, int b, int c)\n    \n    public static void main(String[] args) {\n        System.out.println(max(10, 20));\n        System.out.println(max(5, 15, 10));\n    }\n}",
+          "expected_output": "20\n15",
+          "hints": [
+            {
+              "message": "max(a,b): return a>b?a:b. max(a,b,c): return max(max(a,b),c);"
+            },
+            {
+              "message": "The 3-param version can CALL the 2-param version! Reuse!"
+            },
+            {
+              "message": "static int max(int a, int b) { return a>b?a:b; }\nstatic int max(int a, int b, int c) { return max(max(a,b),c); }"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Overloaded greet",
+          "description": "Different greetings based on parameters. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "beginner",
+          "category": "Method Overloading",
+          "estimated_minutes": 4,
+          "ai_intro": "One version with just name, another with name + title!",
+          "starter_code": "public class Ex25 {\n    // TODO: greet(String name) and greet(String title, String name)\n    \n    public static void main(String[] args) {\n        greet(\"Alice\");\n        greet(\"Dr\", \"Smith\");\n    }\n}",
+          "expected_output": "Hello, Alice!\nHello, Dr Smith!",
+          "hints": [
+            {
+              "message": "greet(name): \"Hello, \"+name. greet(title, name): \"Hello, \"+title+\" \"+name."
+            },
+            {
+              "message": "Different parameter COUNT = valid overloading."
+            },
+            {
+              "message": "static void greet(String name) {\n    System.out.println(\"Hello, \"+name+\"!\");\n}\nstatic void greet(String title, String name) {\n    System.out.println(\"Hello, \"+title+\" \"+name+\"!\");\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Overloaded print",
+          "description": "Print int, double, and String differently. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Method Overloading",
+          "estimated_minutes": 4,
+          "ai_intro": "Format output differently based on the type!",
+          "starter_code": "public class Ex26 {\n    // TODO: static void display(int n), display(double d), display(String s)\n    \n    public static void main(String[] args) {\n        display(42);\n        display(3.14159);\n        display(\"Hello\");\n    }\n}",
+          "expected_output": "Integer: 42\nDecimal: 3.14\nText: Hello",
+          "hints": [
+            {
+              "message": "display(int n): \"Integer: \"+n. display(double d): printf. display(String s): \"Text: \"+s."
+            },
+            {
+              "message": "Three methods, three types. Java picks by argument type."
+            },
+            {
+              "message": "static void display(int n){System.out.println(\"Integer: \"+n);}\nstatic void display(double d){System.out.printf(\"Decimal: %.2f%n\",d);}\nstatic void display(String s){System.out.println(\"Text: \"+s);}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Overloaded repeat",
+          "description": "Repeat with default count. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Method Overloading",
+          "estimated_minutes": 4,
+          "ai_intro": "One version with count, one with default count of 3!",
+          "starter_code": "public class Ex27 {\n    // TODO: repeat(String msg) -> prints 3 times (default)\n    // TODO: repeat(String msg, int times) -> prints specified times\n    \n    public static void main(String[] args) {\n        repeat(\"Hi\");\n        repeat(\"Go\", 2);\n    }\n}",
+          "expected_output": "Hi\nHi\nHi\nGo\nGo",
+          "hints": [
+            {
+              "message": "repeat(msg) calls repeat(msg, 3); -- reuse the detailed version!"
+            },
+            {
+              "message": "The no-count version delegates to the count version with default 3."
+            },
+            {
+              "message": "static void repeat(String msg) { repeat(msg, 3); }\nstatic void repeat(String msg, int times) {\n    for(int i=0;i<times;i++) System.out.println(msg);\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Overloaded average",
+          "description": "Average of array OR of two/three values. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Method Overloading",
+          "estimated_minutes": 5,
+          "ai_intro": "Multiple ways to calculate an average!",
+          "starter_code": "public class Ex28 {\n    // TODO: average(int a, int b), average(int a, int b, int c), average(int[] arr)\n    \n    public static void main(String[] args) {\n        System.out.println(average(10, 20));\n        System.out.println(average(10, 20, 30));\n        System.out.println(average(new int[]{5,10,15,20}));\n    }\n}",
+          "expected_output": "15.0\n20.0\n12.5",
+          "hints": [
+            {
+              "message": "Two-param: (a+b)/2.0. Three-param: (a+b+c)/3.0. Array: sum/length."
+            },
+            {
+              "message": "Use 2.0, 3.0 for double division!"
+            },
+            {
+              "message": "static double average(int a,int b){return(a+b)/2.0;}\nstatic double average(int a,int b,int c){return(a+b+c)/3.0;}\nstatic double average(int[] a){int s=0;for(int n:a)s+=n;return(double)s/a.length;}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Overloaded contains",
+          "description": "Check containment in String and array. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Method Overloading",
+          "estimated_minutes": 5,
+          "ai_intro": "Same concept (contains), different data types!",
+          "starter_code": "public class Ex29 {\n    // TODO: boolean contains(String s, char c) and boolean contains(int[] arr, int val)\n    \n    public static void main(String[] args) {\n        System.out.println(contains(\"Hello\", 'e'));\n        System.out.println(contains(new int[]{1,2,3}, 5));\n    }\n}",
+          "expected_output": "true\nfalse",
+          "hints": [
+            {
+              "message": "String: s.indexOf(c)>=0. Array: loop and check."
+            },
+            {
+              "message": "Different parameter TYPES = valid overloading."
+            },
+            {
+              "message": "static boolean contains(String s, char c){return s.indexOf(c)>=0;}\nstatic boolean contains(int[] a, int v){for(int n:a)if(n==v)return true;return false;}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Overloaded format",
+          "description": "Format numbers as currency or percentage. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Method Overloading",
+          "estimated_minutes": 5,
+          "ai_intro": "Same name, completely different formatting based on parameters!",
+          "starter_code": "public class Ex30 {\n    // TODO: format(double amount, String currency) -> \"$100.00\"\n    // TODO: format(double ratio) -> \"75.0%\"\n    \n    public static void main(String[] args) {\n        System.out.println(format(100.0, \"$\"));\n        System.out.println(format(0.75));\n    }\n}",
+          "expected_output": "$100.00\n75.0%",
+          "hints": [
+            {
+              "message": "format(amount, currency): String.format(\"%s%.2f\", currency, amount). format(ratio): ratio*100 + \"%\"."
+            },
+            {
+              "message": "Different parameter count AND types."
+            },
+            {
+              "message": "static String format(double amt, String cur){return String.format(\"%s%.2f\",cur,amt);}\nstatic String format(double ratio){return String.format(\"%.1f%%\",ratio*100);}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Scope Test",
+          "description": "Predict output with local variables. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Scope & Parameters",
+          "estimated_minutes": 4,
+          "ai_intro": "Each method has its own variables -- even if the names match!",
+          "starter_code": "public class Ex31 {\n    static void changeX() {\n        int x = 99;\n        System.out.println(\"changeX: x = \" + x);\n    }\n    public static void main(String[] args) {\n        int x = 5;\n        System.out.println(\"Before: x = \" + x);\n        changeX();\n        System.out.println(\"After: x = \" + x);\n        // TODO: What prints? Fill in expected_output.\n    }\n}",
+          "expected_output": "Before: x = 5\nchangeX: x = 99\nAfter: x = 5",
+          "hints": [
+            {
+              "message": "changeX creates its OWN x=99. main's x=5 is a completely different variable."
+            },
+            {
+              "message": "Same name does not mean same variable. Scope is per-method."
+            },
+            {
+              "message": "// No code change needed. The output shows scope: main's x stays 5."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Pass-by-Value Test",
+          "description": "Show that primitives are not changed. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Scope & Parameters",
+          "estimated_minutes": 4,
+          "ai_intro": "Java copies values -- the original is safe!",
+          "starter_code": "public class Ex32 {\n    static void doubleIt(int n) {\n        n = n * 2;\n        System.out.println(\"Inside: \" + n);\n    }\n    public static void main(String[] args) {\n        int x = 10;\n        doubleIt(x);\n        System.out.println(\"Outside: \" + x);\n        // TODO: What does x print? Why?\n    }\n}",
+          "expected_output": "Inside: 20\nOutside: 10",
+          "hints": [
+            {
+              "message": "n is a COPY of x. Changing n to 20 does not affect x."
+            },
+            {
+              "message": "Pass-by-value: the method gets a photocopy, not the original."
+            },
+            {
+              "message": "// x stays 10 because Java copies the value into n."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Array Modification",
+          "description": "Show arrays CAN be changed by methods. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Scope & Parameters",
+          "estimated_minutes": 4,
+          "ai_intro": "Arrays are different -- the reference is copied but the object is shared!",
+          "starter_code": "public class Ex33 {\n    static void doubleAll(int[] arr) {\n        for(int i=0;i<arr.length;i++) arr[i] *= 2;\n    }\n    public static void main(String[] args) {\n        int[] nums = {1, 2, 3};\n        doubleAll(nums);\n        for(int n : nums) System.out.print(n + \" \");\n        // TODO: What prints? Why is this different from primitives?\n    }\n}",
+          "expected_output": "2 4 6 ",
+          "hints": [
+            {
+              "message": "The array OBJECT is shared. arr[i]*=2 changes the actual array elements."
+            },
+            {
+              "message": "Reference copied -> same object. Changes to contents are visible outside."
+            },
+            {
+              "message": "// Array IS modified because both variables point to the same object."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Return Instead of Modify",
+          "description": "Return a new value instead of trying to change a parameter. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Scope & Parameters",
+          "estimated_minutes": 4,
+          "ai_intro": "Since primitives are copies, RETURN the new value instead!",
+          "starter_code": "public class Ex34 {\n    // TODO: static int doubleIt(int n) -- return n*2\n    \n    public static void main(String[] args) {\n        int x = 10;\n        x = doubleIt(x); // capture return value\n        System.out.println(x);\n    }\n}",
+          "expected_output": "20",
+          "hints": [
+            {
+              "message": "static int doubleIt(int n) { return n * 2; }"
+            },
+            {
+              "message": "Instead of modifying the copy (impossible), return the new value and reassign."
+            },
+            {
+              "message": "static int doubleIt(int n) {\n    return n * 2;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Block Scope",
+          "description": "Variables declared in blocks die at the closing brace. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Scope & Parameters",
+          "estimated_minutes": 4,
+          "ai_intro": "Curly braces define variable lifetime!",
+          "starter_code": "public class Ex35 {\n    public static void main(String[] args) {\n        for(int i=0; i<3; i++) {\n            int temp = i * 10;\n            System.out.println(\"temp = \" + temp);\n        }\n        // TODO: What happens if you try println(i) or println(temp) here?\n        // Answer: Compile error -- i and temp are out of scope!\n    }\n}",
+          "expected_output": "temp = 0\ntemp = 10\ntemp = 20",
+          "hints": [
+            {
+              "message": "i and temp exist only inside the for loop braces. Outside, they are gone."
+            },
+            {
+              "message": "Block scope: variable lives from declaration to closing }."
+            },
+            {
+              "message": "// Both i and temp are out of scope after the for loop's closing brace."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Multiple Returns",
+          "description": "Method with multiple return points. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Scope & Parameters",
+          "estimated_minutes": 4,
+          "ai_intro": "Each return exits immediately -- use for guard clauses!",
+          "starter_code": "public class Ex36 {\n    // TODO: static String classify(int n)\n    // negative -> \"Negative\", zero -> \"Zero\", positive -> \"Positive\"\n    \n    public static void main(String[] args) {\n        System.out.println(classify(-5));\n        System.out.println(classify(0));\n        System.out.println(classify(10));\n    }\n}",
+          "expected_output": "Negative\nZero\nPositive",
+          "hints": [
+            {
+              "message": "if(n<0) return \"Negative\"; if(n==0) return \"Zero\"; return \"Positive\";"
+            },
+            {
+              "message": "Each return exits the method. No else needed after return."
+            },
+            {
+              "message": "static String classify(int n) {\n    if(n<0) return \"Negative\";\n    if(n==0) return \"Zero\";\n    return \"Positive\";\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Scope Shadowing",
+          "description": "Local variable hides class variable. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Scope & Parameters",
+          "estimated_minutes": 5,
+          "ai_intro": "When local and class variables have the same name, local wins!",
+          "starter_code": "public class Ex37 {\n    static int value = 100;\n    static void test() {\n        int value = 5; // shadows class-level value\n        System.out.println(\"Local: \" + value);\n        // TODO: How do you access the class-level value? Use Ex37.value\n    }\n    public static void main(String[] args) {\n        test();\n        System.out.println(\"Class: \" + value);\n    }\n}",
+          "expected_output": "Local: 5\nClass: 100",
+          "hints": [
+            {
+              "message": "Local 'value' hides class 'value'. Use ClassName.value to access class-level."
+            },
+            {
+              "message": "Shadowing is legal but confusing. Best practice: use different names."
+            },
+            {
+              "message": "// Inside test(), 'value' refers to local variable (5).\n// Class-level 'value' (100) is accessed via Ex37.value"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Variable Lifetime",
+          "description": "Track when variables are created and destroyed. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Scope & Parameters",
+          "estimated_minutes": 5,
+          "ai_intro": "Variables are born at declaration and die at their scope's closing brace!",
+          "starter_code": "public class Ex38 {\n    public static void main(String[] args) {\n        System.out.println(\"Start\");\n        for(int i=0;i<2;i++) {\n            int inner = i*10;\n            System.out.println(\"i=\"+i+\" inner=\"+inner);\n        } // i and inner die here\n        String msg = \"End\";\n        System.out.println(msg);\n        // TODO: Predict the output\n    }\n}",
+          "expected_output": "Start\ni=0 inner=0\ni=1 inner=10\nEnd",
+          "hints": [
+            {
+              "message": "i and inner are created fresh each iteration and destroyed at the loop end."
+            },
+            {
+              "message": "inner is created 2 times (once per iteration). Each time it starts fresh."
+            },
+            {
+              "message": "// i: born at for, dies at }. inner: born each iteration, dies each iteration."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Recursive Countdown",
+          "description": "Count down recursively. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Recursion",
+          "estimated_minutes": 4,
+          "ai_intro": "Replace the loop with self-calling -- your first recursion!",
+          "starter_code": "public class Ex39 {\n    // TODO: static void countdown(int n) -- base case: n<=0\n    \n    public static void main(String[] args) {\n        countdown(5);\n    }\n}",
+          "expected_output": "5\n4\n3\n2\n1\nBlast off!",
+          "hints": [
+            {
+              "message": "if(n<=0){println(\"Blast off!\");return;} println(n); countdown(n-1);"
+            },
+            {
+              "message": "Base case: n<=0 prints blast off and returns. Recursive: print n, call countdown(n-1)."
+            },
+            {
+              "message": "static void countdown(int n) {\n    if(n<=0){System.out.println(\"Blast off!\");return;}\n    System.out.println(n);\n    countdown(n-1);\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Recursive Sum",
+          "description": "Sum 1 to n recursively. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Recursion",
+          "estimated_minutes": 4,
+          "ai_intro": "sum(5) = 5 + sum(4) = 5 + 4 + sum(3) = ...",
+          "starter_code": "public class Ex40 {\n    // TODO: static int sum(int n)\n    \n    public static void main(String[] args) {\n        System.out.println(sum(10));\n    }\n}",
+          "expected_output": "55",
+          "hints": [
+            {
+              "message": "Base: if(n<=0) return 0; Recursive: return n + sum(n-1);"
+            },
+            {
+              "message": "sum(10)=10+sum(9)=10+9+sum(8)=...=10+9+8+...+1+0=55."
+            },
+            {
+              "message": "static int sum(int n) {\n    if(n<=0) return 0;\n    return n + sum(n-1);\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Recursive Factorial",
+          "description": "Calculate n! recursively. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Recursion",
+          "estimated_minutes": 4,
+          "ai_intro": "The classic recursion example: n! = n * (n-1)!",
+          "starter_code": "public class Ex41 {\n    // TODO: static long factorial(int n)\n    \n    public static void main(String[] args) {\n        System.out.println(factorial(5));\n        System.out.println(factorial(10));\n    }\n}",
+          "expected_output": "120\n3628800",
+          "hints": [
+            {
+              "message": "Base: if(n<=1) return 1; Recursive: return n * factorial(n-1);"
+            },
+            {
+              "message": "5!=5*4!=5*4*3!=5*4*3*2!=5*4*3*2*1=120."
+            },
+            {
+              "message": "static long factorial(int n) {\n    if(n<=1) return 1;\n    return n * factorial(n-1);\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Recursive Power",
+          "description": "Calculate base^exp recursively. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Recursion",
+          "estimated_minutes": 5,
+          "ai_intro": "power(2,5) = 2 * power(2,4) = 2 * 2 * power(2,3) = ...",
+          "starter_code": "public class Ex42 {\n    // TODO: static long power(int base, int exp)\n    \n    public static void main(String[] args) {\n        System.out.println(power(2, 10));\n        System.out.println(power(3, 4));\n    }\n}",
+          "expected_output": "1024\n81",
+          "hints": [
+            {
+              "message": "Base: if(exp==0) return 1; Recursive: return base * power(base, exp-1);"
+            },
+            {
+              "message": "2^10 = 2*2^9 = 2*2*2^8 = ... = 2^10 = 1024."
+            },
+            {
+              "message": "static long power(int base, int exp) {\n    if(exp==0) return 1;\n    return base * power(base, exp-1);\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Recursive String Reverse",
+          "description": "Reverse a string recursively. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Recursion",
+          "estimated_minutes": 5,
+          "ai_intro": "Take the last char, then reverse the rest!",
+          "starter_code": "public class Ex43 {\n    // TODO: static String reverse(String s)\n    \n    public static void main(String[] args) {\n        System.out.println(reverse(\"Hello\"));\n    }\n}",
+          "expected_output": "olleH",
+          "hints": [
+            {
+              "message": "Base: if(s.length()<=1) return s; Recursive: return reverse(s.substring(1)) + s.charAt(0);"
+            },
+            {
+              "message": "Take first char, put it at the END of the reversed rest."
+            },
+            {
+              "message": "static String reverse(String s) {\n    if(s.length()<=1) return s;\n    return reverse(s.substring(1)) + s.charAt(0);\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Recursive Fibonacci",
+          "description": "Return nth Fibonacci number. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Recursion",
+          "estimated_minutes": 5,
+          "ai_intro": "fib(n) = fib(n-1) + fib(n-2). Two base cases!",
+          "starter_code": "public class Ex44 {\n    // TODO: static int fib(int n)\n    \n    public static void main(String[] args) {\n        for(int i=0;i<=10;i++) System.out.print(fib(i)+\" \");\n    }\n}",
+          "expected_output": "0 1 1 2 3 5 8 13 21 34 55 ",
+          "hints": [
+            {
+              "message": "Base: if(n<=0) return 0; if(n==1) return 1; Recursive: return fib(n-1)+fib(n-2);"
+            },
+            {
+              "message": "Two base cases because fib needs two previous values."
+            },
+            {
+              "message": "static int fib(int n) {\n    if(n<=0) return 0;\n    if(n==1) return 1;\n    return fib(n-1)+fib(n-2);\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Recursive Palindrome",
+          "description": "Check palindrome recursively. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Recursion",
+          "estimated_minutes": 5,
+          "ai_intro": "If first==last, check the middle recursively!",
+          "starter_code": "public class Ex45 {\n    // TODO: static boolean isPalin(String s)\n    \n    public static void main(String[] args) {\n        System.out.println(isPalin(\"racecar\"));\n        System.out.println(isPalin(\"hello\"));\n    }\n}",
+          "expected_output": "true\nfalse",
+          "hints": [
+            {
+              "message": "Base: length<=1 return true. If first!=last return false. Else check substring(1,len-1)."
+            },
+            {
+              "message": "Peel off first and last chars. If they match, recurse on the middle."
+            },
+            {
+              "message": "static boolean isPalin(String s) {\n    if(s.length()<=1) return true;\n    if(s.charAt(0)!=s.charAt(s.length()-1)) return false;\n    return isPalin(s.substring(1,s.length()-1));\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Recursive GCD",
+          "description": "Euclidean algorithm recursively. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Recursion",
+          "estimated_minutes": 5,
+          "ai_intro": "gcd(a,b) = gcd(b, a%b). Base: b==0 -> return a.",
+          "starter_code": "public class Ex46 {\n    // TODO: static int gcd(int a, int b)\n    \n    public static void main(String[] args) {\n        System.out.println(gcd(48, 18));\n        System.out.println(gcd(100, 75));\n    }\n}",
+          "expected_output": "6\n25",
+          "hints": [
+            {
+              "message": "if(b==0) return a; return gcd(b, a%b);"
+            },
+            {
+              "message": "gcd(48,18)->gcd(18,12)->gcd(12,6)->gcd(6,0)->6."
+            },
+            {
+              "message": "static int gcd(int a, int b) {\n    if(b==0) return a;\n    return gcd(b, a%b);\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Recursive Count Digits",
+          "description": "Count digits in a number recursively. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Recursion",
+          "estimated_minutes": 5,
+          "ai_intro": "Remove one digit each call: n/10. Count how many removals until 0!",
+          "starter_code": "public class Ex47 {\n    // TODO: static int countDigits(int n)\n    \n    public static void main(String[] args) {\n        System.out.println(countDigits(12345));\n        System.out.println(countDigits(7));\n    }\n}",
+          "expected_output": "5\n1",
+          "hints": [
+            {
+              "message": "Base: if(n<10) return 1; Recursive: return 1 + countDigits(n/10);"
+            },
+            {
+              "message": "12345 -> 1+countDigits(1234) -> 1+1+countDigits(123) -> ... -> 5."
+            },
+            {
+              "message": "static int countDigits(int n) {\n    n=Math.abs(n);\n    if(n<10) return 1;\n    return 1+countDigits(n/10);\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Recursive Binary Conversion",
+          "description": "Convert decimal to binary string recursively. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "advanced",
+          "category": "Recursion",
+          "estimated_minutes": 6,
+          "ai_intro": "n%2 gives last bit. Recurse on n/2 for remaining bits!",
+          "starter_code": "public class Ex48 {\n    // TODO: static String toBinary(int n)\n    \n    public static void main(String[] args) {\n        System.out.println(toBinary(42));\n        System.out.println(toBinary(255));\n    }\n}",
+          "expected_output": "101010\n11111111",
+          "hints": [
+            {
+              "message": "Base: if(n<=1) return \"\"+n; Recursive: return toBinary(n/2) + (n%2);"
+            },
+            {
+              "message": "42/2=21 rem 0. 21/2=10 rem 1. ... Build string left to right."
+            },
+            {
+              "message": "static String toBinary(int n) {\n    if(n<=1) return \"\"+n;\n    return toBinary(n/2)+\"\"+n%2;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Validation Methods",
+          "description": "Build input validators. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Real-World Applications",
+          "estimated_minutes": 5,
+          "ai_intro": "Methods that return boolean are perfect for validation!",
+          "starter_code": "public class Ex49 {\n    // TODO: isValidEmail(String), isValidAge(int), isStrongPassword(String)\n    \n    public static void main(String[] args) {\n        System.out.println(isValidEmail(\"a@b.com\"));\n        System.out.println(isValidAge(25));\n        System.out.println(isStrongPassword(\"Ab1234\"));\n    }\n}",
+          "expected_output": "true\ntrue\ntrue",
+          "hints": [
+            {
+              "message": "isValidEmail: contains @ and . isValidAge: 0-150. isStrongPassword: length>=6."
+            },
+            {
+              "message": "Each method checks ONE thing and returns boolean."
+            },
+            {
+              "message": "static boolean isValidEmail(String e){return e.contains(\"@\")&&e.contains(\".\");}\nstatic boolean isValidAge(int a){return a>=0&&a<=150;}\nstatic boolean isStrongPassword(String p){return p.length()>=6;}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: String Utilities",
+          "description": "Build a mini string library. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Real-World Applications",
+          "estimated_minutes": 5,
+          "ai_intro": "Methods as a reusable toolkit!",
+          "starter_code": "public class Ex50 {\n    // TODO: capitalize(String), countWords(String), truncate(String, int maxLen)\n    \n    public static void main(String[] args) {\n        System.out.println(capitalize(\"hello\"));\n        System.out.println(countWords(\"Java is great\"));\n        System.out.println(truncate(\"Hello World\", 5));\n    }\n}",
+          "expected_output": "Hello\n3\nHello...",
+          "hints": [
+            {
+              "message": "capitalize: charAt(0) toUpper + substring(1). countWords: split(\" \").length. truncate: substring(0,max)+\"...\"."
+            },
+            {
+              "message": "Each method is small and focused -- a utility library."
+            },
+            {
+              "message": "static String capitalize(String s){return Character.toUpperCase(s.charAt(0))+s.substring(1);}\nstatic int countWords(String s){return s.trim().split(\"\\\\s+\").length;}\nstatic String truncate(String s,int m){return s.length()<=m?s:s.substring(0,m)+\"...\";}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Math Utilities",
+          "description": "Build math helper methods. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Real-World Applications",
+          "estimated_minutes": 5,
+          "ai_intro": "Your own Math library!",
+          "starter_code": "public class Ex51 {\n    // TODO: clamp(int val, int min, int max), map(double val, double min1, double max1, double min2, double max2)\n    \n    public static void main(String[] args) {\n        System.out.println(clamp(150, 0, 100));\n        System.out.printf(\"%.1f%n\", map(50, 0, 100, 0, 1.0));\n    }\n}",
+          "expected_output": "100\n0.5",
+          "hints": [
+            {
+              "message": "clamp: if<min return min, if>max return max, else val. map: proportional scaling."
+            },
+            {
+              "message": "clamp keeps value in bounds. map converts between ranges."
+            },
+            {
+              "message": "static int clamp(int v,int min,int max){return v<min?min:v>max?max:v;}\nstatic double map(double v,double mn1,double mx1,double mn2,double mx2){return mn2+(v-mn1)*(mx2-mn2)/(mx1-mn1);}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Array Toolkit",
+          "description": "Build array helper methods. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Real-World Applications",
+          "estimated_minutes": 6,
+          "ai_intro": "Methods that process arrays -- the most common real-world pattern!",
+          "starter_code": "public class Ex52 {\n    // TODO: min(int[]), max(int[]), average(int[]), contains(int[], int)\n    \n    public static void main(String[] args) {\n        int[] d = {5, 2, 8, 1, 9};\n        System.out.println(\"Min: \"+min(d));\n        System.out.println(\"Max: \"+max(d));\n        System.out.printf(\"Avg: %.1f%n\",average(d));\n        System.out.println(\"Has 8: \"+contains(d,8));\n    }\n}",
+          "expected_output": "Min: 1\nMax: 9\nAvg: 5.0\nHas 8: true",
+          "hints": [
+            {
+              "message": "min/max: tracker pattern. average: sum/length. contains: search pattern."
+            },
+            {
+              "message": "Four focused methods, each one simple. Together they are powerful."
+            },
+            {
+              "message": "static int min(int[]a){int m=a[0];for(int n:a)if(n<m)m=n;return m;}\nstatic int max(int[]a){int m=a[0];for(int n:a)if(n>m)m=n;return m;}\nstatic double average(int[]a){int s=0;for(int n:a)s+=n;return(double)s/a.length;}\nstatic boolean contains(int[]a,int v){for(int n:a)if(n==v)return true;return false;}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Password Generator",
+          "description": "Generate a random password of given length. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Real-World Applications",
+          "estimated_minutes": 6,
+          "ai_intro": "Combine chars from different pools into a password!",
+          "starter_code": "public class Ex53 {\n    // TODO: static String generatePassword(int length)\n    \n    public static void main(String[] args) {\n        System.out.println(generatePassword(12));\n        System.out.println(\"Length: \" + generatePassword(8).length());\n    }\n}",
+          "expected_output": "(random 12 chars)\nLength: 8",
+          "hints": [
+            {
+              "message": "String chars=\"ABCabc123!@#\"; loop length times, pick random char."
+            },
+            {
+              "message": "Use (int)(Math.random()*chars.length()) for random index."
+            },
+            {
+              "message": "static String generatePassword(int len){\n    String pool=\"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$\";\n    String pw=\"\";\n    for(int i=0;i<len;i++)pw+=pool.charAt((int)(Math.random()*pool.length()));\n    return pw;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Receipt Printer",
+          "description": "Build a receipt with multiple helper methods. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Real-World Applications",
+          "estimated_minutes": 6,
+          "ai_intro": "Compose multiple methods to build a complete receipt!",
+          "starter_code": "public class Ex54 {\n    static String padRight(String s, int w) { return String.format(\"%-\"+w+\"s\",s); }\n    static String formatPrice(double p) { return String.format(\"%.2f\",p); }\n    // TODO: static void printReceipt(String[] items, double[] prices)\n    \n    public static void main(String[] args) {\n        printReceipt(new String[]{\"Coffee\",\"Cake\"}, new double[]{3.50,4.99});\n    }\n}",
+          "expected_output": "Coffee    3.50\nCake      4.99\n-----------\nTotal:    8.49",
+          "hints": [
+            {
+              "message": "Loop items, use padRight and formatPrice. Sum prices for total."
+            },
+            {
+              "message": "Compose helper methods for clean output."
+            },
+            {
+              "message": "static void printReceipt(String[]items,double[]prices){\n    double total=0;\n    for(int i=0;i<items.length;i++){System.out.println(padRight(items[i],10)+formatPrice(prices[i]));total+=prices[i];}\n    System.out.println(\"-----------\");\n    System.out.println(padRight(\"Total:\",10)+formatPrice(total));\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Number Analyser",
+          "description": "Multiple analysis methods on one number. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Real-World Applications",
+          "estimated_minutes": 5,
+          "ai_intro": "Build a toolkit of number-checking methods!",
+          "starter_code": "public class Ex55 {\n    // TODO: isPrime(int), isEven(int), digitSum(int), digitCount(int)\n    \n    public static void main(String[] args) {\n        int n = 97;\n        System.out.println(n+\" prime: \"+isPrime(n));\n        System.out.println(n+\" even: \"+isEven(n));\n        System.out.println(n+\" digit sum: \"+digitSum(n));\n        System.out.println(n+\" digits: \"+digitCount(n));\n    }\n}",
+          "expected_output": "97 prime: true\n97 even: false\n97 digit sum: 16\n97 digits: 2",
+          "hints": [
+            {
+              "message": "isPrime: loop 2 to sqrt(n). isEven: n%2==0. digitSum: loop %10 and /10. digitCount: loop /10."
+            },
+            {
+              "message": "Each method handles one analysis. Together they give a full profile."
+            },
+            {
+              "message": "static boolean isPrime(int n){if(n<2)return false;for(int i=2;i*i<=n;i++)if(n%i==0)return false;return true;}\nstatic boolean isEven(int n){return n%2==0;}\nstatic int digitSum(int n){int s=0;n=Math.abs(n);while(n>0){s+=n%10;n/=10;}return s;}\nstatic int digitCount(int n){int c=0;n=Math.abs(n);if(n==0)return 1;while(n>0){c++;n/=10;}return c;}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Caesar Cipher Methods",
+          "description": "Encrypt and decrypt with methods. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Real-World Applications",
+          "estimated_minutes": 6,
+          "ai_intro": "Separate encrypt and decrypt into clean methods!",
+          "starter_code": "public class Ex56 {\n    // TODO: static String encrypt(String msg, int shift) and decrypt\n    \n    public static void main(String[] args) {\n        String enc = encrypt(\"HELLO\", 3);\n        System.out.println(\"Encrypted: \" + enc);\n        System.out.println(\"Decrypted: \" + decrypt(enc, 3));\n    }\n}",
+          "expected_output": "Encrypted: KHOOR\nDecrypted: HELLO",
+          "hints": [
+            {
+              "message": "encrypt: shift each char forward. decrypt: shift backward (or encrypt with 26-shift)."
+            },
+            {
+              "message": "decrypt can call encrypt(msg, 26-shift)! Method reuse!"
+            },
+            {
+              "message": "static String encrypt(String m,int s){\n    String r=\"\";\n    for(char c:m.toCharArray())r+=(c>='A'&&c<='Z')?(char)('A'+(c-'A'+s)%26):c;\n    return r;\n}\nstatic String decrypt(String m,int s){return encrypt(m,26-s);}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Sort Helper",
+          "description": "Build a sorting method with helpers. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "advanced",
+          "category": "Real-World Applications",
+          "estimated_minutes": 6,
+          "ai_intro": "Compose swap + findMin + sort methods!",
+          "starter_code": "public class Ex57 {\n    static void swap(int[] a,int i,int j){int t=a[i];a[i]=a[j];a[j]=t;}\n    // TODO: static int findMinIndex(int[] arr, int start)\n    // TODO: static void selectionSort(int[] arr)\n    \n    public static void main(String[] args) {\n        int[] arr={5,3,8,1,9};\n        selectionSort(arr);\n        for(int n:arr) System.out.print(n+\" \");\n    }\n}",
+          "expected_output": "1 3 5 8 9 ",
+          "hints": [
+            {
+              "message": "findMinIndex: loop from start, track minimum index. selectionSort: for each position, findMinIndex and swap."
+            },
+            {
+              "message": "Selection sort: find smallest, put in position 0. Find next smallest, position 1. Etc."
+            },
+            {
+              "message": "static int findMinIndex(int[]a,int s){int mi=s;for(int i=s+1;i<a.length;i++)if(a[i]<a[mi])mi=i;return mi;}\nstatic void selectionSort(int[]a){for(int i=0;i<a.length-1;i++)swap(a,i,findMinIndex(a,i));}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Mini Calculator",
+          "description": "Complete calculator with method per operation. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "intermediate",
+          "category": "Real-World Applications",
+          "estimated_minutes": 6,
+          "ai_intro": "Each operation is a method. A dispatcher calls the right one!",
+          "starter_code": "public class Ex58 {\n    static double calc(double a, char op, double b) {\n        // TODO: switch on op, call add/sub/mul/div methods\n        return 0;\n    }\n    static double add(double a,double b){return a+b;}\n    static double sub(double a,double b){return a-b;}\n    static double mul(double a,double b){return a*b;}\n    static double div(double a,double b){return b!=0?a/b:0;}\n    \n    public static void main(String[] args) {\n        System.out.println(calc(10, '+', 5));\n        System.out.println(calc(10, '*', 3));\n    }\n}",
+          "expected_output": "15.0\n30.0",
+          "hints": [
+            {
+              "message": "switch(op){case '+':return add(a,b); case '-':return sub(a,b); ...}"
+            },
+            {
+              "message": "The calc method DISPATCHES to the right operation method."
+            },
+            {
+              "message": "static double calc(double a, char op, double b) {\n    return switch(op){case '+'->add(a,b);case '-'->sub(a,b);case '*'->mul(a,b);case '/'->div(a,b);default->0;};\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Student Grade Report",
+          "description": "Complete program with multiple methods. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "advanced",
+          "category": "Real-World Applications",
+          "estimated_minutes": 7,
+          "ai_intro": "The big challenge: compose 5+ methods into a working program!",
+          "starter_code": "public class Ex59 {\n    // TODO: calcAverage(int[]), getGrade(double), getHighest(int[]), getLowest(int[])\n    // TODO: printReport(String name, int[] scores)\n    \n    public static void main(String[] args) {\n        printReport(\"Alice\", new int[]{85,92,78,90,88});\n    }\n}",
+          "expected_output": "=== Alice's Report ===\nScores: 85 92 78 90 88\nAverage: 86.6\nGrade: B\nHighest: 92\nLowest: 78",
+          "hints": [
+            {
+              "message": "calcAverage: sum/length. getGrade: if-else chain. getHighest/Lowest: tracker pattern."
+            },
+            {
+              "message": "printReport calls all helper methods and formats the output."
+            },
+            {
+              "message": "static double calcAverage(int[]s){int sum=0;for(int v:s)sum+=v;return(double)sum/s.length;}\nstatic String getGrade(double a){if(a>=90)return\"A\";if(a>=80)return\"B\";if(a>=70)return\"C\";if(a>=60)return\"D\";return\"F\";}\nstatic int getHighest(int[]s){int m=s[0];for(int v:s)if(v>m)m=v;return m;}\nstatic int getLowest(int[]s){int m=s[0];for(int v:s)if(v<m)m=v;return m;}\nstatic void printReport(String name,int[]s){\n    System.out.println(\"=== \"+name+\"'s Report ===\");\n    System.out.print(\"Scores: \");for(int v:s)System.out.print(v+\" \");System.out.println();\n    double avg=calcAverage(s);\n    System.out.printf(\"Average: %.1f%nGrade: %s%n\",avg,getGrade(avg));\n    System.out.println(\"Highest: \"+getHighest(s)+\"\\nLowest: \"+getLowest(s));\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Recursive vs Iterative",
+          "description": "Compare recursive and loop solutions. Read the starter code carefully, then complete the TODO sections.",
+          "difficulty": "advanced",
+          "category": "Real-World Applications",
+          "estimated_minutes": 7,
+          "ai_intro": "The ultimate challenge: write BOTH versions and compare!",
+          "starter_code": "public class Ex60 {\n    // TODO: static long factLoop(int n) -- iterative\n    // TODO: static long factRecur(int n) -- recursive\n    // TODO: static int fibLoop(int n) -- iterative\n    // TODO: static int fibRecur(int n) -- recursive\n    \n    public static void main(String[] args) {\n        System.out.println(\"Fact loop: \" + factLoop(10));\n        System.out.println(\"Fact recur: \" + factRecur(10));\n        System.out.println(\"Fib loop: \" + fibLoop(10));\n        System.out.println(\"Fib recur: \" + fibRecur(10));\n    }\n}",
+          "expected_output": "Fact loop: 3628800\nFact recur: 3628800\nFib loop: 55\nFib recur: 55",
+          "hints": [
+            {
+              "message": "factLoop: long r=1; for(i=1..n) r*=i. factRecur: if(n<=1) return 1; return n*factRecur(n-1)."
+            },
+            {
+              "message": "fibLoop: two variables tracking previous values. fibRecur: fib(n-1)+fib(n-2)."
+            },
+            {
+              "message": "static long factLoop(int n){long r=1;for(int i=2;i<=n;i++)r*=i;return r;}\nstatic long factRecur(int n){return n<=1?1:n*factRecur(n-1);}\nstatic int fibLoop(int n){if(n<=1)return n;int a=0,b=1;for(int i=2;i<=n;i++){int t=a+b;a=b;b=t;}return b;}\nstatic int fibRecur(int n){return n<=1?n:fibRecur(n-1)+fibRecur(n-2);}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

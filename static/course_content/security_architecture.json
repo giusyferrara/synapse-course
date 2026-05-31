@@ -1,0 +1,1609 @@
+{
+  "course_id": "security_architecture",
+  "title": "Security Architecture & Secure Design",
+  "description": "Master the Secure Development Lifecycle (SDLC), threat modeling with STRIDE, secure design principles from Saltzer & Schroeder, defence-in-depth architecture, and risk assessment — building security INTO systems from the ground up.",
+  "difficulty": "ADVANCED",
+  "estimated_hours": 12,
+  "prerequisites": [
+    "authentication_access",
+    "java_classes_objects"
+  ],
+  "learning_outcomes": [
+    "Explain the phases of the Secure Development Lifecycle (SDLC)",
+    "Apply STRIDE threat modeling to identify threats in a system",
+    "Implement Saltzer and Schroeder's secure design principles in code",
+    "Design defence-in-depth architectures with multiple security layers",
+    "Conduct a design-level risk assessment",
+    "Apply the principle of least privilege in system architecture",
+    "Implement fail-safe defaults in application code",
+    "Design systems with complete mediation (every access checked)",
+    "Apply separation of duties and economy of mechanism",
+    "Build security into every phase of development, not as an afterthought",
+    "Understand protection vs distribution trade-offs in architecture",
+    "Create a threat model document for a web application"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins. Thinks of security architecture like building a castle — every wall, moat, and gate has a purpose!",
+    "intervention_triggers": {
+      "idle_40_seconds": "Security architecture is about thinking BEFORE coding. Imagine you are an architect designing a bank vault — every decision matters. Want me to walk through the key principles?",
+      "idle_90_seconds": "Still thinking? That is great — architects think a LOT before they build! Let me simplify: secure design means building security INTO the system from day one, not bolting it on later. Which principle would you like to explore?",
+      "idle_180_seconds": "No rush at all! Think of it this way: a castle has multiple defences — moat, walls, guards, locked doors. That is defence-in-depth. Each layer stops different attacks. Let us start with one layer and build up!",
+      "first_error": "Good thinking! Architecture is about trade-offs — there is rarely one right answer. Let me show you the reasoning behind the best practice.",
+      "repeated_errors": "These concepts are more abstract than coding, so let me give you a concrete analogy and a step-by-step approach.",
+      "after_success": "Excellent! You are thinking like a security architect now. These decisions prevent entire categories of vulnerabilities!"
+    },
+    "encouragement_phrases": [
+      "Security architects prevent vulnerabilities before a single line of code is written!",
+      "STRIDE threat modeling is used by Microsoft, Google, and every major tech company!",
+      "Defence-in-depth is why banks have vaults inside locked rooms inside guarded buildings!",
+      "The SDLC ensures security is considered at EVERY stage — not just at the end!",
+      "Saltzer and Schroeder's principles from 1975 are STILL the gold standard today!",
+      "Fail-safe defaults mean if something goes wrong, the system stays SECURE!",
+      "Complete mediation means EVERY access is checked — no shortcuts!",
+      "Economy of mechanism: simpler code = fewer bugs = fewer vulnerabilities!",
+      "You are learning to think like an attacker to build like a defender!",
+      "These architectural decisions protect millions of users!"
+    ],
+    "explanation_styles": {
+      "analogy": "Building a secure system is like building a medieval castle. The SDLC is your construction plan. Threat modeling is scouting for enemy attack routes. Design principles are your architectural rules (thick walls, narrow gates, multiple barriers). Defence-in-depth is having a moat AND walls AND guards AND locked doors.",
+      "visual": "Draw the SDLC as a cycle: [Requirements] -> [Design] -> [Implementation] -> [Testing] -> [Deployment] -> [Maintenance] -> back to Requirements. At each phase, add a security gate: threat modeling at Design, code review at Implementation, penetration testing at Testing.",
+      "step_by_step": "Step 1: Identify what you are protecting (assets). Step 2: Identify who might attack (threat actors). Step 3: Identify how they might attack (STRIDE). Step 4: Design defences (principles). Step 5: Build with security in every layer (defence-in-depth). Step 6: Test that defences work. Step 7: Monitor and maintain.",
+      "code_trace": "Look at each function: Does it validate input? (Complete mediation) Does it use minimum permissions? (Least privilege) Does it fail securely? (Fail-safe defaults) Does it have one clear purpose? (Economy of mechanism) If any answer is NO, there is a design flaw.",
+      "comparison": "WITHOUT security architecture: developers add security as patches after breaches. WITH security architecture: security is built into every decision from day one. The first approach is like adding a lock to a cardboard door. The second is like building a steel vault."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "security_architecture_lesson_1",
+      "title": "Security Architecture: Building Secure Systems from the Ground Up",
+      "theory": {
+        "introduction": "Imagine building a house. Would you add the locks and alarms AFTER everything else is done? Of course not — you design security into the blueprints from the start. Software is the same. Security architecture means making security a FUNDAMENTAL part of how systems are designed, built, tested, and maintained. This is not about adding a firewall at the end — it is about ensuring every architectural decision considers security implications. The Secure Development Lifecycle (SDLC) provides a framework for integrating security into every phase. Threat modeling (using techniques like STRIDE) helps you think like an attacker before you write a single line of code. And secure design principles — many dating back to Saltzer and Schroeder's groundbreaking 1975 work — give you time-tested rules for building robust systems. In the real world, the most devastating breaches happen not because of a single bug, but because of ARCHITECTURAL flaws: missing authentication on critical functions, no input validation layer, single points of failure, or systems where a breach in one component exposes everything. This course teaches you to prevent those flaws at the design level.",
+        "why_important": "The cost of fixing a security flaw increases 100x as it moves from design to production. A design-level vulnerability — like missing access control on an entire API — cannot be fixed with a single patch; it requires redesigning the system. The Equifax breach, the SolarWinds supply chain attack, and countless others were fundamentally ARCHITECTURAL failures. Companies like Microsoft, Google, and Amazon invest heavily in threat modeling and security architecture because preventing flaws at design time is exponentially cheaper and more effective than finding them after deployment.",
+        "key_concepts": [
+          {
+            "concept": "The Secure Development Lifecycle (SDLC)",
+            "explanation": "The SDLC integrates security activities into every phase of software development. Requirements phase: define security requirements and abuse cases. Design phase: threat modeling, security architecture review. Implementation phase: secure coding standards, code review. Testing phase: security testing, penetration testing, static analysis. Deployment phase: hardening, configuration review. Maintenance phase: patch management, incident response. Security is not a phase — it is a continuous thread through ALL phases.",
+            "example": "// SDLC Security Activities at Each Phase:\n\n// 1. REQUIREMENTS\n// - Define who can access what (access control requirements)\n// - Define data classification (public, internal, confidential, secret)\n// - Define compliance requirements (GDPR, PCI-DSS, HIPAA)\n\n// 2. DESIGN\n// - Threat modeling (STRIDE)\n// - Security architecture review\n// - Choose authentication/authorisation model\n\n// 3. IMPLEMENTATION\n// - Follow secure coding standards\n// - Use approved libraries\n// - Peer code review with security checklist\n\n// 4. TESTING\n// - Static analysis (find bugs without running code)\n// - Dynamic analysis (find bugs while running)\n// - Penetration testing (simulate attacks)\n\n// 5. DEPLOYMENT\n// - Harden server configuration\n// - Remove default accounts\n// - Enable logging and monitoring\n\n// 6. MAINTENANCE\n// - Patch vulnerabilities promptly\n// - Monitor for attacks\n// - Incident response plan",
+            "ai_hint": "Think of SDLC like a building inspection at every stage: foundation check, frame check, electrical check, final walkthrough. You do not wait until the house is built to check if the wiring is safe!"
+          },
+          {
+            "concept": "STRIDE Threat Modeling",
+            "explanation": "STRIDE is a framework for identifying threats, created by Microsoft. Each letter represents a threat category: Spoofing (pretending to be someone else), Tampering (modifying data), Repudiation (denying actions), Information Disclosure (leaking data), Denial of Service (making system unavailable), Elevation of Privilege (gaining unauthorised access). For each component in your system, ask: can this be Spoofed? Tampered with? etc. This systematically identifies threats you might otherwise miss.",
+            "example": "// STRIDE Analysis for a Banking Web Application:\n\npublic class STRIDEAnalysis {\n    public static void main(String[] args) {\n        System.out.println(\"=== STRIDE THREAT MODEL ===\");\n        System.out.println();\n        System.out.println(\"[S] SPOOFING:\");\n        System.out.println(\"  Threat: Attacker logs in as another user\");\n        System.out.println(\"  Mitigation: Strong authentication, MFA\");\n        System.out.println();\n        System.out.println(\"[T] TAMPERING:\");\n        System.out.println(\"  Threat: Attacker modifies transfer amount in transit\");\n        System.out.println(\"  Mitigation: HTTPS, input validation, integrity checks\");\n        System.out.println();\n        System.out.println(\"[R] REPUDIATION:\");\n        System.out.println(\"  Threat: User denies making a transfer\");\n        System.out.println(\"  Mitigation: Audit logging with timestamps\");\n        System.out.println();\n        System.out.println(\"[I] INFORMATION DISCLOSURE:\");\n        System.out.println(\"  Threat: Account details exposed to wrong user\");\n        System.out.println(\"  Mitigation: Access control, encryption at rest\");\n        System.out.println();\n        System.out.println(\"[D] DENIAL OF SERVICE:\");\n        System.out.println(\"  Threat: Flood of requests crashes the server\");\n        System.out.println(\"  Mitigation: Rate limiting, load balancing\");\n        System.out.println();\n        System.out.println(\"[E] ELEVATION OF PRIVILEGE:\");\n        System.out.println(\"  Threat: Regular user gains admin access\");\n        System.out.println(\"  Mitigation: RBAC, least privilege, input validation\");\n    }\n}",
+            "ai_hint": "STRIDE is like a security checklist for every part of your system. Think of it as asking six questions about every door, window, and room in your building."
+          },
+          {
+            "concept": "Defence-in-Depth",
+            "explanation": "Defence-in-depth means using multiple layers of security so that if one layer fails, others still protect the system. Like a medieval castle with a moat, outer wall, inner wall, keep, and guards at every gate — an attacker must breach ALL layers. In software: network firewall + web application firewall + input validation + parameterised queries + output encoding + access control + encryption + monitoring. No single layer is perfect, but together they create strong protection.",
+            "example": "// Defence-in-Depth for SQL Injection:\n\npublic class DefenceInDepth {\n    // Layer 1: Web Application Firewall (WAF)\n    //   Blocks known attack patterns before they reach the app\n    \n    // Layer 2: Input Validation\n    static boolean validateInput(String input) {\n        return input != null && input.matches(\"[a-zA-Z0-9 ]+\");\n    }\n    \n    // Layer 3: Parameterised Queries\n    static String safeQuery(String username) {\n        return \"PreparedStatement: SELECT * FROM users WHERE name = ?\";\n        // Parameter bound separately, never concatenated\n    }\n    \n    // Layer 4: Least Privilege Database User\n    //   App connects with SELECT-only permissions\n    //   Cannot DROP TABLE even if injection succeeds\n    \n    // Layer 5: Output Encoding\n    static String encodeOutput(String data) {\n        return data.replace(\"<\", \"&lt;\").replace(\">\", \"&gt;\");\n    }\n    \n    // Layer 6: Monitoring and Alerting\n    //   Log suspicious queries, alert on anomalies\n    \n    public static void main(String[] args) {\n        System.out.println(\"6 layers protect against SQL injection:\");\n        System.out.println(\"  1. WAF blocks known patterns\");\n        System.out.println(\"  2. Input validation rejects special chars\");\n        System.out.println(\"  3. Parameterised queries prevent injection\");\n        System.out.println(\"  4. DB permissions limit damage\");\n        System.out.println(\"  5. Output encoding prevents XSS from stored data\");\n        System.out.println(\"  6. Monitoring detects attempts\");\n    }\n}",
+            "ai_hint": "Never rely on a single defence. A firewall alone will not stop everything. Input validation alone will not stop everything. But TOGETHER, they create a wall that is extremely hard to breach."
+          },
+          {
+            "concept": "Principle of Least Privilege",
+            "explanation": "Every user, process, and component should have only the minimum permissions necessary for its function. A web application that only reads data should connect to the database with a read-only account. An API endpoint that displays user profiles should not have access to delete users. If a component is compromised, least privilege limits the damage to only what that component could do — not everything.",
+            "example": "// Least Privilege in Database Connections:\n\npublic class LeastPrivilege {\n    public static void main(String[] args) {\n        System.out.println(\"=== LEAST PRIVILEGE ===\");\n        System.out.println();\n        System.out.println(\"BAD: One account for everything\");\n        System.out.println(\"  app_user: SELECT, INSERT, UPDATE, DELETE, DROP, CREATE\");\n        System.out.println(\"  Risk: SQL injection can DROP all tables!\");\n        System.out.println();\n        System.out.println(\"GOOD: Separate accounts per function\");\n        System.out.println(\"  reader_user:  SELECT only\");\n        System.out.println(\"  writer_user:  SELECT, INSERT, UPDATE\");\n        System.out.println(\"  admin_user:   Full access (used only by admin tools)\");\n        System.out.println();\n        System.out.println(\"Impact of compromise:\");\n        System.out.println(\"  BAD:  Attacker can destroy everything\");\n        System.out.println(\"  GOOD: Attacker with reader can only READ data\");\n    }\n}",
+            "ai_hint": "Give a babysitter the house key, not the car keys and bank card. They only need access to what their job requires."
+          },
+          {
+            "concept": "Fail-Safe Defaults",
+            "explanation": "The default state of a system should be DENY access, not ALLOW. If a configuration is missing, if an error occurs, if a condition is not explicitly handled — the system should default to the most secure state. Whitelisting (allow known good) is more secure than blacklisting (block known bad). If your access control has a bug, it should deny everyone rather than allow everyone.",
+            "example": "// Fail-Safe Defaults:\n\npublic class FailSafe {\n    // BAD: Default ALLOW (blacklist approach)\n    static boolean badAccessCheck(String role) {\n        if (role.equals(\"BANNED\")) return false;\n        return true; // Everyone else gets in!\n    }\n    \n    // GOOD: Default DENY (whitelist approach)\n    static boolean goodAccessCheck(String role) {\n        if (role.equals(\"ADMIN\")) return true;\n        if (role.equals(\"USER\")) return true;\n        return false; // Unknown roles are denied!\n    }\n    \n    // GOOD: Error handling defaults to deny\n    static boolean safeCheck(String role) {\n        try {\n            return role != null && (role.equals(\"ADMIN\") || role.equals(\"USER\"));\n        } catch (Exception e) {\n            return false; // On ANY error, deny access\n        }\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"BAD  (unknown role): \" + badAccessCheck(\"HACKER\"));\n        System.out.println(\"GOOD (unknown role): \" + goodAccessCheck(\"HACKER\"));\n        System.out.println(\"SAFE (null role):    \" + safeCheck(null));\n    }\n}",
+            "ai_hint": "Fail-safe is like a bank vault door that locks when the power goes out, not opens. If anything goes wrong, the system should become MORE secure, not less."
+          },
+          {
+            "concept": "Complete Mediation",
+            "explanation": "EVERY access to EVERY resource must be checked for authorisation. Not just the first time — every single time. No caching of permissions, no assumptions that 'if they got this far, they must be authorised.' Web applications often check permissions on the page load but not on the API endpoint that the page calls. Complete mediation means checking at every layer: UI, API, service, database.",
+            "example": "// Complete Mediation:\n\npublic class CompleteMediation {\n    // BAD: Only checks on initial page load\n    static String badApproach(boolean initialCheckPassed, String action) {\n        if (initialCheckPassed) {\n            return \"Performed: \" + action; // Cached permission!\n        }\n        return \"Denied\";\n    }\n    \n    // GOOD: Checks every single request\n    static String goodApproach(String sessionId, String role, String action) {\n        // Check 1: Valid session?\n        if (sessionId == null) return \"401: Not authenticated\";\n        // Check 2: Role has permission?\n        if (action.equals(\"DELETE\") && !role.equals(\"ADMIN\")) \n            return \"403: Not authorised\";\n        // Check 3: Rate limit?\n        // Check 4: Input valid?\n        return \"200: Performed \" + action;\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"BAD:  \" + badApproach(true, \"DELETE_USER\"));\n        System.out.println(\"GOOD: \" + goodApproach(\"sess1\", \"USER\", \"DELETE\"));\n        System.out.println(\"GOOD: \" + goodApproach(\"sess1\", \"ADMIN\", \"DELETE\"));\n    }\n}",
+            "ai_hint": "Complete mediation is like checking every guest's wristband at every door in a venue, not just at the entrance. Someone might have snuck in or had their wristband revoked."
+          },
+          {
+            "concept": "Economy of Mechanism",
+            "explanation": "Keep the design as simple as possible. Simpler systems have fewer bugs, and fewer bugs mean fewer vulnerabilities. Complex code is harder to review, harder to test, and more likely to contain hidden flaws. Prefer well-tested standard libraries over custom implementations. A custom encryption algorithm is almost certainly worse than AES. A custom session manager is likely less secure than the framework's built-in one.",
+            "example": "// Economy of Mechanism:\n\npublic class EconomyOfMechanism {\n    public static void main(String[] args) {\n        System.out.println(\"BAD: Custom session management\");\n        System.out.println(\"  400 lines of custom code\");\n        System.out.println(\"  Likely bugs: race conditions, timing attacks, poor randomness\");\n        System.out.println();\n        System.out.println(\"GOOD: Framework session management\");\n        System.out.println(\"  2 lines: HttpSession session = request.getSession()\");\n        System.out.println(\"  Tested by millions of users, audited by security experts\");\n        System.out.println();\n        System.out.println(\"BAD: Custom encryption\");\n        System.out.println(\"  string.charAt(i) ^ key.charAt(i % key.length())\");\n        System.out.println(\"  Trivially breakable XOR cipher\");\n        System.out.println();\n        System.out.println(\"GOOD: Standard library\");\n        System.out.println(\"  Cipher.getInstance(\\\"AES/GCM/NoPadding\\\")\");\n        System.out.println(\"  Industry-standard, peer-reviewed, hardware-accelerated\");\n    }\n}",
+            "ai_hint": "Economy of mechanism is like using a well-tested lock from a reputable company rather than building your own. Your homemade lock might have flaws you cannot see."
+          },
+          {
+            "concept": "Separation of Duties",
+            "explanation": "No single person or component should have complete control over a critical function. In finance, the person who approves expenses should not be the same person who writes cheques. In software, the developer who writes code should not be the same person who deploys to production. This prevents both accidental errors and malicious insider actions.",
+            "example": "// Separation of Duties:\n\npublic class SeparationOfDuties {\n    public static void main(String[] args) {\n        System.out.println(\"=== SEPARATION OF DUTIES ===\");\n        System.out.println();\n        System.out.println(\"Software Development:\");\n        System.out.println(\"  Developer: writes code\");\n        System.out.println(\"  Reviewer: approves code changes\");\n        System.out.println(\"  DevOps: deploys to production\");\n        System.out.println(\"  Security: audits and tests\");\n        System.out.println();\n        System.out.println(\"Financial System:\");\n        System.out.println(\"  Requester: submits transfer request\");\n        System.out.println(\"  Approver: authorises the transfer (different person!)\");\n        System.out.println(\"  Auditor: reviews all transfers\");\n        System.out.println();\n        System.out.println(\"Database Administration:\");\n        System.out.println(\"  DBA: manages schemas and performance\");\n        System.out.println(\"  App: reads/writes data via limited account\");\n        System.out.println(\"  Backup: separate service with backup-only access\");\n    }\n}",
+            "ai_hint": "Separation of duties is like having two people with different keys both needed to open a nuclear launch. No single person can act alone on critical operations."
+          },
+          {
+            "concept": "Open Design",
+            "explanation": "The security of a system should not depend on keeping the design secret (security through obscurity). The design can be open — security comes from the strength of the mechanisms (keys, algorithms, access controls), not from hiding how they work. AES encryption is public knowledge, but it is still unbreakable because the KEYS are secret, not the algorithm. Hiding your source code does not make it secure.",
+            "example": "// Open Design Principle:\n\npublic class OpenDesign {\n    public static void main(String[] args) {\n        System.out.println(\"=== OPEN DESIGN ===\");\n        System.out.println();\n        System.out.println(\"BAD (security through obscurity):\");\n        System.out.println(\"  'Nobody knows our API endpoint is /secret-admin'\");\n        System.out.println(\"  'Our encryption uses XOR with a fixed key'\");\n        System.out.println(\"  'The database is on a non-standard port'\");\n        System.out.println(\"  Problem: once discovered, zero protection\");\n        System.out.println();\n        System.out.println(\"GOOD (open design):\");\n        System.out.println(\"  'Our admin endpoint requires ADMIN role + MFA'\");\n        System.out.println(\"  'We use AES-256 (public algorithm, secret key)'\");\n        System.out.println(\"  'Database requires authentication regardless of port'\");\n        System.out.println(\"  Strength: even if attacker knows HOW, they lack the KEYS\");\n    }\n}",
+            "ai_hint": "Open design is like a lock where everyone can see HOW the mechanism works, but only the person with the key can open it. The lock's security comes from the key, not from hiding the lock."
+          },
+          {
+            "concept": "Psychological Acceptability",
+            "explanation": "Security mechanisms must be easy to use correctly and hard to use incorrectly. If security is too inconvenient, users will find workarounds (writing passwords on sticky notes, disabling firewalls, sharing accounts). The best security is invisible — it protects without burdening the user. Password managers, biometrics, and single sign-on are examples of making security convenient.",
+            "example": "// Psychological Acceptability:\n\npublic class PsychologicalAcceptability {\n    public static void main(String[] args) {\n        System.out.println(\"=== PSYCHOLOGICAL ACCEPTABILITY ===\");\n        System.out.println();\n        System.out.println(\"BAD (users will bypass):\");\n        System.out.println(\"  - Change password every 30 days with 20-char minimum\");\n        System.out.println(\"  - Re-authenticate for every page load\");\n        System.out.println(\"  - Separate login for each microservice\");\n        System.out.println(\"  Result: sticky notes, shared passwords, frustration\");\n        System.out.println();\n        System.out.println(\"GOOD (security users will actually use):\");\n        System.out.println(\"  - Password manager integration\");\n        System.out.println(\"  - Biometric authentication (fingerprint/face)\");\n        System.out.println(\"  - Single sign-on across services\");\n        System.out.println(\"  - Session that lasts 8 hours with idle timeout\");\n        System.out.println(\"  Result: strong security that doesn't annoy users\");\n    }\n}",
+            "ai_hint": "The best lock is one people actually use. A 10-digit combination that changes daily is technically more secure, but people will just leave the door propped open."
+          },
+          {
+            "concept": "Protection vs Distribution Trade-off",
+            "explanation": "Two fundamental architectural decisions conflict: Protection (centralise assets so they are easy to guard) vs Distribution (spread assets so a single breach does not expose everything). A single database is easy to secure but catastrophic if breached. Distributed databases limit breach impact but are harder to protect. The solution is layered: centralise authentication, distribute data, encrypt everything, and monitor all access.",
+            "example": "// Protection vs Distribution:\n\npublic class ProtectionVsDistribution {\n    public static void main(String[] args) {\n        System.out.println(\"=== ARCHITECTURAL TRADE-OFF ===\");\n        System.out.println();\n        System.out.println(\"CENTRALISED (easy to protect, high impact if breached):\");\n        System.out.println(\"  Single database with all user data\");\n        System.out.println(\"  Pro: One point to monitor, one backup, one access control\");\n        System.out.println(\"  Con: Breach exposes EVERYTHING\");\n        System.out.println();\n        System.out.println(\"DISTRIBUTED (harder to protect, limited impact per breach):\");\n        System.out.println(\"  Separate databases: auth, profiles, financial, logs\");\n        System.out.println(\"  Pro: Breach of one does not expose others\");\n        System.out.println(\"  Con: More systems to monitor and secure\");\n        System.out.println();\n        System.out.println(\"BEST PRACTICE: Defence-in-depth hybrid\");\n        System.out.println(\"  Centralise authentication (one strong gate)\");\n        System.out.println(\"  Distribute data (separate datastores per domain)\");\n        System.out.println(\"  Encrypt everything (protection even if breached)\");\n        System.out.println(\"  Monitor all access (detect breaches fast)\");\n    }\n}",
+            "ai_hint": "It is like deciding whether to keep all your money in one highly secure vault or spread it across multiple safes. The answer is usually: a bit of both, with encryption as insurance."
+          },
+          {
+            "concept": "Risk Assessment in Design",
+            "explanation": "Risk assessment during design evaluates: What assets need protection? What threats exist? What is the likelihood and impact of each threat? What controls mitigate the risk? Risk = Likelihood x Impact. High-likelihood, high-impact risks get priority. Design risk assessment uses system architecture to identify vulnerabilities from design choices (e.g., choosing HTTP instead of HTTPS, using a single shared database account).",
+            "example": "// Risk Assessment Matrix:\n\npublic class RiskAssessment {\n    static String assessRisk(int likelihood, int impact) {\n        int score = likelihood * impact;\n        if (score >= 15) return \"CRITICAL\";\n        if (score >= 10) return \"HIGH\";\n        if (score >= 5)  return \"MEDIUM\";\n        return \"LOW\";\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== DESIGN RISK ASSESSMENT ===\");\n        // Likelihood: 1-5, Impact: 1-5\n        System.out.println(\"SQL Injection:        \" + assessRisk(4, 5)); // CRITICAL\n        System.out.println(\"Brute Force Login:    \" + assessRisk(5, 3)); // CRITICAL\n        System.out.println(\"Insider Threat:       \" + assessRisk(2, 5)); // HIGH\n        System.out.println(\"DDoS Attack:          \" + assessRisk(3, 3)); // MEDIUM\n        System.out.println(\"Physical Server Theft:\" + assessRisk(1, 5)); // MEDIUM\n        System.out.println(\"Typo in Error Page:   \" + assessRisk(3, 1)); // LOW\n    }\n}",
+            "ai_hint": "Risk assessment is like a doctor's triage: treat the most dangerous and likely conditions first. Not every risk is equal — focus resources on the ones that matter most."
+          },
+          {
+            "concept": "Security Patterns and Anti-Patterns",
+            "explanation": "Security patterns are proven solutions to recurring security problems. Anti-patterns are common but flawed approaches. Pattern: parameterised queries for database access. Anti-pattern: string concatenation for queries. Pattern: centralised authentication service. Anti-pattern: each microservice implementing its own auth. Pattern: structured error handling with generic user messages. Anti-pattern: showing stack traces to users. Learning patterns helps you make good design decisions quickly.",
+            "example": "// Security Patterns vs Anti-Patterns:\n\npublic class SecurityPatterns {\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURITY PATTERNS ===\");\n        String[][] patterns = {\n            {\"Input Validation\", \"Validate & sanitise ALL input at entry point\", \"Trust user input, validate only some fields\"},\n            {\"Authentication\", \"Centralised auth service (OAuth2, SAML)\", \"Each service has its own login system\"},\n            {\"Error Handling\", \"Generic errors to user, detailed logs server-side\", \"Show stack traces and SQL errors to users\"},\n            {\"Database Access\", \"Parameterised queries / ORM\", \"String concatenation in queries\"},\n            {\"Secrets Management\", \"Vault / env vars / config service\", \"Hard-coded in source code\"},\n            {\"Logging\", \"Structured audit logs without sensitive data\", \"Log everything including passwords\"}\n        };\n        for (String[] p : patterns) {\n            System.out.println(\"\\n\" + p[0] + \":\");\n            System.out.println(\"  PATTERN: \" + p[1]);\n            System.out.println(\"  ANTI-PATTERN: \" + p[2]);\n        }\n    }\n}",
+            "ai_hint": "Patterns are like recipes from master chefs — proven to work. Anti-patterns are the common mistakes that lead to food poisoning. Learn both so you can spot trouble and apply solutions."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: SDLC Security Checklist",
+          "description": "Security activities mapped to each development phase",
+          "difficulty": "beginner",
+          "code": "public class SDLCChecklist {\n    public static void main(String[] args) {\n        String[][] phases = {\n            {\"REQUIREMENTS\", \"Define security requirements\", \"Identify sensitive data\", \"Define access control needs\", \"List compliance requirements\"},\n            {\"DESIGN\", \"Threat model (STRIDE)\", \"Security architecture review\", \"Choose auth mechanism\", \"Plan defence-in-depth\"},\n            {\"IMPLEMENTATION\", \"Follow secure coding standards\", \"Use parameterised queries\", \"Validate all input\", \"Peer code review\"},\n            {\"TESTING\", \"Static analysis (SAST)\", \"Dynamic analysis (DAST)\", \"Penetration testing\", \"Dependency scanning\"},\n            {\"DEPLOYMENT\", \"Harden configurations\", \"Remove defaults/samples\", \"Enable HTTPS\", \"Configure monitoring\"},\n            {\"MAINTENANCE\", \"Patch vulnerabilities\", \"Monitor for attacks\", \"Incident response\", \"Regular security audits\"}\n        };\n        System.out.println(\"=== SECURE DEVELOPMENT LIFECYCLE ===\");\n        for (String[] phase : phases) {\n            System.out.println(\"\\n[\" + phase[0] + \"]\");\n            for (int i = 1; i < phase.length; i++)\n                System.out.println(\"  \" + i + \". \" + phase[i]);\n        }\n    }\n}",
+          "output": "=== SECURE DEVELOPMENT LIFECYCLE ===\n\n[REQUIREMENTS]\n  1. Define security requirements\n  2. Identify sensitive data\n  3. Define access control needs\n  4. List compliance requirements\n\n[DESIGN]\n  1. Threat model (STRIDE)\n  2. Security architecture review\n  3. Choose auth mechanism\n  4. Plan defence-in-depth\n\n[IMPLEMENTATION]\n  1. Follow secure coding standards\n  2. Use parameterised queries\n  3. Validate all input\n  4. Peer code review\n\n[TESTING]\n  1. Static analysis (SAST)\n  2. Dynamic analysis (DAST)\n  3. Penetration testing\n  4. Dependency scanning\n\n[DEPLOYMENT]\n  1. Harden configurations\n  2. Remove defaults/samples\n  3. Enable HTTPS\n  4. Configure monitoring\n\n[MAINTENANCE]\n  1. Patch vulnerabilities\n  2. Monitor for attacks\n  3. Incident response\n  4. Regular security audits",
+          "ai_explanation": "Each SDLC phase has specific security activities. Requirements defines WHAT to protect. Design defines HOW to protect. Implementation builds the protection. Testing verifies it works. Deployment configures it. Maintenance keeps it working.",
+          "ai_challenge": "Which phase do you think is most commonly skipped? Research shows design-phase security (threat modeling) is often missed. Why is this the most costly phase to skip?"
+        },
+        {
+          "title": "Example 2: STRIDE Threat Model for a Login System",
+          "description": "Systematic threat identification using STRIDE",
+          "difficulty": "intermediate",
+          "code": "import java.util.*;\n\npublic class STRIDELoginModel {\n    public static void main(String[] args) {\n        String[][] threats = {\n            {\"S\", \"Spoofing\", \"Attacker uses stolen credentials\", \"MFA, account lockout, anomaly detection\", \"HIGH\"},\n            {\"S\", \"Spoofing\", \"Attacker creates fake login page (phishing)\", \"Security headers, user education, HSTS\", \"HIGH\"},\n            {\"T\", \"Tampering\", \"Attacker modifies login request in transit\", \"HTTPS/TLS encryption\", \"MEDIUM\"},\n            {\"T\", \"Tampering\", \"Attacker modifies session cookie\", \"HttpOnly, Secure, signed cookies\", \"HIGH\"},\n            {\"R\", \"Repudiation\", \"User denies logging in from a device\", \"IP logging, device fingerprinting, audit trail\", \"MEDIUM\"},\n            {\"I\", \"Info Disclosure\", \"Error messages reveal valid usernames\", \"Generic error messages\", \"MEDIUM\"},\n            {\"I\", \"Info Disclosure\", \"Password transmitted in URL (GET)\", \"Use POST for credentials, HTTPS\", \"HIGH\"},\n            {\"D\", \"Denial of Service\", \"Brute force locks all accounts\", \"Rate limiting, CAPTCHA, per-IP limits\", \"MEDIUM\"},\n            {\"D\", \"Denial of Service\", \"Flood of login requests\", \"Load balancing, rate limiting\", \"HIGH\"},\n            {\"E\", \"Elevation\", \"User manipulates role in cookie\", \"Server-side session, signed tokens\", \"CRITICAL\"}\n        };\n        System.out.println(\"=== STRIDE: LOGIN SYSTEM ===\");\n        for (String[] t : threats) {\n            System.out.printf(\"[%s] %s%n  Threat: %s%n  Fix: %s%n  Risk: %s%n%n\", t[0], t[1], t[2], t[3], t[4]);\n        }\n    }\n}",
+          "output": "=== STRIDE: LOGIN SYSTEM ===\n[S] Spoofing\n  Threat: Attacker uses stolen credentials\n  Fix: MFA, account lockout, anomaly detection\n  Risk: HIGH\n\n[S] Spoofing\n  Threat: Attacker creates fake login page (phishing)\n  Fix: Security headers, user education, HSTS\n  Risk: HIGH\n\n... (10 threats total)",
+          "ai_explanation": "Each STRIDE category reveals different threats. A single login page has at least 10 identifiable threats! Systematic threat modeling catches issues that ad-hoc thinking misses.",
+          "ai_challenge": "Pick another system component (e.g., file upload, payment processing) and apply STRIDE. How many threats can you find?"
+        },
+        {
+          "title": "Example 3: Defence-in-Depth Layer Simulator",
+          "description": "Simulating how multiple security layers stop attacks",
+          "difficulty": "intermediate",
+          "code": "import java.util.*;\n\npublic class DefenceLayerSim {\n    static boolean wafBlock(String input) {\n        return input.contains(\"<script>\") || input.contains(\"DROP TABLE\");\n    }\n    static boolean inputValidation(String input) {\n        return !input.matches(\"[a-zA-Z0-9 @.]+\");\n    }\n    static boolean parameterisedQuery() {\n        return false; // Parameterised queries prevent injection by design\n    }\n    static boolean leastPrivilege(String action) {\n        return action.equals(\"DROP\"); // Read-only DB user cannot DROP\n    }\n    \n    static void simulateAttack(String attackName, String payload, String action) {\n        System.out.println(\"Attack: \" + attackName);\n        System.out.println(\"  Payload: \" + payload);\n        if (wafBlock(payload)) { System.out.println(\"  BLOCKED at Layer 1: WAF\\n\"); return; }\n        if (inputValidation(payload)) { System.out.println(\"  BLOCKED at Layer 2: Input Validation\\n\"); return; }\n        System.out.println(\"  Layer 3: Parameterised query neutralises injection\");\n        if (leastPrivilege(action)) { System.out.println(\"  BLOCKED at Layer 4: DB permissions deny \" + action + \"\\n\"); return; }\n        System.out.println(\"  Result: No damage (all layers held)\\n\");\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== DEFENCE-IN-DEPTH SIMULATION ===\");\n        simulateAttack(\"XSS via script tag\", \"<script>alert(1)</script>\", \"READ\");\n        simulateAttack(\"SQL DROP TABLE\", \"'; DROP TABLE users;--\", \"DROP\");\n        simulateAttack(\"SQL UNION injection\", \"' UNION SELECT * FROM secrets--\", \"READ\");\n        simulateAttack(\"Normal input\", \"john.doe@email.com\", \"READ\");\n    }\n}",
+          "output": "=== DEFENCE-IN-DEPTH SIMULATION ===\nAttack: XSS via script tag\n  Payload: <script>alert(1)</script>\n  BLOCKED at Layer 1: WAF\n\nAttack: SQL DROP TABLE\n  Payload: '; DROP TABLE users;--\n  BLOCKED at Layer 1: WAF\n\nAttack: SQL UNION injection\n  Payload: ' UNION SELECT * FROM secrets--\n  BLOCKED at Layer 2: Input Validation\n\nAttack: Normal input\n  Payload: john.doe@email.com\n  Layer 3: Parameterised query neutralises injection\n  Result: No damage (all layers held)",
+          "ai_explanation": "Different attacks are caught at different layers. The WAF catches known patterns, input validation catches special characters, parameterised queries prevent any remaining injection, and DB permissions limit damage. Normal input passes through all layers safely.",
+          "ai_challenge": "What if an attacker finds a way past the WAF? That is why we have MULTIPLE layers! Design an attack that bypasses layer 1 but is caught by layer 2."
+        },
+        {
+          "title": "Example 4: Fail-Safe Defaults in Access Control",
+          "description": "Comparing blacklist (default allow) vs whitelist (default deny)",
+          "difficulty": "beginner",
+          "code": "import java.util.*;\n\npublic class FailSafeDefaults {\n    // BAD: Blacklist - deny specific bad roles\n    static boolean blacklist(String role) {\n        Set<String> banned = Set.of(\"BANNED\", \"SUSPENDED\");\n        if (banned.contains(role)) return false;\n        return true; // Unknown = allowed!\n    }\n    \n    // GOOD: Whitelist - allow specific good roles\n    static boolean whitelist(String role) {\n        Set<String> allowed = Set.of(\"ADMIN\", \"MANAGER\", \"USER\");\n        if (allowed.contains(role)) return true;\n        return false; // Unknown = denied!\n    }\n    \n    public static void main(String[] args) {\n        String[] tests = {\"ADMIN\", \"USER\", \"BANNED\", \"HACKER\", null, \"\", \"UNKNOWN\"};\n        System.out.println(\"=== FAIL-SAFE DEFAULTS ===\");\n        System.out.printf(\"%-10s %-12s %-12s%n\", \"Role\", \"Blacklist\", \"Whitelist\");\n        for (String r : tests) {\n            String display = r == null ? \"null\" : r.isEmpty() ? \"(empty)\" : r;\n            boolean bl = false, wl = false;\n            try { bl = blacklist(r); } catch (Exception e) { }\n            try { wl = whitelist(r); } catch (Exception e) { }\n            System.out.printf(\"%-10s %-12s %-12s%n\", display, bl ? \"ALLOW\" : \"DENY\", wl ? \"ALLOW\" : \"DENY\");\n        }\n    }\n}",
+          "output": "=== FAIL-SAFE DEFAULTS ===\nRole       Blacklist    Whitelist   \nADMIN      ALLOW        ALLOW       \nUSER       ALLOW        ALLOW       \nBANNED     DENY         DENY        \nHACKER     ALLOW        DENY        \nnull       DENY         DENY        \n(empty)    ALLOW        DENY        \nUNKNOWN    ALLOW        DENY",
+          "ai_explanation": "The blacklist allows HACKER, empty string, and UNKNOWN because they are not on the banned list. The whitelist denies everything not explicitly allowed. In security, default-deny (whitelist) is always safer.",
+          "ai_challenge": "Write a whitelist for HTTP methods that only allows GET and POST. What happens when someone sends a DELETE or PATCH request?"
+        },
+        {
+          "title": "Example 5: Complete Mediation Checker",
+          "description": "Verifying every endpoint has authentication and authorisation",
+          "difficulty": "intermediate",
+          "code": "import java.util.*;\n\npublic class CompleteMediationCheck {\n    static Map<String, Map<String,Boolean>> endpoints = new LinkedHashMap<>();\n    static {\n        endpoints.put(\"GET /\", Map.of(\"auth\",false,\"authz\",false)); // Public\n        endpoints.put(\"GET /login\", Map.of(\"auth\",false,\"authz\",false)); // Public\n        endpoints.put(\"POST /login\", Map.of(\"auth\",false,\"authz\",false)); // Login itself\n        endpoints.put(\"GET /profile\", Map.of(\"auth\",true,\"authz\",true));\n        endpoints.put(\"GET /admin\", Map.of(\"auth\",true,\"authz\",true));\n        endpoints.put(\"POST /transfer\", Map.of(\"auth\",true,\"authz\",true));\n        endpoints.put(\"DELETE /user\", Map.of(\"auth\",true,\"authz\",false)); // BUG!\n        endpoints.put(\"GET /api/data\", Map.of(\"auth\",false,\"authz\",false)); // BUG!\n    }\n    \n    public static void main(String[] args) {\n        Set<String> publicEndpoints = Set.of(\"GET /\", \"GET /login\", \"POST /login\");\n        System.out.println(\"=== COMPLETE MEDIATION AUDIT ===\");\n        int issues = 0;\n        for (var entry : endpoints.entrySet()) {\n            String ep = entry.getKey();\n            Map<String,Boolean> checks = entry.getValue();\n            if (publicEndpoints.contains(ep)) {\n                System.out.println(\"[OK]   \" + ep + \" (public)\");\n            } else if (!checks.get(\"auth\")) {\n                System.out.println(\"[FAIL] \" + ep + \" - MISSING AUTHENTICATION!\");\n                issues++;\n            } else if (!checks.get(\"authz\")) {\n                System.out.println(\"[FAIL] \" + ep + \" - MISSING AUTHORISATION!\");\n                issues++;\n            } else {\n                System.out.println(\"[OK]   \" + ep);\n            }\n        }\n        System.out.println(\"\\nIssues found: \" + issues);\n    }\n}",
+          "output": "=== COMPLETE MEDIATION AUDIT ===\n[OK]   GET / (public)\n[OK]   GET /login (public)\n[OK]   POST /login (public)\n[OK]   GET /profile\n[OK]   GET /admin\n[OK]   POST /transfer\n[FAIL] DELETE /user - MISSING AUTHORISATION!\n[FAIL] GET /api/data - MISSING AUTHENTICATION!\n\nIssues found: 2",
+          "ai_explanation": "Complete mediation means EVERY non-public endpoint must have both authentication (who are you?) and authorisation (what can you do?). The audit found two gaps: DELETE /user has auth but no authz (any logged-in user can delete), and GET /api/data has neither (anyone can access).",
+          "ai_challenge": "How would you automate this audit as part of your CI/CD pipeline? Think about how to ensure new endpoints always have security checks."
+        },
+        {
+          "title": "Example 6: Risk Assessment Calculator",
+          "description": "Quantifying security risks with likelihood and impact",
+          "difficulty": "intermediate",
+          "code": "public class RiskCalculator {\n    static String calcRisk(String threat, int likelihood, int impact) {\n        int score = likelihood * impact;\n        String level = score >= 20 ? \"CRITICAL\" : score >= 12 ? \"HIGH\" : score >= 6 ? \"MEDIUM\" : \"LOW\";\n        String colour = score >= 20 ? \"[!!!]\" : score >= 12 ? \"[!! ]\" : score >= 6 ? \"[!  ]\" : \"[   ]\";\n        return String.format(\"%s %-30s L=%d I=%d Score=%-2d %s\", colour, threat, likelihood, impact, score, level);\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== DESIGN RISK ASSESSMENT ===\");\n        System.out.println(\"L=Likelihood(1-5) I=Impact(1-5) Score=LxI\\n\");\n        System.out.println(calcRisk(\"SQL Injection\", 4, 5));\n        System.out.println(calcRisk(\"Broken Authentication\", 4, 5));\n        System.out.println(calcRisk(\"Sensitive Data Exposure\", 3, 5));\n        System.out.println(calcRisk(\"XSS (Stored)\", 4, 4));\n        System.out.println(calcRisk(\"CSRF\", 3, 4));\n        System.out.println(calcRisk(\"Insecure Deserialization\", 2, 5));\n        System.out.println(calcRisk(\"DDoS Attack\", 3, 3));\n        System.out.println(calcRisk(\"Information Leakage (errors)\", 4, 2));\n        System.out.println(calcRisk(\"Clickjacking\", 2, 2));\n        System.out.println(calcRisk(\"DNS Misconfiguration\", 1, 3));\n    }\n}",
+          "output": "=== DESIGN RISK ASSESSMENT ===\nL=Likelihood(1-5) I=Impact(1-5) Score=LxI\n\n[!!!] SQL Injection                    L=4 I=5 Score=20 CRITICAL\n[!!!] Broken Authentication            L=4 I=5 Score=20 CRITICAL\n[!! ] Sensitive Data Exposure           L=3 I=5 Score=15 HIGH\n[!! ] XSS (Stored)                     L=4 I=4 Score=16 HIGH\n[!! ] CSRF                             L=3 I=4 Score=12 HIGH\n[!  ] Insecure Deserialization         L=2 I=5 Score=10 MEDIUM\n[!  ] DDoS Attack                      L=3 I=3 Score=9  MEDIUM\n[!  ] Information Leakage (errors)     L=4 I=2 Score=8  MEDIUM\n[   ] Clickjacking                     L=2 I=2 Score=4  LOW\n[   ] DNS Misconfiguration             L=1 I=3 Score=3  LOW",
+          "ai_explanation": "Risk = Likelihood x Impact. SQL Injection and Broken Auth are CRITICAL because they are both likely AND devastating. Clickjacking is LOW because it is less likely and lower impact. This prioritises which threats to address first.",
+          "ai_challenge": "After adding mitigations (parameterised queries for SQL injection), reassess the likelihood. How does it change the risk score?"
+        },
+        {
+          "title": "Example 7: Economy of Mechanism Comparison",
+          "description": "Comparing complex custom code vs simple standard library usage",
+          "difficulty": "beginner",
+          "code": "public class EconomyComparison {\n    // BAD: 25 lines of custom \"encryption\"\n    static String customEncrypt(String data, String key) {\n        char[] result = new char[data.length()];\n        for (int i = 0; i < data.length(); i++) {\n            result[i] = (char)(data.charAt(i) ^ key.charAt(i % key.length()));\n        }\n        return new String(result);\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== ECONOMY OF MECHANISM ===\");\n        System.out.println();\n        System.out.println(\"Custom XOR 'encryption':\");\n        String encrypted = customEncrypt(\"password\", \"key\");\n        System.out.println(\"  Encrypted: \" + encrypted);\n        System.out.println(\"  Decrypted: \" + customEncrypt(encrypted, \"key\"));\n        System.out.println(\"  Lines of code: ~10\");\n        System.out.println(\"  Security level: NONE (trivially breakable)\");\n        System.out.println(\"  Bugs likely: XOR is symmetric, key reuse, no IV\");\n        System.out.println();\n        System.out.println(\"Standard library AES:\");\n        System.out.println(\"  Cipher c = Cipher.getInstance(\\\"AES/GCM/NoPadding\\\");\");\n        System.out.println(\"  Lines of code: ~5\");\n        System.out.println(\"  Security level: Military grade (AES-256)\");\n        System.out.println(\"  Bugs likely: ZERO (millions of users, expert review)\");\n        System.out.println();\n        System.out.println(\"LESSON: Less custom code = fewer bugs = better security\");\n    }\n}",
+          "output": "=== ECONOMY OF MECHANISM ===\n\nCustom XOR 'encryption':\n  Encrypted: (garbled text)\n  Decrypted: password\n  Lines of code: ~10\n  Security level: NONE (trivially breakable)\n  Bugs likely: XOR is symmetric, key reuse, no IV\n\nStandard library AES:\n  Cipher c = Cipher.getInstance(\"AES/GCM/NoPadding\");\n  Lines of code: ~5\n  Security level: Military grade (AES-256)\n  Bugs likely: ZERO (millions of users, expert review)\n\nLESSON: Less custom code = fewer bugs = better security",
+          "ai_explanation": "Custom XOR 'encryption' is trivially breakable but looks like it works. Standard AES is truly secure and requires LESS code. Economy of mechanism: use proven tools, keep it simple.",
+          "ai_challenge": "Research the Schneier's Law: 'Anyone can create an encryption algorithm they themselves cannot break.' Why does this make custom crypto dangerous?"
+        },
+        {
+          "title": "Example 8: Separation of Duties Simulator",
+          "description": "Enforcing that no single person controls an entire process",
+          "difficulty": "intermediate",
+          "code": "import java.util.*;\n\npublic class SeparationOfDuties {\n    static String submitTransfer(String submitter, String amount) {\n        return \"Transfer $\" + amount + \" submitted by \" + submitter;\n    }\n    \n    static String approveTransfer(String approver, String submitter, String amount) {\n        if (approver.equals(submitter)) {\n            return \"DENIED: Approver cannot be the same as submitter!\";\n        }\n        return \"Transfer $\" + amount + \" approved by \" + approver;\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== SEPARATION OF DUTIES ===\");\n        System.out.println();\n        System.out.println(submitTransfer(\"alice\", \"50000\"));\n        System.out.println(approveTransfer(\"bob\", \"alice\", \"50000\"));\n        System.out.println();\n        System.out.println(\"Attempt self-approval:\");\n        System.out.println(submitTransfer(\"eve\", \"100000\"));\n        System.out.println(approveTransfer(\"eve\", \"eve\", \"100000\"));\n    }\n}",
+          "output": "=== SEPARATION OF DUTIES ===\n\nTransfer $50000 submitted by alice\nTransfer $50000 approved by bob\n\nAttempt self-approval:\nTransfer $100000 submitted by eve\nDENIED: Approver cannot be the same as submitter!",
+          "ai_explanation": "The person who submits a transfer cannot approve it. This prevents both fraud (insider threat) and mistakes (accidental transfers). The check is simple: submitter != approver.",
+          "ai_challenge": "For very high-value transfers, companies require TWO approvers. How would you implement dual-approval?"
+        },
+        {
+          "title": "Example 9: Threat Model Document Generator",
+          "description": "Creating a structured threat model for a web application",
+          "difficulty": "advanced",
+          "code": "public class ThreatModelDoc {\n    public static void main(String[] args) {\n        System.out.println(\"=====================================\");\n        System.out.println(\"  THREAT MODEL: Online Banking App\");\n        System.out.println(\"=====================================\");\n        System.out.println();\n        System.out.println(\"1. SYSTEM DESCRIPTION\");\n        System.out.println(\"   Web app for balance checks, transfers, payments\");\n        System.out.println(\"   Components: Browser, Web Server, App Server, Database\");\n        System.out.println();\n        System.out.println(\"2. ASSETS (What we protect)\");\n        System.out.println(\"   - Customer credentials (passwords, tokens)\");\n        System.out.println(\"   - Financial data (balances, transactions)\");\n        System.out.println(\"   - Personal data (names, addresses, SSN)\");\n        System.out.println(\"   - System availability\");\n        System.out.println();\n        System.out.println(\"3. THREAT ACTORS\");\n        System.out.println(\"   - External attackers (hackers, criminals)\");\n        System.out.println(\"   - Malicious insiders (employees)\");\n        System.out.println(\"   - Automated bots (credential stuffing)\");\n        System.out.println(\"   - Nation-state actors (espionage)\");\n        System.out.println();\n        System.out.println(\"4. TRUST BOUNDARIES\");\n        System.out.println(\"   [Internet] <--boundary--> [DMZ/Web Server]\");\n        System.out.println(\"   [DMZ] <--boundary--> [Internal Network/App Server]\");\n        System.out.println(\"   [App Server] <--boundary--> [Database]\");\n        System.out.println();\n        System.out.println(\"5. STRIDE THREATS (Top 5)\");\n        System.out.println(\"   #1 [E] SQL Injection -> full DB access (CRITICAL)\");\n        System.out.println(\"   #2 [S] Credential theft -> account takeover (CRITICAL)\");\n        System.out.println(\"   #3 [I] IDOR -> view other accounts (HIGH)\");\n        System.out.println(\"   #4 [T] CSRF -> unauthorised transfers (HIGH)\");\n        System.out.println(\"   #5 [D] DDoS -> service unavailable (MEDIUM)\");\n        System.out.println();\n        System.out.println(\"6. MITIGATIONS\");\n        System.out.println(\"   #1 Parameterised queries + WAF + least privilege DB\");\n        System.out.println(\"   #2 MFA + bcrypt hashing + account lockout\");\n        System.out.println(\"   #3 Ownership checks on every data access\");\n        System.out.println(\"   #4 CSRF tokens + SameSite cookies\");\n        System.out.println(\"   #5 Rate limiting + CDN + auto-scaling\");\n    }\n}",
+          "output": "=====================================\n  THREAT MODEL: Online Banking App\n=====================================\n\n1. SYSTEM DESCRIPTION\n   Web app for balance checks, transfers, payments\n   Components: Browser, Web Server, App Server, Database\n\n2. ASSETS\n   - Customer credentials\n   - Financial data\n   - Personal data\n   - System availability\n\n3. THREAT ACTORS\n   - External attackers\n   - Malicious insiders\n   - Automated bots\n   - Nation-state actors\n\n4. TRUST BOUNDARIES\n   [Internet] <--boundary--> [DMZ]\n   [DMZ] <--boundary--> [Internal Network]\n   [App Server] <--boundary--> [Database]\n\n5. STRIDE THREATS (Top 5)\n...\n\n6. MITIGATIONS\n...",
+          "ai_explanation": "A threat model documents: what we protect (assets), who attacks (actors), where boundaries exist (trust boundaries), what can go wrong (STRIDE), and how we defend (mitigations). This is created BEFORE coding begins.",
+          "ai_challenge": "Add a section 7 (Residual Risk) that lists risks that remain even after mitigations. What cannot be fully prevented?"
+        },
+        {
+          "title": "Example 10: Layered Architecture Security",
+          "description": "Security controls at each architectural layer",
+          "difficulty": "intermediate",
+          "code": "public class LayeredSecurity {\n    // Layer 1: Presentation (UI)\n    static String presentationLayer(String input) {\n        if (input.contains(\"<script>\")) return \"BLOCKED: XSS attempt in UI layer\";\n        return \"PASS\";\n    }\n    // Layer 2: Application Logic\n    static String applicationLayer(String role, String action) {\n        if (action.equals(\"ADMIN_ACTION\") && !role.equals(\"ADMIN\")) return \"BLOCKED: Unauthorised\";\n        return \"PASS\";\n    }\n    // Layer 3: Data Access\n    static String dataLayer(String query) {\n        if (query.contains(\"DROP\") || query.contains(\";\")) return \"BLOCKED: Dangerous query\";\n        return \"PASS (using parameterised query)\";\n    }\n    // Layer 4: Database\n    static String databaseLayer(String dbUser, String action) {\n        if (dbUser.equals(\"readonly\") && !action.equals(\"SELECT\")) return \"BLOCKED: Permission denied\";\n        return \"PASS\";\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== LAYERED ARCHITECTURE SECURITY ===\");\n        System.out.println();\n        System.out.println(\"Request 1: XSS attempt\");\n        System.out.println(\"  UI:     \" + presentationLayer(\"<script>alert(1)</script>\"));\n        System.out.println();\n        System.out.println(\"Request 2: Unauthorised admin action\");\n        System.out.println(\"  UI:     \" + presentationLayer(\"delete user\"));\n        System.out.println(\"  App:    \" + applicationLayer(\"USER\", \"ADMIN_ACTION\"));\n        System.out.println();\n        System.out.println(\"Request 3: SQL injection that bypasses app layer\");\n        System.out.println(\"  UI:     \" + presentationLayer(\"1; DROP TABLE users\"));\n        System.out.println(\"  App:    \" + applicationLayer(\"USER\", \"READ\"));\n        System.out.println(\"  Data:   \" + dataLayer(\"1; DROP TABLE users\"));\n        System.out.println();\n        System.out.println(\"Request 4: Legitimate read\");\n        System.out.println(\"  UI:     \" + presentationLayer(\"alice\"));\n        System.out.println(\"  App:    \" + applicationLayer(\"USER\", \"READ\"));\n        System.out.println(\"  Data:   \" + dataLayer(\"SELECT * FROM users WHERE name=?\"));\n        System.out.println(\"  DB:     \" + databaseLayer(\"readonly\", \"SELECT\"));\n    }\n}",
+          "output": "=== LAYERED ARCHITECTURE SECURITY ===\n\nRequest 1: XSS attempt\n  UI:     BLOCKED: XSS attempt in UI layer\n\nRequest 2: Unauthorised admin action\n  UI:     PASS\n  App:    BLOCKED: Unauthorised\n\nRequest 3: SQL injection that bypasses app layer\n  UI:     PASS\n  App:    PASS\n  Data:   BLOCKED: Dangerous query\n\nRequest 4: Legitimate read\n  UI:     PASS\n  App:    PASS\n  Data:   PASS (using parameterised query)\n  DB:     PASS",
+          "ai_explanation": "Each layer catches different attacks. XSS is caught at the UI layer. Unauthorised actions at the app layer. SQL injection at the data layer. And even if all three fail, the database permissions provide a final defence.",
+          "ai_challenge": "What happens if Request 3 also bypasses the data layer? The DB layer would still block DROP because the app uses a readonly user. That is defence-in-depth!"
+        },
+        {
+          "title": "Example 11: Secure Design Review Checklist",
+          "description": "Evaluating a system design against all secure design principles",
+          "difficulty": "advanced",
+          "code": "public class DesignReview {\n    static int pass = 0, fail = 0;\n    static void check(String principle, String question, boolean result) {\n        if (result) pass++; else fail++;\n        System.out.println((result ? \"[PASS]\" : \"[FAIL]\") + \" \" + principle + \": \" + question);\n    }\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURE DESIGN REVIEW ===\");\n        System.out.println();\n        check(\"Least Privilege\", \"DB connections use minimum permissions?\", true);\n        check(\"Least Privilege\", \"API endpoints have role-based access?\", true);\n        check(\"Fail-Safe\", \"Default access is DENY (whitelist)?\", true);\n        check(\"Fail-Safe\", \"Errors default to secure state?\", false);\n        check(\"Complete Mediation\", \"Every endpoint checks auth+authz?\", false);\n        check(\"Complete Mediation\", \"API and UI have same access controls?\", true);\n        check(\"Economy\", \"Using framework auth, not custom?\", true);\n        check(\"Economy\", \"Using standard crypto libraries?\", true);\n        check(\"Separation\", \"Different roles for submit/approve?\", true);\n        check(\"Open Design\", \"Security does not rely on hidden URLs?\", true);\n        check(\"Psychological\", \"Security mechanisms are user-friendly?\", false);\n        check(\"Defence-in-Depth\", \"Multiple layers for each threat?\", true);\n        System.out.println(\"\\nScore: \" + pass + \"/\" + (pass+fail) + \" - \" + (pass >= 10 ? \"GOOD\" : \"NEEDS WORK\"));\n    }\n}",
+          "output": "=== SECURE DESIGN REVIEW ===\n\n[PASS] Least Privilege: DB connections use minimum permissions?\n[PASS] Least Privilege: API endpoints have role-based access?\n[PASS] Fail-Safe: Default access is DENY (whitelist)?\n[FAIL] Fail-Safe: Errors default to secure state?\n[FAIL] Complete Mediation: Every endpoint checks auth+authz?\n[PASS] Complete Mediation: API and UI have same access controls?\n[PASS] Economy: Using framework auth, not custom?\n[PASS] Economy: Using standard crypto libraries?\n[PASS] Separation: Different roles for submit/approve?\n[PASS] Open Design: Security does not rely on hidden URLs?\n[FAIL] Psychological: Security mechanisms are user-friendly?\n[PASS] Defence-in-Depth: Multiple layers for each threat?\n\nScore: 9/12 - NEEDS WORK",
+          "ai_explanation": "This checklist applies all Saltzer & Schroeder principles plus modern additions. Three failures: errors don't fail safely, not all endpoints are mediated, and security mechanisms annoy users. Each failure is a design flaw to fix BEFORE coding.",
+          "ai_challenge": "How would you fix the three failures? For complete mediation, consider using a middleware/filter that runs on EVERY request."
+        },
+        {
+          "title": "Example 12: Architecture Security Anti-Patterns",
+          "description": "Common architectural mistakes and their secure alternatives",
+          "difficulty": "intermediate",
+          "code": "public class AntiPatterns {\n    public static void main(String[] args) {\n        String[][] items = {\n            {\"Shared Database Account\",\n             \"All services use the same root DB account\",\n             \"Each service has own limited account\",\n             \"One compromised service = total DB access\"},\n            {\"Security by Obscurity\",\n             \"Hide admin panel at /s3cr3t-admin\",\n             \"Protect admin panel with authentication + RBAC\",\n             \"URL discovery exposes admin panel\"},\n            {\"Client-Side Security\",\n             \"Validate permissions in JavaScript only\",\n             \"Validate on server, client is convenience only\",\n             \"Attacker bypasses all client-side checks\"},\n            {\"Monolithic Auth\",\n             \"Each microservice implements own auth\",\n             \"Centralised auth service (OAuth2/OIDC)\",\n             \"Inconsistent auth, some services bypass\"},\n            {\"Error Info Leak\",\n             \"Show stack traces and SQL errors to users\",\n             \"Generic user errors, detailed server logs\",\n             \"Attacker learns DB structure, file paths, versions\"},\n            {\"No Input Validation\",\n             \"Trust client data, validate nowhere\",\n             \"Validate at every trust boundary\",\n             \"SQL injection, XSS, command injection\"}\n        };\n        System.out.println(\"=== ARCHITECTURE ANTI-PATTERNS ===\");\n        for (String[] item : items) {\n            System.out.println(\"\\n\" + item[0] + \":\");\n            System.out.println(\"  ANTI-PATTERN: \" + item[1]);\n            System.out.println(\"  PATTERN:      \" + item[2]);\n            System.out.println(\"  RISK:         \" + item[3]);\n        }\n    }\n}",
+          "output": "=== ARCHITECTURE ANTI-PATTERNS ===\n\nShared Database Account:\n  ANTI-PATTERN: All services use the same root DB account\n  PATTERN:      Each service has own limited account\n  RISK:         One compromised service = total DB access\n\nSecurity by Obscurity:\n  ANTI-PATTERN: Hide admin panel at /s3cr3t-admin\n  PATTERN:      Protect admin panel with authentication + RBAC\n  RISK:         URL discovery exposes admin panel\n\n... (6 anti-patterns total)",
+          "ai_explanation": "Each anti-pattern represents a common architectural mistake. The pattern is the proven secure alternative. Understanding both helps you make better design decisions.",
+          "ai_challenge": "Can you think of a 7th anti-pattern? Hint: think about logging, error handling, or dependency management."
+        },
+        {
+          "title": "Example 13: Trust Boundary Analyser",
+          "description": "Identifying and securing trust boundaries in architecture",
+          "difficulty": "advanced",
+          "code": "public class TrustBoundaries {\n    public static void main(String[] args) {\n        System.out.println(\"=== TRUST BOUNDARY ANALYSIS ===\");\n        System.out.println();\n        String[][] boundaries = {\n            {\"Internet -> Web Server\",\n             \"User input crosses from untrusted internet\",\n             \"WAF, HTTPS, input validation, rate limiting\"},\n            {\"Browser -> Server API\",\n             \"Client-side data reaches server\",\n             \"Server-side validation, CSRF tokens, auth headers\"},\n            {\"Web Server -> App Server\",\n             \"DMZ forwards to internal network\",\n             \"Internal firewall, authenticated service calls, TLS\"},\n            {\"App Server -> Database\",\n             \"Application queries data store\",\n             \"Parameterised queries, least-privilege DB user, encrypted connection\"},\n            {\"App Server -> External API\",\n             \"Application calls third-party services\",\n             \"API keys, output validation, timeout limits, circuit breaker\"},\n            {\"Admin -> Production\",\n             \"Admin access to live systems\",\n             \"VPN, MFA, audit logging, just-in-time access\"}\n        };\n        for (String[] b : boundaries) {\n            System.out.println(\"BOUNDARY: \" + b[0]);\n            System.out.println(\"  Risk: \" + b[1]);\n            System.out.println(\"  Controls: \" + b[2]);\n            System.out.println();\n        }\n        System.out.println(\"RULE: Validate ALL data crossing any trust boundary.\");\n        System.out.println(\"RULE: Never trust data from a less-trusted zone.\");\n    }\n}",
+          "output": "=== TRUST BOUNDARY ANALYSIS ===\n\nBOUNDARY: Internet -> Web Server\n  Risk: User input crosses from untrusted internet\n  Controls: WAF, HTTPS, input validation, rate limiting\n\nBOUNDARY: Browser -> Server API\n  Risk: Client-side data reaches server\n  Controls: Server-side validation, CSRF tokens, auth headers\n\n... (6 boundaries)\n\nRULE: Validate ALL data crossing any trust boundary.\nRULE: Never trust data from a less-trusted zone.",
+          "ai_explanation": "Every boundary where data flows from a less-trusted zone to a more-trusted zone needs security controls. The internet is least trusted, the database is most trusted. Each crossing point needs specific protections.",
+          "ai_challenge": "Draw (on paper or in code) the trust boundaries for YOUR project. Where does untrusted data enter? Where are the boundaries?"
+        },
+        {
+          "title": "Example 14: Real-World Architecture Failure Analysis",
+          "description": "Analysing famous breaches through the lens of secure design principles",
+          "difficulty": "advanced",
+          "code": "public class BreachAnalysis {\n    public static void main(String[] args) {\n        System.out.println(\"=== ARCHITECTURE FAILURE ANALYSIS ===\");\n        String[][] breaches = {\n            {\"Equifax 2017\", \"147M records exposed\",\n             \"Unpatched Apache Struts vulnerability\",\n             \"SDLC: No patch management in maintenance phase\",\n             \"Defence-in-depth: No network segmentation after web server\"},\n            {\"Capital One 2019\", \"100M customer records\",\n             \"SSRF attack on misconfigured WAF\",\n             \"Least Privilege: WAF role had access to S3 buckets with all data\",\n             \"Separation: WAF could access customer data directly\"},\n            {\"SolarWinds 2020\", \"18,000 organisations compromised\",\n             \"Supply chain attack via build system\",\n             \"Complete Mediation: Build pipeline not verified end-to-end\",\n             \"Defence-in-depth: No code signing verification at deployment\"},\n            {\"Heartbleed 2014\", \"OpenSSL memory leak\",\n             \"Buffer over-read in heartbeat extension\",\n             \"Economy of Mechanism: Complex C code with manual memory management\",\n             \"Open Design: Despite open source, bug existed for 2 years\"}\n        };\n        for (String[] b : breaches) {\n            System.out.println(\"\\n\" + b[0] + \" (\" + b[1] + \")\");\n            System.out.println(\"  Attack: \" + b[2]);\n            System.out.println(\"  Principle violated: \" + b[3]);\n            System.out.println(\"  Lesson: \" + b[4]);\n        }\n    }\n}",
+          "output": "=== ARCHITECTURE FAILURE ANALYSIS ===\n\nEquifax 2017 (147M records exposed)\n  Attack: Unpatched Apache Struts vulnerability\n  Principle violated: SDLC: No patch management in maintenance phase\n  Lesson: Defence-in-depth: No network segmentation after web server\n\nCapital One 2019 (100M customer records)\n  Attack: SSRF attack on misconfigured WAF\n  Principle violated: Least Privilege: WAF role had access to all data\n  Lesson: Separation: WAF could access customer data directly\n\nSolarWinds 2020 (18,000 organisations compromised)\n  Attack: Supply chain attack via build system\n  Principle violated: Complete Mediation: Build pipeline not verified\n  Lesson: Defence-in-depth: No code signing verification\n\nHeartbleed 2014 (OpenSSL memory leak)\n  Attack: Buffer over-read in heartbeat extension\n  Principle violated: Economy of Mechanism: Complex C code\n  Lesson: Open Design: Despite open source, bug existed 2 years",
+          "ai_explanation": "Every major breach maps to one or more violated design principles. Equifax = SDLC failure. Capital One = least privilege violation. SolarWinds = complete mediation gap. Heartbleed = complexity (economy of mechanism). These principles prevent real-world catastrophes.",
+          "ai_challenge": "Pick a recent breach and analyse which secure design principles were violated. How would applying those principles have prevented it?"
+        }
+      ],
+      "visual_diagram": {
+        "title": "Security Architecture: SDLC, STRIDE, Design Principles & Defence-in-Depth",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8;\"><span style=\"background: #e74c3c; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[SECURE DEVELOPMENT LIFECYCLE]</span>\n\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">REQUIREMENTS</span> Security requirements, abuse cases, data classification\n        |                                                         ^\n        v                                                         |\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">DESIGN</span> Threat modeling (STRIDE), architecture review, design principles\n        |                                                         |\n        v                                                         |\n<span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">IMPLEMENT</span> Secure coding, code review, approved libraries\n        |                                                         |\n        v                                                         |\n<span style=\"background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;\">TEST</span> SAST, DAST, pen testing, dependency scanning\n        |                                                         |\n        v                                                         |\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">DEPLOY</span> Hardening, HTTPS, remove defaults, enable monitoring\n        |                                                         |\n        v                                                         |\n<span style=\"background: #95a5a6; color: white; padding: 4px 12px; border-radius: 4px;\">MAINTAIN</span> Patching, monitoring, incident response -----> BACK TO TOP\n\n\n<span style=\"background: #2ecc71; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[STRIDE THREAT CATEGORIES]</span>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">S</span> = Spoofing       (fake identity)        <span style=\"color: #2ecc71;\">Fix: Strong authentication</span>\n  <span style=\"color: #f39c12; font-weight: bold;\">T</span> = Tampering      (modify data)           <span style=\"color: #2ecc71;\">Fix: Integrity checks, HTTPS</span>\n  <span style=\"color: #3498db; font-weight: bold;\">R</span> = Repudiation    (deny actions)          <span style=\"color: #2ecc71;\">Fix: Audit logging</span>\n  <span style=\"color: #9b59b6; font-weight: bold;\">I</span> = Info Disclosure (leak data)            <span style=\"color: #2ecc71;\">Fix: Encryption, access control</span>\n  <span style=\"color: #e67e22; font-weight: bold;\">D</span> = Denial of Service (crash system)       <span style=\"color: #2ecc71;\">Fix: Rate limiting, redundancy</span>\n  <span style=\"color: #c0392b; font-weight: bold;\">E</span> = Elevation of Privilege (gain access)   <span style=\"color: #2ecc71;\">Fix: RBAC, least privilege</span>\n\n\n<span style=\"background: #9b59b6; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[DESIGN PRINCIPLES (Saltzer & Schroeder 1975)]</span>\n\n  <span style=\"background: #e74c3c; color: white; padding: 3px 8px; border-radius: 3px;\">1</span> <span style=\"color: #e74c3c;\">Least Privilege</span> - minimum permissions needed\n  <span style=\"background: #f39c12; color: white; padding: 3px 8px; border-radius: 3px;\">2</span> <span style=\"color: #f39c12;\">Fail-Safe Defaults</span> - deny by default\n  <span style=\"background: #2ecc71; color: white; padding: 3px 8px; border-radius: 3px;\">3</span> <span style=\"color: #2ecc71;\">Complete Mediation</span> - check every access\n  <span style=\"background: #3498db; color: white; padding: 3px 8px; border-radius: 3px;\">4</span> <span style=\"color: #3498db;\">Economy of Mechanism</span> - keep it simple\n  <span style=\"background: #9b59b6; color: white; padding: 3px 8px; border-radius: 3px;\">5</span> <span style=\"color: #9b59b6;\">Separation of Duties</span> - no single point of control\n  <span style=\"background: #e67e22; color: white; padding: 3px 8px; border-radius: 3px;\">6</span> <span style=\"color: #e67e22;\">Open Design</span> - security ≠ secrecy\n  <span style=\"background: #1abc9c; color: white; padding: 3px 8px; border-radius: 3px;\">7</span> <span style=\"color: #1abc9c;\">Psychological Acceptability</span> - usable security\n  <span style=\"background: #95a5a6; color: white; padding: 3px 8px; border-radius: 3px;\">8</span> <span style=\"color: #95a5a6;\">Defence-in-Depth</span> - multiple layers\n\n\n<span style=\"background: #2c3e50; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[DEFENCE-IN-DEPTH LAYERS]</span>\n\n  <span style=\"background: #e74c3c; color: white; padding: 3px 10px;\">Layer 6: Monitoring & Logging</span>\n  <span style=\"background: #f39c12; color: white; padding: 3px 10px;\">Layer 5: Database Permissions (Least Privilege)</span>\n  <span style=\"background: #2ecc71; color: white; padding: 3px 10px;\">Layer 4: Parameterised Queries / Safe APIs</span>\n  <span style=\"background: #3498db; color: white; padding: 3px 10px;\">Layer 3: Input Validation at Trust Boundaries</span>\n  <span style=\"background: #9b59b6; color: white; padding: 3px 10px;\">Layer 2: Authentication + Authorisation</span>\n  <span style=\"background: #e67e22; color: white; padding: 3px 10px;\">Layer 1: Network Firewall + WAF + HTTPS</span>\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: SDLC Phase Matching",
+          "description": "Match security activities to SDLC phases.",
+          "difficulty": "beginner",
+          "category": "SDLC & Process",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master SDLC & Process!",
+          "starter_code": "// Match each activity to its SDLC phase:\n// REQUIREMENTS, DESIGN, IMPLEMENTATION, TESTING, DEPLOYMENT, MAINTENANCE\n//\n// 1. Threat modeling with STRIDE: ___\n// 2. Applying security patches: ___\n// 3. Penetration testing: ___\n// 4. Defining data classification levels: ___\n// 5. Using parameterised queries: ___\n// 6. Hardening server configuration: ___\n// 7. Code review with security checklist: ___\n// 8. Identifying compliance requirements: ___\n// 9. Static analysis scanning: ___\n// 10. Incident response: ___",
+          "expected_output": "1.DESIGN 2.MAINTENANCE 3.TESTING 4.REQUIREMENTS 5.IMPLEMENTATION 6.DEPLOYMENT 7.IMPLEMENTATION 8.REQUIREMENTS 9.TESTING 10.MAINTENANCE",
+          "hints": [
+            {
+              "message": "Think about WHEN each activity happens in the development process."
+            },
+            {
+              "message": "Threat modeling is design-time. Patches are post-deployment. Pen testing is before release."
+            },
+            {
+              "message": "1.DESIGN 2.MAINTENANCE 3.TESTING 4.REQUIREMENTS 5.IMPLEMENTATION 6.DEPLOYMENT 7.IMPLEMENTATION 8.REQUIREMENTS 9.TESTING 10.MAINTENANCE"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Security Requirements Writing",
+          "description": "Write security requirements for a web app.",
+          "difficulty": "beginner",
+          "category": "SDLC & Process",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master SDLC & Process!",
+          "starter_code": "public class SecurityRequirements {\n    public static void main(String[] args) {\n        // TODO: Print 5 security requirements for an e-commerce app\n        // Format: SR-001: [requirement]\n        // Cover: authentication, data protection, access control, logging, encryption\n    }\n}",
+          "expected_output": "SR-001: All users must authenticate with password + optional MFA\nSR-002: Customer payment data must be encrypted at rest (AES-256)\nSR-003: Admin functions require ADMIN role\nSR-004: All authentication events must be logged with timestamps\nSR-005: All data in transit must use TLS 1.2+",
+          "hints": [
+            {
+              "message": "Think about WHO can access WHAT and HOW data is protected."
+            },
+            {
+              "message": "Cover: authentication method, data encryption, access control, audit logging, transport security."
+            },
+            {
+              "message": "5 requirements covering: authn, encryption at rest, RBAC, audit logs, TLS."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Abuse Case Identification",
+          "description": "Write abuse cases alongside normal use cases.",
+          "difficulty": "beginner",
+          "category": "SDLC & Process",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master SDLC & Process!",
+          "starter_code": "// For each use case, write the matching abuse case:\n// Use Case 1: User logs in with username and password\n// Abuse Case 1: ___\n// Use Case 2: User views their account balance\n// Abuse Case 2: ___\n// Use Case 3: User transfers money to another account\n// Abuse Case 3: ___\n// Use Case 4: Admin resets a user's password\n// Abuse Case 4: ___\n// Use Case 5: User uploads a profile picture\n// Abuse Case 5: ___",
+          "expected_output": "Abuse 1: Attacker brute-forces login with common passwords\nAbuse 2: Attacker changes account ID to view other balances (IDOR)\nAbuse 3: Attacker forges transfer request (CSRF) or changes amount\nAbuse 4: Attacker impersonates admin to reset victim's password\nAbuse 5: Attacker uploads malicious file (web shell, malware)",
+          "hints": [
+            {
+              "message": "For each normal action, think: how could an attacker misuse this?"
+            },
+            {
+              "message": "Think about: guessing, forging, bypassing, manipulating, injecting."
+            },
+            {
+              "message": "Each abuse case inverts the use case: brute force, IDOR, CSRF/tampering, impersonation, malicious upload."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Data Classification",
+          "description": "Classify application data by sensitivity level.",
+          "difficulty": "beginner",
+          "category": "SDLC & Process",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master SDLC & Process!",
+          "starter_code": "// Classify each data type: PUBLIC, INTERNAL, CONFIDENTIAL, SECRET\n// 1. Company's product catalog: ___\n// 2. Employee salary records: ___\n// 3. User's hashed password: ___\n// 4. Marketing blog posts: ___\n// 5. Customer credit card numbers: ___\n// 6. Internal meeting notes: ___\n// 7. Source code repository: ___\n// 8. API encryption keys: ___",
+          "expected_output": "1.PUBLIC 2.CONFIDENTIAL 3.CONFIDENTIAL 4.PUBLIC 5.SECRET 6.INTERNAL 7.CONFIDENTIAL 8.SECRET",
+          "hints": [
+            {
+              "message": "PUBLIC: anyone can see. SECRET: highest protection. INTERNAL: employees only. CONFIDENTIAL: restricted."
+            },
+            {
+              "message": "Credit cards and encryption keys are SECRET. Passwords (even hashed) and source code are CONFIDENTIAL."
+            },
+            {
+              "message": "1.PUBLIC 2.CONFIDENTIAL 3.CONFIDENTIAL 4.PUBLIC 5.SECRET 6.INTERNAL 7.CONFIDENTIAL 8.SECRET"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Compliance Requirements",
+          "description": "Identify which regulations apply to a system.",
+          "difficulty": "beginner",
+          "category": "SDLC & Process",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master SDLC & Process!",
+          "starter_code": "// For each scenario, identify the relevant compliance standard:\n// GDPR, PCI-DSS, HIPAA, SOX, ISO 27001\n// 1. E-commerce site processing credit cards: ___\n// 2. Hospital patient records system: ___\n// 3. European user data collection: ___\n// 4. Public company financial reporting: ___\n// 5. Any org wanting security certification: ___",
+          "expected_output": "1.PCI-DSS 2.HIPAA 3.GDPR 4.SOX 5.ISO 27001",
+          "hints": [
+            {
+              "message": "PCI-DSS = payment cards. HIPAA = health. GDPR = EU privacy. SOX = finance. ISO 27001 = general."
+            },
+            {
+              "message": "Credit cards -> PCI-DSS. Medical -> HIPAA. EU residents -> GDPR."
+            },
+            {
+              "message": "1.PCI-DSS 2.HIPAA 3.GDPR 4.SOX 5.ISO 27001"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: SDLC Cost of Fixing Bugs",
+          "description": "Calculate the cost multiplier of late-found security bugs.",
+          "difficulty": "beginner",
+          "category": "SDLC & Process",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master SDLC & Process!",
+          "starter_code": "public class BugCostMultiplier {\n    // Cost multiplier: Requirements=1x, Design=5x, Implementation=10x, Testing=20x, Production=100x\n    public static void main(String[] args) {\n        int baseCost = 100; // $100 to fix at requirements\n        String[] phases = {\"Requirements\",\"Design\",\"Implementation\",\"Testing\",\"Production\"};\n        int[] multipliers = {1, 5, 10, 20, 100};\n        // TODO: Print cost at each phase\n        System.out.println(\"Finding a missing auth requirement:\");\n        for (int i = 0; i < phases.length; i++) {\n            System.out.println(\"  \" + phases[i] + \": $\" + (baseCost * multipliers[i]));\n        }\n    }\n}",
+          "expected_output": "Finding a missing auth requirement:\n  Requirements: $100\n  Design: $500\n  Implementation: $1000\n  Testing: $2000\n  Production: $10000",
+          "hints": [
+            {
+              "message": "Multiply baseCost by each multiplier."
+            },
+            {
+              "message": "baseCost * multipliers[i] for each phase."
+            },
+            {
+              "message": "Just multiply and print. The lesson: fix early, save money."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Security Gate Checklist",
+          "description": "Create go/no-go criteria for each SDLC phase.",
+          "difficulty": "beginner",
+          "category": "SDLC & Process",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master SDLC & Process!",
+          "starter_code": "public class SecurityGates {\n    public static void main(String[] args) {\n        // TODO: For each phase transition, print 2 security criteria that must pass\n        // Requirements -> Design gate\n        // Design -> Implementation gate\n        // Implementation -> Testing gate\n        // Testing -> Deployment gate\n    }\n}",
+          "expected_output": "Requirements->Design: Security requirements documented? Threat actors identified?\nDesign->Implementation: Threat model complete? Architecture reviewed?\nImplementation->Testing: Code reviewed? No high-severity SAST findings?\nTesting->Deployment: Pen test passed? All critical vulnerabilities fixed?",
+          "hints": [
+            {
+              "message": "What must be TRUE before moving to the next phase?"
+            },
+            {
+              "message": "Each gate has criteria: documentation, review, testing results."
+            },
+            {
+              "message": "2 criteria per gate: doc/review for early gates, test results for later gates."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Security vs Feature Trade-off",
+          "description": "Evaluate when security impacts user experience.",
+          "difficulty": "beginner",
+          "category": "SDLC & Process",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master SDLC & Process!",
+          "starter_code": "// For each feature, rate the security-usability trade-off:\n// Write GOOD (both good), TRADE-OFF (security hurts UX), or BAD (security too weak)\n// 1. Auto-logout after 30 minutes idle: ___\n// 2. Password must be 40+ chars with 5 special chars: ___\n// 3. MFA via authenticator app at login: ___\n// 4. No password requirements at all: ___\n// 5. Single sign-on across all company apps: ___\n// 6. Re-enter password for every page: ___",
+          "expected_output": "1.GOOD (reasonable timeout)\n2.TRADE-OFF (too strict, users will write it down)\n3.GOOD (strong security, acceptable UX)\n4.BAD (no security)\n5.GOOD (better UX AND security)\n6.TRADE-OFF (too annoying, users will find workarounds)",
+          "hints": [
+            {
+              "message": "Good security is usable. If it is too strict, users bypass it."
+            },
+            {
+              "message": "30min timeout is reasonable. 40-char password is excessive. SSO improves both."
+            },
+            {
+              "message": "1.GOOD 2.TRADE-OFF 3.GOOD 4.BAD 5.GOOD 6.TRADE-OFF"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Maintenance Phase Activities",
+          "description": "Plan ongoing security activities post-deployment.",
+          "difficulty": "beginner",
+          "category": "SDLC & Process",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master SDLC & Process!",
+          "starter_code": "public class MaintenancePlan {\n    public static void main(String[] args) {\n        // TODO: Print a monthly security maintenance schedule\n        // Week 1: ___ Week 2: ___ Week 3: ___ Week 4: ___\n    }\n}",
+          "expected_output": "Week 1: Apply security patches and dependency updates\nWeek 2: Review security logs and alerts for anomalies\nWeek 3: Run automated vulnerability scan\nWeek 4: Review access controls and remove unused accounts",
+          "hints": [
+            {
+              "message": "What security tasks should happen regularly after deployment?"
+            },
+            {
+              "message": "Patching, log review, scanning, access review are the four pillars."
+            },
+            {
+              "message": "Week1: patches. Week2: log review. Week3: vuln scan. Week4: access review."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Order the SDLC",
+          "description": "Put security activities in correct SDLC order.",
+          "difficulty": "beginner",
+          "category": "SDLC & Process",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master SDLC & Process!",
+          "starter_code": "// Order 1-10 from earliest to latest in SDLC:\n// ___ Penetration testing\n// ___ Define data classification\n// ___ Apply security patches\n// ___ Threat modeling\n// ___ Deploy with HTTPS enabled\n// ___ Static code analysis\n// ___ Security code review\n// ___ Identify compliance requirements\n// ___ Monitor for attacks\n// ___ Choose authentication mechanism",
+          "expected_output": "1. Identify compliance requirements (REQUIREMENTS)\n2. Define data classification (REQUIREMENTS)\n3. Choose authentication mechanism (DESIGN)\n4. Threat modeling (DESIGN)\n5. Security code review (IMPLEMENTATION)\n6. Static code analysis (TESTING)\n7. Penetration testing (TESTING)\n8. Deploy with HTTPS (DEPLOYMENT)\n9. Monitor for attacks (MAINTENANCE)\n10. Apply security patches (MAINTENANCE)",
+          "hints": [
+            {
+              "message": "Group by phase: requirements first, then design, implementation, testing, deployment, maintenance."
+            },
+            {
+              "message": "Requirements activities come before design. Testing before deployment. Maintenance is last."
+            },
+            {
+              "message": "Compliance+classification -> authn+threat model -> code review+SAST -> pen test -> deploy -> monitor+patch"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: STRIDE Category Quiz",
+          "description": "Match threats to STRIDE categories.",
+          "difficulty": "intermediate",
+          "category": "STRIDE Threat Modeling",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master STRIDE Threat Modeling!",
+          "starter_code": "// Match each threat to S, T, R, I, D, or E:\n// 1. Attacker reads data from unencrypted database: ___\n// 2. Attacker floods server with requests: ___\n// 3. Attacker changes price in hidden form field: ___\n// 4. Attacker uses stolen session cookie: ___\n// 5. User denies placing an online order: ___\n// 6. Regular user accesses admin dashboard: ___",
+          "expected_output": "1.I (Information Disclosure) 2.D (Denial of Service) 3.T (Tampering) 4.S (Spoofing) 5.R (Repudiation) 6.E (Elevation of Privilege)",
+          "hints": [
+            {
+              "message": "S=fake identity, T=modify data, R=deny action, I=leak data, D=crash, E=gain access."
+            },
+            {
+              "message": "Unencrypted read=I, flood=D, modify=T, stolen cookie=S, deny action=R, unauthorised access=E."
+            },
+            {
+              "message": "1.I 2.D 3.T 4.S 5.R 6.E"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: STRIDE a File Upload",
+          "description": "Apply STRIDE to a file upload feature.",
+          "difficulty": "intermediate",
+          "category": "STRIDE Threat Modeling",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master STRIDE Threat Modeling!",
+          "starter_code": "// For a file upload feature, identify one threat per STRIDE category:\n// S: ___\n// T: ___\n// R: ___\n// I: ___\n// D: ___\n// E: ___",
+          "expected_output": "S: Attacker uploads as another user (spoofed session)\nT: Attacker modifies file contents after upload\nR: Uploader denies uploading malicious file\nI: Uploaded files accessible to unauthorised users\nD: Uploading very large files crashes the server\nE: Upload a web shell to gain server access",
+          "hints": [
+            {
+              "message": "Think about each STRIDE letter applied to uploading a file."
+            },
+            {
+              "message": "Who uploads? Can files be changed? Can they deny it? Can others see it? Can it crash things? Can it grant access?"
+            },
+            {
+              "message": "S:spoofed user T:modified file R:deny upload I:unauthorised access D:huge file E:web shell"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: STRIDE a Chat Application",
+          "description": "Threat model a real-time messaging system.",
+          "difficulty": "intermediate",
+          "category": "STRIDE Threat Modeling",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master STRIDE Threat Modeling!",
+          "starter_code": "public class STRIDEChat {\n    public static void main(String[] args) {\n        // TODO: Print STRIDE threats for a chat application\n        // At least one threat and mitigation per category\n    }\n}",
+          "expected_output": "S: Impersonate another user in chat -> MFA + verified usernames\nT: Modify message after sending -> Message integrity hashes\nR: Deny sending a threatening message -> Immutable audit log\nI: Read private messages -> End-to-end encryption\nD: Spam flood crashes chat server -> Rate limiting per user\nE: Regular user gains moderator powers -> Server-side role checks",
+          "hints": [
+            {
+              "message": "Think about each STRIDE category in context of sending/receiving messages."
+            },
+            {
+              "message": "S:impersonation T:message modification R:deny sending I:eavesdropping D:spam E:role escalation"
+            },
+            {
+              "message": "Full STRIDE with mitigations for each category."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Build a STRIDE Table",
+          "description": "Create a structured threat table for an API endpoint.",
+          "difficulty": "intermediate",
+          "category": "STRIDE Threat Modeling",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master STRIDE Threat Modeling!",
+          "starter_code": "public class STRIDETable {\n    public static void main(String[] args) {\n        // TODO: Build STRIDE table for POST /api/transfer (bank transfer)\n        // Format: Category | Threat | Impact | Likelihood | Mitigation\n    }\n}",
+          "expected_output": "S | Stolen credentials | HIGH | MEDIUM | MFA + lockout\nT | Modified amount in transit | HIGH | LOW | HTTPS + server validation\nR | Deny initiating transfer | MEDIUM | MEDIUM | Audit log + confirmation\nI | Transfer details leaked | HIGH | LOW | Encryption + access control\nD | Flood transfer requests | MEDIUM | HIGH | Rate limiting\nE | User transfers from other account | CRITICAL | MEDIUM | Ownership check",
+          "hints": [
+            {
+              "message": "For each STRIDE category, think about the bank transfer endpoint specifically."
+            },
+            {
+              "message": "What can be spoofed? What data can be tampered? What action denied? What leaked? What flooded? What escalated?"
+            },
+            {
+              "message": "Table with 6 rows, one per STRIDE category with threat, impact, likelihood, and mitigation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Identify Trust Boundaries",
+          "description": "Find where trust levels change in a system.",
+          "difficulty": "intermediate",
+          "category": "STRIDE Threat Modeling",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master STRIDE Threat Modeling!",
+          "starter_code": "// Mark each boundary as YES (trust boundary) or NO:\n// 1. Between user's browser and web server: ___\n// 2. Between two functions in the same class: ___\n// 3. Between web server and database: ___\n// 4. Between app server and external payment API: ___\n// 5. Between frontend JavaScript and backend API: ___\n// 6. Between two threads in the same process: ___",
+          "expected_output": "1.YES (untrusted client -> server) 2.NO (same trust level) 3.YES (app -> data) 4.YES (internal -> external) 5.YES (client -> server) 6.NO (same process)",
+          "hints": [
+            {
+              "message": "Trust boundaries exist where data crosses between different trust levels."
+            },
+            {
+              "message": "Browser->server is always a boundary. Internal function->function is not. External APIs are boundaries."
+            },
+            {
+              "message": "1.YES 2.NO 3.YES 4.YES 5.YES 6.NO"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Threat Actor Profiling",
+          "description": "Identify and characterise threat actors.",
+          "difficulty": "intermediate",
+          "category": "STRIDE Threat Modeling",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master STRIDE Threat Modeling!",
+          "starter_code": "// For each threat actor, rate: Skill(L/M/H), Resources(L/M/H), Motivation\n// 1. Script kiddie: Skill=___ Resources=___ Motivation=___\n// 2. Organised crime: Skill=___ Resources=___ Motivation=___\n// 3. Nation-state: Skill=___ Resources=___ Motivation=___\n// 4. Disgruntled employee: Skill=___ Resources=___ Motivation=___\n// 5. Hacktivist: Skill=___ Resources=___ Motivation=___",
+          "expected_output": "1. Skill=L Resources=L Motivation=Fun/reputation\n2. Skill=H Resources=H Motivation=Financial gain\n3. Skill=H Resources=H Motivation=Espionage/disruption\n4. Skill=M Resources=M Motivation=Revenge/sabotage\n5. Skill=M Resources=L Motivation=Political/social cause",
+          "hints": [
+            {
+              "message": "Different attackers have different capabilities and motivations."
+            },
+            {
+              "message": "Script kiddies use pre-built tools. Nation-states have unlimited resources. Insiders have existing access."
+            },
+            {
+              "message": "1.L/L/fun 2.H/H/money 3.H/H/espionage 4.M/M/revenge 5.M/L/political"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Mitigation Mapping",
+          "description": "Map threats to appropriate security controls.",
+          "difficulty": "intermediate",
+          "category": "STRIDE Threat Modeling",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master STRIDE Threat Modeling!",
+          "starter_code": "// For each threat, choose the BEST mitigation:\n// A=MFA, B=Rate limiting, C=Encryption, D=Input validation, E=Audit logging, F=RBAC\n// 1. Brute force login: ___\n// 2. SQL injection: ___\n// 3. Data breach (stolen DB): ___\n// 4. Unauthorised admin access: ___\n// 5. User denies making a purchase: ___\n// 6. Credential stuffing: ___",
+          "expected_output": "1.B (Rate limiting stops brute force) 2.D (Input validation + parameterised queries) 3.C (Encryption protects stored data) 4.F (RBAC restricts admin functions) 5.E (Audit logging proves the action) 6.A (MFA stops stolen credentials)",
+          "hints": [
+            {
+              "message": "Match each threat to the control that most directly prevents it."
+            },
+            {
+              "message": "Brute force -> rate limit. Injection -> validation. Stolen data -> encryption. Unauthorised -> RBAC. Deny -> logging. Stolen creds -> MFA."
+            },
+            {
+              "message": "1.B 2.D 3.C 4.F 5.E 6.A"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: STRIDE for REST API",
+          "description": "Comprehensive threat model for API endpoints.",
+          "difficulty": "intermediate",
+          "category": "STRIDE Threat Modeling",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master STRIDE Threat Modeling!",
+          "starter_code": "public class STRIDERestAPI {\n    public static void main(String[] args) {\n        // TODO: Threat model these endpoints:\n        // GET /api/users (list all users)\n        // POST /api/users (create user)\n        // DELETE /api/users/{id} (delete user)\n        // At least 2 threats per endpoint\n    }\n}",
+          "expected_output": "GET /api/users:\n  [I] User list exposed to unauthorised users -> Add auth + RBAC\n  [D] Requesting huge user list crashes server -> Pagination + rate limit\nPOST /api/users:\n  [S] Attacker creates account as another person -> Email verification\n  [T] Attacker modifies user data in request -> Server-side validation\nDELETE /api/users/{id}:\n  [E] Regular user deletes admin account -> RBAC + ownership check\n  [R] Admin denies deleting a user -> Audit logging",
+          "hints": [
+            {
+              "message": "For each endpoint, think: who should NOT access it? What data can be stolen or modified?"
+            },
+            {
+              "message": "GET: info disclosure + DoS. POST: spoofing + tampering. DELETE: elevation + repudiation."
+            },
+            {
+              "message": "2 threats per endpoint from different STRIDE categories."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Attack Tree Construction",
+          "description": "Build an attack tree for a security goal.",
+          "difficulty": "intermediate",
+          "category": "STRIDE Threat Modeling",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master STRIDE Threat Modeling!",
+          "starter_code": "public class AttackTree {\n    public static void main(String[] args) {\n        // TODO: Build attack tree for goal: \"Access admin panel\"\n        // Show at least 3 attack paths with sub-steps\n    }\n}",
+          "expected_output": "GOAL: Access admin panel\n  Path 1: Steal admin credentials\n    1a. Phishing email to admin\n    1b. Brute force admin password\n    1c. Find credentials in source code\n  Path 2: Bypass authentication\n    2a. SQL injection in login form\n    2b. Session fixation attack\n    2c. Exploit password reset flaw\n  Path 3: Escalate privileges\n    3a. Modify role in cookie/token\n    3b. Access admin URL directly (missing auth check)\n    3c. Exploit IDOR to change own role",
+          "hints": [
+            {
+              "message": "Think of different WAYS an attacker could reach the goal."
+            },
+            {
+              "message": "Three main paths: steal credentials, bypass auth, escalate privileges. Each has sub-techniques."
+            },
+            {
+              "message": "3 paths with 3 sub-steps each: credential theft, auth bypass, privilege escalation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Data Flow Diagram Security",
+          "description": "Identify threats along data flows.",
+          "difficulty": "intermediate",
+          "category": "STRIDE Threat Modeling",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master STRIDE Threat Modeling!",
+          "starter_code": "// A user submits a form that goes through these steps:\n// Browser -> Load Balancer -> Web Server -> App Server -> Database\n// For each step, identify one security concern:\n// Browser -> LB: ___\n// LB -> Web: ___\n// Web -> App: ___\n// App -> DB: ___",
+          "expected_output": "Browser->LB: Data in transit unencrypted (need HTTPS/TLS)\nLB->Web: Internal traffic may be unencrypted (need internal TLS)\nWeb->App: Unvalidated input forwarded (need input validation)\nApp->DB: SQL injection if queries not parameterised (need prepared statements)",
+          "hints": [
+            {
+              "message": "At each hop, data crosses a potential trust boundary."
+            },
+            {
+              "message": "Each hop can have: encryption, validation, injection, or access control issues."
+            },
+            {
+              "message": "HTTPS for transit, internal TLS, input validation before app server, parameterised queries for DB."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Identify the Principle",
+          "description": "Match code examples to design principles.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Design Principles!",
+          "starter_code": "// Which Saltzer & Schroeder principle does each follow?\n// Choices: Least Privilege, Fail-Safe, Complete Mediation, Economy, Separation, Open Design\n// 1. if(allowed.contains(role)) grant; else deny; -> ___\n// 2. DB user has SELECT only: -> ___\n// 3. Using Cipher.getInstance(\"AES\") not custom crypto: -> ___\n// 4. Check permissions on EVERY API call: -> ___\n// 5. Developer cannot deploy own code: -> ___\n// 6. Security comes from keys, not hidden URLs: -> ___",
+          "expected_output": "1.Fail-Safe Defaults 2.Least Privilege 3.Economy of Mechanism 4.Complete Mediation 5.Separation of Duties 6.Open Design",
+          "hints": [
+            {
+              "message": "Whitelist = fail-safe. Minimum permissions = least privilege. Standard library = economy."
+            },
+            {
+              "message": "1.Fail-safe(whitelist) 2.LP(minimum access) 3.Economy(standard lib) 4.CM(every call) 5.Separation 6.Open."
+            },
+            {
+              "message": "1.Fail-Safe 2.Least Privilege 3.Economy 4.Complete Mediation 5.Separation 6.Open Design"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Implement Fail-Safe Config",
+          "description": "Build a configuration loader that defaults to secure values.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Design Principles!",
+          "starter_code": "import java.util.*;\n\npublic class FailSafeConfig {\n    static Map<String, String> config = new HashMap<>(); // simulates config file\n    \n    static String getConfig(String key, String secureDefault) {\n        // TODO: Return config value if exists, otherwise return secureDefault\n        return \"\";\n    }\n    public static void main(String[] args) {\n        config.put(\"max_login_attempts\", \"5\");\n        // ssl_enabled is MISSING from config\n        System.out.println(\"Max attempts: \" + getConfig(\"max_login_attempts\", \"3\"));\n        System.out.println(\"SSL enabled: \" + getConfig(\"ssl_enabled\", \"true\")); // defaults to true!\n        System.out.println(\"Debug mode: \" + getConfig(\"debug_mode\", \"false\")); // defaults to false!\n    }\n}",
+          "expected_output": "Max attempts: 5\nSSL enabled: true\nDebug mode: false",
+          "hints": [
+            {
+              "message": "If config has the key, use it. Otherwise, use the secure default."
+            },
+            {
+              "message": "return config.getOrDefault(key, secureDefault);"
+            },
+            {
+              "message": "config.getOrDefault(key, secureDefault) - SSL defaults ON, debug defaults OFF."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Complete Mediation Filter",
+          "description": "Build a middleware that checks every request.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Design Principles!",
+          "starter_code": "import java.util.*;\n\npublic class MediationFilter {\n    static Set<String> publicPaths = Set.of(\"/\", \"/login\", \"/register\");\n    static Map<String, String> sessions = Map.of(\"s1\", \"ADMIN\", \"s2\", \"USER\");\n    \n    static String filter(String path, String sessionId) {\n        // TODO: Public paths pass. Others need valid session.\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(filter(\"/login\", null));\n        System.out.println(filter(\"/profile\", null));\n        System.out.println(filter(\"/profile\", \"s2\"));\n        System.out.println(filter(\"/admin\", \"s2\"));\n    }\n}",
+          "expected_output": "ALLOW: /login (public)\n401: /profile requires authentication\nALLOW: /profile (USER)\nALLOW: /admin (USER) [Note: authz check needed separately]",
+          "hints": [
+            {
+              "message": "Check if path is public first. Then check session."
+            },
+            {
+              "message": "if(publicPaths.contains(path)) allow. else if(sessionId==null or invalid) 401. else allow."
+            },
+            {
+              "message": "Public path -> allow. No/invalid session -> 401. Valid session -> allow (authz is separate)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Least Privilege DB Users",
+          "description": "Design database users with minimum permissions.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Design Principles!",
+          "starter_code": "public class LeastPrivDB {\n    public static void main(String[] args) {\n        // TODO: For each service, print the SQL permissions it should have\n        // Search Service: ___\n        // Order Service: ___\n        // Admin Service: ___\n        // Backup Service: ___\n        // Report Service: ___\n    }\n}",
+          "expected_output": "Search Service: SELECT on products, categories\nOrder Service: SELECT, INSERT, UPDATE on orders, inventory\nAdmin Service: ALL on users, settings, orders\nBackup Service: SELECT on ALL tables (read-only)\nReport Service: SELECT on orders, users (read-only, aggregates only)",
+          "hints": [
+            {
+              "message": "Each service only needs permissions for ITS specific tasks."
+            },
+            {
+              "message": "Search=read products. Orders=read+write orders. Admin=everything. Backup=read all. Reports=read summaries."
+            },
+            {
+              "message": "Minimum permissions per service function."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Economy: Custom vs Library",
+          "description": "Compare custom code vs standard library for security tasks.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Design Principles!",
+          "starter_code": "// For each task, write CUSTOM (risky) or LIBRARY (preferred):\n// 1. Password hashing: write your own MD5 loop: ___\n// 2. Session management: use Spring Security: ___\n// 3. Input validation: regex patterns from OWASP: ___\n// 4. Encryption: XOR cipher: ___\n// 5. Random numbers: Math.random(): ___\n// 6. JWT handling: use auth0 java-jwt library: ___",
+          "expected_output": "1.CUSTOM (risky! use bcrypt library)\n2.LIBRARY (good!)\n3.LIBRARY (good!)\n4.CUSTOM (risky! use AES)\n5.CUSTOM (risky! use SecureRandom)\n6.LIBRARY (good!)",
+          "hints": [
+            {
+              "message": "Standard libraries are tested by millions. Custom security code likely has bugs."
+            },
+            {
+              "message": "MD5 is weak. XOR is breakable. Math.random() is predictable. Use established libraries."
+            },
+            {
+              "message": "1.CUSTOM(bad) 2.LIBRARY 3.LIBRARY 4.CUSTOM(bad) 5.CUSTOM(bad) 6.LIBRARY"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Separation of Duties Checker",
+          "description": "Verify that no single user controls a full process.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Design Principles!",
+          "starter_code": "import java.util.*;\n\npublic class DutyChecker {\n    static String checkSeparation(String submitter, String approver, String deployer) {\n        // TODO: Verify all three are different people\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(checkSeparation(\"alice\", \"bob\", \"charlie\"));\n        System.out.println(checkSeparation(\"alice\", \"alice\", \"charlie\"));\n        System.out.println(checkSeparation(\"alice\", \"bob\", \"alice\"));\n    }\n}",
+          "expected_output": "OK: All different (alice, bob, charlie)\nVIOLATION: submitter=approver (alice)\nVIOLATION: submitter=deployer (alice)",
+          "hints": [
+            {
+              "message": "Check all three pairs: submitter!=approver, submitter!=deployer, approver!=deployer."
+            },
+            {
+              "message": "Three checks: s!=a, s!=d, a!=d. If any match, report violation."
+            },
+            {
+              "message": "Check all pairs for equality. Report which roles overlap."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Open Design Test",
+          "description": "Verify security doesn't rely on obscurity.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Design Principles!",
+          "starter_code": "// For each defence, is it OPEN DESIGN (strong) or OBSCURITY (weak)?\n// 1. Admin panel at /admin-panel-x7z9q: ___\n// 2. Admin panel at /admin with RBAC: ___\n// 3. Custom encoding instead of encryption: ___\n// 4. AES-256 with secret key: ___\n// 5. API that rejects unauthenticated requests: ___\n// 6. API that uses non-standard port 8443: ___",
+          "expected_output": "1.OBSCURITY 2.OPEN DESIGN 3.OBSCURITY 4.OPEN DESIGN 5.OPEN DESIGN 6.OBSCURITY",
+          "hints": [
+            {
+              "message": "If the security breaks when the attacker learns the mechanism, it is obscurity."
+            },
+            {
+              "message": "Hidden URLs, custom encoding, unusual ports = obscurity. Auth, encryption, RBAC = open design."
+            },
+            {
+              "message": "1.OBSCURITY 2.OPEN 3.OBSCURITY 4.OPEN 5.OPEN 6.OBSCURITY"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Defence-in-Depth for XSS",
+          "description": "Layer multiple defences against cross-site scripting.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Design Principles!",
+          "starter_code": "public class XSSDefenceLayers {\n    public static void main(String[] args) {\n        // TODO: List 5 defence layers against XSS, from outermost to innermost\n    }\n}",
+          "expected_output": "Layer 1: Content-Security-Policy header (blocks inline scripts)\nLayer 2: Input validation (reject/sanitise HTML)\nLayer 3: Output encoding (escape < > & \" ')\nLayer 4: HttpOnly cookies (JS cannot steal session)\nLayer 5: Framework auto-escaping (template engines escape by default)",
+          "hints": [
+            {
+              "message": "Think of multiple independent defences against XSS."
+            },
+            {
+              "message": "CSP header, input validation, output encoding, HttpOnly cookies, template auto-escaping."
+            },
+            {
+              "message": "5 layers: CSP, validation, encoding, HttpOnly, auto-escaping."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Psychological Acceptability Review",
+          "description": "Evaluate if security is user-friendly.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Design Principles!",
+          "starter_code": "// Rate each security mechanism: ACCEPTABLE or UNACCEPTABLE for users\n// 1. Fingerprint login on mobile app: ___\n// 2. 25-character password changed every 2 weeks: ___\n// 3. SSO across all company apps: ___\n// 4. CAPTCHA on every page load: ___\n// 5. Password manager auto-fill support: ___\n// 6. Mandatory security training once per year: ___",
+          "expected_output": "1.ACCEPTABLE (convenient biometric)\n2.UNACCEPTABLE (too strict, users will write it down)\n3.ACCEPTABLE (one login for everything)\n4.UNACCEPTABLE (frustrating, users leave)\n5.ACCEPTABLE (easy + secure)\n6.ACCEPTABLE (reasonable frequency)",
+          "hints": [
+            {
+              "message": "If users will bypass it or complain, it is unacceptable."
+            },
+            {
+              "message": "Biometrics and SSO are convenient. Excessive passwords and CAPTCHAs frustrate users."
+            },
+            {
+              "message": "1.OK 2.BAD 3.OK 4.BAD 5.OK 6.OK"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Apply All Principles",
+          "description": "Review code against all design principles simultaneously.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Design Principles!",
+          "starter_code": "// This function has violations. Identify which PRINCIPLE each violates:\npublic class AllPrinciples {\n    // Connects as root with all permissions (Principle: ___)\n    // Uses custom XOR encryption (Principle: ___)\n    // Only checks auth on first request (Principle: ___)\n    // Returns full stack trace on error (Principle: ___)\n    // Single admin can create+approve+deploy (Principle: ___)\n    // Admin hidden at /x7z-secret-admin (Principle: ___)\n}",
+          "expected_output": "Root DB connection: Least Privilege\nCustom XOR: Economy of Mechanism\nAuth only first request: Complete Mediation\nStack trace on error: Fail-Safe Defaults\nSingle admin all roles: Separation of Duties\nHidden admin URL: Open Design",
+          "hints": [
+            {
+              "message": "Match each flaw to the principle it violates."
+            },
+            {
+              "message": "Root=LP, Custom crypto=Economy, First-only auth=CM, Stack trace=Fail-Safe, One admin=Separation, Hidden URL=Open."
+            },
+            {
+              "message": "LP, Economy, CM, Fail-Safe, Separation, Open Design"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Layered Security Architecture",
+          "description": "Design security controls for each application layer.",
+          "difficulty": "intermediate",
+          "category": "Architecture Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Architecture Patterns!",
+          "starter_code": "public class LayeredArch {\n    public static void main(String[] args) {\n        // TODO: For each layer, list 2 security controls:\n        // Network Layer:\n        // Presentation Layer:\n        // Business Logic Layer:\n        // Data Access Layer:\n        // Database Layer:\n    }\n}",
+          "expected_output": "Network: Firewall + IDS/IPS\nPresentation: Input validation + CSP headers\nBusiness Logic: Authentication + RBAC\nData Access: Parameterised queries + ORM\nDatabase: Encryption at rest + least privilege accounts",
+          "hints": [
+            {
+              "message": "Each layer has different security concerns and controls."
+            },
+            {
+              "message": "Network=firewall. Presentation=validation. Logic=auth. Data=queries. DB=encryption."
+            },
+            {
+              "message": "2 controls per layer covering the main threats at each level."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Microservice Security Design",
+          "description": "Secure inter-service communication.",
+          "difficulty": "intermediate",
+          "category": "Architecture Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Architecture Patterns!",
+          "starter_code": "public class MicroserviceSecurity {\n    public static void main(String[] args) {\n        // TODO: List 5 security controls for microservice architecture\n        // Cover: auth, communication, secrets, logging, access\n    }\n}",
+          "expected_output": "1. API Gateway with centralised authentication\n2. mTLS (mutual TLS) between services\n3. Secrets management vault (not env vars in code)\n4. Centralised logging with correlation IDs\n5. Service mesh with least-privilege policies",
+          "hints": [
+            {
+              "message": "Microservices need: central auth, encrypted communication, secret management, logging, access control."
+            },
+            {
+              "message": "API gateway, mTLS, vault, central logging, service mesh."
+            },
+            {
+              "message": "5 controls: gateway, mTLS, vault, logging, service mesh."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Security Zone Design",
+          "description": "Define network security zones and rules.",
+          "difficulty": "intermediate",
+          "category": "Architecture Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Architecture Patterns!",
+          "starter_code": "// Define which zones can communicate:\n// Zones: INTERNET, DMZ, APP_ZONE, DB_ZONE, MANAGEMENT\n// For each pair, write ALLOW or DENY:\n// INTERNET -> DMZ: ___\n// INTERNET -> APP_ZONE: ___\n// DMZ -> APP_ZONE: ___\n// APP_ZONE -> DB_ZONE: ___\n// DB_ZONE -> INTERNET: ___\n// MANAGEMENT -> ALL: ___",
+          "expected_output": "INTERNET->DMZ: ALLOW (web server)\nINTERNET->APP_ZONE: DENY (no direct access)\nDMZ->APP_ZONE: ALLOW (proxy requests)\nAPP_ZONE->DB_ZONE: ALLOW (data queries)\nDB_ZONE->INTERNET: DENY (no outbound)\nMANAGEMENT->ALL: ALLOW (admin access via VPN)",
+          "hints": [
+            {
+              "message": "Traffic flows inward: internet->DMZ->app->DB. No outbound from DB."
+            },
+            {
+              "message": "Internet only reaches DMZ. App zone only from DMZ. DB only from app. Management is special."
+            },
+            {
+              "message": "Inward flow only. No direct internet to app or DB. Management via VPN."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Error Handling Architecture",
+          "description": "Design a centralised error handling strategy.",
+          "difficulty": "intermediate",
+          "category": "Architecture Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Architecture Patterns!",
+          "starter_code": "public class ErrorArchitecture {\n    static String handleError(Exception e, boolean isProduction) {\n        // TODO: In production: generic message. In development: full details.\n        return \"\";\n    }\n    public static void main(String[] args) {\n        Exception e = new RuntimeException(\"SQL error: table users, column password\");\n        System.out.println(\"Production: \" + handleError(e, true));\n        System.out.println(\"Development: \" + handleError(e, false));\n    }\n}",
+          "expected_output": "Production: An error occurred. Please try again. (Reference: ERR-20260223-001)\nDevelopment: SQL error: table users, column password",
+          "hints": [
+            {
+              "message": "Production shows generic message with reference ID. Development shows full details."
+            },
+            {
+              "message": "if(isProduction) return generic + reference ID. else return e.getMessage()."
+            },
+            {
+              "message": "Production: generic + ID. Development: full details. Log full details server-side always."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Input Validation Architecture",
+          "description": "Design a multi-layer validation strategy.",
+          "difficulty": "intermediate",
+          "category": "Architecture Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Architecture Patterns!",
+          "starter_code": "public class ValidationArch {\n    // TODO: Implement 3 layers of validation for a username field\n    // Layer 1: Client-side (quick feedback)\n    // Layer 2: API layer (security check)\n    // Layer 3: Database constraint (last resort)\n    \n    static String clientValidation(String input) { return \"\"; }\n    static String apiValidation(String input) { return \"\"; }\n    static String dbConstraint(String input) { return \"\"; }\n    \n    public static void main(String[] args) {\n        System.out.println(clientValidation(\"alice\"));\n        System.out.println(apiValidation(\"alice\"));\n        System.out.println(dbConstraint(\"alice\"));\n    }\n}",
+          "expected_output": "Client: PASS (3-20 chars, alphanumeric)\nAPI: PASS (3-20 chars, alphanumeric, not reserved, not in blacklist)\nDB: PASS (UNIQUE constraint, VARCHAR(20))",
+          "hints": [
+            {
+              "message": "Three layers: client for UX, API for security, DB for data integrity."
+            },
+            {
+              "message": "Client: length+chars. API: same + reserved words + blacklist. DB: unique + length constraint."
+            },
+            {
+              "message": "Client=length+pattern. API=same+reserved+blacklist. DB=unique+type constraint."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Authentication Architecture",
+          "description": "Design centralised authentication for multiple services.",
+          "difficulty": "intermediate",
+          "category": "Architecture Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Architecture Patterns!",
+          "starter_code": "public class AuthArchitecture {\n    public static void main(String[] args) {\n        // TODO: Design auth flow for 3 services using a central auth server\n        // 1. User authenticates with Auth Server\n        // 2. Auth Server issues token\n        // 3. User sends token to Service A, B, C\n        // 4. Services validate token with Auth Server\n    }\n}",
+          "expected_output": "1. User -> Auth Server: username + password + MFA\n2. Auth Server -> User: JWT token (signed, 1-hour expiry)\n3. User -> Service A: Authorization: Bearer <token>\n4. Service A -> Auth Server: Validate token signature\n5. Auth Server -> Service A: Valid, user=alice, role=USER\n6. Service A: Check role has permission for requested action",
+          "hints": [
+            {
+              "message": "Centralised auth: one login, token used everywhere, each service validates."
+            },
+            {
+              "message": "Auth server issues JWT. Services validate the signature. No service stores passwords."
+            },
+            {
+              "message": "Central auth server, JWT tokens, service-level validation, no password storage in services."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Logging Architecture",
+          "description": "Design a secure, centralised logging system.",
+          "difficulty": "intermediate",
+          "category": "Architecture Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Architecture Patterns!",
+          "starter_code": "public class LogArchitecture {\n    public static void main(String[] args) {\n        // TODO: Design logging architecture\n        // What to log, where to store, how to protect\n        // What NEVER to log\n    }\n}",
+          "expected_output": "LOG: auth events, access denials, data changes, admin actions, errors\nSTORE: centralised SIEM, immutable storage, 90-day retention\nPROTECT: TLS transport, access control on logs, tamper detection\nNEVER LOG: passwords, credit cards, session tokens, personal data (GDPR)",
+          "hints": [
+            {
+              "message": "Log security events. Store securely. Never log secrets."
+            },
+            {
+              "message": "Log events: auth, access, changes. Store: centralised+immutable. Never: passwords, tokens, PII."
+            },
+            {
+              "message": "What to log, where to store, how to protect, what to exclude."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Encryption Architecture",
+          "description": "Design data encryption at rest and in transit.",
+          "difficulty": "intermediate",
+          "category": "Architecture Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Architecture Patterns!",
+          "starter_code": "public class EncryptionArch {\n    public static void main(String[] args) {\n        // TODO: Specify encryption for each data state:\n        // In Transit: ___\n        // At Rest (database): ___\n        // At Rest (files): ___\n        // In Memory: ___\n        // Key Management: ___\n    }\n}",
+          "expected_output": "In Transit: TLS 1.3 for all connections\nAt Rest (DB): AES-256 column-level encryption for sensitive fields\nAt Rest (Files): AES-256 full disk encryption + file-level for secrets\nIn Memory: Clear sensitive data after use, avoid logging\nKey Management: HSM or cloud KMS, key rotation every 90 days",
+          "hints": [
+            {
+              "message": "Different encryption strategies for different data states."
+            },
+            {
+              "message": "Transit=TLS. DB=column encryption. Files=disk+file. Memory=clear after use. Keys=HSM+rotation."
+            },
+            {
+              "message": "TLS for transit, AES-256 for storage, clear memory, HSM for keys."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Secure API Gateway Design",
+          "description": "Design a gateway that enforces security for all APIs.",
+          "difficulty": "intermediate",
+          "category": "Architecture Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Architecture Patterns!",
+          "starter_code": "public class APIGateway {\n    static String processRequest(String path, String token, String ip) {\n        // TODO: Implement gateway checks:\n        // 1. Rate limiting\n        // 2. Authentication\n        // 3. Input validation\n        // 4. Logging\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(processRequest(\"/api/users\", \"valid-token\", \"192.168.1.1\"));\n        System.out.println(processRequest(\"/api/users\", null, \"192.168.1.1\"));\n        System.out.println(processRequest(\"/api/users\", \"valid-token\", \"attacker-ip\"));\n    }\n}",
+          "expected_output": "PASS: Authenticated, rate OK, input valid -> forward to service\n401: No token provided\nPASS: Authenticated, rate OK -> forward (IP logged for monitoring)",
+          "hints": [
+            {
+              "message": "Gateway checks in order: rate limit, auth, validate, log, forward."
+            },
+            {
+              "message": "Check each condition in sequence. Any failure returns error. Success forwards to backend."
+            },
+            {
+              "message": "Rate limit -> auth check -> input validation -> log -> forward to service."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Incident Response Architecture",
+          "description": "Design system components for incident detection and response.",
+          "difficulty": "intermediate",
+          "category": "Architecture Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Architecture Patterns!",
+          "starter_code": "public class IncidentResponse {\n    public static void main(String[] args) {\n        // TODO: Design 5 architectural components for incident response\n    }\n}",
+          "expected_output": "1. SIEM: Centralised log collection + correlation + alerting\n2. IDS/IPS: Network intrusion detection at trust boundaries\n3. WAF: Application-level attack detection and blocking\n4. Automated Response: Auto-block IPs after threshold + alert team\n5. Forensics Storage: Immutable log archive for investigation",
+          "hints": [
+            {
+              "message": "What systems do you need to detect, respond to, and investigate incidents?"
+            },
+            {
+              "message": "SIEM for correlation, IDS for detection, WAF for blocking, automation for speed, forensics for investigation."
+            },
+            {
+              "message": "5 components: SIEM, IDS/IPS, WAF, automated response, forensics storage."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Risk Score Calculator",
+          "description": "Build a risk scoring system.",
+          "difficulty": "advanced",
+          "category": "Risk Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Risk Assessment!",
+          "starter_code": "public class RiskScore {\n    static String score(String threat, int likelihood, int impact) {\n        // TODO: Calculate risk score and level\n        // Score = likelihood * impact\n        // CRITICAL >=20, HIGH >=12, MEDIUM >=6, LOW <6\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(score(\"SQL Injection\", 4, 5));\n        System.out.println(score(\"Clickjacking\", 2, 2));\n        System.out.println(score(\"Account Takeover\", 3, 5));\n    }\n}",
+          "expected_output": "SQL Injection: 20 (CRITICAL)\nClickjacking: 4 (LOW)\nAccount Takeover: 15 (HIGH)",
+          "hints": [
+            {
+              "message": "Multiply likelihood * impact, then classify."
+            },
+            {
+              "message": "int s = l*i; if s>=20 CRITICAL else if s>=12 HIGH else if s>=6 MEDIUM else LOW."
+            },
+            {
+              "message": "return threat+\": \"+s+\" (\"+(s>=20?\"CRITICAL\":s>=12?\"HIGH\":s>=6?\"MEDIUM\":\"LOW\")+\")\";"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Risk Mitigation Priority",
+          "description": "Prioritise risks and assign mitigations.",
+          "difficulty": "advanced",
+          "category": "Risk Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Risk Assessment!",
+          "starter_code": "public class RiskPriority {\n    // TODO: Given 5 risks with scores, print in priority order with mitigations\n    public static void main(String[] args) {\n        // SQL Injection (20), XSS (16), CSRF (12), Info Leak (8), Clickjack (4)\n    }\n}",
+          "expected_output": "Priority 1: SQL Injection (20 CRITICAL) -> Parameterised queries\nPriority 2: XSS (16 HIGH) -> Output encoding + CSP\nPriority 3: CSRF (12 HIGH) -> CSRF tokens + SameSite\nPriority 4: Info Leak (8 MEDIUM) -> Generic errors + access control\nPriority 5: Clickjacking (4 LOW) -> X-Frame-Options header",
+          "hints": [
+            {
+              "message": "Sort by score descending. Assign most critical first."
+            },
+            {
+              "message": "Highest score = highest priority. Each gets a specific mitigation."
+            },
+            {
+              "message": "Order by score, assign appropriate mitigation for each."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Residual Risk Assessment",
+          "description": "Calculate remaining risk after mitigations.",
+          "difficulty": "advanced",
+          "category": "Risk Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Risk Assessment!",
+          "starter_code": "public class ResidualRisk {\n    // TODO: For each threat, show original risk, mitigation effect, and residual risk\n    // Original: L*I. After mitigation: reduces L or I. Residual = new L * new I\n    public static void main(String[] args) {\n        // SQL Injection: original L=4 I=5. With parameterised queries: L=1 I=5\n        // Brute Force: original L=5 I=3. With lockout: L=2 I=3\n    }\n}",
+          "expected_output": "SQL Injection: Original=20(CRITICAL) -> Parameterised queries -> Residual=5(LOW)\nBrute Force: Original=15(HIGH) -> Account lockout -> Residual=6(MEDIUM)",
+          "hints": [
+            {
+              "message": "Mitigations reduce likelihood or impact. Recalculate after applying controls."
+            },
+            {
+              "message": "Parameterised queries reduce SQL injection likelihood from 4 to 1. Lockout reduces brute force from 5 to 2."
+            },
+            {
+              "message": "Recalculate: newL * I = residual. Mitigations primarily reduce likelihood."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Threat Model Document",
+          "description": "Create a complete threat model for a project.",
+          "difficulty": "advanced",
+          "category": "Risk Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Risk Assessment!",
+          "starter_code": "public class ThreatModelDocument {\n    // TODO: Generate a complete threat model with:\n    // 1. System description\n    // 2. Assets (3+)\n    // 3. Threat actors (3+)\n    // 4. STRIDE threats (6)\n    // 5. Risk scores\n    // 6. Mitigations\n    public static void main(String[] args) {\n    }\n}",
+          "expected_output": "THREAT MODEL: E-Commerce Platform\n1. System: Web app for shopping\n2. Assets: Customer PII, Payment data, Inventory\n3. Actors: Hackers, Insiders, Bots\n4. STRIDE: [6 threats with scores]\n5. Mitigations: [matched to threats]\n6. Residual risks: [remaining exposure]",
+          "hints": [
+            {
+              "message": "Follow the template: describe, identify assets, actors, threats, score, mitigate."
+            },
+            {
+              "message": "6 sections covering the full threat model lifecycle."
+            },
+            {
+              "message": "Complete document with all 6 sections populated."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Attack Surface Analysis",
+          "description": "Identify and minimise the attack surface.",
+          "difficulty": "advanced",
+          "category": "Risk Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Risk Assessment!",
+          "starter_code": "// For each, identify if it INCREASES or DECREASES attack surface:\n// 1. Adding a new API endpoint: ___\n// 2. Removing unused admin pages: ___\n// 3. Enabling debug mode in production: ___\n// 4. Disabling unused network ports: ___\n// 5. Adding a third-party JavaScript library: ___\n// 6. Implementing input validation: ___",
+          "expected_output": "1.INCREASES 2.DECREASES 3.INCREASES 4.DECREASES 5.INCREASES 6.DECREASES",
+          "hints": [
+            {
+              "message": "Attack surface = total entry points for attackers. More = bigger surface."
+            },
+            {
+              "message": "New endpoints, debug mode, third-party code = more surface. Removing/disabling/validating = less."
+            },
+            {
+              "message": "1.INCREASES 2.DECREASES 3.INCREASES 4.DECREASES 5.INCREASES 6.DECREASES"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Security Requirements Traceability",
+          "description": "Trace requirements to implementations.",
+          "difficulty": "advanced",
+          "category": "Risk Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Risk Assessment!",
+          "starter_code": "public class RequirementTrace {\n    // TODO: For each security requirement, map to implementation and test\n    // SR-001: \"Passwords must be hashed\"\n    //   Implementation: ___\n    //   Test: ___\n    public static void main(String[] args) {\n    }\n}",
+          "expected_output": "SR-001: Passwords hashed\n  Impl: bcrypt in UserService.register()\n  Test: Unit test verifies stored value != input\nSR-002: All API auth required\n  Impl: AuthFilter on all /api/* endpoints\n  Test: Integration test: unauthenticated request returns 401\nSR-003: Admin actions audited\n  Impl: AuditLogger.log() in AdminService\n  Test: Verify log entry exists after admin action",
+          "hints": [
+            {
+              "message": "Each requirement maps to code (where) and test (how to verify)."
+            },
+            {
+              "message": "Requirement -> specific class/method -> specific test case."
+            },
+            {
+              "message": "3 requirements each with implementation location and verification test."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Business Impact Analysis",
+          "description": "Assess business impact of security failures.",
+          "difficulty": "advanced",
+          "category": "Risk Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Risk Assessment!",
+          "starter_code": "public class BusinessImpact {\n    // TODO: For each security failure, assess:\n    // Financial impact, Reputation impact, Legal impact, Operational impact\n    // 1. Customer data breach\n    // 2. Payment system downtime\n    // 3. Admin account compromised\n    public static void main(String[] args) {\n    }\n}",
+          "expected_output": "Customer Data Breach:\n  Financial: Fines (GDPR up to 4% revenue), lawsuits\n  Reputation: Lost customer trust, media coverage\n  Legal: Regulatory investigation, notification requirements\n  Operational: Incident response, system rebuild\nPayment Downtime:\n  Financial: Lost sales, SLA penalties\n  Reputation: Customer frustration\n  Legal: PCI-DSS compliance issues\n  Operational: Emergency response, manual processing",
+          "hints": [
+            {
+              "message": "Think about each type of impact for each failure scenario."
+            },
+            {
+              "message": "Data breach = fines + trust + lawsuits + IR. Downtime = lost revenue + SLA + frustration."
+            },
+            {
+              "message": "4 impact types per scenario: financial, reputation, legal, operational."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Security Architecture Review",
+          "description": "Conduct a full architecture review.",
+          "difficulty": "advanced",
+          "category": "Risk Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Risk Assessment!",
+          "starter_code": "public class ArchReview {\n    static int p=0,f=0;\n    static void check(String area, String q, boolean ok) {\n        if(ok)p++;else f++;\n        System.out.println((ok?\"[PASS]\":\"[FAIL]\")+\" \"+area+\": \"+q);\n    }\n    public static void main(String[] args) {\n        // TODO: 10+ architecture review checks\n        System.out.println(\"Score: \"+p+\"/\"+(p+f));\n    }\n}",
+          "expected_output": "[PASS] Auth: Centralised authentication?\n[PASS] Crypto: TLS 1.2+ for all connections?\n[FAIL] Access: Complete mediation on all endpoints?\n...\nScore: 8/10",
+          "hints": [
+            {
+              "message": "Check each design principle and architecture pattern."
+            },
+            {
+              "message": "10 checks: auth, crypto, access, logging, input validation, error handling, sessions, secrets, SDLC, monitoring."
+            },
+            {
+              "message": "10 pass/fail checks across all security areas."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Compliance Mapping",
+          "description": "Map security controls to compliance requirements.",
+          "difficulty": "advanced",
+          "category": "Risk Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Risk Assessment!",
+          "starter_code": "public class ComplianceMap {\n    // TODO: Map controls to GDPR, PCI-DSS, and OWASP Top 10\n    // For each control, show which requirements it satisfies\n    public static void main(String[] args) {\n    }\n}",
+          "expected_output": "Encryption at rest: GDPR Art.32, PCI-DSS Req.3, OWASP A02\nAccess control: GDPR Art.25, PCI-DSS Req.7, OWASP A01\nAudit logging: GDPR Art.30, PCI-DSS Req.10, OWASP A09\nInput validation: PCI-DSS Req.6, OWASP A03\nIncident response: GDPR Art.33, PCI-DSS Req.12",
+          "hints": [
+            {
+              "message": "One control can satisfy multiple compliance requirements."
+            },
+            {
+              "message": "Encryption->GDPR+PCI+OWASP. Logging->GDPR+PCI+OWASP. Validation->PCI+OWASP."
+            },
+            {
+              "message": "Map 5 controls to their compliance requirements across 3 frameworks."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Full Security Assessment",
+          "description": "Complete assessment of a system architecture.",
+          "difficulty": "advanced",
+          "category": "Risk Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Risk Assessment!",
+          "starter_code": "public class FullAssessment {\n    // TODO: Assess a banking web application:\n    // 1. STRIDE analysis (6 threats)\n    // 2. Risk scores (6 scores)\n    // 3. Design principle violations (check all 8)\n    // 4. Recommended mitigations (6 fixes)\n    // 5. Overall security rating\n    public static void main(String[] args) {\n    }\n}",
+          "expected_output": "STRIDE: [6 threats identified]\nRisk Scores: 2 CRITICAL, 2 HIGH, 2 MEDIUM\nPrinciple Violations: 2 found (missing mediation, weak fail-safe)\nMitigations: [6 specific controls]\nRating: 7/10 - GOOD (needs mediation + fail-safe fixes)",
+          "hints": [
+            {
+              "message": "Combine STRIDE + risk assessment + design principles + mitigations."
+            },
+            {
+              "message": "Apply everything: STRIDE for threats, scores for priority, principles for design review, mitigations for fixes."
+            },
+            {
+              "message": "Full assessment: 6 STRIDE threats, 6 risk scores, 8 principle checks, 6 mitigations, overall rating."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Build: STRIDE Analyser Tool",
+          "description": "Automated STRIDE analysis for system components.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Build from Scratch!",
+          "starter_code": "import java.util.*;\n\npublic class STRIDETool {\n    // TODO: Build a tool that takes a component name\n    // and generates STRIDE threats with suggested mitigations\n    static void analyseComponent(String component) {\n    }\n    public static void main(String[] args) {\n        analyseComponent(\"Login Form\");\n        analyseComponent(\"Payment API\");\n    }\n}",
+          "expected_output": "=== STRIDE: Login Form ===\n[S] Credential theft -> MFA\n[T] Request tampering -> HTTPS\n[R] Deny login -> Audit log\n[I] Password leak -> Hashing\n[D] Brute force -> Rate limit\n[E] Admin bypass -> RBAC",
+          "hints": [
+            {
+              "message": "Map each STRIDE category to common threats for the given component type."
+            },
+            {
+              "message": "For each letter, generate a relevant threat and mitigation based on the component."
+            },
+            {
+              "message": "Generic STRIDE template with component-specific threats and mitigations."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Build: Risk Register",
+          "description": "Create a risk tracking system.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Build from Scratch!",
+          "starter_code": "import java.util.*;\n\npublic class RiskRegister {\n    // TODO: Build a risk register that:\n    // 1. Adds risks with likelihood, impact, mitigation\n    // 2. Calculates risk scores\n    // 3. Sorts by priority\n    // 4. Tracks mitigation status\n    public static void main(String[] args) {\n    }\n}",
+          "expected_output": "=== RISK REGISTER ===\n#1 SQL Injection     Score:20 CRITICAL  Status:MITIGATED\n#2 Auth Bypass       Score:16 HIGH      Status:IN PROGRESS\n#3 Data Leak         Score:12 HIGH      Status:OPEN\n...",
+          "hints": [
+            {
+              "message": "List/Map of risk objects with score calculation and sorting."
+            },
+            {
+              "message": "Risk class with fields: name, L, I, score, mitigation, status. Sort by score desc."
+            },
+            {
+              "message": "Full register: add, score, sort, track status."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Build: Design Review Checker",
+          "description": "Automated check against all design principles.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Build from Scratch!",
+          "starter_code": "public class DesignChecker {\n    // TODO: Build a checker that evaluates a system against all 8 principles\n    // Input: boolean for each principle\n    // Output: score, failures, recommendations\n    public static void main(String[] args) {\n    }\n}",
+          "expected_output": "=== DESIGN REVIEW ===\n[PASS] Least Privilege\n[FAIL] Fail-Safe Defaults -> Add default-deny to all access checks\n...\nScore: 6/8 GOOD",
+          "hints": [
+            {
+              "message": "Check each of the 8 Saltzer & Schroeder principles."
+            },
+            {
+              "message": "8 checks, each with pass/fail, failed ones get recommendations."
+            },
+            {
+              "message": "8 principle checks with recommendations for failures."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Build: Security Gate System",
+          "description": "Implement SDLC security gates with pass/fail criteria.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Build from Scratch!",
+          "starter_code": "import java.util.*;\n\npublic class SecurityGates {\n    // TODO: Implement gates between SDLC phases\n    // Each gate has criteria that must pass before proceeding\n    // Print gate status: PASS (proceed) or BLOCKED (fix issues)\n    public static void main(String[] args) {\n    }\n}",
+          "expected_output": "Gate: Requirements->Design\n  [PASS] Security requirements documented\n  [PASS] Data classification complete\n  RESULT: PROCEED\n\nGate: Testing->Deployment\n  [PASS] Pen test complete\n  [FAIL] Critical vulnerabilities unresolved\n  RESULT: BLOCKED",
+          "hints": [
+            {
+              "message": "Each gate has criteria. ALL must pass to proceed."
+            },
+            {
+              "message": "Design gates with 2-3 criteria each. Any failure blocks the gate."
+            },
+            {
+              "message": "4 gates with criteria, some passing, some failing."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Build: Threat Model Report Generator",
+          "description": "Auto-generate a complete threat model document.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Build from Scratch!",
+          "starter_code": "public class ThreatModelGen {\n    // TODO: Generate a complete threat model report for a given app type\n    // Sections: Description, Assets, Actors, Boundaries, STRIDE, Mitigations\n    static void generate(String appType) {\n    }\n    public static void main(String[] args) {\n        generate(\"E-Commerce\");\n    }\n}",
+          "expected_output": "============================\nTHREAT MODEL: E-Commerce\n============================\n1. DESCRIPTION: Online shopping platform...\n2. ASSETS: Customer PII, payment data...\n3. ACTORS: External hackers, insiders...\n4. BOUNDARIES: Internet->DMZ->App->DB\n5. STRIDE: [6 threats]\n6. MITIGATIONS: [6 controls]",
+          "hints": [
+            {
+              "message": "Template with sections filled based on app type."
+            },
+            {
+              "message": "Generate all 6 sections with content appropriate for the app type."
+            },
+            {
+              "message": "Full report generator with all sections populated."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Build: Defence Layer Simulator",
+          "description": "Simulate attacks passing through multiple defence layers.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Build from Scratch!",
+          "starter_code": "import java.util.*;\n\npublic class DefenceSimulator {\n    // TODO: Build a simulator with 5+ defence layers\n    // Simulate different attacks and show which layer catches each\n    // Show how bypassing one layer is caught by the next\n    public static void main(String[] args) {\n    }\n}",
+          "expected_output": "Attack: SQL Injection\n  Layer 1 (WAF): PASS (obfuscated)\n  Layer 2 (Validation): BLOCKED\n\nAttack: XSS\n  Layer 1 (WAF): BLOCKED\n\nAttack: IDOR\n  Layer 1 (WAF): PASS\n  Layer 2 (Validation): PASS\n  Layer 3 (Auth): PASS\n  Layer 4 (Authz): BLOCKED",
+          "hints": [
+            {
+              "message": "Array of layer checks. Each attack passes through until caught."
+            },
+            {
+              "message": "Each layer is a function returning pass/block. Chain them together."
+            },
+            {
+              "message": "5 layers, 3+ attacks, show exactly where each is caught."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Build: Access Control Policy Engine",
+          "description": "Implement a flexible policy-based access control system.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Build from Scratch!",
+          "starter_code": "import java.util.*;\n\npublic class PolicyEngine {\n    // TODO: Build an engine that evaluates access policies\n    // Policies: role-based, time-based, resource-based\n    // Example: ADMIN can DELETE during business hours only\n    public static void main(String[] args) {\n    }\n}",
+          "expected_output": "Policy: ADMIN + DELETE + business_hours -> ALLOW\nPolicy: USER + READ + any_time -> ALLOW\nPolicy: USER + DELETE + any_time -> DENY\nPolicy: ADMIN + DELETE + after_hours -> DENY",
+          "hints": [
+            {
+              "message": "Define policies as rules, evaluate each against the request."
+            },
+            {
+              "message": "Policy object with role, action, condition. Evaluate by matching best policy."
+            },
+            {
+              "message": "Policy engine with rule matching and condition evaluation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Build: Security Metrics Dashboard",
+          "description": "Track and display security KPIs.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Build from Scratch!",
+          "starter_code": "public class SecurityMetrics {\n    // TODO: Build a dashboard showing:\n    // 1. Vulnerability counts by severity\n    // 2. Mean time to patch\n    // 3. Security test pass rate\n    // 4. Incident count trend\n    // 5. Compliance score\n    public static void main(String[] args) {\n    }\n}",
+          "expected_output": "=== SECURITY DASHBOARD ===\nVulnerabilities: 0 Critical, 2 High, 5 Medium, 12 Low\nMean Time to Patch: 3.2 days (target: <7)\nSecurity Test Pass Rate: 94% (target: >90%)\nIncidents This Month: 1 (down from 3)\nCompliance Score: 87/100 (PCI-DSS)",
+          "hints": [
+            {
+              "message": "Define KPIs, calculate values, format as dashboard."
+            },
+            {
+              "message": "5 metrics with values, targets, and trend indicators."
+            },
+            {
+              "message": "Dashboard with 5 KPIs: vulnerabilities, MTTP, test rate, incidents, compliance."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Build: Complete SDLC Pipeline",
+          "description": "Implement security activities at every SDLC phase.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Build from Scratch!",
+          "starter_code": "public class SDLCPipeline {\n    // TODO: Simulate a complete SDLC pipeline with security at every phase\n    // Show what happens at each phase and the security gate result\n    public static void main(String[] args) {\n    }\n}",
+          "expected_output": "Phase 1: REQUIREMENTS\n  Activity: Security requirements defined\n  Gate: PASS\nPhase 2: DESIGN\n  Activity: STRIDE threat model complete\n  Gate: PASS\nPhase 3: IMPLEMENTATION\n  Activity: Code review passed\n  Gate: PASS\nPhase 4: TESTING\n  Activity: Pen test found 2 medium issues\n  Gate: PASS (no critical/high)\nPhase 5: DEPLOYMENT\n  Activity: Hardening checklist complete\n  Gate: PASS\nPhase 6: MAINTENANCE\n  Activity: Monitoring active\n  Status: RUNNING",
+          "hints": [
+            {
+              "message": "Simulate each phase with activity + gate check."
+            },
+            {
+              "message": "6 phases, each with security activity and pass/fail gate."
+            },
+            {
+              "message": "Complete pipeline: 6 phases, 6 activities, 6 gates."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Build: Full Security Architecture Document",
+          "description": "Generate a comprehensive security architecture.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's master Build from Scratch!",
+          "starter_code": "public class SecurityArchDoc {\n    // TODO: Generate a full security architecture document covering:\n    // 1. Authentication architecture\n    // 2. Authorisation model\n    // 3. Data protection strategy\n    // 4. Network security zones\n    // 5. Logging and monitoring\n    // 6. Incident response plan\n    // 7. Compliance mapping\n    // 8. Risk register\n    public static void main(String[] args) {\n    }\n}",
+          "expected_output": "=== SECURITY ARCHITECTURE DOCUMENT ===\n1. AUTH: Centralised OAuth2 + MFA\n2. AUTHZ: RBAC with 4 roles\n3. DATA: AES-256 at rest, TLS in transit\n4. NETWORK: 4 zones (DMZ, App, DB, Mgmt)\n5. LOGGING: Centralised SIEM\n6. IR: Automated detection + response playbook\n7. COMPLIANCE: GDPR + PCI-DSS mapped\n8. RISKS: 5 risks tracked",
+          "hints": [
+            {
+              "message": "8 sections covering all aspects of security architecture."
+            },
+            {
+              "message": "Each section covers one domain: auth, authz, data, network, logging, IR, compliance, risk."
+            },
+            {
+              "message": "Complete document with all 8 sections populated."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

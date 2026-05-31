@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SYNAPSE Research Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+.header{background:#1e293b;border-bottom:1px solid #334155;padding:20px 30px;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:24px;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.btn{padding:8px 16px;border-radius:8px;border:1px solid #475569;background:#1e293b;color:#e2e8f0;cursor:pointer;font-size:13px}
+.btn:hover{background:#334155;border-color:#667eea}
+.btn-primary{background:#667eea;border-color:#667eea;color:white}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;text-align:center}
+.kpi .value{font-size:28px;font-weight:700;margin-bottom:4px}
+.kpi .label{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+.kpi.purple .value{color:#a78bfa}.kpi.blue .value{color:#60a5fa}.kpi.green .value{color:#34d399}.kpi.orange .value{color:#fbbf24}.kpi.red .value{color:#f87171}
+.section{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;margin-bottom:20px}
+.section h2{font-size:16px;font-weight:600;margin-bottom:12px;color:#f1f5f9}
+.section .legend{font-size:11px;color:#64748b;margin-bottom:12px;font-style:italic}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.chart-box{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px}
+.chart-box h3{font-size:13px;color:#94a3b8;margin-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#0f172a;color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:1px;padding:8px;text-align:left;border-bottom:1px solid #334155}
+td{padding:8px;border-bottom:1px solid #1e293b}
+tr:hover{background:#334155}
+.badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.badge-beginner{background:#065f46;color:#34d399}
+.badge-experienced{background:#312e81;color:#a78bfa}
+.badge-nd{background:#7c2d12;color:#fb923c}
+.badge-nt{background:#1e3a5f;color:#60a5fa}
+.badge-done{background:#065f46;color:#34d399}
+.badge-pending{background:#78350f;color:#fbbf24}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.compare-card{background:#0f172a;border:1px solid #475569;border-radius:8px;padding:16px}
+.compare-card h3{font-size:13px;color:#94a3b8;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px}
+.compare-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e293b;font-size:13px}
+.compare-row:last-child{border:none}
+.compare-label{color:#94a3b8}
+.compare-val{font-weight:700}
+.up{color:#34d399}.down{color:#f87171}.neutral{color:#fbbf24}
+@media(max-width:900px){.charts{grid-template-columns:1fr}.kpi-grid{grid-template-columns:repeat(3,1fr)}.compare-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>SYNAPSE Research Dashboard</h1>
+<div style="display:flex;gap:8px">
+<button class="btn" onclick="loadData()">Refresh</button>
+<button class="btn btn-primary" onclick="exportCSV()">Export CSV</button>
+</div>
+</div>
+<div class="container" id="content">
+<div style="text-align:center;padding:60px;color:#94a3b8">Loading...</div>
+</div>
+<script>
+let DATA = null;
+async function loadData() {
+    const resp = await fetch('/api/research/dashboard_data');
+    DATA = await resp.json();
+    render(DATA);
+}
+
+function avg(arr) { return arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length) : 0; }
+function fmt(n,d) { return n ? Number(n).toFixed(d||1) : '—'; }
+
+function render(d) {
+    var completed = d.participants.filter(p => p.completed);
+    var pathB = d.participants.filter(p => p.chosen_path === 'beginner');
+    var pathE = d.participants.filter(p => p.chosen_path === 'experienced');
+    var ndAll = d.participants.filter(p => p.is_nd);
+    var ntAll = d.participants.filter(p => !p.is_nd);
+    var ndDone = completed.filter(p => p.is_nd);
+    var ntDone = completed.filter(p => !p.is_nd);
+    var begDone = completed.filter(p => p.chosen_path === 'beginner');
+    var expDone = completed.filter(p => p.chosen_path === 'experienced');
+
+    var susAll = completed.map(p => p.sus_total).filter(s => s > 0);
+    var engAll = completed.map(p => p.perception_avg).filter(s => s > 0);
+    var avgSUS = avg(susAll);
+    var avgEng = avg(engAll);
+
+    var html = '';
+
+    // ══════════ KPI CARDS ══════════
+    html += '<div class="kpi-grid">';
+    html += '<div class="kpi purple"><div class="value">' + d.total + '</div><div class="label">Total Participants</div></div>';
+    html += '<div class="kpi green"><div class="value">' + completed.length + '</div><div class="label">Completed</div></div>';
+    html += '<div class="kpi blue"><div class="value">' + pathB.length + '</div><div class="label">☕ Beginners</div></div>';
+    html += '<div class="kpi orange"><div class="value">' + pathE.length + '</div><div class="label">🔐 Experienced</div></div>';
+    html += '<div class="kpi green"><div class="value">' + fmt(avgSUS) + '</div><div class="label">Avg SUS (0-100)</div></div>';
+    html += '<div class="kpi purple"><div class="value">' + fmt(avgEng) + '</div><div class="label">Avg Engagement (1-5)</div></div>';
+    html += '<div class="kpi blue"><div class="value">' + ndAll.length + '</div><div class="label">🧠 ADHD</div></div>';
+    html += '<div class="kpi orange"><div class="value">' + ntAll.length + '</div><div class="label">NT</div></div>';
+    var nasaAvgs = completed.map(p => p.nasa && p.nasa.avg).filter(s => s > 0);
+    var avgNASA = avg(nasaAvgs);
+    var aiHelp = completed.map(p => p.qual && p.qual.ai_helpfulness).filter(s => s > 0);
+    var avgAIHelp = avg(aiHelp);
+    var vulnScores = completed.filter(p => p.vuln_count > 0);
+    var avgVulnQ = avg(vulnScores.map(p => p.vuln_avg_quality).filter(s => s > 0));
+    html += '<div class="kpi green"><div class="value">' + fmt(avgNASA) + '</div><div class="label">Avg NASA-TLX (1-5)</div></div>';
+    html += '<div class="kpi purple"><div class="value">' + fmt(avgAIHelp) + '</div><div class="label">Avg AI Helpfulness (1-5)</div></div>';
+    html += '</div>';
+
+    // ══════════ GROUP COMPARISONS ══════════
+    html += '<div class="section"><h2>📊 Group Comparisons</h2>';
+    html += '<p class="legend">SUS benchmark = 68 (Brooke, 1996). Engagement reference = 4.1/5 (Kestin et al., 2025). NASA-TLX: 1=Very Low, 5=Very High.</p>';
+    html += '<div class="compare-grid">';
+
+    // ND vs NT
+    var ndSUS = avg(ndDone.map(p=>p.sus_total).filter(s=>s>0));
+    var ntSUS = avg(ntDone.map(p=>p.sus_total).filter(s=>s>0));
+    var ndEng = avg(ndDone.map(p=>p.perception_avg).filter(s=>s>0));
+    var ntEng = avg(ntDone.map(p=>p.perception_avg).filter(s=>s>0));
+    var ndNasaM = avg(ndDone.map(p=>p.nasa?p.nasa.mental:0).filter(s=>s>0));
+    var ntNasaM = avg(ntDone.map(p=>p.nasa?p.nasa.mental:0).filter(s=>s>0));
+    var ndNasaE = avg(ndDone.map(p=>p.nasa?p.nasa.effort:0).filter(s=>s>0));
+    var ntNasaE = avg(ntDone.map(p=>p.nasa?p.nasa.effort:0).filter(s=>s>0));
+    var ndNasaF = avg(ndDone.map(p=>p.nasa?p.nasa.frustration:0).filter(s=>s>0));
+    var ntNasaF = avg(ntDone.map(p=>p.nasa?p.nasa.frustration:0).filter(s=>s>0));
+    var ndNASA = avg(ndDone.map(p=>p.nasa&&p.nasa.avg).filter(s=>s>0));
+    var ntNASA = avg(ntDone.map(p=>p.nasa&&p.nasa.avg).filter(s=>s>0));
+    var ndAIHelp = avg(ndDone.map(p=>p.qual&&p.qual.ai_helpfulness).filter(s=>s>0));
+    var ntAIHelp = avg(ntDone.map(p=>p.qual&&p.qual.ai_helpfulness).filter(s=>s>0));
+    var ndConfPre = avg(ndDone.map(p=>p.self_confidence_pre).filter(s=>s>0));
+    var ntConfPre = avg(ntDone.map(p=>p.self_confidence_pre).filter(s=>s>0));
+    var ndConfPost = avg(ndDone.map(p=>(p.qual&&p.qual.confidence)||0).filter(s=>s>0));
+    var ntConfPost = avg(ntDone.map(p=>(p.qual&&p.qual.confidence)||0).filter(s=>s>0));
+
+    html += '<div class="compare-card"><h3>🧠 ADHD vs Non-ADHD</h3>';
+    html += '<div class="compare-row"><span class="compare-label">n</span><span class="compare-val">' + ndDone.length + ' ND / ' + ntDone.length + ' NT</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">SUS (0-100)</span><span class="compare-val ' + (ndSUS>ntSUS?'up':'down') + '">' + fmt(ndSUS) + ' / ' + fmt(ntSUS) + '</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">NASA-TLX Avg</span><span class="compare-val ' + (ndNASA<ntNASA?'up':'down') + '">' + fmt(ndNASA) + ' / ' + fmt(ntNASA) + '</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">AI Helpfulness</span><span class="compare-val ' + (ndAIHelp>ntAIHelp?'up':'down') + '">' + fmt(ndAIHelp) + ' / ' + fmt(ntAIHelp) + '</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">Engagement (1-5)</span><span class="compare-val ' + (ndEng>ntEng?'up':'down') + '">' + fmt(ndEng) + ' / ' + fmt(ntEng) + '</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">NASA Mental (1-5)</span><span class="compare-val">' + fmt(ndNasaM) + ' / ' + fmt(ntNasaM) + '</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">NASA Effort (1-5)</span><span class="compare-val">' + fmt(ndNasaE) + ' / ' + fmt(ntNasaE) + '</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">NASA Frustration (1-5)</span><span class="compare-val">' + fmt(ndNasaF) + ' / ' + fmt(ntNasaF) + '</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">Confidence Pre</span><span class="compare-val">' + fmt(ndConfPre) + ' / ' + fmt(ntConfPre) + '</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">Confidence Post</span><span class="compare-val">' + fmt(ndConfPost) + ' / ' + fmt(ntConfPost) + '</span></div>';
+    html += '</div>';
+
+    // Beginner vs Experienced
+    var begSUS = avg(begDone.map(p=>p.sus_total).filter(s=>s>0));
+    var expSUS = avg(expDone.map(p=>p.sus_total).filter(s=>s>0));
+    var begEng = avg(begDone.map(p=>p.perception_avg).filter(s=>s>0));
+    var expEng = avg(expDone.map(p=>p.perception_avg).filter(s=>s>0));
+    var begNasaM = avg(begDone.map(p=>p.nasa?p.nasa.mental:0).filter(s=>s>0));
+    var expNasaM = avg(expDone.map(p=>p.nasa?p.nasa.mental:0).filter(s=>s>0));
+    var begNasaF = avg(begDone.map(p=>p.nasa?p.nasa.frustration:0).filter(s=>s>0));
+    var expNasaF = avg(expDone.map(p=>p.nasa?p.nasa.frustration:0).filter(s=>s>0));
+    var begNASA = avg(begDone.map(p=>p.nasa&&p.nasa.avg).filter(s=>s>0));
+    var expNASA = avg(expDone.map(p=>p.nasa&&p.nasa.avg).filter(s=>s>0));
+    var begConfPre = avg(begDone.map(p=>p.self_confidence_pre).filter(s=>s>0));
+    var begConfPost = avg(begDone.map(p=>(p.qual&&p.qual.confidence)||0).filter(s=>s>0));
+    var expConfPre = avg(expDone.map(p=>p.self_confidence_pre).filter(s=>s>0));
+    var expConfPost = avg(expDone.map(p=>(p.qual&&p.qual.confidence)||0).filter(s=>s>0));
+
+    html += '<div class="compare-card"><h3>☕ Beginner vs 🔐 Experienced</h3>';
+    html += '<div class="compare-row"><span class="compare-label">n</span><span class="compare-val">' + begDone.length + ' Beg / ' + expDone.length + ' Exp</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">SUS (0-100)</span><span class="compare-val">' + fmt(begSUS) + ' / ' + fmt(expSUS) + '</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">NASA-TLX Avg</span><span class="compare-val">' + fmt(begNASA) + ' / ' + fmt(expNASA) + '</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">Engagement (1-5)</span><span class="compare-val">' + fmt(begEng) + ' / ' + fmt(expEng) + '</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">NASA Mental (1-5)</span><span class="compare-val">' + fmt(begNasaM) + ' / ' + fmt(expNasaM) + '</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">NASA Frustration (1-5)</span><span class="compare-val">' + fmt(begNasaF) + ' / ' + fmt(expNasaF) + '</span></div>';
+    html += '<div class="compare-row"><span class="compare-label">Confidence Pre→Post</span><span class="compare-val">' + fmt(begConfPre) + '→' + fmt(begConfPost) + ' / ' + fmt(expConfPre) + '→' + fmt(expConfPost) + '</span></div>';
+    html += '</div>';
+    html += '</div></div>';
+
+    // ══════════ CHARTS ══════════
+    html += '<div class="charts">';
+    html += '<div class="chart-box"><h3>Pre-Survey: AI for Learning Experience</h3><canvas id="chartAIExp"></canvas></div>';
+    html += '<div class="chart-box"><h3>Pre-Survey: Self-Confidence (1=Not at all, 5=Very confident)</h3><canvas id="chartConfidence"></canvas></div>';
+    html += '<div class="chart-box"><h3>SUS Score Distribution (Benchmark: 68 = Average)</h3><canvas id="chartSUS"></canvas></div>';
+    html += '<div class="chart-box"><h3>ADHD vs Non-ADHD: Key Metrics</h3><canvas id="chartNDvsNT"></canvas></div>';
+    html += '<div class="chart-box"><h3>🎯 Confidence: Pre → Post (per participant)</h3><canvas id="chartConfPrePost"></canvas></div>';
+    html += '<div class="chart-box"><h3>🕸️ Participant Radar: Multi-Metric Overview</h3><canvas id="chartRadar"></canvas></div>';
+    html += '<div class="chart-box"><h3>🔐 Vulnerability Score by CWE</h3><canvas id="chartVulnCWE"></canvas></div>';
+    html += '</div>';
+
+    // ══════════ ALL PARTICIPANTS TABLE ══════════
+    html += '<div class="section"><h2>👥 All Participants</h2>';
+    html += '<p class="legend">SUS: 0-100 (68=average, Brooke 1996). Engagement: 1-5 Likert (ref: 4.1, Kestin 2025). NASA-TLX: M/E/F (1=Very Low, 5=Very High), Avg = mean of 3. Vuln Score: CWE+Exploit+CIA+Mitigation (max 4 per finding). AI Help: 1-5 Likert. AI Msgs: total AI interactions. Exercises: completed during session. Duration: first to last interaction.</p>';
+    html += '<table><tr><th>Code</th><th>Name</th><th>Path</th><th>ND</th><th>Prog Exp</th><th>AI Usage</th><th>Conf Pre</th><th>Conf Post</th><th>Status</th><th>SUS</th><th>Engagement</th><th>Mental</th><th>Effort</th><th>Frustration</th><th>NASA Avg</th><th>Vulns</th><th>Vuln Score</th><th>AI Msgs</th><th>Hints</th><th>AI Help</th><th>Exercises</th><th>Duration</th></tr>';
+    d.participants.forEach(function(p) {
+        var pathBadge = p.chosen_path === 'beginner' ? '<span class="badge badge-beginner">☕ Java</span>' : (p.chosen_path === 'experienced' ? '<span class="badge badge-experienced">🔐 Task</span>' : '<span class="badge">—</span>');
+        var ndBadge = p.is_nd ? '<span class="badge badge-nd">ND</span>' : '<span class="badge badge-nt">NT</span>';
+        var statusBadge = p.completed ? '<span class="badge badge-done">Done</span>' : '<span class="badge badge-pending">Pending</span>';
+        var sus = p.sus_total ? p.sus_total.toFixed(1) : '—';
+        var susColor = p.sus_total >= 80 ? 'color:#34d399' : (p.sus_total >= 68 ? 'color:#fbbf24' : (p.sus_total > 0 ? 'color:#f87171' : ''));
+        var perc = p.perception_avg ? p.perception_avg.toFixed(1) : '—';
+        var confPre = p.self_confidence_pre || '—';
+        var confPost = (p.qual && p.qual.confidence) || '—';
+        var confGain = (p.self_confidence_pre && p.qual && p.qual.confidence) ? (p.qual.confidence - p.self_confidence_pre) : null;
+        var confPostStr = confPost;
+        if (confGain !== null && confGain > 0) confPostStr = '<span style="color:#34d399">' + confPost + ' (+' + confGain + ')</span>';
+        else if (confGain === 0) confPostStr = '<span style="color:#94a3b8">' + confPost + ' (=)</span>';
+        var nasaM = p.nasa ? (p.nasa.mental || '—') : '—';
+        var nasaE = p.nasa ? (p.nasa.effort || '—') : '—';
+        var nasaF = p.nasa ? (p.nasa.frustration || '—') : '—';
+        var vulns = p.vuln_count || 0;
+        var hints = p.ai_hints || 0;
+        var nasaAvg = p.nasa && p.nasa.avg ? p.nasa.avg.toFixed(1) : '—';
+        var nasaAvgColor = p.nasa && p.nasa.avg <= 2 ? 'color:#34d399' : (p.nasa && p.nasa.avg <= 3.5 ? 'color:#fbbf24' : (p.nasa && p.nasa.avg > 0 ? 'color:#f87171' : ''));
+        var vulnScore = p.vuln_total_score ? p.vuln_total_score + '/' + (p.vuln_count * 4) : '—';
+        var aiHelp = (p.qual && p.qual.ai_helpfulness) ? p.qual.ai_helpfulness + '/5' : '—';
+        html += '<tr><td style="font-family:monospace;font-weight:600">' + p.code + '</td><td>' + (p.nickname||'—') + '</td><td>' + pathBadge + '</td><td>' + ndBadge + '</td><td>' + (p.prog_exp||'—') + '</td><td>' + (p.ai_for_learning||'—') + '</td><td>' + confPre + '</td><td>' + confPostStr + '</td><td>' + statusBadge + '</td><td style="font-weight:700;' + susColor + '">' + sus + '</td><td>' + perc + '</td><td>' + nasaM + '</td><td>' + nasaE + '</td><td>' + nasaF + '</td><td style="font-weight:700;' + nasaAvgColor + '">' + nasaAvg + '</td><td>' + vulns + '</td><td style="font-weight:700">' + vulnScore + '</td><td>' + (p.ai_messages||0) + '</td><td>' + hints + '</td><td>' + aiHelp + '</td>'
+        + '<td>' + (p.exercises_completed || 0) + '</td>'
+        + '<td>' + (p.session_duration_min ? (p.session_duration_min >= 60 ? Math.floor(p.session_duration_min/60) + 'h ' + Math.round(p.session_duration_min%60) + 'm' : Math.round(p.session_duration_min) + ' min') : '—') + '</td></tr>';
+    });
+    html += '</table></div>';
+
+    // ══════════ VULNERABILITY FINDINGS DETAIL ══════════
+    var vulnParticipants = d.participants.filter(function(p){return p.vuln_findings && p.vuln_findings.length > 0});
+    if (vulnParticipants.length > 0) {
+        html += '<div class="section"><h2>🔍 Vulnerability Findings Detail</h2>';
+        html += '<p class="legend">Attack: actions performed by participant. CIA: Confidentiality/Integrity/Availability impact. Mitigation: defence selected (correct options marked ✅).</p>';
+        html += '<table><tr><th>Participant</th><th>CWE</th><th>Attacks Performed</th><th>CIA Impact</th><th>Mitigation Selected</th><th>Correct?</th></tr>';
+        var correctMitigations = {'json_correct':1,'whitelist_correct':1,'canonical_correct':1,'token_correct':1,'samesite_correct':1};
+        vulnParticipants.forEach(function(p) {
+            (p.vuln_findings || []).forEach(function(f) {
+                var isCorrect = correctMitigations[f.mitigation] ? '<span style="color:#34d399">✅ Correct</span>' : (f.mitigation ? '<span style="color:#f87171">❌ Incorrect</span>' : '<span style="color:#94a3b8">Not selected</span>');
+                var mitigationLabel = f.mitigation ? f.mitigation.replace('_correct','').replace('_wrong','').replace('_',' ') : '—';
+                html += '<tr><td>' + p.nickname + '</td><td style="font-weight:600">' + (f.cwe_code||'—') + '</td><td style="font-size:11px">' + (f.exploitation||'—').replace(/,/g, ', ') + '</td><td>' + (f.impact_cia||'—') + '</td><td style="font-size:11px">' + mitigationLabel + '</td><td>' + isCorrect + '</td></tr>';
+            });
+        });
+        html += '</table></div>';
+
+        // Mitigation Understanding
+        html += '<div class="section"><h2>🎯 Mitigation Understanding (Bloom\'s Evaluate Level)</h2>';
+        html += '<p class="legend">Percentage of participants who selected a correct mitigation for each vulnerability type.</p>';
+        var cweStats = {};
+        vulnParticipants.forEach(function(p) {
+            (p.vuln_findings||[]).forEach(function(f) {
+                if (!f.cwe_code) return;
+                if (!cweStats[f.cwe_code]) cweStats[f.cwe_code] = {total:0, correct:0};
+                cweStats[f.cwe_code].total++;
+                if (correctMitigations[f.mitigation]) cweStats[f.cwe_code].correct++;
+            });
+        });
+        html += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+        Object.keys(cweStats).forEach(function(cwe) {
+            var s = cweStats[cwe];
+            var pct = s.total > 0 ? Math.round(s.correct/s.total*100) : 0;
+            var color = pct >= 70 ? '#34d399' : pct >= 40 ? '#fbbf24' : '#f87171';
+            html += '<div style="background:#0f172a;border:1px solid #475569;border-radius:8px;padding:16px;text-align:center;min-width:150px"><div style="font-size:11px;color:#94a3b8;text-transform:uppercase">' + cwe + '</div><div style="font-size:28px;font-weight:700;color:' + color + '">' + pct + '%</div><div style="font-size:11px;color:#94a3b8">' + s.correct + '/' + s.total + ' correct</div></div>';
+        });
+        html += '</div></div>';
+    }
+
+    // ══════════ EXERCISE BREAKDOWN ══════════
+    var exParticipants = d.participants.filter(function(p){return p.exercises_completed > 0});
+    if (exParticipants.length > 0) {
+        html += '<div class="section"><h2>📝 Exercise Completion (Beginner Path)</h2>';
+        html += '<p class="legend">Exercises completed by each participant during their Java course session.</p>';
+        html += '<table><tr><th>Participant</th><th>Path</th><th>ND</th><th>Exercises Done</th><th>Session Duration</th><th>AI Messages</th><th>Exercises List</th></tr>';
+        exParticipants.forEach(function(p) {
+            var ndBadge = p.is_nd ? '<span class="badge badge-nd">ND</span>' : '<span class="badge badge-nt">NT</span>';
+            var dur = p.session_duration_min ? (p.session_duration_min >= 60 ? Math.floor(p.session_duration_min/60) + 'h ' + Math.round(p.session_duration_min%60) + 'm' : Math.round(p.session_duration_min) + ' min') : '—';
+            var exList = (p.exercise_list || []).join(', ') || '—';
+            html += '<tr><td>' + (p.nickname||p.code) + '</td><td>' + (p.chosen_path||'—') + '</td><td>' + ndBadge + '</td><td style="font-weight:700;color:#34d399">' + p.exercises_completed + '</td><td>' + dur + '</td><td>' + (p.ai_messages||0) + '</td><td style="font-size:11px;max-width:300px;word-wrap:break-word">' + exList + '</td></tr>';
+        });
+        html += '</table></div>';
+    }
+
+    // ══════════ QUALITATIVE FEEDBACK ══════════
+    var qualResponses = d.participants.filter(function(p){return p.qual && (p.qual.easiest || p.qual.hardest)});
+    if (qualResponses.length > 0) {
+        html += '<div class="section"><h2>💬 Participant Feedback (Open-ended)</h2>';
+        html += '<p class="legend">Q1: What was most helpful about the platform? Q2: What would you improve?</p>';
+        qualResponses.forEach(function(p) {
+            var pathLabel = p.chosen_path === 'beginner' ? '☕ Beginner' : '🔐 Experienced';
+            var ndLabel = p.is_nd ? '🧠 ND' : 'NT';
+            html += '<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px;margin-bottom:8px">';
+            html += '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px">' + p.nickname + ' — ' + pathLabel + ' — ' + ndLabel + '</div>';
+            if(p.qual.easiest) html += '<div style="margin-bottom:6px"><strong style="color:#34d399">Most helpful:</strong> ' + p.qual.easiest + '</div>';
+            if(p.qual.hardest) html += '<div><strong style="color:#fbbf24">Would improve:</strong> ' + p.qual.hardest + '</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+
+    // ══════════ ACCESSIBILITY FEATURES USED ══════════
+    html += '<div class="section"><h2>♿ Accessibility Features Used</h2>';
+    html += '<p class="legend">Features activated by participants during their session. Tracked automatically every 60 seconds.</p>';
+    var accDark=0, accDyslexia=0, accFocus=0, accMask=0, accNone=0;
+    d.participants.forEach(function(p) {
+        var used = false;
+        if (p.accessibility && p.accessibility.dark_mode) { accDark++; used=true; }
+        if (p.accessibility && p.accessibility.dyslexia_font) { accDyslexia++; used=true; }
+        if (p.accessibility && p.accessibility.tts) { accFocus++; used=true; }
+        if (p.accessibility && p.accessibility.reading_pointer) { accMask++; used=true; }
+        if (!used && p.completed) accNone++;
+    });
+    html += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+    var accFeatures = [
+        {label:'Dark Mode', count:accDark, icon:'🌙', color:'#a78bfa'},
+        {label:'Dyslexia Font', count:accDyslexia, icon:'🔤', color:'#fb923c'},
+        {label:'Focus/Calm Mode', count:accFocus, icon:'🧘', color:'#34d399'},
+        {label:'Reading Mask', count:accMask, icon:'📖', color:'#60a5fa'},
+        {label:'No Features Used', count:accNone, icon:'—', color:'#94a3b8'}
+    ];
+    accFeatures.forEach(function(f) {
+        html += '<div style="background:#0f172a;border:1px solid #475569;border-radius:8px;padding:16px;text-align:center;min-width:130px"><div style="font-size:20px">' + f.icon + '</div><div style="font-size:24px;font-weight:700;color:' + f.color + '">' + f.count + '</div><div style="font-size:11px;color:#94a3b8">' + f.label + '</div></div>';
+    });
+    html += '</div></div>';
+
+    // ══════════ PRE-SURVEY DETAILS ══════════
+    html += '<div class="section"><h2>📋 Pre-Survey Responses</h2>';
+    html += '<p class="legend">Self-regulated learning strategies (Zimmerman, 2002) and learning style preferences collected at signup.</p>';
+    html += '<table><tr><th>Name</th><th>Path</th><th>ND</th><th>AI for Learning</th><th>Platforms Used</th><th>When Stuck</th><th>Learning Style</th></tr>';
+    d.participants.forEach(function(p) {
+        var whenStuck = p.when_stuck || '—';
+        var learnStyle = p.learning_style || '—';
+        if (typeof whenStuck === 'object') whenStuck = whenStuck.join(', ');
+        if (typeof learnStyle === 'object') learnStyle = learnStyle.join(', ');
+        html += '<tr><td>' + (p.nickname||'—') + '</td><td>' + (p.chosen_path||'—') + '</td><td>' + (p.is_nd?'ND':'NT') + '</td><td>' + (p.ai_for_learning||'—') + '</td><td>' + (p.platforms_used||'—') + '</td><td style="font-size:11px">' + whenStuck + '</td><td style="font-size:11px">' + learnStyle + '</td></tr>';
+    });
+    html += '</table></div>';
+
+    document.getElementById('content').innerHTML = html;
+    setTimeout(function() { buildCharts(d); }, 100);
+}
+
+function buildCharts(d) {
+    var completed = d.participants.filter(p => p.completed);
+
+    // AI for Learning Experience
+    var aiExpCounts = {never:0, tried_unhelpful:0, tried_helpful:0, regularly:0};
+    d.participants.forEach(p => { if(p.ai_for_learning && aiExpCounts[p.ai_for_learning] !== undefined) aiExpCounts[p.ai_for_learning]++; });
+    new Chart(document.getElementById('chartAIExp'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Never', 'Tried (unhelpful)', 'Tried (helpful)', 'Regularly'],
+            datasets: [{data: Object.values(aiExpCounts), backgroundColor: ['#475569','#f87171','#fbbf24','#34d399']}]
+        },
+        options: {plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}}}
+    });
+
+    // Self-Confidence Distribution
+    var confCounts = [0,0,0,0,0];
+    d.participants.forEach(p => { if(p.self_confidence_pre >= 1 && p.self_confidence_pre <= 5) confCounts[p.self_confidence_pre-1]++; });
+    new Chart(document.getElementById('chartConfidence'), {
+        type: 'bar',
+        data: {
+            labels: ['1 - Not at all', '2 - Slightly', '3 - Somewhat', '4 - Fairly', '5 - Very'],
+            datasets: [{label:'Participants',data:confCounts,backgroundColor:'#667eea'}]
+        },
+        options: {scales:{y:{ticks:{color:'#94a3b8',stepSize:1},grid:{color:'#334155'}},x:{ticks:{color:'#94a3b8'},grid:{color:'#334155'}}},plugins:{legend:{display:false}}}
+    });
+
+    // SUS Distribution with benchmark line
+    var susScores = completed.map(p => p.sus_total).filter(s => s > 0);
+    if (susScores.length > 0) {
+        var susBuckets = [0,0,0,0,0];
+        susScores.forEach(s => { var b = Math.min(4, Math.floor(s/20)); susBuckets[b]++; });
+        new Chart(document.getElementById('chartSUS'), {
+            type: 'bar',
+            data: {
+                labels: ['0-20 (F)', '21-40 (D)', '41-60 (C)', '61-80 (B)', '81-100 (A)'],
+                datasets: [{label:'Participants',data:susBuckets,backgroundColor:['#ef4444','#f97316','#eab308','#22c55e','#10b981']}]
+            },
+            options: {scales:{y:{ticks:{color:'#94a3b8',stepSize:1},grid:{color:'#334155'}},x:{ticks:{color:'#94a3b8'},grid:{color:'#334155'}}},plugins:{legend:{display:false}}}
+        });
+    }
+
+    // ND vs NT comparison chart
+    var ndDone = completed.filter(p => p.is_nd);
+    var ntDone = completed.filter(p => !p.is_nd);
+    var ndSUS = ndDone.length ? ndDone.reduce((a,p)=>a+(p.sus_total||0),0)/ndDone.length : 0;
+    var ntSUS = ntDone.length ? ntDone.reduce((a,p)=>a+(p.sus_total||0),0)/ntDone.length : 0;
+    var ndEng = ndDone.length ? ndDone.reduce((a,p)=>a+(p.perception_avg||0),0)/ndDone.length : 0;
+    var ntEng = ntDone.length ? ntDone.reduce((a,p)=>a+(p.perception_avg||0),0)/ntDone.length : 0;
+    var ndFrust = ndDone.length ? ndDone.reduce((a,p)=>a+((p.nasa&&p.nasa.frustration)||0),0)/ndDone.length : 0;
+    var ntFrust = ntDone.length ? ntDone.reduce((a,p)=>a+((p.nasa&&p.nasa.frustration)||0),0)/ntDone.length : 0;
+
+    // ND vs NT with NASA Avg
+    var ndNasaAvg = ndDone.length ? ndDone.reduce((a,p)=>a+((p.nasa&&p.nasa.avg)||0),0)/ndDone.length : 0;
+    var ntNasaAvg = ntDone.length ? ntDone.reduce((a,p)=>a+((p.nasa&&p.nasa.avg)||0),0)/ntDone.length : 0;
+    var ndConfPre2 = ndDone.length ? ndDone.reduce((a,p)=>a+(p.self_confidence_pre||0),0)/ndDone.length : 0;
+    var ntConfPre2 = ntDone.length ? ntDone.reduce((a,p)=>a+(p.self_confidence_pre||0),0)/ntDone.length : 0;
+    var ndConfPost2 = ndDone.length ? ndDone.reduce((a,p)=>a+((p.qual&&p.qual.confidence)||0),0)/ndDone.length : 0;
+    var ntConfPost2 = ntDone.length ? ntDone.reduce((a,p)=>a+((p.qual&&p.qual.confidence)||0),0)/ntDone.length : 0;
+
+    new Chart(document.getElementById('chartNDvsNT'), {
+        type: 'bar',
+        data: {
+            labels: ['SUS (/20)', 'Engagement', 'NASA Avg', 'Frustration', 'Conf Pre', 'Conf Post'],
+            datasets: [
+                {label:'ADHD',data:[ndSUS/20, ndEng, ndNasaAvg, ndFrust, ndConfPre2, ndConfPost2],backgroundColor:'rgba(251,146,60,0.8)',borderColor:'#fb923c',borderWidth:1},
+                {label:'Non-ADHD',data:[ntSUS/20, ntEng, ntNasaAvg, ntFrust, ntConfPre2, ntConfPost2],backgroundColor:'rgba(96,165,250,0.8)',borderColor:'#60a5fa',borderWidth:1}
+            ]
+        },
+        options: {
+            scales:{
+                y:{min:0,max:5,ticks:{color:'#94a3b8'},grid:{color:'#334155'}},
+                x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#334155'}}
+            },
+            plugins:{
+                legend:{labels:{color:'#94a3b8'}},
+                title:{display:true,text:'Lower NASA = better. Higher SUS/Engagement/Confidence = better.',color:'#64748b',font:{size:10}}
+            }
+        }
+    });
+
+    // ═══════ CHART: Confidence Pre → Post (per participant) ═══════
+    var confLabels = completed.map(p => p.nickname || p.code.substring(0,6));
+    var confPreData = completed.map(p => p.self_confidence_pre || 0);
+    var confPostData = completed.map(p => (p.qual && p.qual.confidence) || 0);
+    var confColors = completed.map(p => {
+        var pre = p.self_confidence_pre || 0;
+        var post = (p.qual && p.qual.confidence) || 0;
+        return post > pre ? '#34d399' : (post === pre ? '#fbbf24' : '#f87171');
+    });
+
+    new Chart(document.getElementById('chartConfPrePost'), {
+        type: 'bar',
+        data: {
+            labels: confLabels,
+            datasets: [
+                {label:'Pre-Confidence',data:confPreData,backgroundColor:'rgba(100,116,139,0.6)',borderColor:'#64748b',borderWidth:1},
+                {label:'Post-Confidence',data:confPostData,backgroundColor:confColors,borderColor:confColors,borderWidth:1}
+            ]
+        },
+        options: {
+            scales:{
+                y:{min:0,max:5,ticks:{color:'#94a3b8',stepSize:1,callback:function(v){return ['','Not at all','Slightly','Somewhat','Fairly','Very'][v]||v}},grid:{color:'#334155'}},
+                x:{ticks:{color:'#94a3b8'},grid:{color:'#334155'}}
+            },
+            plugins:{
+                legend:{labels:{color:'#94a3b8'}},
+                title:{display:true,text:'Green = improved, Yellow = same, Red = decreased',color:'#64748b',font:{size:10}}
+            }
+        }
+    });
+
+    // ═══════ CHART: Radar per-participant ═══════
+    var radarColors = ['#fb923c','#60a5fa','#34d399','#f87171','#a78bfa','#fbbf24','#ec4899','#14b8a6','#f97316','#8b5cf6'];
+    var radarDatasets = completed.map(function(p, i) {
+        var susNorm = (p.sus_total || 0) / 20;
+        var engVal = p.perception_avg || 0;
+        var nasaInv = p.nasa && p.nasa.avg ? (6 - p.nasa.avg) : 0;
+        var confVal = (p.qual && p.qual.confidence) || 0;
+        var aiActivity = Math.min(5, (p.ai_messages || 0) / 2);
+        return {
+            label: p.nickname || p.code.substring(0,6),
+            data: [susNorm, engVal, nasaInv, confVal, aiActivity],
+            borderColor: radarColors[i % radarColors.length],
+            backgroundColor: radarColors[i % radarColors.length].replace(')', ',0.1)').replace('rgb', 'rgba'),
+            pointBackgroundColor: radarColors[i % radarColors.length],
+            pointRadius: 3,
+            borderWidth: 2,
+            fill: true
+        };
+    });
+
+    new Chart(document.getElementById('chartRadar'), {
+        type: 'radar',
+        data: {
+            labels: ['SUS (/20→5)', 'Engagement', 'Low Workload\n(6-NASA)', 'Confidence', 'AI Activity'],
+            datasets: radarDatasets
+        },
+        options: {
+            scales:{
+                r:{
+                    min:0,max:5,
+                    ticks:{color:'#94a3b8',backdropColor:'transparent',stepSize:1},
+                    grid:{color:'#334155'},
+                    pointLabels:{color:'#cbd5e1',font:{size:11}},
+                    angleLines:{color:'#334155'}
+                }
+            },
+            plugins:{
+                legend:{labels:{color:'#94a3b8',font:{size:10}},position:'bottom'},
+                title:{display:true,text:'Higher = better on all axes. Low Workload = 6 minus NASA avg.',color:'#64748b',font:{size:10}}
+            }
+        }
+    });
+
+    // ═══════ CHART: Vulnerability Score by CWE ═══════
+    var vulnP = d.participants.filter(function(p){return p.vuln_findings && p.vuln_findings.length > 0});
+    if (vulnP.length > 0 && document.getElementById('chartVulnCWE')) {
+        var cweData = {};
+        vulnP.forEach(function(p) {
+            (p.vuln_findings||[]).forEach(function(f) {
+                var cwe = f.cwe_code || 'Unknown';
+                if (!cweData[cwe]) cweData[cwe] = {scores:[], participants:[]};
+                var score = 0;
+                if (f.cwe_code && f.cwe_code.startsWith('CWE-')) score++;
+                if (f.exploitation) score++;
+                if (f.impact_cia) score++;
+                if (f.mitigation && f.mitigation.indexOf('_correct') >= 0) score++;
+                cweData[cwe].scores.push(score);
+                cweData[cwe].participants.push(p.nickname || p.code);
+            });
+        });
+        var cweLabels = Object.keys(cweData);
+        var cweAvgScores = cweLabels.map(function(c){
+            var s = cweData[c].scores;
+            return s.reduce(function(a,b){return a+b},0) / s.length;
+        });
+        var cweCounts = cweLabels.map(function(c){return cweData[c].scores.length});
+        var cweBarColors = cweLabels.map(function(c){
+            var avg = cweData[c].scores.reduce(function(a,b){return a+b},0)/cweData[c].scores.length;
+            return avg >= 3.5 ? '#34d399' : avg >= 2 ? '#fbbf24' : '#f87171';
+        });
+
+        new Chart(document.getElementById('chartVulnCWE'), {
+            type: 'bar',
+            data: {
+                labels: cweLabels,
+                datasets: [
+                    {label:'Avg Score (max 4)',data:cweAvgScores,backgroundColor:cweBarColors,borderColor:cweBarColors,borderWidth:1},
+                    {label:'Attempts',data:cweCounts,backgroundColor:'rgba(148,163,184,0.3)',borderColor:'#94a3b8',borderWidth:1}
+                ]
+            },
+            options: {
+                scales:{
+                    y:{min:0,max:4,ticks:{color:'#94a3b8',stepSize:1,callback:function(v){return ['','CWE only','+ Exploit','+ CIA','Perfect'][v]||v}},grid:{color:'#334155'}},
+                    x:{ticks:{color:'#94a3b8'},grid:{color:'#334155'}}
+                },
+                plugins:{
+                    legend:{labels:{color:'#94a3b8'}},
+                    title:{display:true,text:'Score = CWE(1) + Exploit(1) + CIA Impact(1) + Correct Mitigation(1)',color:'#64748b',font:{size:10}}
+                }
+            }
+        });
+    } else if (document.getElementById('chartVulnCWE')) {
+        document.getElementById('chartVulnCWE').parentElement.innerHTML = '<h3>🔐 Vulnerability Score by CWE</h3><p style="color:#64748b;text-align:center;padding:40px">No vulnerability findings yet. This chart appears when experienced-path participants submit findings.</p>';
+    }
+}
+
+function exportCSV() {
+    if (!DATA) return;
+    var csv = 'Code,Nickname,Path,ND,ND_Type,ProgExp,SecExp,AIForLearning,PlatformsUsed,WhenStuck,LearningStyle,ConfidencePre,ConfidencePost,ConfidenceGain,Status,SUS_Total,Engagement_Avg,NASA_Mental,NASA_Effort,NASA_Frustration,NASA_Avg,VulnsFound,VulnTotalScore,VulnAvgQuality,AIMessages,HintsRequested,AIHelpfulness,MostHelpful,WouldImprove\n';
+    DATA.participants.forEach(function(p) {
+        var confPost = (p.qual && p.qual.confidence) || '';
+        var confGain = (p.self_confidence_pre && confPost) ? (confPost - p.self_confidence_pre) : '';
+        var nasaM = p.nasa ? (p.nasa.mental||'') : '';
+        var nasaE = p.nasa ? (p.nasa.effort||'') : '';
+        var nasaF = p.nasa ? (p.nasa.frustration||'') : '';
+        var helpful = (p.qual && p.qual.easiest) ? '"' + p.qual.easiest.replace(/"/g,'""') + '"' : '';
+        var improve = (p.qual && p.qual.hardest) ? '"' + p.qual.hardest.replace(/"/g,'""') + '"' : '';
+        var whenStuck = p.when_stuck || '';
+        var learnStyle = p.learning_style || '';
+        if (typeof whenStuck === 'object') whenStuck = whenStuck.join('; ');
+        if (typeof learnStyle === 'object') learnStyle = learnStyle.join('; ');
+        csv += [p.code,p.nickname||'',p.chosen_path||'',p.is_nd?'ND':'NT',p.nd_type||'',p.prog_exp||'',p.sec_exp||'',p.ai_for_learning||'',p.platforms_used||'','"'+whenStuck+'"','"'+learnStyle+'"',p.self_confidence_pre||'',confPost,confGain,p.completed?'Done':'Pending',p.sus_total||'',p.perception_avg||'',nasaM,nasaE,nasaF,p.vuln_count||0,p.ai_messages||0,p.ai_hints||0,helpful,improve].join(',') + '\n';
+    });
+    var blob = new Blob([csv], {type:'text/csv'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'synapse_research_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+}
+
+loadData();
+</script>
+</body>
+</html>

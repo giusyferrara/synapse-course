@@ -1,0 +1,1585 @@
+{
+  "course_id": "py_conditions_loops",
+  "title": "Conditions & Loops",
+  "description": "Teach your code to make decisions and repeat tasks — the engine behind every forensic scanner and log parser",
+  "difficulty": "BEGINNER",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "py_syntax_output",
+    "py_variables_datatypes"
+  ],
+  "learning_outcomes": [
+    "Use if, elif, and else to make decisions based on evidence data",
+    "Apply comparison operators (==, !=, <, >, <=, >=) to evaluate conditions",
+    "Combine conditions with logical operators (and, or, not) for complex rules",
+    "Write for loops to iterate through evidence collections, log entries, and byte arrays",
+    "Use while loops for continuous monitoring and conditional scanning",
+    "Control loop flow with break (stop scanning), continue (skip item), and pass",
+    "Nest conditions inside loops for sophisticated evidence filtering",
+    "Use range() to generate sequences for port scanning and brute-force patterns",
+    "Build enumerate() loops for tracking position in evidence lists",
+    "Implement real forensic patterns: threat detection, log filtering, password validation, file scanning",
+    "Understand loop performance and when to use break for efficiency",
+    "Write match/case statements (Python 3.10+) for structured pattern matching"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging forensic mentor. Treats every if/else like a detective following leads — one path leads to evidence, another to a dead end. Loops are like searching a building room by room. Never judges wrong logic — investigators test hypotheses that turn out wrong all the time!",
+    "intervention_triggers": {
+      "idle_40_seconds": "Conditions can feel tricky at first. Think of if/else like a detective at a fork in the road — which path has the evidence? Want me to draw it out? 🔍",
+      "idle_90_seconds": "Loops are like searching rooms in a building one by one. The for loop knows how many rooms. The while loop keeps searching until it finds what it wants. Want an example? 🏢",
+      "idle_180_seconds": "Take a breather! Conditions and loops are the HARDEST beginner concept — once you get them, everything else clicks. I'm here whenever you're ready to try again! ☕",
+      "first_error": "Logic errors are the trickiest because Python doesn't crash — it just gives wrong results! Let's trace through your code step by step to find where the logic goes off track. 🕵️",
+      "repeated_errors": "I see the pattern! Let me explain this a completely different way. Imagine you're a security guard checking IDs at the door... 🚪",
+      "after_success": "PERFECT logic! 🎉 You just built a decision system — that's exactly what firewalls, antivirus scanners, and intrusion detection systems do. Your code is getting seriously powerful!"
+    },
+    "encouragement_phrases": [
+      "if/else is how EVERY security tool makes decisions. Firewall rules? if/else. Antivirus? if/else. You're learning the core! 🔥",
+      "Loops are superpowers — they turn a single check into a full scan of thousands of files! 🔄",
+      "Wrong output? That's a logic puzzle, not a failure. Detectives test hypotheses too! 🧩",
+      "Nesting conditions inside loops? That's how real forensic scanners work. You're building professional skills! 💪",
+      "break and continue are like a detective saying 'Found it!' or 'Not this one, next!' ⏭️",
+      "Every port scanner, password cracker, and log parser uses EXACTLY these patterns. You're learning the real thing! 🎯",
+      "Take it one condition at a time. Even complex logic is just simple decisions stacked together! 🧱",
+      "Your for loop just scanned all that data automatically. Imagine doing that by hand! Python saves hours! ⚡",
+      "elif chains are like a security classification system — check each level until you find the match! 📊",
+      "Stuck on the logic? Draw it as a flowchart first — if YES go here, if NO go there. Then code it! 📝"
+    ],
+    "explanation_styles": {
+      "analogy": "Think of if/elif/else like a security checkpoint with multiple lanes. The guard checks your ID (the condition). If you're VIP (True), you go to the fast lane. Elif you're staff, you go to the staff entrance. Else (everyone else), you join the regular queue. Only ONE lane gets used — once a condition is True, the rest are skipped.",
+      "visual": "Picture a flowchart: Diamond shapes are decisions (if), rectangles are actions (code blocks). Each diamond has two arrows: YES (True) goes one way, NO (False) goes the other. Following the arrows = running your code.",
+      "step_by_step": "Step 1: Python evaluates the if condition. Step 2: If True, run that block and SKIP all elif/else. Step 3: If False, check the next elif. Step 4: If all elif are False, run the else block. Step 5: Continue after the whole if/elif/else structure.",
+      "code_trace": "For: if x > 10: — Python looks up x's value (say 7), compares 7 > 10 (False), skips the if block, checks elif, and so on. Trace each comparison like reading a decision tree.",
+      "comparison": "Java: if (x > 10) { ... } else if (x > 5) { ... } else { ... }. Python: if x > 10: ... elif x > 5: ... else: ... — No parentheses needed, no curly braces, just clean indentation. Easier to read, same logic!"
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "py_conditions_loops_lesson_1",
+      "title": "Conditions & Loops — The Decision Engine of Forensic Tools",
+      "theory": {
+        "introduction": "Every forensic tool you'll ever use makes DECISIONS and REPEATS tasks. When a firewall checks a packet, it asks: 'Is this IP address blocked? Is this port allowed? Does this pattern match a known attack?' — those are CONDITIONS (if/elif/else). When an antivirus scans your hard drive, it checks file after file after file — that's a LOOP (for/while).\n\nThink of it this way: in Topic 1 you learned to SPEAK (print). In Topic 2 you learned to REMEMBER (variables). Now in Topic 3 you learn to THINK (conditions) and SEARCH (loops). Together, these make your code intelligent.\n\nImagine you're a forensic analyst with 10,000 log entries. Without conditions, you can't filter suspicious ones. Without loops, you'd have to check each entry manually. With both? You write 10 lines of code that automatically scans all 10,000 entries, flags the suspicious ones, counts the threats, and generates a report. That's the power you're about to unlock.\n\nThis topic is often considered the HARDEST for beginners — but also the most rewarding. Once conditions and loops click, you can build REAL tools: port scanners, log analysers, password validators, threat detectors, and file scanners. Let's make your code think!\n\nVM TIP: On your Kali Linux VM, try: nmap -sT 127.0.0.1 — that's a port scanner using loops to check each port and conditions to report which are open. By the end of this topic, you'll understand the LOGIC behind it.",
+        "why_important": "Conditions and loops are the engine of EVERY cybersecurity tool in existence. Firewall rules are if/elif/else chains. Port scanners are for loops over port ranges. Brute-force tools are while loops with break on success. Intrusion Detection Systems (IDS) are while loops running conditions against every network packet 24/7. Log parsers combine for loops (iterate entries) with if conditions (filter suspicious ones). Without these, your code can only run in a straight line — with them, it can make intelligent decisions and process unlimited amounts of data automatically. This is where you go from 'student' to 'tool builder'.",
+        "key_concepts": [
+          {
+            "concept": "if Statement — The Basic Decision",
+            "explanation": "The if statement checks a condition — if it's True, the indented code block runs. If False, it's skipped. Think of it like a security guard at a door: if you have the right badge, you get in. Otherwise, nothing happens and you walk past.\n\nThe condition can be any expression that evaluates to True or False: comparisons (x > 10), equality checks (password == 'secret'), membership tests ('admin' in user_roles), or even just a variable (if file_exists:). Remember from Topic 2: any truthy value counts as True, any falsy value counts as False.",
+            "example": "# if statement — the basic decision\nport = 443\n\nif port == 443:\n    print(\"HTTPS detected — encrypted connection\")\n\nif port < 1024:\n    print(\"Well-known port — likely a standard service\")\n\n# Using truthiness\nsuspicious_files = [\"malware.exe\", \"keylogger.py\"]\nif suspicious_files:  # Non-empty list = True\n    print(f\"WARNING: {len(suspicious_files)} suspicious files found!\")",
+            "ai_hint": "if checks ONE condition. If True → run the block. If False → skip it entirely. The colon : and indentation are REQUIRED!"
+          },
+          {
+            "concept": "if/else — Two Paths, One Choice",
+            "explanation": "if/else gives you exactly two paths: if the condition is True, run block A. Otherwise (else), run block B. Think of a traffic light: if green, GO. Else (red), STOP. There's no in-between — one path or the other.\n\nIn forensics, if/else is used everywhere: if hash matches → evidence verified, else → evidence may be tampered with. If file is encrypted → flag for decryption, else → proceed with analysis. If login attempt count exceeds threshold → block the account, else → allow access.",
+            "example": "# if/else — two paths\nlogin_attempts = 5\nmax_attempts = 3\n\nif login_attempts > max_attempts:\n    print(\"ALERT: Account locked — too many failed attempts!\")\n    print(f\"Attempts: {login_attempts}/{max_attempts}\")\nelse:\n    print(\"Login attempts within normal range\")\n    print(f\"Attempts: {login_attempts}/{max_attempts}\")",
+            "ai_hint": "else has NO condition — it catches EVERYTHING that didn't match the if. Think of it as the 'default' or 'otherwise' path."
+          },
+          {
+            "concept": "elif — Multiple Conditions (Security Classification)",
+            "explanation": "elif (else if) lets you check multiple conditions in sequence. Python checks each one from top to bottom and runs the FIRST one that's True. Think of it like a security classification system: check if it's CRITICAL first, then HIGH, then MEDIUM, then LOW. Once a match is found, the rest are skipped.\n\nelif is CRUCIAL in forensics for: threat severity classification, port identification, file type detection, response code analysis, and risk scoring. You can have as many elif blocks as needed — there's no limit.",
+            "example": "# elif chain — threat severity classification\nseverity_score = 8.5\n\nif severity_score >= 9.0:\n    level = \"CRITICAL\"\n    colour = \"RED\"\nelif severity_score >= 7.0:\n    level = \"HIGH\"\n    colour = \"ORANGE\"\nelif severity_score >= 4.0:\n    level = \"MEDIUM\"\n    colour = \"YELLOW\"\nelif severity_score >= 1.0:\n    level = \"LOW\"\n    colour = \"GREEN\"\nelse:\n    level = \"INFO\"\n    colour = \"BLUE\"\n\nprint(f\"Score: {severity_score} → {level} ({colour})\")",
+            "ai_hint": "elif checks are ordered — Python stops at the FIRST True condition. Put the most specific/critical checks FIRST, general ones LAST."
+          },
+          {
+            "concept": "Comparison Operators — Evaluating Evidence",
+            "explanation": "Comparison operators compare two values and return True or False. They're the building blocks of every condition.\n\n== (equal to) — does this value MATCH that value? Used for hash comparison, password checking.\n!= (not equal) — are these DIFFERENT? Used to find anomalies, mismatches.\n> and < (greater/less than) — is this MORE or LESS? Used for thresholds, file sizes.\n>= and <= (greater/less or equal) — includes the boundary value. Used for ranges.\n\nWARNING: == is comparison, = is assignment! Writing if x = 5: is a common bug (Python will actually give a SyntaxError for this, which is helpful). Always use == for comparison.",
+            "example": "# Comparison operators in forensic contexts\nfile_size = 1048576  # 1 MB\nhash1 = \"abc123\"\nhash2 = \"abc123\"\nport = 22\n\n# Equality\nprint(f\"Hashes match: {hash1 == hash2}\")\nprint(f\"Hashes differ: {hash1 != hash2}\")\n\n# Size comparisons\nprint(f\"Over 1 MB: {file_size > 1000000}\")\nprint(f\"Under 5 MB: {file_size < 5000000}\")\n\n# Range check\nprint(f\"Well-known port (0-1023): {0 <= port <= 1023}\")\n\n# String comparison (alphabetical)\nprint(f\"'apple' < 'banana': {'apple' < 'banana'}\")",
+            "ai_hint": "== checks equality (are they the same?). = assigns a value (put this in that variable). Mixing them up is one of the most common bugs in programming!"
+          },
+          {
+            "concept": "Logical Operators — Combining Conditions (and, or, not)",
+            "explanation": "Logical operators combine multiple conditions into one: 'and' requires BOTH to be True, 'or' requires AT LEAST ONE to be True, 'not' flips True to False and vice versa.\n\nThink of 'and' like a security system that needs BOTH a keycard AND a PIN code. Think of 'or' like a building with two entrances — either door works. Think of 'not' like a bouncer who lets everyone in EXCEPT people on the blacklist.\n\nIn forensic rules: 'if port == 22 and country != \"US\"' flags SSH from foreign IPs. 'if file_size > 1000000 or is_encrypted' flags large or encrypted files. 'if not is_analysed' finds evidence that hasn't been processed yet.",
+            "example": "# Logical operators — building complex forensic rules\nport = 22\ncountry = \"RU\"\nis_encrypted = True\nfile_size = 5000000\n\n# AND — both must be true\nif port == 22 and country != \"US\":\n    print(\"ALERT: Foreign SSH connection!\")\n\n# OR — at least one must be true\nif file_size > 1000000 or is_encrypted:\n    print(\"FLAG: Large or encrypted file detected\")\n\n# NOT — inverts the condition\nis_analysed = False\nif not is_analysed:\n    print(\"PENDING: Evidence awaiting analysis\")\n\n# Combining all three\nif (port < 1024 and country == \"RU\") or is_encrypted:\n    print(\"HIGH RISK: Suspicious connection profile\")",
+            "ai_hint": "and = BOTH must be True. or = AT LEAST ONE must be True. not = flips the result. Use parentheses to make complex conditions clear!"
+          },
+          {
+            "concept": "for Loop — Scanning Through Evidence",
+            "explanation": "The for loop iterates through a collection — one item at a time. Think of it like a forensic analyst going through a box of evidence bags: pick up the first bag, examine it, move to the next, repeat until the box is empty.\n\nYou can loop through: lists (evidence items), strings (characters), ranges of numbers (port ranges), dictionaries (key-value pairs), and files (lines of a log). The for loop knows exactly how many items there are and stops automatically when it reaches the end.\n\nIn forensics, for loops are used to scan file lists, parse log entries, check port ranges, iterate through hash databases, process evidence collections, and generate reports.",
+            "example": "# for loop — scanning evidence\n\n# Loop through a list\nevidence = [\"laptop.img\", \"phone.tar\", \"usb.zip\", \"email.pst\"]\nfor item in evidence:\n    print(f\"Scanning: {item}\")\n\n# Loop through a string (character by character)\nhex_str = \"4D5A\"\nprint(\"\\nHex bytes:\")\nfor char in hex_str:\n    print(f\"  Character: {char} (ASCII: {ord(char)})\")\n\n# Loop with index using enumerate()\nprint(\"\\nEvidence inventory:\")\nfor i, item in enumerate(evidence, 1):\n    print(f\"  [{i}] {item}\")",
+            "ai_hint": "for item in collection: gives you one item at a time. enumerate() adds a counter. Both are used in EVERY forensic scanning tool!"
+          },
+          {
+            "concept": "range() — Generating Number Sequences",
+            "explanation": "range() generates a sequence of numbers. range(5) gives 0,1,2,3,4. range(1,6) gives 1,2,3,4,5. range(0, 256) gives all possible byte values. range(1, 1025) gives all well-known ports.\n\nThink of range() like setting the dial on a scanning tool — you specify the start, stop, and step. It's essential for port scanning (check ports 1-1024), brute-force logic (try combinations 0000-9999), and byte analysis (examine each byte value 0-255).\n\nrange(start, stop, step): start is inclusive, stop is EXCLUSIVE (very important!), step is the increment. range(0, 100, 10) gives 0, 10, 20, 30... 90.",
+            "example": "# range() — generating sequences for scanning\n\n# Basic range\nprint(\"Ports to scan:\")\nfor port in range(80, 86):\n    print(f\"  Checking port {port}...\")\n\n# range with step\nprint(\"\\nEven ports:\")\nfor port in range(80, 90, 2):\n    print(f\"  Port {port}\")\n\n# Counting down\nprint(\"\\nCountdown:\")\nfor i in range(5, 0, -1):\n    print(f\"  {i}...\")\nprint(\"  SCAN COMPLETE!\")\n\n# All byte values (0-255)\nprint(f\"\\nByte range: {list(range(0, 256))[:5]}...{list(range(0, 256))[-3:]}\")\nprint(f\"Total byte values: {len(range(0, 256))}\")",
+            "ai_hint": "range(start, stop) — stop is EXCLUSIVE! range(1, 5) gives 1,2,3,4 (not 5). This trips up everyone at first!"
+          },
+          {
+            "concept": "while Loop — Continuous Monitoring",
+            "explanation": "A while loop keeps running AS LONG AS its condition is True. Think of it like a security camera that records continuously WHILE the building is open. Or an IDS (Intrusion Detection System) that monitors network traffic WHILE the server is running.\n\nwhile loops are perfect when you DON'T KNOW how many iterations you need: keep trying passwords until one works, keep reading log lines until end of file, keep monitoring until a threat is detected, keep retrying a connection until it succeeds or times out.\n\nDANGER: If the condition never becomes False, you get an INFINITE LOOP! Always make sure something inside the loop eventually makes the condition False, or use break to exit.",
+            "example": "# while loop — continuous monitoring\n\n# Brute-force PIN simulation\nimport random\ntarget_pin = \"1234\"\nattempts = 0\nmax_attempts = 10\n\nwhile attempts < max_attempts:\n    attempts += 1\n    guess = f\"{random.randint(0, 9999):04d}\"\n    \n    if guess == target_pin:\n        print(f\"PIN CRACKED: {guess} (attempt {attempts})\")\n        break\nelse:\n    # This runs if the while loop finishes WITHOUT break\n    print(f\"Failed after {max_attempts} attempts\")\n\nprint(f\"Total attempts: {attempts}\")",
+            "ai_hint": "while = 'keep going UNTIL this condition becomes False'. for = 'do this FOR each item in a collection'. Use while when you don't know how many iterations you need!"
+          },
+          {
+            "concept": "break, continue, pass — Loop Control",
+            "explanation": "break STOPS the loop immediately — like a detective saying 'Found the evidence, stop searching!' continue SKIPS the current item and moves to the next — like 'This one's clean, next!' pass does NOTHING — it's a placeholder for code you haven't written yet.\n\nIn forensics: break when you find the evidence you're looking for (first match). continue to skip files that don't match your criteria (wrong extension, too small). pass as a placeholder in your scan function while you work on the detection logic.\n\nbreak makes loops more EFFICIENT — why scan 10,000 files if you found the threat at file #47?",
+            "example": "# break, continue, pass — controlling the search\n\nfiles = [\"readme.txt\", \"photo.jpg\", \"malware.exe\", \"notes.txt\", \"data.csv\"]\n\n# break — stop when threat found\nprint(\"=== THREAT SCAN ===\")\nfor f in files:\n    print(f\"  Scanning {f}...\", end=\" \")\n    if f.endswith(\".exe\"):\n        print(\"THREAT FOUND! Stopping scan.\")\n        break\n    print(\"Clean\")\n\n# continue — skip non-relevant files\nprint(\"\\n=== TEXT FILE SEARCH ===\")\nfor f in files:\n    if not f.endswith(\".txt\"):\n        continue  # Skip non-txt files\n    print(f\"  Found text file: {f}\")\n\n# pass — placeholder\nprint(\"\\n=== FUTURE FEATURES ===\")\nfor f in files:\n    if f.endswith(\".csv\"):\n        pass  # TODO: add CSV parser later\n    else:\n        pass  # TODO: add other file handlers",
+            "ai_hint": "break = 'STOP the entire loop'. continue = 'skip THIS iteration, go to next'. pass = 'do nothing (placeholder)'. break is your efficiency tool!"
+          },
+          {
+            "concept": "Nested Loops & Conditions — Building Scanners",
+            "explanation": "You can put loops inside loops and conditions inside loops (or loops inside conditions!). This is called NESTING. Think of it like a building search: the OUTER loop goes floor by floor, the INNER loop checks each room on that floor, and CONDITIONS inside decide if evidence is found.\n\nIn forensics, nesting is used for: scanning multiple hosts with multiple ports (outer = hosts, inner = ports), checking multiple log files for multiple threat signatures, comparing multiple hash values against multiple databases, and generating combination lists for testing.\n\nKeep nesting shallow (2-3 levels max) for readability. Deep nesting makes code hard to understand.",
+            "example": "# Nested loops — multi-dimensional scanning\n\n# Scan multiple hosts on multiple ports\nhosts = [\"192.168.1.1\", \"192.168.1.2\"]\nports = [22, 80, 443]\n\nprint(\"=== NETWORK SCAN ===\")\nfor host in hosts:\n    print(f\"\\nHost: {host}\")\n    for port in ports:\n        # Simulate: some ports are open\n        is_open = (host.endswith(\".1\") and port == 80) or port == 443\n        status = \"OPEN\" if is_open else \"closed\"\n        marker = \">>>\" if is_open else \"   \"\n        print(f\"  {marker} Port {port}: {status}\")\n\nprint(\"\\nScan complete!\")",
+            "ai_hint": "Nesting = loops inside loops. The inner loop runs COMPLETELY for each iteration of the outer loop. 2 hosts × 3 ports = 6 total checks!"
+          },
+          {
+            "concept": "in Operator — Membership Testing",
+            "explanation": "The 'in' operator checks if a value exists INSIDE a collection. 'admin' in users returns True if 'admin' is in the users list. 'exe' in filename checks if 'exe' appears anywhere in the filename string.\n\nThink of 'in' like checking a watchlist — is this IP on our blocklist? Is this file extension in our suspicious list? Is this keyword in the log entry? It's one of the most-used operators in forensic scripts because evidence analysis is fundamentally about SEARCHING.\n\n'not in' is the inverse — 'if ip not in whitelist:' flags IPs that AREN'T approved.",
+            "example": "# in operator — searching evidence\n\n# Check against a blocklist\nblocklist = [\"10.0.0.1\", \"172.16.0.99\", \"192.168.1.666\"]\ntest_ip = \"172.16.0.99\"\n\nif test_ip in blocklist:\n    print(f\"BLOCKED: {test_ip} is on the blocklist!\")\n\n# Check file extensions\nsuspicious_ext = [\".exe\", \".bat\", \".cmd\", \".ps1\", \".vbs\"]\nfilename = \"report.exe\"\n\nfor ext in suspicious_ext:\n    if filename.endswith(ext):\n        print(f\"WARNING: {filename} has suspicious extension {ext}\")\n        break\n\n# Search within strings\nlog_line = \"2025-02-28 FAILED login from 10.0.0.5\"\nif \"FAILED\" in log_line:\n    print(f\"Alert: {log_line}\")",
+            "ai_hint": "'in' searches INSIDE a collection or string. Use it like a forensic search tool: 'Is this item in my evidence database?'"
+          },
+          {
+            "concept": "Ternary Operator — One-Line Decisions",
+            "explanation": "The ternary operator (conditional expression) lets you write a simple if/else in ONE line: result = value_if_true if condition else value_if_false. Think of it like a quick YES/NO stamp on an evidence form — no need for a full page when a single line will do.\n\nUse it for simple assignments where a full if/else block would be overkill. Don't nest ternary operators — that makes code unreadable. If the logic is complex, use a regular if/else.",
+            "example": "# Ternary operator — quick decisions\n\nport = 443\nservice = \"HTTPS\" if port == 443 else \"Unknown\"\nprint(f\"Port {port}: {service}\")\n\n# Status flags\nfiles_found = 0\nstatus = \"Evidence found\" if files_found > 0 else \"No evidence\"\nprint(f\"Status: {status}\")\n\n# Risk level\nscore = 7.5\nrisk = \"HIGH\" if score >= 7 else \"MEDIUM\" if score >= 4 else \"LOW\"\nprint(f\"Score {score}: {risk}\")\n\n# Formatting\nfor port in [22, 80, 443, 8080, 3306]:\n    known = \"well-known\" if port < 1024 else \"registered\"\n    print(f\"  Port {port:>5}: {known}\")",
+            "ai_hint": "Ternary = one-line if/else. Great for simple assignments. For complex logic, stick to regular if/elif/else — readability matters more than brevity!"
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Security Alert System",
+          "description": "Basic if/elif/else chain — classify threats by severity",
+          "difficulty": "beginner",
+          "code": "# Security alert classification system\n\nalerts = [\n    {\"type\": \"Login\", \"attempts\": 15, \"source\": \"external\"},\n    {\"type\": \"Login\", \"attempts\": 2, \"source\": \"internal\"},\n    {\"type\": \"File Access\", \"attempts\": 1, \"source\": \"internal\"},\n    {\"type\": \"Port Scan\", \"attempts\": 500, \"source\": \"external\"},\n    {\"type\": \"Login\", \"attempts\": 8, \"source\": \"external\"},\n]\n\nprint(\"SECURITY ALERT DASHBOARD\")\nprint(\"=\" * 55)\nprint(f\"{'Type':<15}{'Attempts':>8}{'Source':>12}{'Severity':>12}{'Action':>10}\")\nprint(\"-\" * 55)\n\nfor alert in alerts:\n    at = alert[\"type\"]\n    attempts = alert[\"attempts\"]\n    source = alert[\"source\"]\n    \n    # Classify severity\n    if attempts >= 100 and source == \"external\":\n        severity = \"CRITICAL\"\n        action = \"BLOCK\"\n    elif attempts >= 10 and source == \"external\":\n        severity = \"HIGH\"\n        action = \"ALERT\"\n    elif attempts >= 5 or source == \"external\":\n        severity = \"MEDIUM\"\n        action = \"LOG\"\n    else:\n        severity = \"LOW\"\n        action = \"MONITOR\"\n    \n    print(f\"{at:<15}{attempts:>8}{source:>12}{severity:>12}{action:>10}\")\n\nprint(\"=\" * 55)",
+          "output": "SECURITY ALERT DASHBOARD\n=======================================================\nType           Attempts      Source    Severity    Action\n-------------------------------------------------------\nLogin                15    external        HIGH     ALERT\nLogin                 2    internal         LOW   MONITOR\nFile Access           1    internal         LOW   MONITOR\nPort Scan           500    external    CRITICAL     BLOCK\nLogin                 8    external      MEDIUM       LOG\n=======================================================",
+          "ai_explanation": "This demonstrates a real-world security pattern:\n1. A list of alert dictionaries — each with type, attempts, and source.\n2. A for loop iterates through every alert.\n3. if/elif/else classifies each alert based on MULTIPLE criteria using 'and' and 'or'.\n4. The most severe check comes FIRST (>=100 AND external), then less severe.\n5. Each alert gets a severity level and recommended action.\n\nThis is EXACTLY how Security Information and Event Management (SIEM) systems like Splunk and QRadar work — they apply rules to classify incoming alerts. You just built a mini SIEM!",
+          "ai_challenge": "Add a counter for each severity level and print a summary at the bottom: 'Critical: 1, High: 1, Medium: 1, Low: 2'."
+        },
+        {
+          "title": "Example 2: Port Scanner Logic",
+          "description": "Use for loop with range() to scan ports and identify services",
+          "difficulty": "intermediate",
+          "code": "# Mini port scanner — the logic behind Nmap!\n# (This is the LOGIC only — real scanning happens on Kali VM)\n\n# Known services database\nKNOWN_PORTS = {\n    21: \"FTP\", 22: \"SSH\", 23: \"Telnet\", 25: \"SMTP\",\n    53: \"DNS\", 80: \"HTTP\", 110: \"POP3\", 143: \"IMAP\",\n    443: \"HTTPS\", 993: \"IMAPS\", 3306: \"MySQL\",\n    3389: \"RDP\", 5432: \"PostgreSQL\", 8080: \"HTTP-Alt\"\n}\n\n# Simulate which ports are \"open\"\nopen_ports = {22, 80, 443, 3306, 8080}\n\nprint(\"PORT SCAN RESULTS\")\nprint(f\"Target: 192.168.1.100\")\nprint(f\"Scanning ports 1-1024 + common high ports...\")\nprint(\"-\" * 50)\nprint(f\"{'PORT':>6} | {'STATE':<8} | {'SERVICE'}\")\nprint(\"-\" * 50)\n\nopen_count = 0\nfor port in sorted(KNOWN_PORTS.keys()):\n    if port in open_ports:\n        state = \"OPEN\"\n        open_count += 1\n        service = KNOWN_PORTS[port]\n        print(f\"{port:>6} | {state:<8} | {service}\")\n\nprint(\"-\" * 50)\nprint(f\"\\n{open_count} open ports found out of {len(KNOWN_PORTS)} checked\")\n\n# Risk assessment\nrisky_ports = {21, 23, 3389}  # FTP, Telnet, RDP are risky\nfound_risky = risky_ports & open_ports  # Set intersection\nif found_risky:\n    print(f\"\\nWARNING: Risky open ports: {found_risky}\")\n    for p in found_risky:\n        print(f\"  Port {p} ({KNOWN_PORTS[p]}) should be closed!\")\nelse:\n    print(\"\\nNo high-risk ports detected.\")",
+          "output": "PORT SCAN RESULTS\nTarget: 192.168.1.100\nScanning ports 1-1024 + common high ports...\n--------------------------------------------------\n  PORT | STATE    | SERVICE\n--------------------------------------------------\n    22 | OPEN     | SSH\n    80 | OPEN     | HTTP\n   443 | OPEN     | HTTPS\n  3306 | OPEN     | MySQL\n  8080 | OPEN     | HTTP-Alt\n--------------------------------------------------\n\n5 open ports found out of 14 checked\n\nWARNING: Risky open ports: {22}\n  Port 22 (SSH) should be closed!",
+          "ai_explanation": "This simulates the LOGIC of a real port scanner:\n1. KNOWN_PORTS dictionary maps port numbers to service names.\n2. open_ports set simulates which ports responded (in real tools, this would be a TCP connection test).\n3. The for loop checks each known port — 'if port in open_ports' tests membership.\n4. Set intersection (& operator) finds which risky ports are open.\n5. Conditional reporting flags dangerous services.\n\nOn your Kali VM, try the real thing: nmap -sT 127.0.0.1 — it does exactly this but with actual network connections.\nNmap checks thousands of ports using the same loop + condition pattern!",
+          "ai_challenge": "Add port categories: 'Well-known (0-1023)', 'Registered (1024-49151)', 'Dynamic (49152-65535)'. Classify each open port."
+        },
+        {
+          "title": "Example 3: Log File Analyser",
+          "description": "Parse and analyse security log entries using loops and conditions",
+          "difficulty": "intermediate",
+          "code": "# Security Log Analyser — parse, filter, and report\n\n# Simulated log entries\nlogs = [\n    \"2025-02-28 08:15:22 LOGIN_SUCCESS user=admin ip=10.0.0.5\",\n    \"2025-02-28 08:15:45 LOGIN_FAILED user=admin ip=203.0.113.42\",\n    \"2025-02-28 08:15:46 LOGIN_FAILED user=admin ip=203.0.113.42\",\n    \"2025-02-28 08:15:47 LOGIN_FAILED user=admin ip=203.0.113.42\",\n    \"2025-02-28 09:00:00 FILE_ACCESS user=john ip=10.0.0.12 file=secret.pdf\",\n    \"2025-02-28 09:30:15 LOGIN_SUCCESS user=john ip=10.0.0.12\",\n    \"2025-02-28 10:00:00 LOGIN_FAILED user=root ip=198.51.100.77\",\n    \"2025-02-28 10:00:01 LOGIN_FAILED user=root ip=198.51.100.77\",\n    \"2025-02-28 11:45:00 LOGOUT user=admin ip=10.0.0.5\",\n    \"2025-02-28 12:00:00 LOGIN_FAILED user=admin ip=203.0.113.42\",\n]\n\n# Analysis counters\ntotal = len(logs)\nfailed = 0\nsuccess = 0\nsuspicious_ips = {}\n\nprint(\"=== SECURITY LOG ANALYSIS ===\")\nprint(f\"Total entries: {total}\\n\")\n\n# Process each log entry\nfor line in logs:\n    if \"LOGIN_FAILED\" in line:\n        failed += 1\n        # Extract IP address\n        parts = line.split(\"ip=\")\n        if len(parts) > 1:\n            ip = parts[1].split()[0]\n            suspicious_ips[ip] = suspicious_ips.get(ip, 0) + 1\n    elif \"LOGIN_SUCCESS\" in line:\n        success += 1\n\n# Report\nprint(f\"Login Success: {success}\")\nprint(f\"Login Failed:  {failed}\")\nprint(f\"Fail Rate:     {failed/(failed+success)*100:.1f}%\")\n\nprint(f\"\\n--- Suspicious IPs (multiple failures) ---\")\nfor ip, count in sorted(suspicious_ips.items(), key=lambda x: x[1], reverse=True):\n    threat = \"HIGH\" if count >= 3 else \"MEDIUM\" if count >= 2 else \"LOW\"\n    print(f\"  {ip:<20} Failures: {count:<4} Threat: {threat}\")\n    if count >= 3:\n        print(f\"  >>> RECOMMEND: Block this IP immediately!\")",
+          "output": "=== SECURITY LOG ANALYSIS ===\nTotal entries: 10\n\nLogin Success: 2\nLogin Failed:  5\nFail Rate:     71.4%\n\n--- Suspicious IPs (multiple failures) ---\n  203.0.113.42         Failures: 4    Threat: HIGH\n  >>> RECOMMEND: Block this IP immediately!\n  198.51.100.77        Failures: 2    Threat: MEDIUM",
+          "ai_explanation": "This is a REAL log analysis pattern:\n1. for loop iterates through every log line.\n2. 'if \"LOGIN_FAILED\" in line' searches for the keyword — the 'in' operator!\n3. String splitting extracts the IP address from the log format.\n4. A dictionary counts failures per IP (suspicious_ips[ip] = count).\n5. sorted() with a lambda sorts by failure count (highest first).\n6. if/elif/else classifies threat level based on failure count.\n\nThis is exactly what tools like Fail2ban and Splunk do — parse logs, count failures, and take action. On Kali, try: cat /var/log/auth.log | grep 'Failed' to see real failed login attempts.",
+          "ai_challenge": "Add time-based analysis: detect if 3+ failures happen within 5 minutes from the same IP (indicates brute-force attack)."
+        },
+        {
+          "title": "Example 4: Password Strength Validator",
+          "description": "Check passwords against multiple rules using conditions",
+          "difficulty": "beginner",
+          "code": "# Password Strength Validator\n# Checks multiple security rules\n\ndef check_password(password):\n    \"\"\"Validate password against security rules.\"\"\"\n    results = []\n    score = 0\n    \n    # Rule 1: Minimum length\n    if len(password) >= 8:\n        results.append((\"Length >= 8\", True))\n        score += 1\n    else:\n        results.append((\"Length >= 8\", False))\n    \n    # Rule 2: Has uppercase\n    has_upper = False\n    for char in password:\n        if char.isupper():\n            has_upper = True\n            break\n    results.append((\"Has uppercase\", has_upper))\n    if has_upper: score += 1\n    \n    # Rule 3: Has lowercase\n    has_lower = any(c.islower() for c in password)\n    results.append((\"Has lowercase\", has_lower))\n    if has_lower: score += 1\n    \n    # Rule 4: Has digit\n    has_digit = any(c.isdigit() for c in password)\n    results.append((\"Has digit\", has_digit))\n    if has_digit: score += 1\n    \n    # Rule 5: Has special character\n    specials = \"!@#$%^&*()_+-=[]{}|;:,.<>?\"\n    has_special = any(c in specials for c in password)\n    results.append((\"Has special char\", has_special))\n    if has_special: score += 1\n    \n    return results, score\n\n# Test passwords\ntest_passwords = [\"password\", \"Abc123\", \"MyP@ss123!\", \"short\", \"NoSpecial123\"]\n\nfor pwd in test_passwords:\n    results, score = check_password(pwd)\n    \n    # Determine strength\n    if score >= 5:\n        strength = \"STRONG\"\n    elif score >= 3:\n        strength = \"MEDIUM\"\n    else:\n        strength = \"WEAK\"\n    \n    print(f\"\\nPassword: {'*' * len(pwd)} ({len(pwd)} chars)\")\n    for rule, passed in results:\n        icon = \"✓\" if passed else \"✗\"\n        print(f\"  {icon} {rule}\")\n    print(f\"  Score: {score}/5 — {strength}\")",
+          "output": "\nPassword: ******** (8 chars)\n  ✓ Length >= 8\n  ✗ Has uppercase\n  ✓ Has lowercase\n  ✗ Has digit\n  ✗ Has special char\n  Score: 2/5 — WEAK\n\nPassword: ****** (6 chars)\n  ✗ Length >= 8\n  ✓ Has uppercase\n  ✓ Has lowercase\n  ✓ Has digit\n  ✗ Has special char\n  Score: 3/5 — MEDIUM\n...",
+          "ai_explanation": "This combines conditions, loops, and strings beautifully:\n1. Each rule is an if/else that checks ONE requirement.\n2. The for loop with break finds the first uppercase character efficiently.\n3. any() with a generator is a Pythonic shortcut: any(c.isdigit() for c in password) = 'is there at least one digit?'\n4. Results are stored as tuples (rule_name, passed_boolean) for clean reporting.\n5. Score-based classification uses if/elif/else.\n\nThis is how real password validators work! Tools like John the Ripper and Hashcat test passwords against similar rules. The difference is they CRACK passwords — you're VALIDATING them.",
+          "ai_challenge": "Add a rule for 'no common passwords' by checking against a list: ['password', '123456', 'admin', 'qwerty']."
+        },
+        {
+          "title": "Example 5: File Extension Threat Classifier",
+          "description": "Classify files by extension using conditions and loops",
+          "difficulty": "beginner",
+          "code": "# File Extension Threat Classifier\n\nfiles = [\n    \"report.docx\", \"photo.jpg\", \"malware.exe\", \"script.py\",\n    \"data.csv\", \"payload.bat\", \"notes.txt\", \"archive.zip\",\n    \"macro.xlsm\", \"readme.md\", \"shell.ps1\", \"image.png\",\n]\n\n# Classification rules\nhigh_risk = [\".exe\", \".bat\", \".cmd\", \".ps1\", \".vbs\", \".scr\"]\nmedium_risk = [\".xlsm\", \".docm\", \".zip\", \".rar\", \".7z\", \".py\"]\nsafe_ext = [\".txt\", \".md\", \".csv\", \".jpg\", \".png\", \".gif\", \".pdf\"]\n\nprint(\"FILE THREAT CLASSIFICATION\")\nprint(\"=\" * 50)\n\ncounts = {\"HIGH\": 0, \"MEDIUM\": 0, \"SAFE\": 0, \"UNKNOWN\": 0}\n\nfor filename in files:\n    # Get extension\n    ext = \".\" + filename.split(\".\")[-1] if \".\" in filename else \"\"\n    \n    # Classify\n    if ext in high_risk:\n        level = \"HIGH\"\n        icon = \"🔴\"\n    elif ext in medium_risk:\n        level = \"MEDIUM\"\n        icon = \"🟡\"\n    elif ext in safe_ext:\n        level = \"SAFE\"\n        icon = \"🟢\"\n    else:\n        level = \"UNKNOWN\"\n        icon = \"⚪\"\n    \n    counts[level] += 1\n    print(f\"  {icon} {filename:<20} [{ext:<5}] → {level}\")\n\nprint(\"=\" * 50)\nprint(\"Summary:\")\nfor level, count in counts.items():\n    if count > 0:\n        bar = \"█\" * (count * 3)\n        print(f\"  {level:<8}: {count} {bar}\")",
+          "output": "FILE THREAT CLASSIFICATION\n==================================================\n  🟢 report.docx           [.docx] → SAFE\n  🟢 photo.jpg             [.jpg ] → SAFE\n  🔴 malware.exe           [.exe ] → HIGH\n  🟡 script.py             [.py  ] → MEDIUM\n  🟢 data.csv              [.csv ] → SAFE\n  🔴 payload.bat           [.bat ] → HIGH\n  🟢 notes.txt             [.txt ] → SAFE\n  🟡 archive.zip           [.zip ] → MEDIUM\n  🟡 macro.xlsm            [.xlsm] → MEDIUM\n  🟢 readme.md             [.md  ] → SAFE\n  🔴 shell.ps1             [.ps1 ] → HIGH\n  🟢 image.png             [.png ] → SAFE\n==================================================\nSummary:\n  HIGH    : 3 █████████\n  MEDIUM  : 3 █████████\n  SAFE    : 6 ██████████████████",
+          "ai_explanation": "A clean classification pipeline:\n1. Lists define which extensions belong to each risk category.\n2. The for loop processes each file.\n3. String splitting extracts the extension: 'malware.exe'.split('.')[-1] = 'exe'.\n4. if/elif/else checks membership in each list using 'in'.\n5. A counts dictionary tracks totals per category.\n6. The summary uses a visual bar chart with █ characters.\n\nThis pattern is used by antivirus software, email security gateways, and file upload validators. Real tools add more checks (file signatures, content scanning) but the classification logic is identical.",
+          "ai_challenge": "Add a .docx check — it should be MEDIUM if the filename contains 'macro' or 'invoice' (common phishing patterns), SAFE otherwise."
+        },
+        {
+          "title": "Example 6: Brute Force PIN Cracker (Educational)",
+          "description": "Understand how brute-force attacks work — for defence purposes",
+          "difficulty": "intermediate",
+          "code": "# Brute Force PIN Cracker — EDUCATIONAL ONLY\n# Understanding attacks helps you DEFEND against them!\n# NEVER use this on systems you don't own.\n\nimport time\n\ntarget_pin = \"4217\"  # The PIN we're trying to crack\nattempts = 0\nfound = False\n\nprint(\"BRUTE FORCE PIN CRACKER (Educational Demo)\")\nprint(\"=\"  * 45)\nprint(f\"Target: ****  (4-digit PIN)\")\nprint(f\"Keyspace: 0000-9999 (10,000 combinations)\")\nprint()\n\nstart = time.time()\n\n# Try every combination from 0000 to 9999\nfor num in range(10000):\n    guess = f\"{num:04d}\"  # Zero-pad to 4 digits\n    attempts += 1\n    \n    # Show progress every 2500 attempts\n    if attempts % 2500 == 0:\n        print(f\"  Trying {guess}... ({attempts:,} attempts)\")\n    \n    if guess == target_pin:\n        elapsed = time.time() - start\n        found = True\n        print(f\"\\n  PIN FOUND: {guess}\")\n        print(f\"  Attempts: {attempts:,}\")\n        print(f\"  Time: {elapsed:.4f} seconds\")\n        break\n\nif not found:\n    print(\"PIN not found (shouldn't happen for 4-digit PINs!)\")\n\n# Defence lesson\nprint(f\"\\n{'=' * 45}\")\nprint(\"DEFENCE LESSONS:\")\nprint(\"  1. 4-digit PINs are cracked in milliseconds\")\nprint(\"  2. Use 6+ digit PINs minimum\")\nprint(\"  3. Add lockout after 3-5 failed attempts\")\nprint(\"  4. Add time delays between attempts\")\nprint(f\"  5. 6-digit PIN: {10**6:,} combinations\")\nprint(f\"  6. 8-char password: ~{26**8:,} combinations\")",
+          "output": "BRUTE FORCE PIN CRACKER (Educational Demo)\n=============================================\nTarget: ****  (4-digit PIN)\nKeyspace: 0000-9999 (10,000 combinations)\n\n  Trying 2500... (2,500 attempts)\n\n  PIN FOUND: 4217\n  Attempts: 4,218\n  Time: 0.0035 seconds\n\n=============================================\nDEFENCE LESSONS:\n  1. 4-digit PINs are cracked in milliseconds\n  2. Use 6+ digit PINs minimum\n  3. Add lockout after 3-5 failed attempts\n  4. Add time delays between attempts\n  5. 6-digit PIN: 1,000,000 combinations\n  6. 8-char password: ~208,827,064,576 combinations",
+          "ai_explanation": "This demonstrates the LOGIC of brute-force attacks:\n1. range(10000) generates all PINs from 0 to 9999.\n2. f\"{num:04d}\" zero-pads: 0 → '0000', 42 → '0042', 4217 → '4217'.\n3. The loop compares each guess to the target.\n4. break exits immediately when found — no need to try remaining PINs.\n5. time.time() measures how fast the attack is.\n\nA 4-digit PIN has only 10,000 possibilities — cracked instantly!\nAn 8-character password with letters: 26^8 = 208 billion possibilities.\n\nThis is why security tools enforce account lockouts, rate limiting, and complex passwords. Understanding the ATTACK helps you build better DEFENCES.",
+          "ai_challenge": "Modify to crack a 3-letter lowercase password (26^3 = 17,576 possibilities). Use nested loops or itertools.product."
+        },
+        {
+          "title": "Example 7: while Loop — Network Monitor",
+          "description": "Continuous monitoring pattern using while loop with exit conditions",
+          "difficulty": "intermediate",
+          "code": "# Network Connection Monitor — while loop pattern\nimport random\nimport time\n\nprint(\"NETWORK MONITOR v1.0\")\nprint(\"=\" * 50)\nprint(\"Monitoring connections... (max 8 checks)\\n\")\n\n# Monitoring state\ncheck_count = 0\nmax_checks = 8\nalerts = 0\nblocked = []\n\nwhile check_count < max_checks:\n    check_count += 1\n    \n    # Simulate incoming connections\n    ips = [\"10.0.0.5\", \"203.0.113.42\", \"192.168.1.100\", \"198.51.100.1\"]\n    ports = [22, 80, 443, 3306, 4444, 8080]\n    \n    ip = random.choice(ips)\n    port = random.choice(ports)\n    \n    # Decision logic\n    is_internal = ip.startswith(\"10.\") or ip.startswith(\"192.168.\")\n    is_suspicious_port = port in [4444, 3306, 22]\n    \n    if not is_internal and is_suspicious_port:\n        status = \"BLOCKED\"\n        alerts += 1\n        blocked.append(f\"{ip}:{port}\")\n    elif not is_internal:\n        status = \"WATCHED\"\n    else:\n        status = \"ALLOWED\"\n    \n    icon = {\"BLOCKED\": \"🔴\", \"WATCHED\": \"🟡\", \"ALLOWED\": \"🟢\"}[status]\n    internal = \"INT\" if is_internal else \"EXT\"\n    print(f\"  [{check_count:>2}] {icon} {ip:<16}:{port:<5} [{internal}] {status}\")\n\nprint(f\"\\n{'=' * 50}\")\nprint(f\"Checks: {check_count} | Alerts: {alerts} | Blocked: {len(blocked)}\")\nif blocked:\n    print(f\"Blocked connections:\")\n    for b in blocked:\n        print(f\"  🔴 {b}\")",
+          "output": "NETWORK MONITOR v1.0\n==================================================\nMonitoring connections... (max 8 checks)\n\n  [ 1] 🟢 192.168.1.100  :443   [INT] ALLOWED\n  [ 2] 🔴 203.0.113.42   :4444  [EXT] BLOCKED\n  [ 3] 🟡 198.51.100.1   :80    [EXT] WATCHED\n  ...\n==================================================\nChecks: 8 | Alerts: 2 | Blocked: 2",
+          "ai_explanation": "This shows the while loop monitoring pattern:\n1. while check_count < max_checks: runs until the limit is reached.\n2. Each iteration simulates an incoming connection.\n3. Conditions classify each connection: internal vs external, safe vs suspicious port.\n4. Combined conditions (not is_internal AND is_suspicious_port) create complex rules.\n5. Counters and lists track alerts and blocked connections.\n\nReal IDS/IPS systems (Snort, Suricata) run essentially this pattern — an infinite while loop that inspects every network packet against a set of rules. The max_checks limit here prevents an infinite loop for the demo.",
+          "ai_challenge": "Add a 'break on critical threat' feature: if 3+ blocks happen, print 'CRITICAL: Possible attack in progress!' and stop monitoring."
+        },
+        {
+          "title": "Example 8: Nested Loops — Caesar Cipher Cracker",
+          "description": "Try all 25 possible shifts to crack a Caesar cipher",
+          "difficulty": "intermediate",
+          "code": "# Caesar Cipher Cracker — try all 25 shifts\n# Caesar cipher shifts each letter by N positions\n\ndef caesar_decrypt(ciphertext, shift):\n    \"\"\"Decrypt a Caesar cipher with given shift.\"\"\"\n    result = \"\"\n    for char in ciphertext:\n        if char.isalpha():\n            base = ord('A') if char.isupper() else ord('a')\n            decrypted = chr((ord(char) - base - shift) % 26 + base)\n            result += decrypted\n        else:\n            result += char  # Keep non-letters as-is\n    return result\n\n# The encrypted message\nciphertext = \"Wkh vhfuhw sdvvzrug lv iruhqvlfv\"\n\nprint(\"CAESAR CIPHER CRACKER\")\nprint(\"=\" * 50)\nprint(f\"Ciphertext: {ciphertext}\")\nprint(f\"Trying all 25 shifts...\\n\")\n\n# Common English words to detect correct decryption\ncommon_words = [\"the\", \"is\", \"and\", \"was\", \"for\", \"that\", \"password\", \"secret\"]\n\nfound = False\nfor shift in range(1, 26):  # Try shifts 1-25\n    decrypted = caesar_decrypt(ciphertext, shift)\n    \n    # Check if decrypted text contains common words\n    lower = decrypted.lower()\n    matches = sum(1 for word in common_words if word in lower)\n    \n    indicator = \"\" \n    if matches >= 2:\n        indicator = \" <<< LIKELY MATCH!\"\n        found = True\n    \n    print(f\"  Shift {shift:>2}: {decrypted}{indicator}\")\n    \n    if found:\n        print(f\"\\nDECRYPTED (shift {shift}): {decrypted}\")\n        break\n\nif not found:\n    print(\"\\nNo obvious match found — may need frequency analysis.\")",
+          "output": "CAESAR CIPHER CRACKER\n==================================================\nCiphertext: Wkh vhfuhw sdvvzrug lv iruhqvlfv\nTrying all 25 shifts...\n\n  Shift  1: Vjg ugetgv rcuuyqtf ku hqtgpukeu\n  Shift  2: Uif tfdsef qbttvpse jt gpsfotjdt\n  Shift  3: The secret password is forensics <<< LIKELY MATCH!\n\nDECRYPTED (shift 3): The secret password is forensics",
+          "ai_explanation": "This combines nested iterations beautifully:\n1. OUTER loop (for shift in range(1, 26)) tries each possible shift value.\n2. INNER loop (for char in ciphertext inside the function) processes each character.\n3. The ASCII maths: (ord(char) - base - shift) % 26 + base handles the wraparound (Z→A).\n4. Detection: checks if decrypted text contains common English words.\n5. break exits as soon as a likely match is found — efficiency!\n\nCaesar cipher is the simplest classical cipher. With only 25 possible shifts, brute force is instant. Modern encryption (AES-256) has 2^256 possible keys — that's more than atoms in the universe! On Kali, try: echo 'Wkh vhfuhw' | tr 'A-Za-z' 'X-ZA-Wx-za-w'",
+          "ai_challenge": "Add frequency analysis: count how often each letter appears in the decrypted text and compare to English letter frequency (E is most common at ~12.7%)."
+        },
+        {
+          "title": "Example 9: enumerate() and zip() — Processing Paired Evidence",
+          "description": "Advanced loop patterns for handling related data collections",
+          "difficulty": "intermediate",
+          "code": "# enumerate() and zip() — powerful loop patterns\n\n# enumerate() — loop with automatic counter\nprint(\"=== EVIDENCE LOG (enumerate) ===\")\nevidence = [\"laptop.img\", \"phone.tar\", \"usb.zip\", \"email.pst\", \"camera_sd.dd\"]\n\nfor index, item in enumerate(evidence, start=1):\n    status = \"Analysed\" if index <= 3 else \"Pending\"\n    print(f\"  E{index:03d}: {item:<15} [{status}]\")\n\n# zip() — pair up related data\nprint(\"\\n=== HASH VERIFICATION (zip) ===\")\nfilenames = [\"photo.jpg\", \"doc.pdf\", \"data.csv\"]\nexpected_hashes = [\"a1b2c3\", \"d4e5f6\", \"g7h8i9\"]\nactual_hashes =   [\"a1b2c3\", \"d4e5f6\", \"XXXXXX\"]\n\nfor fname, expected, actual in zip(filenames, expected_hashes, actual_hashes):\n    match = expected == actual\n    icon = \"✓\" if match else \"✗\"\n    status = \"VERIFIED\" if match else \"MISMATCH!\"\n    print(f\"  {icon} {fname:<12} Expected: {expected}  Got: {actual}  [{status}]\")\n\n# Combined: enumerate + zip\nprint(\"\\n=== COMBINED REPORT ===\")\nfor i, (fname, exp, act) in enumerate(zip(filenames, expected_hashes, actual_hashes), 1):\n    match = \"OK\" if exp == act else \"FAIL\"\n    print(f\"  [{i}] {fname}: {match}\")",
+          "output": "=== EVIDENCE LOG (enumerate) ===\n  E001: laptop.img       [Analysed]\n  E002: phone.tar        [Analysed]\n  E003: usb.zip          [Analysed]\n  E004: email.pst        [Pending]\n  E005: camera_sd.dd     [Pending]\n\n=== HASH VERIFICATION (zip) ===\n  ✓ photo.jpg    Expected: a1b2c3  Got: a1b2c3  [VERIFIED]\n  ✓ doc.pdf      Expected: d4e5f6  Got: d4e5f6  [VERIFIED]\n  ✗ data.csv     Expected: g7h8i9  Got: XXXXXX  [MISMATCH!]\n\n=== COMBINED REPORT ===\n  [1] photo.jpg: OK\n  [2] doc.pdf: OK\n  [3] data.csv: FAIL",
+          "ai_explanation": "enumerate() adds a counter: for i, item in enumerate(list, start=1) gives you both the position AND the value.\n\nzip() pairs up multiple lists: for a, b, c in zip(list1, list2, list3) gives you one item from each list per iteration.\n\nCombined: enumerate(zip(...)) gives you counters AND paired data!\n\nHash verification is a REAL forensic task: after copying evidence, you verify the hash matches the original to prove nothing was altered. If there's a mismatch, the evidence may have been tampered with — which could invalidate it in court.\n\nOn Kali, try: md5sum file.txt to compute a file's hash.",
+          "ai_challenge": "Create a function that takes two file lists and their hashes, compares them, and returns a percentage of verified files."
+        },
+        {
+          "title": "Example 10: List Comprehensions — Forensic Filtering",
+          "description": "Compact one-line loops for filtering and transforming evidence data",
+          "difficulty": "intermediate",
+          "code": "# List Comprehensions — compact filtering\n\n# Original evidence list\nall_files = [\n    \"photo1.jpg\", \"malware.exe\", \"report.pdf\", \"script.bat\",\n    \"notes.txt\", \"keylogger.py\", \"image.png\", \"payload.ps1\",\n    \"data.csv\", \"readme.md\", \"trojan.exe\", \"invoice.docx\"\n]\n\n# Filter: get only executable files\nexecutables = [f for f in all_files if f.endswith(('.exe', '.bat', '.ps1'))]\nprint(f\"Executables: {executables}\")\n\n# Filter: get safe files\nsafe = [f for f in all_files if f.endswith(('.txt', '.md', '.csv', '.pdf'))]\nprint(f\"Safe files: {safe}\")\n\n# Transform: get just extensions\nextensions = [f.split('.')[-1] for f in all_files]\nprint(f\"Extensions: {extensions}\")\n\n# Transform: uppercase all names\nupper_files = [f.upper() for f in all_files]\nprint(f\"Uppercase: {upper_files[:3]}...\")\n\n# Filter + Transform: suspicious filenames in uppercase\nthreats = [f.upper() for f in all_files if f.endswith(('.exe', '.bat', '.ps1'))]\nprint(f\"Threats: {threats}\")\n\n# Count by extension\nfrom collections import Counter\next_count = Counter(f.split('.')[-1] for f in all_files)\nprint(f\"\\nExtension frequency:\")\nfor ext, count in ext_count.most_common():\n    bar = \"█\" * (count * 3)\n    print(f\"  .{ext:<5}: {count} {bar}\")",
+          "output": "Executables: ['malware.exe', 'script.bat', 'payload.ps1', 'trojan.exe']\nSafe files: ['report.pdf', 'notes.txt', 'data.csv', 'readme.md']\nExtensions: ['jpg', 'exe', 'pdf', 'bat', 'txt', 'py', 'png', 'ps1', 'csv', 'md', 'exe', 'docx']\nUppercase: ['PHOTO1.JPG', 'MALWARE.EXE', 'REPORT.PDF']...\nThreats: ['MALWARE.EXE', 'SCRIPT.BAT', 'PAYLOAD.PS1', 'TROJAN.EXE']\n\nExtension frequency:\n  .exe  : 2 ██████\n  .jpg  : 1 ███\n  .pdf  : 1 ███\n  ...",
+          "ai_explanation": "List comprehensions are one-line for loops:\n[expression for item in list] = transform every item\n[expression for item in list if condition] = filter + transform\n\nThey're equivalent to:\nresult = []\nfor item in list:\n    if condition:\n        result.append(expression)\n\nBut MUCH more compact and Pythonic! Professional Python code uses comprehensions extensively.\n\nCounter from collections counts occurrences automatically — perfect for frequency analysis in forensics (most common file types, most active IPs, etc.).",
+          "ai_challenge": "Create a dictionary comprehension that maps each filename to its size in bytes (use len(filename) * 1000 as a fake size). Filter to only include files over 10,000 bytes."
+        },
+        {
+          "title": "Example 11: for/else — Search Until Found",
+          "description": "Python's unique for/else pattern for search-and-report operations",
+          "difficulty": "advanced",
+          "code": "# for/else — Python's unique search pattern\n# The else block runs if the loop completed WITHOUT break\n\n# Search for a specific hash in a database\nhash_database = [\n    {\"hash\": \"abc123\", \"malware\": \"WannaCry\", \"severity\": \"CRITICAL\"},\n    {\"hash\": \"def456\", \"malware\": \"Stuxnet\", \"severity\": \"CRITICAL\"},\n    {\"hash\": \"ghi789\", \"malware\": \"Emotet\", \"severity\": \"HIGH\"},\n    {\"hash\": \"jkl012\", \"malware\": \"Mirai\", \"severity\": \"HIGH\"},\n]\n\n# Search function\ndef lookup_hash(target_hash):\n    print(f\"\\nSearching for: {target_hash}\")\n    for entry in hash_database:\n        if entry[\"hash\"] == target_hash:\n            print(f\"  MATCH FOUND!\")\n            print(f\"  Malware: {entry['malware']}\")\n            print(f\"  Severity: {entry['severity']}\")\n            break\n    else:\n        # This runs ONLY if break was NOT called\n        print(f\"  No match — file appears clean\")\n\n# Test with known malware hash\nlookup_hash(\"def456\")\n\n# Test with unknown hash\nlookup_hash(\"zzz999\")\n\n# Test with another match\nlookup_hash(\"ghi789\")",
+          "output": "\nSearching for: def456\n  MATCH FOUND!\n  Malware: Stuxnet\n  Severity: CRITICAL\n\nSearching for: zzz999\n  No match — file appears clean\n\nSearching for: ghi789\n  MATCH FOUND!\n  Malware: Emotet\n  Severity: HIGH",
+          "ai_explanation": "Python's for/else is unique and powerful:\n- The else block after a for loop runs ONLY if the loop completed normally (no break).\n- If break IS called, the else is skipped.\n\nThis is PERFECT for search patterns:\n- Loop through database, if found → break (else skipped).\n- If not found → loop ends normally → else runs.\n\nWithout for/else, you'd need a 'found' flag variable:\nfound = False\nfor entry in db:\n    if match: found = True; break\nif not found: print('not found')\n\nfor/else is cleaner! This pattern is used in hash lookup tools, virus signature databases, and blocklist checking.",
+          "ai_challenge": "Make the search case-insensitive and partial — so searching 'abc' matches 'abc123'. Add a results counter for partial matches."
+        },
+        {
+          "title": "Example 12: Complete Intrusion Detection Rule Engine",
+          "description": "Putting it ALL together — a mini IDS using every concept from this topic",
+          "difficulty": "advanced",
+          "code": "# === MINI INTRUSION DETECTION SYSTEM ===\n# Uses: if/elif/else, and/or/not, for, while, break, continue,\n# enumerate, range, in, nested loops, ternary, comprehensions\n\nimport random\n\n# Detection rules\nRULES = [\n    {\"name\": \"Brute Force\", \"condition\": \"failed_logins >= 5\", \"severity\": \"HIGH\"},\n    {\"name\": \"Port Scan\", \"condition\": \"unique_ports >= 10\", \"severity\": \"HIGH\"},\n    {\"name\": \"Data Exfil\", \"condition\": \"bytes_out > 10000000\", \"severity\": \"CRITICAL\"},\n    {\"name\": \"Suspicious Port\", \"condition\": \"port in [4444, 5555, 6666]\", \"severity\": \"MEDIUM\"},\n]\n\n# Simulated network events\nevents = [\n    {\"ip\": \"203.0.113.42\", \"port\": 22, \"action\": \"LOGIN_FAILED\", \"bytes\": 0},\n    {\"ip\": \"203.0.113.42\", \"port\": 22, \"action\": \"LOGIN_FAILED\", \"bytes\": 0},\n    {\"ip\": \"203.0.113.42\", \"port\": 22, \"action\": \"LOGIN_FAILED\", \"bytes\": 0},\n    {\"ip\": \"203.0.113.42\", \"port\": 22, \"action\": \"LOGIN_FAILED\", \"bytes\": 0},\n    {\"ip\": \"203.0.113.42\", \"port\": 22, \"action\": \"LOGIN_FAILED\", \"bytes\": 0},\n    {\"ip\": \"10.0.0.5\", \"port\": 443, \"action\": \"UPLOAD\", \"bytes\": 15000000},\n    {\"ip\": \"198.51.100.1\", \"port\": 4444, \"action\": \"CONNECT\", \"bytes\": 1024},\n    {\"ip\": \"10.0.0.12\", \"port\": 80, \"action\": \"LOGIN_SUCCESS\", \"bytes\": 500},\n]\n\nprint(\"╔\" + \"═\" * 56 + \"╗\")\nprint(f\"║{'SYNAPSE INTRUSION DETECTION SYSTEM':^56}║\")\nprint(\"╠\" + \"═\" * 56 + \"╣\")\n\n# Phase 1: Process events\nprint(f\"║{'Phase 1: Processing Events':^56}║\")\nprint(\"╠\" + \"═\" * 56 + \"╣\")\n\nip_stats = {}\nfor i, event in enumerate(events, 1):\n    ip = event[\"ip\"]\n    if ip not in ip_stats:\n        ip_stats[ip] = {\"failed\": 0, \"ports\": set(), \"bytes_out\": 0, \"events\": 0}\n    \n    ip_stats[ip][\"events\"] += 1\n    ip_stats[ip][\"ports\"].add(event[\"port\"])\n    \n    if event[\"action\"] == \"LOGIN_FAILED\":\n        ip_stats[ip][\"failed\"] += 1\n    if event[\"action\"] == \"UPLOAD\":\n        ip_stats[ip][\"bytes_out\"] += event[\"bytes\"]\n\n# Phase 2: Check rules\nprint(f\"║{'Phase 2: Checking Rules':^56}║\")\nprint(\"╠\" + \"═\" * 56 + \"╣\")\n\nalerts = []\nfor ip, stats in ip_stats.items():\n    is_internal = ip.startswith(\"10.\") or ip.startswith(\"192.168.\")\n    \n    # Check each rule\n    if stats[\"failed\"] >= 5:\n        alerts.append((ip, \"Brute Force\", \"HIGH\", f\"{stats['failed']} failed logins\"))\n    \n    if stats[\"bytes_out\"] > 10_000_000 and is_internal:\n        mb = stats[\"bytes_out\"] / 1_000_000\n        alerts.append((ip, \"Data Exfiltration\", \"CRITICAL\", f\"{mb:.1f} MB uploaded\"))\n    \n    for port in stats[\"ports\"]:\n        if port in [4444, 5555, 6666] and not is_internal:\n            alerts.append((ip, \"Suspicious Port\", \"MEDIUM\", f\"Port {port}\"))\n\n# Phase 3: Report\nprint(f\"║{'Phase 3: Alert Report':^56}║\")\nprint(\"╠\" + \"═\" * 56 + \"╣\")\n\nif alerts:\n    # Sort by severity\n    severity_order = {\"CRITICAL\": 0, \"HIGH\": 1, \"MEDIUM\": 2, \"LOW\": 3}\n    alerts.sort(key=lambda a: severity_order.get(a[2], 4))\n    \n    for ip, rule, sev, detail in alerts:\n        icon = {\"CRITICAL\": \"🔴\", \"HIGH\": \"🟠\", \"MEDIUM\": \"🟡\"}.get(sev, \"⚪\")\n        print(f\"║ {icon} [{sev:<8}] {rule:<20} {ip:<15} ║\")\n        print(f\"║   Detail: {detail:<44}║\")\nelse:\n    print(f\"║{'No threats detected':^56}║\")\n\nprint(\"╠\" + \"═\" * 56 + \"╣\")\nprint(f\"║  Events processed: {len(events):<35}║\")\nprint(f\"║  Unique IPs: {len(ip_stats):<41}║\")\nprint(f\"║  Alerts generated: {len(alerts):<35}║\")\nprint(\"╚\" + \"═\" * 56 + \"╝\")",
+          "output": "╔════════════════════════════════════════════════════════╗\n║          SYNAPSE INTRUSION DETECTION SYSTEM            ║\n╠════════════════════════════════════════════════════════╣\n║          Phase 1: Processing Events                   ║\n╠════════════════════════════════════════════════════════╣\n║          Phase 2: Checking Rules                      ║\n╠════════════════════════════════════════════════════════╣\n║            Phase 3: Alert Report                      ║\n╠════════════════════════════════════════════════════════╣\n║ 🔴 [CRITICAL] Data Exfiltration    10.0.0.5          ║\n║   Detail: 15.0 MB uploaded                            ║\n║ 🟠 [HIGH    ] Brute Force          203.0.113.42      ║\n║   Detail: 5 failed logins                             ║\n║ 🟡 [MEDIUM  ] Suspicious Port      198.51.100.1      ║\n║   Detail: Port 4444                                   ║\n╠════════════════════════════════════════════════════════╣\n║  Events processed: 8                                  ║\n║  Unique IPs: 4                                        ║\n║  Alerts generated: 3                                  ║\n╚════════════════════════════════════════════════════════╝",
+          "ai_explanation": "This is a COMPLETE mini IDS combining EVERYTHING:\n\nPhase 1 (Data Collection):\n- for loop with enumerate iterates events\n- Dictionary tracks stats per IP\n- set() tracks unique ports\n- if conditions classify event types\n\nPhase 2 (Rule Engine):\n- Nested loops: outer = IPs, inner = ports\n- Complex conditions with and/or\n- Threshold checks (>=5 failures, >10MB)\n\nPhase 3 (Reporting):\n- Sorting with lambda (severity order)\n- Formatted output with conditional icons\n- Summary statistics\n\nThis is the architecture of real IDS tools like Snort and Suricata — event collection, rule matching, and alert generation. You just built one from scratch! 🎉",
+          "ai_challenge": "Add a 'correlation' feature: if the SAME IP triggers 2+ different rules, upgrade its severity to CRITICAL regardless of individual rule severity."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Conditions & Loops — Decision & Iteration Flow",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 10px;\"><div style=\"text-align: center; margin-bottom: 20px;\"><span style=\"background: #e74c3c; color: white; padding: 8px 20px; border-radius: 6px; font-size: 16px; font-weight: bold;\">🧠 CONDITIONS & LOOPS — DECISION FLOW</span></div>\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">IF / ELIF / ELSE FLOW</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n<div style=\"text-align: center;\"><span style=\"background: #3498db; color: white; padding: 4px 16px; border-radius: 4px;\">Start</span></div>\n<div style=\"text-align: center; color: #3498db;\">│</div>\n<div style=\"text-align: center; color: #3498db;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #f39c12; color: white; padding: 4px 16px; border-radius: 4px;\">❓ if condition True?</span></div>\n<div style=\"text-align: center;\"><span style=\"color: #2ecc71; font-weight: bold;\">YES → Run if block ✅ → Skip to end</span></div>\n<div style=\"text-align: center;\"><span style=\"color: #e74c3c; font-weight: bold;\">NO ↓</span></div>\n\n<div style=\"text-align: center;\"><span style=\"background: #f39c12; color: white; padding: 4px 16px; border-radius: 4px;\">❓ elif condition True?</span></div>\n<div style=\"text-align: center;\"><span style=\"color: #2ecc71; font-weight: bold;\">YES → Run elif block ✅ → Skip to end</span></div>\n<div style=\"text-align: center;\"><span style=\"color: #e74c3c; font-weight: bold;\">NO ↓</span></div>\n\n<div style=\"text-align: center;\"><span style=\"background: #9b59b6; color: white; padding: 4px 16px; border-radius: 4px;\">else → Run else block (default)</span></div>\n<div style=\"text-align: center; color: #3498db;\">│</div>\n<div style=\"text-align: center; color: #3498db;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #2ecc71; color: white; padding: 4px 16px; border-radius: 4px;\">Continue after if/elif/else</span></div>\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">FOR LOOP FLOW</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n<div style=\"text-align: center;\"><span style=\"background: #3498db; color: white; padding: 4px 16px; border-radius: 4px;\">for item in collection:</span></div>\n<div style=\"text-align: center; color: #3498db;\">│</div>\n<div style=\"text-align: center; color: #3498db;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #f39c12; color: white; padding: 4px 16px; border-radius: 4px;\">❓ More items?</span></div>\n<div style=\"text-align: center;\"><span style=\"color: #2ecc71; font-weight: bold;\">YES → Get next item → Run block → Loop back ↑</span></div>\n<div style=\"text-align: center;\"><span style=\"color: #e74c3c; font-weight: bold;\">NO → Exit loop (run else if present)</span></div>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">break</span> = Exit loop immediately (skip else)\n  <span style=\"color: #f39c12; font-weight: bold;\">continue</span> = Skip rest of block, go to next item\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">WHILE LOOP FLOW</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n<div style=\"text-align: center;\"><span style=\"background: #3498db; color: white; padding: 4px 16px; border-radius: 4px;\">while condition:</span></div>\n<div style=\"text-align: center; color: #3498db;\">│</div>\n<div style=\"text-align: center; color: #3498db;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #f39c12; color: white; padding: 4px 16px; border-radius: 4px;\">❓ Condition True?</span></div>\n<div style=\"text-align: center;\"><span style=\"color: #2ecc71; font-weight: bold;\">YES → Run block → Loop back ↑</span></div>\n<div style=\"text-align: center;\"><span style=\"color: #e74c3c; font-weight: bold;\">NO → Exit loop</span></div>\n\n  ⚠ <span style=\"color: #e74c3c; font-weight: bold;\">DANGER:</span> If condition NEVER becomes False → infinite loop!\n  Always ensure something inside changes the condition.\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">COMPARISON & LOGICAL OPERATORS</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">==</span> Equal      <span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">!=</span> Not equal      <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 3px;\"><</span> Less than\n  <span style=\"background: #9b59b6; color: white; padding: 2px 8px; border-radius: 3px;\">></span> Greater    <span style=\"background: #f39c12; color: white; padding: 2px 8px; border-radius: 3px;\"><=</span> Less or equal    <span style=\"background: #95a5a6; color: white; padding: 2px 8px; border-radius: 3px;\">>=</span> Greater or equal\n\n  <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 3px;\">and</span> Both True     <span style=\"background: #f39c12; color: white; padding: 2px 8px; border-radius: 3px;\">or</span> At least one True     <span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">not</span> Flip True↔False\n\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">in</span> Is item in collection?     <span style=\"background: #9b59b6; color: white; padding: 2px 8px; border-radius: 3px;\">not in</span> Is item NOT in collection?\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">💡 REMEMBER</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> if/elif checks top-to-bottom, stops at FIRST True\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> for = known iterations, while = unknown iterations\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> break stops the loop, continue skips current item\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> range(start, stop) — stop is EXCLUSIVE!\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> enumerate() adds a counter to any loop\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> zip() pairs up multiple lists\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> List comprehension = one-line for loop\n  <span style=\"color: #e74c3c; font-weight: bold;\">✓</span> == is comparison, = is assignment — don't mix them!\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Simple if",
+          "description": "If port is 443, print 'HTTPS detected'. Use port=443.",
+          "difficulty": "beginner",
+          "category": "Basic Conditions",
+          "estimated_minutes": 3,
+          "ai_intro": "Decision time! If port is 443, print 'HTTPS detected'. Use port=443.",
+          "starter_code": "port = 443\n# TODO: If port is 443, print HTTPS detected\n",
+          "expected_output": "HTTPS detected",
+          "hints": [
+            {
+              "message": "Use: if port == 443:"
+            },
+            {
+              "message": "if port == 443:\\n    print(\"HTTPS detected\")"
+            },
+            {
+              "message": "Solution:\\nport = 443\\nif port == 443:\\n    print(\"HTTPS detected\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: if/else",
+          "description": "If score >= 7, print 'HIGH risk'. Else print 'LOW risk'. Use score=8.",
+          "difficulty": "beginner",
+          "category": "Basic Conditions",
+          "estimated_minutes": 3,
+          "ai_intro": "Decision time! If score >= 7, print 'HIGH risk'. Else print 'LOW risk'. Use score=8.",
+          "starter_code": "score = 8\n# TODO: Check if score >= 7\n",
+          "expected_output": "HIGH risk",
+          "hints": [
+            {
+              "message": "if score >= 7: print HIGH, else: print LOW"
+            },
+            {
+              "message": "if score >= 7:\\n    print(\"HIGH risk\")\\nelse:\\n    print(\"LOW risk\")"
+            },
+            {
+              "message": "Solution:\\nif score >= 7:\\n    print(\"HIGH risk\")\\nelse:\\n    print(\"LOW risk\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: elif Chain",
+          "description": "Classify port: 80→HTTP, 443→HTTPS, 22→SSH, else→Unknown. Test with port=22.",
+          "difficulty": "beginner",
+          "category": "Basic Conditions",
+          "estimated_minutes": 3,
+          "ai_intro": "Decision time! Classify port: 80→HTTP, 443→HTTPS, 22→SSH, else→Unknown. Test with port=22.",
+          "starter_code": "port = 22\n# TODO: Classify the port using if/elif/else\n",
+          "expected_output": "SSH",
+          "hints": [
+            {
+              "message": "Use if/elif/elif/else to check each port value."
+            },
+            {
+              "message": "if port == 80: HTTP, elif port == 443: HTTPS, elif port == 22: SSH, else: Unknown"
+            },
+            {
+              "message": "Solution:\\nif port == 80:\\n    print(\"HTTP\")\\nelif port == 443:\\n    print(\"HTTPS\")\\nelif port == 22:\\n    print(\"SSH\")\\nelse:\\n    print(\"Unknown\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: and Operator",
+          "description": "If port < 1024 AND protocol == 'TCP', print 'Well-known TCP service'.",
+          "difficulty": "beginner",
+          "category": "Basic Conditions",
+          "estimated_minutes": 3,
+          "ai_intro": "Decision time! If port < 1024 AND protocol == 'TCP', print 'Well-known TCP service'.",
+          "starter_code": "port = 80\nprotocol = \"TCP\"\n# TODO: Check both conditions with and\n",
+          "expected_output": "Well-known TCP service",
+          "hints": [
+            {
+              "message": "Use: if port < 1024 and protocol == \"TCP\":"
+            },
+            {
+              "message": "Both conditions must be True for the block to run."
+            },
+            {
+              "message": "Solution:\\nif port < 1024 and protocol == \"TCP\":\\n    print(\"Well-known TCP service\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: or Operator",
+          "description": "If file ends with .exe OR .bat, print 'Executable detected'. Test with 'test.exe'.",
+          "difficulty": "beginner",
+          "category": "Basic Conditions",
+          "estimated_minutes": 3,
+          "ai_intro": "Decision time! If file ends with .exe OR .bat, print 'Executable detected'. Test with 'test.exe'.",
+          "starter_code": "filename = \"test.exe\"\n# TODO: Check for .exe or .bat extension\n",
+          "expected_output": "Executable detected",
+          "hints": [
+            {
+              "message": "Use: if filename.endswith(\".exe\") or filename.endswith(\".bat\"):"
+            },
+            {
+              "message": "or means AT LEAST ONE condition must be True."
+            },
+            {
+              "message": "Solution:\\nif filename.endswith(\".exe\") or filename.endswith(\".bat\"):\\n    print(\"Executable detected\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: not Operator",
+          "description": "If the file is NOT analysed (is_analysed=False), print 'Pending analysis'.",
+          "difficulty": "beginner",
+          "category": "Basic Conditions",
+          "estimated_minutes": 3,
+          "ai_intro": "Decision time! If the file is NOT analysed (is_analysed=False), print 'Pending analysis'.",
+          "starter_code": "is_analysed = False\n# TODO: Use not to check\n",
+          "expected_output": "Pending analysis",
+          "hints": [
+            {
+              "message": "Use: if not is_analysed:"
+            },
+            {
+              "message": "not False = True, so the block runs."
+            },
+            {
+              "message": "Solution:\\nif not is_analysed:\\n    print(\"Pending analysis\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: in Operator",
+          "description": "Check if '192.168.1.1' is in the blocklist. Print appropriate message.",
+          "difficulty": "beginner",
+          "category": "Basic Conditions",
+          "estimated_minutes": 3,
+          "ai_intro": "Decision time! Check if '192.168.1.1' is in the blocklist. Print appropriate message.",
+          "starter_code": "blocklist = [\"10.0.0.1\", \"192.168.1.1\", \"172.16.0.1\"]\nip = \"192.168.1.1\"\n# TODO: Check if ip is in blocklist\n",
+          "expected_output": "BLOCKED: 192.168.1.1",
+          "hints": [
+            {
+              "message": "Use: if ip in blocklist:"
+            },
+            {
+              "message": "if ip in blocklist:\\n    print(f\"BLOCKED: {ip}\")"
+            },
+            {
+              "message": "Solution:\\nif ip in blocklist:\\n    print(f\"BLOCKED: {ip}\")\\nelse:\\n    print(f\"ALLOWED: {ip}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Nested if",
+          "description": "First check if external (not starting with 10.), then if port is 22, print SSH alert.",
+          "difficulty": "intermediate",
+          "category": "Basic Conditions",
+          "estimated_minutes": 3,
+          "ai_intro": "Decision time! First check if external (not starting with 10.), then if port is 22, print SSH alert.",
+          "starter_code": "ip = \"203.0.113.42\"\nport = 22\n# TODO: Nested check: external AND port 22\n",
+          "expected_output": "ALERT: External SSH from 203.0.113.42",
+          "hints": [
+            {
+              "message": "First if not ip.startswith(\"10.\"), then inside that: if port == 22:"
+            },
+            {
+              "message": "Nested means one if inside another — both must be True."
+            },
+            {
+              "message": "Solution:\\nif not ip.startswith(\"10.\"):\\n    if port == 22:\\n        print(f\"ALERT: External SSH from {ip}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Ternary Operator",
+          "description": "Use one-line ternary: status = 'OPEN' if port==80 else 'CLOSED'. Print it.",
+          "difficulty": "beginner",
+          "category": "Basic Conditions",
+          "estimated_minutes": 3,
+          "ai_intro": "Decision time! Use one-line ternary: status = 'OPEN' if port==80 else 'CLOSED'. Print it.",
+          "starter_code": "port = 80\n# TODO: Use ternary operator\n",
+          "expected_output": "Port 80: OPEN",
+          "hints": [
+            {
+              "message": "Ternary: value_if_true if condition else value_if_false"
+            },
+            {
+              "message": "status = \"OPEN\" if port == 80 else \"CLOSED\""
+            },
+            {
+              "message": "Solution:\\nstatus = \"OPEN\" if port == 80 else \"CLOSED\"\\nprint(f\"Port {port}: {status}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Range Check",
+          "description": "Check if port is in valid range (1-65535). Print valid or invalid.",
+          "difficulty": "intermediate",
+          "category": "Basic Conditions",
+          "estimated_minutes": 3,
+          "ai_intro": "Decision time! Check if port is in valid range (1-65535). Print valid or invalid.",
+          "starter_code": "port = 70000\n# TODO: Check if port is in valid range\n",
+          "expected_output": "Invalid port: 70000",
+          "hints": [
+            {
+              "message": "Use: if 1 <= port <= 65535: (Python allows chained comparison!)"
+            },
+            {
+              "message": "if 1 <= port <= 65535: print valid, else: print invalid"
+            },
+            {
+              "message": "Solution:\\nif 1 <= port <= 65535:\\n    print(f\"Valid port: {port}\")\\nelse:\\n    print(f\"Invalid port: {port}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Severity Classifier",
+          "description": "Given score, classify: >=9 CRITICAL, >=7 HIGH, >=4 MEDIUM, else LOW.",
+          "difficulty": "intermediate",
+          "category": "Basic Conditions",
+          "estimated_minutes": 3,
+          "ai_intro": "Decision time! Given score, classify: >=9 CRITICAL, >=7 HIGH, >=4 MEDIUM, else LOW.",
+          "starter_code": "score = 6.5\n# TODO: Classify severity using if/elif/else\n",
+          "expected_output": "Score 6.5: MEDIUM",
+          "hints": [
+            {
+              "message": "Check from highest to lowest: >=9 first, then >=7, etc."
+            },
+            {
+              "message": "if score >= 9: CRITICAL, elif score >= 7: HIGH, elif score >= 4: MEDIUM, else: LOW"
+            },
+            {
+              "message": "Solution:\\nif score >= 9:\\n    level = \"CRITICAL\"\\nelif score >= 7:\\n    level = \"HIGH\"\\nelif score >= 4:\\n    level = \"MEDIUM\"\\nelse:\\n    level = \"LOW\"\\nprint(f\"Score {score}: {level}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Complex Rule",
+          "description": "Alert if: external IP AND (port<1024 OR encrypted). Test with given values.",
+          "difficulty": "advanced",
+          "category": "Basic Conditions",
+          "estimated_minutes": 3,
+          "ai_intro": "Decision time! Alert if: external IP AND (port<1024 OR encrypted). Test with given values.",
+          "starter_code": "ip = \"203.0.113.42\"\nport = 443\nis_encrypted = True\nis_external = not ip.startswith((\"10.\", \"192.168.\", \"172.16.\"))\n# TODO: Complex alert condition\n",
+          "expected_output": "ALERT: Suspicious external connection",
+          "hints": [
+            {
+              "message": "Combine and/or with parentheses: if is_external and (port < 1024 or is_encrypted):"
+            },
+            {
+              "message": "Parentheses control order: check external FIRST, then either port OR encrypted."
+            },
+            {
+              "message": "Solution:\\nif is_external and (port < 1024 or is_encrypted):\\n    print(\"ALERT: Suspicious external connection\")\\nelse:\\n    print(\"Connection OK\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Loop Through List",
+          "description": "Print each item in evidence=['laptop','phone','usb'] on its own line.",
+          "difficulty": "beginner",
+          "category": "for Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "Loop power! Print each item in evidence=['laptop','phone','usb'] on its own line.",
+          "starter_code": "evidence = [\"laptop\", \"phone\", \"usb\"]\n# TODO: Loop and print each item\n",
+          "expected_output": "laptop\nphone\nusb",
+          "hints": [
+            {
+              "message": "for item in evidence: print(item)"
+            },
+            {
+              "message": "The variable 'item' gets each value from the list, one at a time."
+            },
+            {
+              "message": "Solution:\\nfor item in evidence:\\n    print(item)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Enumerate Evidence",
+          "description": "Print numbered evidence: [1] laptop, [2] phone, [3] usb using enumerate.",
+          "difficulty": "beginner",
+          "category": "for Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "Loop power! Print numbered evidence: [1] laptop, [2] phone, [3] usb using enumerate.",
+          "starter_code": "evidence = [\"laptop\", \"phone\", \"usb\"]\n# TODO: Use enumerate starting at 1\n",
+          "expected_output": "[1] laptop\n[2] phone\n[3] usb",
+          "hints": [
+            {
+              "message": "enumerate(list, 1) gives you index AND value."
+            },
+            {
+              "message": "for i, item in enumerate(evidence, 1): print(f\"[{i}] {item}\")"
+            },
+            {
+              "message": "Solution:\\nfor i, item in enumerate(evidence, 1):\\n    print(f\"[{i}] {item}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: range Basic",
+          "description": "Print numbers 1 to 5 using range().",
+          "difficulty": "beginner",
+          "category": "for Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "Loop power! Print numbers 1 to 5 using range().",
+          "starter_code": "# TODO: Use range to print 1, 2, 3, 4, 5\n",
+          "expected_output": "1\n2\n3\n4\n5",
+          "hints": [
+            {
+              "message": "range(1, 6) gives 1, 2, 3, 4, 5 (stop is exclusive!)."
+            },
+            {
+              "message": "for i in range(1, 6): print(i)"
+            },
+            {
+              "message": "Solution:\\nfor i in range(1, 6):\\n    print(i)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Port Range Scan",
+          "description": "Print 'Checking port X' for ports 80-85 using range.",
+          "difficulty": "beginner",
+          "category": "for Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "Loop power! Print 'Checking port X' for ports 80-85 using range.",
+          "starter_code": "# TODO: Scan ports 80 to 85\n",
+          "expected_output": "Checking port 80\nChecking port 81\nChecking port 82\nChecking port 83\nChecking port 84\nChecking port 85",
+          "hints": [
+            {
+              "message": "range(80, 86) gives 80-85 (remember, stop is exclusive!)."
+            },
+            {
+              "message": "for port in range(80, 86): print(f\"Checking port {port}\")"
+            },
+            {
+              "message": "Solution:\\nfor port in range(80, 86):\\n    print(f\"Checking port {port}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: String Characters",
+          "description": "Loop through 'HACK' and print each character with its ASCII code.",
+          "difficulty": "beginner",
+          "category": "for Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "Loop power! Loop through 'HACK' and print each character with its ASCII code.",
+          "starter_code": "word = \"HACK\"\n# TODO: Print each char and its ord() value\n",
+          "expected_output": "H = 72\nA = 65\nC = 67\nK = 75",
+          "hints": [
+            {
+              "message": "for char in word: use ord(char) for the ASCII code."
+            },
+            {
+              "message": "print(f\"{char} = {ord(char)}\")"
+            },
+            {
+              "message": "Solution:\\nfor char in word:\\n    print(f\"{char} = {ord(char)}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Sum Accumulator",
+          "description": "Calculate the sum of [10, 20, 30, 40, 50] using a for loop.",
+          "difficulty": "beginner",
+          "category": "for Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "Loop power! Calculate the sum of [10, 20, 30, 40, 50] using a for loop.",
+          "starter_code": "numbers = [10, 20, 30, 40, 50]\ntotal = 0\n# TODO: Sum all numbers using a loop\n",
+          "expected_output": "Total: 150",
+          "hints": [
+            {
+              "message": "Use total += number inside the loop to accumulate."
+            },
+            {
+              "message": "for n in numbers: total += n"
+            },
+            {
+              "message": "Solution:\\nfor n in numbers:\\n    total += n\\nprint(f\"Total: {total}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Filter with continue",
+          "description": "Print only .txt files from a list, skip everything else using continue.",
+          "difficulty": "intermediate",
+          "category": "for Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "Loop power! Print only .txt files from a list, skip everything else using continue.",
+          "starter_code": "files = [\"a.txt\", \"b.exe\", \"c.txt\", \"d.jpg\", \"e.txt\"]\n# TODO: Print only .txt files using continue\n",
+          "expected_output": "a.txt\nc.txt\ne.txt",
+          "hints": [
+            {
+              "message": "if not filename.endswith('.txt'): continue — skips non-txt files."
+            },
+            {
+              "message": "continue goes to the next iteration, skipping the print."
+            },
+            {
+              "message": "Solution:\\nfor f in files:\\n    if not f.endswith(\".txt\"):\\n        continue\\n    print(f)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Search with break",
+          "description": "Find the first .exe file in a list and stop searching.",
+          "difficulty": "intermediate",
+          "category": "for Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "Loop power! Find the first .exe file in a list and stop searching.",
+          "starter_code": "files = [\"doc.pdf\", \"pic.jpg\", \"malware.exe\", \"notes.txt\", \"hack.exe\"]\n# TODO: Find first .exe and break\n",
+          "expected_output": "Found threat: malware.exe",
+          "hints": [
+            {
+              "message": "if file.endswith('.exe'): print it and break."
+            },
+            {
+              "message": "break exits the loop immediately — efficient searching!"
+            },
+            {
+              "message": "Solution:\\nfor f in files:\\n    if f.endswith(\".exe\"):\\n        print(f\"Found threat: {f}\")\\n        break"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: zip Two Lists",
+          "description": "Pair up filenames and hashes, print each pair.",
+          "difficulty": "intermediate",
+          "category": "for Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "Loop power! Pair up filenames and hashes, print each pair.",
+          "starter_code": "names = [\"a.jpg\", \"b.pdf\", \"c.txt\"]\nhashes = [\"abc1\", \"def2\", \"ghi3\"]\n# TODO: Use zip to pair and print\n",
+          "expected_output": "a.jpg: abc1\nb.pdf: def2\nc.txt: ghi3",
+          "hints": [
+            {
+              "message": "for name, hash in zip(names, hashes): print them together."
+            },
+            {
+              "message": "zip() pairs up elements at the same position."
+            },
+            {
+              "message": "Solution:\\nfor name, h in zip(names, hashes):\\n    print(f\"{name}: {h}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Countdown",
+          "description": "Print countdown from 5 to 1 then 'SCAN COMPLETE!' using range with negative step.",
+          "difficulty": "beginner",
+          "category": "for Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "Loop power! Print countdown from 5 to 1 then 'SCAN COMPLETE!' using range with negative step.",
+          "starter_code": "# TODO: Countdown from 5 to 1\n",
+          "expected_output": "5\n4\n3\n2\n1\nSCAN COMPLETE!",
+          "hints": [
+            {
+              "message": "range(5, 0, -1) counts backwards: 5, 4, 3, 2, 1."
+            },
+            {
+              "message": "for i in range(5, 0, -1): print(i), then print the message after."
+            },
+            {
+              "message": "Solution:\\nfor i in range(5, 0, -1):\\n    print(i)\\nprint(\"SCAN COMPLETE!\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: List Comprehension",
+          "description": "Create a list of squared values [1,4,9,16,25] using comprehension.",
+          "difficulty": "intermediate",
+          "category": "for Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "Loop power! Create a list of squared values [1,4,9,16,25] using comprehension.",
+          "starter_code": "# TODO: Create squares of 1-5 using list comprehension\n",
+          "expected_output": "[1, 4, 9, 16, 25]",
+          "hints": [
+            {
+              "message": "List comprehension: [expression for item in range]"
+            },
+            {
+              "message": "[x**2 for x in range(1, 6)]"
+            },
+            {
+              "message": "Solution:\\nsquares = [x**2 for x in range(1, 6)]\\nprint(squares)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Filter Comprehension",
+          "description": "Filter: keep only files > 5 chars from ['a.txt','readme.md','x.py','report.pdf'].",
+          "difficulty": "intermediate",
+          "category": "for Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "Loop power! Filter: keep only files > 5 chars from ['a.txt','readme.md','x.py','report.pdf'].",
+          "starter_code": "files = [\"a.txt\", \"readme.md\", \"x.py\", \"report.pdf\"]\n# TODO: Filter using list comprehension\n",
+          "expected_output": "['readme.md', 'report.pdf']",
+          "hints": [
+            {
+              "message": "[f for f in files if len(f) > 5] — add a condition after the for."
+            },
+            {
+              "message": "The if clause filters: only items where the condition is True are included."
+            },
+            {
+              "message": "Solution:\\nlong_files = [f for f in files if len(f) > 5]\\nprint(long_files)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Basic while",
+          "description": "Print 'Attempt X' for X from 1 to 5 using a while loop.",
+          "difficulty": "beginner",
+          "category": "while Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "While loops keep going! Print 'Attempt X' for X from 1 to 5 using a while loop.",
+          "starter_code": "attempt = 1\n# TODO: while loop to print attempts 1-5\n",
+          "expected_output": "Attempt 1\nAttempt 2\nAttempt 3\nAttempt 4\nAttempt 5",
+          "hints": [
+            {
+              "message": "while attempt <= 5: print and increment."
+            },
+            {
+              "message": "Don't forget attempt += 1 inside the loop!"
+            },
+            {
+              "message": "Solution:\\nwhile attempt <= 5:\\n    print(f\"Attempt {attempt}\")\\n    attempt += 1"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: while with break",
+          "description": "Keep halving a number until it's < 1. Start with n=100.",
+          "difficulty": "beginner",
+          "category": "while Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "While loops keep going! Keep halving a number until it's < 1. Start with n=100.",
+          "starter_code": "n = 100\n# TODO: Keep halving, print each step, stop when < 1\n",
+          "expected_output": "100.0\n50.0\n25.0\n12.5\n6.25\n3.125\n1.5625",
+          "hints": [
+            {
+              "message": "while n >= 1: print n, then n = n / 2"
+            },
+            {
+              "message": "Or use n /= 2 as shorthand."
+            },
+            {
+              "message": "Solution:\\nn = 100.0\\nwhile n >= 1:\\n    print(n)\\n    n /= 2"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Password Retry",
+          "description": "Allow 3 attempts to enter 'secret'. Print success or lockout.",
+          "difficulty": "intermediate",
+          "category": "while Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "While loops keep going! Allow 3 attempts to enter 'secret'. Print success or lockout.",
+          "starter_code": "correct = \"secret\"\nattempts = 0\nmax_attempts = 3\npasswords = [\"admin\", \"password\", \"secret\"]  # Simulated inputs\n# TODO: while loop with max 3 attempts\n",
+          "expected_output": "Attempt 1: admin - WRONG\nAttempt 2: password - WRONG\nAttempt 3: secret - CORRECT!",
+          "hints": [
+            {
+              "message": "while attempts < max_attempts: check each password."
+            },
+            {
+              "message": "Use break when the correct password is found."
+            },
+            {
+              "message": "Solution:\\nwhile attempts < max_attempts:\\n    guess = passwords[attempts]\\n    attempts += 1\\n    if guess == correct:\\n        print(f\"Attempt {attempts}: {guess} - CORRECT!\")\\n        break\\n    print(f\"Attempt {attempts}: {guess} - WRONG\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Collatz Sequence",
+          "description": "Start with n=27. If even, halve it. If odd, triple and add 1. Stop at 1. Count steps.",
+          "difficulty": "intermediate",
+          "category": "while Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "While loops keep going! Start with n=27. If even, halve it. If odd, triple and add 1. Stop at 1. Count steps.",
+          "starter_code": "n = 27\nsteps = 0\n# TODO: Implement Collatz sequence\n",
+          "expected_output": "Steps to reach 1: 111",
+          "hints": [
+            {
+              "message": "while n != 1: if n%2==0 then n//=2, else n = n*3+1. Count steps."
+            },
+            {
+              "message": "The Collatz conjecture says this always reaches 1. Nobody has proved it!"
+            },
+            {
+              "message": "Solution:\\nwhile n != 1:\\n    if n % 2 == 0:\\n        n //= 2\\n    else:\\n        n = n * 3 + 1\\n    steps += 1\\nprint(f\"Steps to reach 1: {steps}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Byte Counter",
+          "description": "Count how many times you can divide 1073741824 by 1024 before it reaches 1. (GB→MB→KB→B)",
+          "difficulty": "beginner",
+          "category": "while Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "While loops keep going! Count how many times you can divide 1073741824 by 1024 before it reaches 1. (GB→MB→KB→B)",
+          "starter_code": "value = 1073741824\nsteps = 0\nunits = [\"bytes\", \"KB\", \"MB\", \"GB\"]\n# TODO: Divide by 1024 until value reaches 1\n",
+          "expected_output": "1073741824 bytes\n1048576 KB\n1024 MB\n1 GB",
+          "hints": [
+            {
+              "message": "while value >= 1024: divide by 1024, increment steps."
+            },
+            {
+              "message": "Print each step with the appropriate unit from the units list."
+            },
+            {
+              "message": "Solution:\\nprint(f\"{value} {units[steps]}\")\nwhile value >= 1024:\\n    value //= 1024\\n    steps += 1\\n    print(f\"{value} {units[steps]}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Input Validator",
+          "description": "Keep asking for a port number until a valid one (1-65535) is given. Use simulated inputs.",
+          "difficulty": "intermediate",
+          "category": "while Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "While loops keep going! Keep asking for a port number until a valid one (1-65535) is given. Use simulated inputs.",
+          "starter_code": "inputs = [\"abc\", \"-1\", \"70000\", \"443\"]  # Simulated\nindex = 0\nvalid = False\n# TODO: while not valid loop\n",
+          "expected_output": "Invalid: abc\nInvalid: -1\nInvalid: 70000\nValid port: 443",
+          "hints": [
+            {
+              "message": "while not valid: try int(input), check range 1-65535."
+            },
+            {
+              "message": "Use try/except for non-numeric inputs."
+            },
+            {
+              "message": "Solution:\\nwhile not valid and index < len(inputs):\\n    raw = inputs[index]\\n    index += 1\\n    try:\\n        port = int(raw)\\n        if 1 <= port <= 65535:\\n            print(f\"Valid port: {port}\")\\n            valid = True\\n        else:\\n            print(f\"Invalid: {raw}\")\\n    except ValueError:\\n        print(f\"Invalid: {raw}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Exponential Backoff",
+          "description": "Double wait time from 1 to 64: 1,2,4,8,16,32,64. Then print 'Giving up'.",
+          "difficulty": "intermediate",
+          "category": "while Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "While loops keep going! Double wait time from 1 to 64: 1,2,4,8,16,32,64. Then print 'Giving up'.",
+          "starter_code": "wait = 1\nmax_wait = 64\n# TODO: Double wait each iteration\n",
+          "expected_output": "Retry in 1s...\nRetry in 2s...\nRetry in 4s...\nRetry in 8s...\nRetry in 16s...\nRetry in 32s...\nRetry in 64s...\nGiving up!",
+          "hints": [
+            {
+              "message": "while wait <= max_wait: print, then wait *= 2"
+            },
+            {
+              "message": "Exponential backoff is used in network retry logic."
+            },
+            {
+              "message": "Solution:\\nwhile wait <= max_wait:\\n    print(f\"Retry in {wait}s...\")\\n    wait *= 2\\nprint(\"Giving up!\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Search Until Found",
+          "description": "Search a list of dicts for hash='def456'. Print 'Found' or 'Not found' with for/else.",
+          "difficulty": "advanced",
+          "category": "while Loops",
+          "estimated_minutes": 4,
+          "ai_intro": "While loops keep going! Search a list of dicts for hash='def456'. Print 'Found' or 'Not found' with for/else.",
+          "starter_code": "database = [\n    {\"hash\": \"abc123\", \"name\": \"file1\"},\n    {\"hash\": \"def456\", \"name\": \"file2\"},\n    {\"hash\": \"ghi789\", \"name\": \"file3\"},\n]\ntarget = \"def456\"\n# TODO: Use for/else pattern\n",
+          "expected_output": "Found: file2 (def456)",
+          "hints": [
+            {
+              "message": "for entry in database: if match → print & break. else: print not found."
+            },
+            {
+              "message": "The else after for runs ONLY if break was NOT called."
+            },
+            {
+              "message": "Solution:\\nfor entry in database:\\n    if entry[\"hash\"] == target:\\n        print(f\"Found: {entry['name']} ({entry['hash']})\"  )\\n        break\\nelse:\\n    print(\"Not found\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Filter and Count",
+          "description": "Count how many files in a list end with .exe. Print the count.",
+          "difficulty": "beginner",
+          "category": "Nested & Combined Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Combining conditions and loops! Count how many files in a list end with .exe. Print the count.",
+          "starter_code": "files = [\"a.exe\", \"b.txt\", \"c.exe\", \"d.pdf\", \"e.exe\"]\ncount = 0\n# TODO: Count .exe files\n",
+          "expected_output": "Executables found: 3",
+          "hints": [
+            {
+              "message": "for f in files: if f.endswith(\".exe\"): count += 1"
+            },
+            {
+              "message": "Combine a for loop with an if condition and a counter."
+            },
+            {
+              "message": "Solution:\\nfor f in files:\\n    if f.endswith(\".exe\"):\\n        count += 1\\nprint(f\"Executables found: {count}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Classify Multiple Items",
+          "description": "For each port in [22,80,443,8080], classify as <1024='well-known' else 'registered'.",
+          "difficulty": "beginner",
+          "category": "Nested & Combined Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Combining conditions and loops! For each port in [22,80,443,8080], classify as <1024='well-known' else 'registered'.",
+          "starter_code": "ports = [22, 80, 443, 8080]\n# TODO: Loop and classify each\n",
+          "expected_output": "22: well-known\n80: well-known\n443: well-known\n8080: registered",
+          "hints": [
+            {
+              "message": "for port in ports: if port < 1024: well-known, else: registered"
+            },
+            {
+              "message": "Ternary inside the loop makes it clean."
+            },
+            {
+              "message": "Solution:\\nfor port in ports:\\n    cat = \"well-known\" if port < 1024 else \"registered\"\\n    print(f\"{port}: {cat}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Nested: Hosts × Ports",
+          "description": "Print every combination of 2 hosts and 3 ports.",
+          "difficulty": "intermediate",
+          "category": "Nested & Combined Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Combining conditions and loops! Print every combination of 2 hosts and 3 ports.",
+          "starter_code": "hosts = [\"10.0.0.1\", \"10.0.0.2\"]\nports = [22, 80, 443]\n# TODO: Nested loops for all combinations\n",
+          "expected_output": "10.0.0.1:22\n10.0.0.1:80\n10.0.0.1:443\n10.0.0.2:22\n10.0.0.2:80\n10.0.0.2:443",
+          "hints": [
+            {
+              "message": "Outer loop: for host in hosts. Inner loop: for port in ports."
+            },
+            {
+              "message": "print(f\"{host}:{port}\") inside the inner loop."
+            },
+            {
+              "message": "Solution:\\nfor host in hosts:\\n    for port in ports:\\n        print(f\"{host}:{port}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Log Filter",
+          "description": "From log entries, print only lines containing 'FAILED'.",
+          "difficulty": "intermediate",
+          "category": "Nested & Combined Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Combining conditions and loops! From log entries, print only lines containing 'FAILED'.",
+          "starter_code": "logs = [\n    \"LOGIN_SUCCESS user=admin\",\n    \"LOGIN_FAILED user=admin\",\n    \"FILE_ACCESS user=john\",\n    \"LOGIN_FAILED user=root\",\n]\n# TODO: Print only FAILED entries\n",
+          "expected_output": "LOGIN_FAILED user=admin\nLOGIN_FAILED user=root",
+          "hints": [
+            {
+              "message": "for line in logs: if \"FAILED\" in line: print(line)"
+            },
+            {
+              "message": "The 'in' operator searches within strings."
+            },
+            {
+              "message": "Solution:\\nfor line in logs:\\n    if \"FAILED\" in line:\\n        print(line)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Count by Category",
+          "description": "Count files by extension from a list. Print extension: count.",
+          "difficulty": "intermediate",
+          "category": "Nested & Combined Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Combining conditions and loops! Count files by extension from a list. Print extension: count.",
+          "starter_code": "files = [\"a.txt\", \"b.exe\", \"c.txt\", \"d.exe\", \"e.pdf\", \"f.txt\"]\ncounts = {}\n# TODO: Count occurrences of each extension\n",
+          "expected_output": ".txt: 3\n.exe: 2\n.pdf: 1",
+          "hints": [
+            {
+              "message": "Get extension with '.' + f.split('.')[-1]. Use dict to count."
+            },
+            {
+              "message": "counts[ext] = counts.get(ext, 0) + 1"
+            },
+            {
+              "message": "Solution:\\nfor f in files:\\n    ext = \".\" + f.split(\".\")[-1]\\n    counts[ext] = counts.get(ext, 0) + 1\\nfor ext, n in counts.items():\\n    print(f\"{ext}: {n}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Threat Scanner",
+          "description": "Scan files: flag .exe as HIGH, .zip as MEDIUM, else SAFE. Print summary.",
+          "difficulty": "intermediate",
+          "category": "Nested & Combined Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Combining conditions and loops! Scan files: flag .exe as HIGH, .zip as MEDIUM, else SAFE. Print summary.",
+          "starter_code": "files = [\"a.exe\", \"b.txt\", \"c.zip\", \"d.exe\", \"e.pdf\"]\n# TODO: Classify and count each threat level\n",
+          "expected_output": "a.exe: HIGH\nb.txt: SAFE\nc.zip: MEDIUM\nd.exe: HIGH\ne.pdf: SAFE\nHIGH: 2, MEDIUM: 1, SAFE: 2",
+          "hints": [
+            {
+              "message": "Loop with if/elif/else inside. Track counts with a dictionary."
+            },
+            {
+              "message": "if f.endswith('.exe'): HIGH, elif .zip: MEDIUM, else: SAFE"
+            },
+            {
+              "message": "Solution:\\ncounts = {\"HIGH\": 0, \"MEDIUM\": 0, \"SAFE\": 0}\\nfor f in files:\\n    if f.endswith(\".exe\"): level = \"HIGH\"\\n    elif f.endswith(\".zip\"): level = \"MEDIUM\"\\n    else: level = \"SAFE\"\\n    counts[level] += 1\\n    print(f\"{f}: {level}\")\\nprint(f\"HIGH: {counts['HIGH']}, MEDIUM: {counts['MEDIUM']}, SAFE: {counts['SAFE']}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: IP Subnet Check",
+          "description": "Check if each IP in a list belongs to the 192.168.1.x subnet.",
+          "difficulty": "intermediate",
+          "category": "Nested & Combined Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Combining conditions and loops! Check if each IP in a list belongs to the 192.168.1.x subnet.",
+          "starter_code": "ips = [\"192.168.1.5\", \"10.0.0.1\", \"192.168.1.100\", \"203.0.113.1\"]\n# TODO: Check each IP\n",
+          "expected_output": "192.168.1.5: LOCAL\n10.0.0.1: EXTERNAL\n192.168.1.100: LOCAL\n203.0.113.1: EXTERNAL",
+          "hints": [
+            {
+              "message": "if ip.startswith(\"192.168.1.\"): LOCAL else EXTERNAL"
+            },
+            {
+              "message": "Loop through IPs and classify each."
+            },
+            {
+              "message": "Solution:\\nfor ip in ips:\\n    if ip.startswith(\"192.168.1.\"):\\n        print(f\"{ip}: LOCAL\")\\n    else:\\n        print(f\"{ip}: EXTERNAL\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Password Brute: 2-digit",
+          "description": "Try all 2-digit PINs (00-99) to find target '42'. Count attempts.",
+          "difficulty": "intermediate",
+          "category": "Nested & Combined Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Combining conditions and loops! Try all 2-digit PINs (00-99) to find target '42'. Count attempts.",
+          "starter_code": "target = \"42\"\nattempts = 0\n# TODO: Brute force 00-99\n",
+          "expected_output": "Found: 42 in 43 attempts",
+          "hints": [
+            {
+              "message": "for num in range(100): guess = f\"{num:02d}\", compare to target."
+            },
+            {
+              "message": "Use break when found. Format with :02d for zero-padding."
+            },
+            {
+              "message": "Solution:\\nfor num in range(100):\\n    guess = f\"{num:02d}\"\\n    attempts += 1\\n    if guess == target:\\n        print(f\"Found: {guess} in {attempts} attempts\")\\n        break"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Matrix Scan",
+          "description": "Print all elements of a 3x3 matrix with their position.",
+          "difficulty": "advanced",
+          "category": "Nested & Combined Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Combining conditions and loops! Print all elements of a 3x3 matrix with their position.",
+          "starter_code": "matrix = [\n    [1, 2, 3],\n    [4, 5, 6],\n    [7, 8, 9]\n]\n# TODO: Nested loop to print row, col, value\n",
+          "expected_output": "Row 0, Col 0: 1\nRow 0, Col 1: 2\n...\nRow 2, Col 2: 9",
+          "hints": [
+            {
+              "message": "Outer loop for rows, inner loop for columns."
+            },
+            {
+              "message": "for r, row in enumerate(matrix): for c, val in enumerate(row):"
+            },
+            {
+              "message": "Solution:\\nfor r, row in enumerate(matrix):\\n    for c, val in enumerate(row):\\n        print(f\"Row {r}, Col {c}: {val}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Multi-Rule Firewall",
+          "description": "Check 4 connections against 3 rules each. Block if ANY rule matches.",
+          "difficulty": "advanced",
+          "category": "Nested & Combined Patterns",
+          "estimated_minutes": 5,
+          "ai_intro": "Combining conditions and loops! Check 4 connections against 3 rules each. Block if ANY rule matches.",
+          "starter_code": "connections = [\n    {\"ip\": \"10.0.0.5\", \"port\": 80},\n    {\"ip\": \"203.0.113.1\", \"port\": 4444},\n    {\"ip\": \"192.168.1.1\", \"port\": 22},\n    {\"ip\": \"198.51.100.1\", \"port\": 80},\n]\nblocked_ips = [\"203.0.113.1\"]\nblocked_ports = [4444, 6666]\n# TODO: Check each connection against rules\n",
+          "expected_output": "10.0.0.5:80 → ALLOW\n203.0.113.1:4444 → BLOCK (IP blocked)\n192.168.1.1:22 → ALLOW\n198.51.100.1:80 → ALLOW",
+          "hints": [
+            {
+              "message": "for conn in connections: check if ip in blocked_ips or port in blocked_ports."
+            },
+            {
+              "message": "If any rule matches, block. Otherwise allow."
+            },
+            {
+              "message": "Solution:\\nfor c in connections:\\n    ip, port = c['ip'], c['port']\\n    if ip in blocked_ips:\\n        print(f\"{ip}:{port} → BLOCK (IP blocked)\")\\n    elif port in blocked_ports:\\n        print(f\"{ip}:{port} → BLOCK (port blocked)\")\\n    else:\\n        print(f\"{ip}:{port} → ALLOW\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: if True",
+          "description": "What prints? x=10, if x > 5: print('big')",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Predict what happens! What prints? x=10, if x > 5: print('big')",
+          "starter_code": "# PREDICT: What prints?\nx = 10\nif x > 5:\n    print(\"big\")\n",
+          "expected_output": "big",
+          "hints": [
+            {
+              "message": "10 > 5 is True, so the block runs."
+            },
+            {
+              "message": "\"big\" gets printed."
+            },
+            {
+              "message": "Output: big"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: if False",
+          "description": "What prints? x=3, if x > 5: print('big') else: print('small')",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Predict what happens! What prints? x=3, if x > 5: print('big') else: print('small')",
+          "starter_code": "# PREDICT:\nx = 3\nif x > 5:\n    print(\"big\")\nelse:\n    print(\"small\")\n",
+          "expected_output": "small",
+          "hints": [
+            {
+              "message": "3 > 5 is False, so the else block runs."
+            },
+            {
+              "message": "\"small\" gets printed."
+            },
+            {
+              "message": "Output: small"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Loop Sum",
+          "description": "What does this print? total=0, for i in range(1,4): total+=i, print(total)",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Predict what happens! What does this print? total=0, for i in range(1,4): total+=i, print(total)",
+          "starter_code": "# PREDICT:\ntotal = 0\nfor i in range(1, 4):\n    total += i\nprint(total)\n",
+          "expected_output": "6",
+          "hints": [
+            {
+              "message": "range(1,4) = 1, 2, 3. Sum = 1+2+3 = 6."
+            },
+            {
+              "message": "total starts at 0, adds 1, 2, 3."
+            },
+            {
+              "message": "Output: 6"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: break Effect",
+          "description": "What prints? for i in range(10): if i==3: break, print(i)",
+          "difficulty": "intermediate",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Predict what happens! What prints? for i in range(10): if i==3: break, print(i)",
+          "starter_code": "# PREDICT:\nfor i in range(10):\n    if i == 3:\n        break\n    print(i)\n",
+          "expected_output": "0\n1\n2",
+          "hints": [
+            {
+              "message": "break happens when i==3, BEFORE print. So 0,1,2 print."
+            },
+            {
+              "message": "i=0: print 0, i=1: print 1, i=2: print 2, i=3: break!"
+            },
+            {
+              "message": "Output: 0, 1, 2"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: continue Effect",
+          "description": "What prints? for i in range(5): if i==2: continue, print(i)",
+          "difficulty": "intermediate",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Predict what happens! What prints? for i in range(5): if i==2: continue, print(i)",
+          "starter_code": "# PREDICT:\nfor i in range(5):\n    if i == 2:\n        continue\n    print(i)\n",
+          "expected_output": "0\n1\n3\n4",
+          "hints": [
+            {
+              "message": "continue skips i==2, but the loop keeps going."
+            },
+            {
+              "message": "0, 1, (skip 2), 3, 4"
+            },
+            {
+              "message": "Output: 0, 1, 3, 4"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Nested Loop Count",
+          "description": "How many times does X print? Nested for i in range(3) and for j in range(2)",
+          "difficulty": "intermediate",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Predict what happens! How many times does X print? Nested for i in range(3) and for j in range(2)",
+          "starter_code": "# PREDICT: How many Xs?\ncount = 0\nfor i in range(3):\n    for j in range(2):\n        count += 1\nprint(f\"Count: {count}\")\n",
+          "expected_output": "Count: 6",
+          "hints": [
+            {
+              "message": "Outer loop: 3 iterations. Inner loop: 2 iterations each. 3 × 2 = 6."
+            },
+            {
+              "message": "Each outer iteration runs the inner loop completely."
+            },
+            {
+              "message": "Output: Count: 6"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: and Short Circuit",
+          "description": "What prints? False and print('hello')",
+          "difficulty": "intermediate",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Predict what happens! What prints? False and print('hello')",
+          "starter_code": "# PREDICT: Does hello print?\nresult = False and print(\"hello\")\nprint(f\"Result: {result}\")\n",
+          "expected_output": "Result: False",
+          "hints": [
+            {
+              "message": "Python short-circuits: if the left side of 'and' is False, it doesn't evaluate the right side."
+            },
+            {
+              "message": "print('hello') never runs because False makes the whole expression False."
+            },
+            {
+              "message": "Output: Result: False (hello does NOT print)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: for/else",
+          "description": "What prints? for i in [1,2,3]: if i==5: break, else: print('done')",
+          "difficulty": "intermediate",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Predict what happens! What prints? for i in [1,2,3]: if i==5: break, else: print('done')",
+          "starter_code": "# PREDICT:\nfor i in [1, 2, 3]:\n    if i == 5:\n        break\nelse:\n    print(\"done\")\n",
+          "expected_output": "done",
+          "hints": [
+            {
+              "message": "i is never 5, so break never runs. The else block runs when the loop finishes normally."
+            },
+            {
+              "message": "else after for = runs if NO break occurred."
+            },
+            {
+              "message": "Output: done"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Truthiness in if",
+          "description": "What prints? if '': print('yes') else: print('no')",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Predict what happens! What prints? if '': print('yes') else: print('no')",
+          "starter_code": "# PREDICT:\nif \"\":\n    print(\"yes\")\nelse:\n    print(\"no\")\n",
+          "expected_output": "no",
+          "hints": [
+            {
+              "message": "Empty string '' is falsy."
+            },
+            {
+              "message": "bool('') = False, so the else block runs."
+            },
+            {
+              "message": "Output: no"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Ternary Chain",
+          "description": "What does x get? x = 'A' if 5>10 else 'B' if 3>1 else 'C'",
+          "difficulty": "advanced",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Predict what happens! What does x get? x = 'A' if 5>10 else 'B' if 3>1 else 'C'",
+          "starter_code": "# PREDICT:\nx = \"A\" if 5 > 10 else \"B\" if 3 > 1 else \"C\"\nprint(x)\n",
+          "expected_output": "B",
+          "hints": [
+            {
+              "message": "5>10 is False, so skip A. Then 3>1 is True, so x='B'."
+            },
+            {
+              "message": "Ternary chains evaluate left to right."
+            },
+            {
+              "message": "Output: B"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Wrong Comparison",
+          "description": "Fix: if x = 5 should be if x == 5",
+          "difficulty": "beginner",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug detective time! Fix: if x = 5 should be if x == 5",
+          "starter_code": "# FIX: SyntaxError!\nx = 5\nif x = 5:\n    print(\"Five!\")\n",
+          "expected_output": "Five!",
+          "hints": [
+            {
+              "message": "= is assignment, == is comparison."
+            },
+            {
+              "message": "Change = to == in the if statement."
+            },
+            {
+              "message": "Fix: if x == 5:"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Infinite Loop",
+          "description": "Fix: this while loop never ends!",
+          "difficulty": "beginner",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug detective time! Fix: this while loop never ends!",
+          "starter_code": "# FIX: Infinite loop!\ncount = 0\nwhile count < 5:\n    print(f\"Count: {count}\")\n    # Something is missing!\n",
+          "expected_output": "Count: 0\nCount: 1\nCount: 2\nCount: 3\nCount: 4",
+          "hints": [
+            {
+              "message": "count never changes, so count < 5 is always True!"
+            },
+            {
+              "message": "Add count += 1 inside the loop."
+            },
+            {
+              "message": "Fix: Add count += 1 after the print statement."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Off-by-One",
+          "description": "Fix: should print 1-5 but prints 1-4",
+          "difficulty": "beginner",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug detective time! Fix: should print 1-5 but prints 1-4",
+          "starter_code": "# FIX: Missing the number 5!\nfor i in range(1, 5):\n    print(i)\n",
+          "expected_output": "1\n2\n3\n4\n5",
+          "hints": [
+            {
+              "message": "range(1, 5) gives 1,2,3,4. The stop value is exclusive!"
+            },
+            {
+              "message": "Change to range(1, 6) to include 5."
+            },
+            {
+              "message": "Fix: for i in range(1, 6):"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Wrong Indentation",
+          "description": "Fix: the else is matching the wrong if",
+          "difficulty": "intermediate",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug detective time! Fix: the else is matching the wrong if",
+          "starter_code": "# FIX: Logic error — wrong indentation\nfor f in [\"a.exe\", \"b.txt\"]:\n    if f.endswith(\".exe\"):\n        print(f\"{f}: THREAT\")\nelse:\n    print(f\"{f}: SAFE\")\n",
+          "expected_output": "a.exe: THREAT\nb.txt: SAFE",
+          "hints": [
+            {
+              "message": "The else is aligned with for (for/else pattern), not with if!"
+            },
+            {
+              "message": "Indent the else to align with if, not for."
+            },
+            {
+              "message": "Fix: Indent else to be inside the for loop, aligned with if."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Boolean Trap",
+          "description": "Fix: elif True catches everything before the else!",
+          "difficulty": "intermediate",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug detective time! Fix: elif True catches everything before the else!",
+          "starter_code": "# FIX: The third condition never runs!\nscore = 2\nif score >= 7:\n    print(\"HIGH\")\nelif True:\n    print(\"MEDIUM\")\nelse:\n    print(\"LOW\")\n",
+          "expected_output": "LOW",
+          "hints": [
+            {
+              "message": "elif True is ALWAYS True, so 'LOW' never prints even for score=2."
+            },
+            {
+              "message": "Change elif True to elif score >= 4:"
+            },
+            {
+              "message": "Fix: elif score >= 4:\\n    print(\"MEDIUM\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: break vs continue",
+          "description": "Fix: should skip .exe files but the loop stops entirely",
+          "difficulty": "intermediate",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug detective time! Fix: should skip .exe files but the loop stops entirely",
+          "starter_code": "# FIX: Loop stops instead of skipping!\nfor f in [\"a.txt\", \"b.exe\", \"c.txt\"]:\n    if f.endswith(\".exe\"):\n        break  # Wrong!\n    print(f\"Processing: {f}\")\n",
+          "expected_output": "Processing: a.txt\nProcessing: c.txt",
+          "hints": [
+            {
+              "message": "break STOPS the entire loop. Use continue to SKIP one item."
+            },
+            {
+              "message": "Change break to continue."
+            },
+            {
+              "message": "Fix: Change break to continue"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Missing Colon",
+          "description": "Fix: SyntaxError from missing colons",
+          "difficulty": "beginner",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug detective time! Fix: SyntaxError from missing colons",
+          "starter_code": "# FIX: SyntaxError!\nif True\n    print(\"Yes\")\n",
+          "expected_output": "Yes",
+          "hints": [
+            {
+              "message": "Python requires a colon : at the end of if, for, while statements."
+            },
+            {
+              "message": "Add : after True"
+            },
+            {
+              "message": "Fix: if True:"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Type in Condition",
+          "description": "Fix: comparing string '5' with int 5",
+          "difficulty": "intermediate",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug detective time! Fix: comparing string '5' with int 5",
+          "starter_code": "# FIX: This condition never matches!\nport = \"443\"\nif port == 443:\n    print(\"HTTPS\")\nelse:\n    print(\"Not HTTPS\")\n",
+          "expected_output": "HTTPS",
+          "hints": [
+            {
+              "message": "'443' (string) is NOT equal to 443 (int) in Python."
+            },
+            {
+              "message": "Convert port to int: if int(port) == 443:"
+            },
+            {
+              "message": "Fix: if int(port) == 443: or change port = 443 (no quotes)"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

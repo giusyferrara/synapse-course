@@ -1,0 +1,355 @@
+{
+  "course_id": "data_analysis",
+  "title": "📊 Data Analysis - Master ALL Visualizations",
+  "level": "advanced",
+  "icon": "📊",
+  "description": "Master pandas, numpy, ALL graph types (2D & 3D), data cleaning, and visualization. Connect to Advanced Tools!",
+  "estimated_hours": 16,
+  "links_to_advanced_tools": true,
+  
+  "ai_tutor_config": {
+    "personality": "analytical_thorough_patient",
+    "focus_areas": ["pandas_operations", "data_cleaning", "all_chart_types", "3d_visualization", "interactive_plots"],
+    "intervention_triggers": {
+      "dataframe_confusion": {
+        "condition": "struggling_with_indexing || key_error",
+        "message": "📊 DataFrames can be tricky! Let me show you EXACTLY how to access rows and columns. Think of it like a spreadsheet!",
+        "action": "visualize_dataframe_structure"
+      },
+      "ready_for_3d": {
+        "condition": "mastered_2d_plots",
+        "message": "🎨 You've mastered 2D! Ready for 3D visualizations with x, y, z axes? Let's go!",
+        "action": "introduce_3d_plotting"
+      },
+      "ready_for_visualization": {
+        "condition": "data_cleaned && analysis_done",
+        "message": "🎨 Your data is ready! Now let's visualize it - I'll show you 15+ chart types!",
+        "action": "link_to_visualization_examples"
+      }
+    }
+  },
+  
+  "lessons": [
+    {
+      "lesson_id": "pandas_numpy_basics",
+      "title": "Pandas & NumPy - Data Foundations",
+      "duration_minutes": 90,
+      
+      "ai_welcome_message": "📊 Welcome to Data Analysis! You'll master pandas AND numpy - the tools data scientists use daily!",
+      
+      "theory": {
+        "introduction": "Pandas handles tables (DataFrames), NumPy handles arrays and math. Together, they're unstoppable!",
+        
+        "why_important": "Every data job uses these. Finance, healthcare, AI, research - if there's data, there's pandas & numpy!",
+        
+        "key_concepts": [
+          {
+            "concept": "Pandas DataFrames",
+            "explanation": "Like Excel spreadsheets but MUCH more powerful. Load, clean, analyze, visualize!",
+            "example": "import pandas as pd\n\ndata = {'Name': ['Alice', 'Bob'], 'Age': [25, 30]}\ndf = pd.DataFrame(data)",
+            "ai_hint": "📊 Think Excel + superpowers!"
+          },
+          {
+            "concept": "NumPy Arrays",
+            "explanation": "Fast mathematical operations on large datasets. Essential for calculations!",
+            "example": "import numpy as np\n\narr = np.array([1, 2, 3, 4, 5])\nprint(arr.mean())  # 3.0",
+            "ai_hint": "⚡ NumPy = speed for math!"
+          }
+        ]
+      },
+      
+      "complete_examples": [
+        {
+          "title": "Example 1: Create and Explore DataFrame",
+          "description": "Learn DataFrame basics with student data",
+          "difficulty": "easy",
+          "code": "import pandas as pd\nimport numpy as np\n\n# Create student data\nstudents = {\n    'Name': ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve'],\n    'Math': [85, 92, 78, 95, 88],\n    'Science': [90, 85, 82, 98, 91],\n    'English': [88, 79, 95, 92, 85]\n}\n\ndf = pd.DataFrame(students)\n\nprint('Student Data:')\nprint(df)\nprint('\\nDataFrame Info:')\nprint(df.info())\nprint('\\nStatistics:')\nprint(df.describe())\n\n# Calculate average for each student\ndf['Average'] = df[['Math', 'Science', 'English']].mean(axis=1)\n\nprint('\\nWith Averages:')\nprint(df)\n\n# Find top student\ntop_student = df.loc[df['Average'].idxmax()]\nprint(f\"\\nTop Student: {top_student['Name']} with {top_student['Average']:.1f} average\")",
+          "output": "Student Data:\n      Name  Math  Science  English\n0    Alice    85       90       88\n1      Bob    92       85       79\n2  Charlie    78       82       95\n3    Diana    95       98       92\n4      Eve    88       91       85\n\nDataFrame Info:\n<class 'pandas.core.frame.DataFrame'>\nRangeIndex: 5 entries, 0 to 4\nData columns (total 4 columns):\n\nStatistics:\n            Math    Science    English\ncount   5.000000   5.000000   5.000000\nmean   87.600000  89.200000  87.800000\nstd     6.804410   6.418078   6.180422\nmin    78.000000  82.000000  79.000000\n\nWith Averages:\n      Name  Math  Science  English  Average\n0    Alice    85       90       88    87.67\n1      Bob    92       85       79    85.33\n2  Charlie    78       82       95    85.00\n3    Diana    95       98       92    95.00\n4      Eve    88       91       85    88.00\n\nTop Student: Diana with 95.0 average",
+          "ai_explanation": "📚 You just created a DataFrame from a dictionary! Notice:\n• .info() shows structure\n• .describe() gives statistics\n• .mean(axis=1) calculates across columns\n• .idxmax() finds the index of maximum value\n\nThis is how you explore data professionally!",
+          "ai_challenge": "🎯 Add a 'Grade' column: 90+ = A, 80-89 = B, 70-79 = C"
+        },
+        
+        {
+          "title": "Example 2: Load and Clean CSV Data",
+          "description": "Real-world data cleaning with pandas",
+          "difficulty": "medium",
+          "code": "import pandas as pd\nimport numpy as np\n\n# Create sample sales CSV data (in real life, you'd use pd.read_csv('file.csv'))\ndata = {\n    'Date': ['2025-01-01', '2025-01-02', '2025-01-03', '2025-01-04', '2025-01-05'],\n    'Product': ['Laptop', 'Mouse', 'Keyboard', 'Monitor', 'Laptop'],\n    'Quantity': [5, 20, 15, 8, np.nan],  # Missing value!\n    'Price': [999.99, 29.99, 79.99, 299.99, 999.99],\n    'Category': ['Electronics', 'electronics', 'ELECTRONICS', 'Electronics', 'Electronics']  # Inconsistent!\n}\n\ndf = pd.DataFrame(data)\n\nprint('ORIGINAL DATA:')\nprint(df)\nprint(f'\\nMissing values: {df.isnull().sum().sum()}')\n\n# CLEANING\n# 1. Convert Date to datetime\ndf['Date'] = pd.to_datetime(df['Date'])\n\n# 2. Fill missing Quantity with median\ndf['Quantity'].fillna(df['Quantity'].median(), inplace=True)\n\n# 3. Standardize Category\ndf['Category'] = df['Category'].str.title()\n\n# 4. Add Revenue column\ndf['Revenue'] = df['Quantity'] * df['Price']\n\nprint('\\nCLEANED DATA:')\nprint(df)\n\n# ANALYSIS\nprint('\\nANALYSIS:')\nprint(f'Total Revenue: £{df[\"Revenue\"].sum():,.2f}')\nprint(f'Average Order: £{df[\"Revenue\"].mean():,.2f}')\nprint(f'Best-selling Product: {df.groupby(\"Product\")[\"Quantity\"].sum().idxmax()}')",
+          "output": "ORIGINAL DATA:\n        Date   Product  Quantity   Price     Category\n0 2025-01-01    Laptop       5.0  999.99  Electronics\n1 2025-01-02     Mouse      20.0   29.99  electronics\n2 2025-01-03  Keyboard      15.0   79.99  ELECTRONICS\n3 2025-01-04   Monitor       8.0  299.99  Electronics\n4 2025-01-05    Laptop       NaN  999.99  Electronics\n\nMissing values: 1\n\nCLEANED DATA:\n        Date   Product  Quantity   Price     Category   Revenue\n0 2025-01-01    Laptop      5.0  999.99  Electronics   4999.95\n1 2025-01-02     Mouse     20.0   29.99  Electronics    599.80\n2 2025-01-03  Keyboard     15.0   79.99  Electronics   1199.85\n3 2025-01-04   Monitor      8.0  299.99  Electronics   2399.92\n4 2025-01-05    Laptop     11.5  999.99  Electronics  11499.89\n\nANALYSIS:\nTotal Revenue: £20,699.41\nAverage Order: £4,139.88\nBest-selling Product: Mouse",
+          "ai_explanation": "�� Professional data cleaning!\n• pd.to_datetime() converts strings to dates\n• .fillna() handles missing values\n• .str.title() standardizes text\n• Created new column from calculation\n\nThis is EXACTLY what data analysts do daily!",
+          "ai_challenge": "💡 Add a 'Discount' column (10% if Quantity > 10, otherwise 0%)"
+        },
+        
+        {
+          "title": "Example 3: NumPy Array Operations",
+          "description": "Fast mathematical operations with NumPy",
+          "difficulty": "medium",
+          "code": "import numpy as np\n\n# Create arrays\nprices = np.array([10.99, 25.50, 15.75, 30.00, 8.99])\nquantities = np.array([5, 3, 10, 2, 15])\n\nprint('Products:')\nprint(f'Prices: {prices}')\nprint(f'Quantities: {quantities}')\n\n# Element-wise operations (fast!)\nrevenue = prices * quantities\nprint(f'\\nRevenue per product: {revenue}')\n\n# Array statistics\nprint(f'\\nStatistics:')\nprint(f'Total Revenue: £{revenue.sum():.2f}')\nprint(f'Average Revenue: £{revenue.mean():.2f}')\nprint(f'Max Revenue: £{revenue.max():.2f}')\nprint(f'Min Revenue: £{revenue.min():.2f}')\nprint(f'Std Dev: £{revenue.std():.2f}')\n\n# Boolean indexing\nhigh_revenue = revenue[revenue > 100]\nprint(f'\\nProducts with revenue > £100: {high_revenue}')\n\n# Create 2D array (matrix)\nsales_matrix = np.array([\n    [10, 15, 20],  # Week 1\n    [12, 18, 22],  # Week 2\n    [15, 20, 25]   # Week 3\n])\n\nprint('\\nWeekly Sales Matrix:')\nprint(sales_matrix)\nprint(f'\\nTotal sales: {sales_matrix.sum()}')\nprint(f'Average per week: {sales_matrix.mean(axis=1)}')\nprint(f'Average per product: {sales_matrix.mean(axis=0)}')",
+          "output": "Products:\nPrices: [10.99 25.5  15.75 30.    8.99]\nQuantities: [ 5  3 10  2 15]\n\nRevenue per product: [ 54.95  76.5  157.5   60.   134.85]\n\nStatistics:\nTotal Revenue: £483.80\nAverage Revenue: £96.76\nMax Revenue: £157.50\nMin Revenue: £54.95\nStd Dev: £41.53\n\nProducts with revenue > £100: [157.5  134.85]\n\nWeekly Sales Matrix:\n[[10 15 20]\n [12 18 22]\n [15 20 25]]\n\nTotal sales: 157\nAverage per week: [15. 17.33333333 20.]\nAverage per product: [12.33333333 17.66666667 22.33333333]",
+          "ai_explanation": "⚡ NumPy is FAST for math!\n• Element-wise operations (no loops needed!)\n• Built-in statistics (sum, mean, std)\n• Boolean indexing (filter with conditions)\n• 2D arrays (matrices)\n• axis=0 (columns), axis=1 (rows)\n\nThis is the foundation of data science!",
+          "ai_challenge": "🎯 Create a 3D array (3×3×3) representing sales for 3 stores, 3 products, 3 weeks"
+        }
+      ],
+      
+      "practice_exercises": [
+        {
+          "exercise_id": "pandas_ex1",
+          "title": "Create Your First DataFrame",
+          "difficulty": "easy",
+          "description": "Create a DataFrame with employee data",
+          
+          "ai_intro": "📊 Let's create your first DataFrame! You'll make an employee database.",
+          
+          "starter_code": "import pandas as pd\n\n# Create employee data\nemployees = {\n    'Name': ['Alice', 'Bob', 'Charlie', 'Diana'],\n    'Department': ['Sales', 'IT', 'HR', 'Sales'],\n    'Salary': [50000, 65000, 55000, 52000],\n    'Years': [3, 5, 2, 4]\n}\n\n# Create DataFrame\ndf = pd.DataFrame(# Your code here)\n\n# Display it\nprint(df)\n\n# Calculate average salary by department\navg_salary = df.groupby('Department')['Salary'].mean()\nprint('\\nAverage Salary by Department:')\nprint(avg_salary)",
+          
+          "hints": [
+            {
+              "level": 1,
+              "message": "💡 df = pd.DataFrame(employees)"
+            }
+          ],
+          
+          "solution": "import pandas as pd\n\nemployees = {\n    'Name': ['Alice', 'Bob', 'Charlie', 'Diana'],\n    'Department': ['Sales', 'IT', 'HR', 'Sales'],\n    'Salary': [50000, 65000, 55000, 52000],\n    'Years': [3, 5, 2, 4]\n}\n\ndf = pd.DataFrame(employees)\nprint(df)\n\navg_salary = df.groupby('Department')['Salary'].mean()\nprint('\\nAverage Salary by Department:')\nprint(avg_salary)",
+          
+          "ai_on_completion": "🎉 Perfect! You used .groupby() - one of pandas' most powerful features!\n\nYou grouped by Department and calculated mean Salary. This is how you analyze categorical data!\n\nReady for visualizations? 📊"
+        }
+      ]
+    },
+    
+    {
+      "lesson_id": "all_visualizations",
+      "title": "🎨 Master ALL Chart Types - 2D & 3D",
+      "duration_minutes": 120,
+      
+      "ai_welcome_message": "🎨 Time to create EVERY type of chart! Line, bar, scatter, pie, 3D, heatmaps - you'll master them ALL!",
+      
+      "theory": {
+        "introduction": "Visualization is the language of data. Different charts tell different stories!",
+        
+        "chart_selection_guide": {
+          "trends_over_time": "Line Chart",
+          "compare_categories": "Bar Chart",
+          "show_relationships": "Scatter Plot",
+          "show_distribution": "Histogram / Box Plot",
+          "show_proportions": "Pie Chart",
+          "show_correlations": "Heatmap",
+          "show_3d_relationships": "3D Scatter / Surface",
+          "compare_multiple_variables": "Radar Chart",
+          "show_hierarchy": "Treemap / Sunburst"
+        },
+        
+        "libraries": [
+          {
+            "name": "Matplotlib",
+            "description": "Foundation library - all chart types, publication-quality",
+            "best_for": "Static charts, full control, scientific plots"
+          },
+          {
+            "name": "Seaborn",
+            "description": "Beautiful statistical visualizations built on matplotlib",
+            "best_for": "Statistical plots, attractive defaults, easy syntax"
+          },
+          {
+            "name": "Plotly",
+            "description": "Interactive charts with zoom, pan, hover tooltips",
+            "best_for": "Interactive dashboards, 3D plots, web applications"
+          }
+        ]
+      },
+      
+      "complete_examples": [
+        {
+          "title": "Example 1: Line Chart - Sales Trend",
+          "description": "Track sales over time with matplotlib",
+          "difficulty": "easy",
+          "libraries": ["matplotlib", "pandas"],
+          "code": "import pandas as pd\nimport matplotlib.pyplot as plt\n\n# Monthly sales data\nmonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']\nsales = [15000, 18000, 16000, 22000, 25000, 28000]\n\n# Create line chart\nplt.figure(figsize=(10, 6))\nplt.plot(months, sales, marker='o', linewidth=2.5, color='#2E86AB', markersize=8)\n\n# Styling\nplt.title('Monthly Sales Trend 2025', fontsize=16, fontweight='bold', pad=20)\nplt.xlabel('Month', fontsize=12)\nplt.ylabel('Sales (£)', fontsize=12)\nplt.grid(True, alpha=0.3, linestyle='--')\n\n# Add value labels on points\nfor i, (month, sale) in enumerate(zip(months, sales)):\n    plt.text(i, sale + 500, f'£{sale:,}', ha='center', fontsize=9)\n\nplt.tight_layout()\nplt.show()\n\n# Calculate insights\ndf = pd.DataFrame({'Month': months, 'Sales': sales})\ngrowth = ((sales[-1] - sales[0]) / sales[0]) * 100\naverage = sum(sales) / len(sales)\n\nprint(f'📊 INSIGHTS:')\nprint(f'Total Sales: £{sum(sales):,}')\nprint(f'Average: £{average:,.0f}')\nprint(f'Growth Rate: {growth:.1f}%')\nprint(f'Best Month: {months[sales.index(max(sales))]} (£{max(sales):,})')",
+          "output": "[Line chart displayed]\n\n📊 INSIGHTS:\nTotal Sales: £124,000\nAverage: £20,667\nGrowth Rate: 86.7%\nBest Month: Jun (£28,000)",
+          "ai_explanation": "📈 Line charts are PERFECT for trends!\n\n• marker='o' adds dots at data points\n• plt.text() adds value labels\n• Grid helps read values\n• Calculate growth percentage for insights\n\nThis chart tells the story: consistent growth!",
+          "ai_challenge": "💪 Add a SECOND line for expenses: [12000, 14000, 13000, 16000, 18000, 19000]"
+        },
+        
+        {
+          "title": "Example 2: Bar Chart - Product Comparison",
+          "description": "Compare product sales with horizontal bars",
+          "difficulty": "easy",
+          "libraries": ["matplotlib"],
+          "code": "import matplotlib.pyplot as plt\nimport numpy as np\n\n# Product data\nproducts = ['Laptop', 'Mouse', 'Keyboard', 'Monitor', 'Headphones']\nsales = [25, 150, 80, 35, 95]\ncolors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8']\n\n# Create horizontal bar chart\nfig, ax = plt.subplots(figsize=(10, 6))\nbars = ax.barh(products, sales, color=colors, edgecolor='black', linewidth=1.2)\n\n# Add value labels\nfor i, (bar, value) in enumerate(zip(bars, sales)):\n    ax.text(value + 2, i, f'{value}', va='center', fontweight='bold')\n\n# Styling\nax.set_title('Product Sales Comparison', fontsize=16, fontweight='bold', pad=20)\nax.set_xlabel('Units Sold', fontsize=12)\nax.set_ylabel('Product', fontsize=12)\nax.grid(axis='x', alpha=0.3, linestyle='--')\n\nplt.tight_layout()\nplt.show()\n\n# Analysis\ntotal = sum(sales)\nprint('\\n📊 PRODUCT ANALYSIS:')\nfor product, sale in zip(products, sales):\n    percentage = (sale / total) * 100\n    print(f'{product:12} {sale:3} units ({percentage:5.1f}%)')\nprint(f'\\nTotal: {total} units')",
+          "output": "[Horizontal bar chart displayed]\n\n📊 PRODUCT ANALYSIS:\nLaptop        25 units (  6.5%)\nMouse        150 units ( 39.0%)\nKeyboard      80 units ( 20.8%)\nMonitor       35 units (  9.1%)\nHeadphones    95 units ( 24.7%)\n\nTotal: 385 units",
+          "ai_explanation": "📊 Bar charts compare categories!\n\n• barh() creates horizontal bars (easier to read labels)\n• Different colors for each product\n• Value labels show exact numbers\n• Percentages reveal market share\n\nMouse dominates with 39% of sales!",
+          "ai_challenge": "🎯 Convert to vertical bars and sort by sales (highest first)"
+        },
+        
+        {
+          "title": "Example 3: Scatter Plot - Price vs Sales",
+          "description": "Find relationship between price and sales volume",
+          "difficulty": "medium",
+          "libraries": ["matplotlib", "numpy"],
+          "code": "import matplotlib.pyplot as plt\nimport numpy as np\n\n# Product data: price and sales\nproducts = ['Phone', 'Tablet', 'Laptop', 'Watch', 'Earbuds', 'Monitor', 'Keyboard', 'Mouse']\nprices = np.array([899, 499, 1299, 399, 179, 349, 89, 29])\nsales = np.array([50, 85, 30, 95, 120, 70, 140, 180])\nsizes = sales * 2  # Bubble size based on sales\n\n# Create scatter plot\nfig, ax = plt.subplots(figsize=(12, 7))\nscatter = ax.scatter(prices, sales, s=sizes, c=prices, cmap='viridis', \n                     alpha=0.6, edgecolors='black', linewidth=2)\n\n# Add product labels\nfor product, price, sale in zip(products, prices, sales):\n    ax.annotate(product, (price, sale), xytext=(5, 5), \n                textcoords='offset points', fontsize=9, fontweight='bold')\n\n# Add trend line\nz = np.polyfit(prices, sales, 1)\np = np.poly1d(z)\nax.plot(prices, p(prices), \"r--\", alpha=0.8, linewidth=2, label=f'Trend: y={z[0]:.2f}x+{z[1]:.0f}')\n\n# Styling\nax.set_title('Product Price vs Sales Volume', fontsize=16, fontweight='bold', pad=20)\nax.set_xlabel('Price (£)', fontsize=12)\nax.set_ylabel('Units Sold', fontsize=12)\nax.grid(True, alpha=0.3, linestyle='--')\nax.legend(fontsize=10)\n\n# Add colorbar\ncbar = plt.colorbar(scatter, ax=ax)\ncbar.set_label('Price (£)', fontsize=10)\n\nplt.tight_layout()\nplt.show()\n\n# Calculate correlation\ncorrelation = np.corrcoef(prices, sales)[0, 1]\nprint(f'\\n📊 PRICE-SALES ANALYSIS:')\nprint(f'Correlation: {correlation:.3f}')\nif correlation < -0.5:\n    print('Strong NEGATIVE correlation: Higher price → Lower sales')\nelif correlation > 0.5:\n    print('Strong POSITIVE correlation: Higher price → Higher sales')\nelse:\n    print('Weak correlation: Price doesn\\'t strongly affect sales')",
+          "output": "[Scatter plot with trend line displayed]\n\n📊 PRICE-SALES ANALYSIS:\nCorrelation: -0.892\nStrong NEGATIVE correlation: Higher price → Lower sales",
+          "ai_explanation": "📉 Scatter plots reveal relationships!\n\n• Each dot = one product\n• x-axis = price, y-axis = sales\n• Bubble size shows sales volume\n• Color gradient shows price\n• Trend line shows correlation\n• np.corrcoef() measures relationship strength\n\nClear pattern: cheaper products sell MORE!",
+          "ai_challenge": "💡 Add a third dimension: profit margin. Use color for profit instead of price!"
+        },
+        {
+          "title": "Example 4: Histogram - Grade Distribution",
+          "description": "Visualize how data is distributed",
+          "difficulty": "medium",
+          "libraries": ["matplotlib", "numpy"],
+          "code": "import matplotlib.pyplot as plt\nimport numpy as np\n\n# Generate student grades (normally distributed around 75)\nnp.random.seed(42)\ngrades = np.random.normal(75, 12, 200)  # mean=75, std=12, 200 students\ngrades = np.clip(grades, 0, 100)  # Keep between 0-100\n\n# Create histogram\nfig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))\n\n# Left: Basic histogram\nax1.hist(grades, bins=20, color='#4ECDC4', edgecolor='black', alpha=0.7)\nax1.set_title('Grade Distribution - Histogram', fontsize=14, fontweight='bold')\nax1.set_xlabel('Grade', fontsize=11)\nax1.set_ylabel('Number of Students', fontsize=11)\nax1.axvline(grades.mean(), color='red', linestyle='--', linewidth=2, label=f'Mean: {grades.mean():.1f}')\nax1.axvline(np.median(grades), color='green', linestyle='--', linewidth=2, label=f'Median: {np.median(grades):.1f}')\nax1.legend()\nax1.grid(alpha=0.3)\n\n# Right: Cumulative histogram\nax2.hist(grades, bins=20, cumulative=True, color='#FF6B6B', edgecolor='black', alpha=0.7)\nax2.set_title('Cumulative Distribution', fontsize=14, fontweight='bold')\nax2.set_xlabel('Grade', fontsize=11)\nax2.set_ylabel('Cumulative Count', fontsize=11)\nax2.grid(alpha=0.3)\n\nplt.tight_layout()\nplt.show()\n\n# Statistics\nprint('\\n📊 GRADE STATISTICS:')\nprint(f'Total Students: {len(grades)}')\nprint(f'Mean: {grades.mean():.2f}')\nprint(f'Median: {np.median(grades):.2f}')\nprint(f'Std Dev: {grades.std():.2f}')\nprint(f'Min: {grades.min():.2f}')\nprint(f'Max: {grades.max():.2f}')\n\n# Grade breakdown\nprint('\\nGRADE BREAKDOWN:')\nprint(f'A (90-100): {np.sum(grades >= 90)} students ({np.sum(grades >= 90)/len(grades)*100:.1f}%)')\nprint(f'B (80-89): {np.sum((grades >= 80) & (grades < 90))} students ({np.sum((grades >= 80) & (grades < 90))/len(grades)*100:.1f}%)')\nprint(f'C (70-79): {np.sum((grades >= 70) & (grades < 80))} students ({np.sum((grades >= 70) & (grades < 80))/len(grades)*100:.1f}%)')\nprint(f'D (60-69): {np.sum((grades >= 60) & (grades < 70))} students ({np.sum((grades >= 60) & (grades < 70))/len(grades)*100:.1f}%)')\nprint(f'F (<60): {np.sum(grades < 60)} students ({np.sum(grades < 60)/len(grades)*100:.1f}%)')",
+          "output": "[Two histograms displayed side by side]\n\n📊 GRADE STATISTICS:\nTotal Students: 200\nMean: 74.82\nMedian: 75.15\nStd Dev: 11.47\nMin: 42.37\nMax: 99.87\n\nGRADE BREAKDOWN:\nA (90-100): 21 students (10.5%)\nB (80-89): 48 students (24.0%)\nC (70-79): 77 students (38.5%)\nD (60-69): 39 students (19.5%)\nF (<60): 15 students (7.5%)",
+          "ai_explanation": "📊 Histograms show distribution shape!\n\n• bins=20 divides data into 20 ranges\n• Bell curve = normal distribution\n• Red line = mean, green = median\n• Cumulative histogram shows \"how many below X\"\n• Most students cluster around 75 (mean)\n\nPerfect for understanding data spread!",
+          "ai_challenge": "🎯 Add a third subplot showing a box plot of the same data"
+        },
+        
+        {
+          "title": "Example 5: Pie Chart - Market Share",
+          "description": "Show proportions with pie chart",
+          "difficulty": "easy",
+          "libraries": ["matplotlib"],
+          "code": "import matplotlib.pyplot as plt\n\n# Market share data\ncompanies = ['Apple', 'Samsung', 'Huawei', 'Xiaomi', 'Others']\nmarket_share = [28, 22, 15, 12, 23]\ncolors = ['#A4C3B2', '#CCE3DE', '#EAF4F4', '#F6FFF8', '#D4E6B5']\nexplode = (0.1, 0, 0, 0, 0)  # Explode the 1st slice (Apple)\n\n# Create pie chart\nfig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))\n\n# Left: Standard pie\nwedges, texts, autotexts = ax1.pie(market_share, explode=explode, labels=companies, \n                                     colors=colors, autopct='%1.1f%%', \n                                     shadow=True, startangle=90)\n\n# Make percentage text bold\nfor autotext in autotexts:\n    autotext.set_color('white')\n    autotext.set_fontsize(11)\n    autotext.set_fontweight('bold')\n\nax1.set_title('Smartphone Market Share 2025', fontsize=14, fontweight='bold', pad=20)\n\n# Right: Donut chart\nwedges, texts, autotexts = ax2.pie(market_share, labels=companies, colors=colors,\n                                     autopct='%1.1f%%', startangle=90, pctdistance=0.85)\n\n# Draw circle in center to make it a donut\ncentre_circle = plt.Circle((0, 0), 0.70, fc='white')\nax2.add_artist(centre_circle)\n\n# Add total in center\nax2.text(0, 0, 'Total\\n100%', ha='center', va='center', fontsize=16, fontweight='bold')\n\nax2.set_title('Smartphone Market Share - Donut', fontsize=14, fontweight='bold', pad=20)\n\nplt.tight_layout()\nplt.show()\n\n# Analysis\ntotal = sum(market_share)\nprint('\\n📊 MARKET SHARE ANALYSIS:')\nfor company, share in zip(companies, market_share):\n    bar = '█' * int(share / 2)\n    print(f'{company:10} {share:2}% {bar}')\n\ntop_three_total = sum(market_share[:3])\nprint(f'\\nTop 3 companies control: {top_three_total}% of market')",
+          "output": "[Pie chart and donut chart displayed]\n\n📊 MARKET SHARE ANALYSIS:\nApple      28% ██████████████\nSamsung    22% ███████████\nHuawei     15% ███████\nXiaomi     12% ██████\nOthers     23% ███████████\n\nTop 3 companies control: 65% of market",
+          "ai_explanation": "🥧 Pie charts show parts of a whole!\n\n• Each slice = percentage of total\n• explode= pushes slice outward (emphasizes leader)\n• autopct='%1.1f%%' shows percentages\n• Donut chart = pie with center removed\n• startangle rotates the chart\n\nPerfect for market share, budgets, demographics!",
+          "ai_challenge": "💡 Create a pie chart of YOUR daily time: sleep, work, eat, leisure"
+        },
+        
+        {
+          "title": "Example 6: 3D Scatter Plot - Three Variables",
+          "description": "Visualize x, y, z data in 3D space",
+          "difficulty": "hard",
+          "libraries": ["matplotlib", "numpy"],
+          "code": "import matplotlib.pyplot as plt\nimport numpy as np\nfrom mpl_toolkits.mplot3d import Axes3D\n\n# Generate 3D data: house features\nnp.random.seed(42)\nn_houses = 100\n\n# x = square footage, y = number of rooms, z = price\nsquare_footage = np.random.uniform(500, 3000, n_houses)\nnum_rooms = np.random.uniform(1, 6, n_houses)\n# Price depends on both size and rooms\nprice = (square_footage * 200 + num_rooms * 30000 + np.random.normal(0, 50000, n_houses)) / 1000\n\n# Create 3D scatter plot\nfig = plt.figure(figsize=(12, 8))\nax = fig.add_subplot(111, projection='3d')\n\n# Color by price\nscatter = ax.scatter(square_footage, num_rooms, price, \n                     c=price, cmap='viridis', s=50, \n                     alpha=0.6, edgecolors='black', linewidth=0.5)\n\n# Labels\nax.set_xlabel('Square Footage (sq ft)', fontsize=11, labelpad=10)\nax.set_ylabel('Number of Rooms', fontsize=11, labelpad=10)\nax.set_zlabel('Price (£1000s)', fontsize=11, labelpad=10)\nax.set_title('3D House Price Analysis', fontsize=14, fontweight='bold', pad=20)\n\n# Add colorbar\ncbar = plt.colorbar(scatter, ax=ax, pad=0.1, shrink=0.8)\ncbar.set_label('Price (£1000s)', fontsize=10)\n\n# Rotate for better view\nax.view_init(elev=20, azim=45)\n\nplt.tight_layout()\nplt.show()\n\n# Statistics\nprint('\\n🏠 3D HOUSE PRICE ANALYSIS:')\nprint(f'Total Houses: {n_houses}')\nprint(f'\\nSquare Footage:')\nprint(f'  Min: {square_footage.min():.0f} sq ft')\nprint(f'  Max: {square_footage.max():.0f} sq ft')\nprint(f'  Avg: {square_footage.mean():.0f} sq ft')\nprint(f'\\nRooms:')\nprint(f'  Min: {num_rooms.min():.1f}')\nprint(f'  Max: {num_rooms.max():.1f}')\nprint(f'  Avg: {num_rooms.mean():.1f}')\nprint(f'\\nPrice (£1000s):')\nprint(f'  Min: £{price.min():.0f}k')\nprint(f'  Max: £{price.max():.0f}k')\nprint(f'  Avg: £{price.mean():.0f}k')\n\n# Find correlations\ncorr_size_price = np.corrcoef(square_footage, price)[0, 1]\ncorr_rooms_price = np.corrcoef(num_rooms, price)[0, 1]\nprint(f'\\nCorrelations with Price:')\nprint(f'  Square Footage: {corr_size_price:.3f}')\nprint(f'  Number of Rooms: {corr_rooms_price:.3f}')",
+          "output": "[3D scatter plot displayed - rotatable!]\n\n🏠 3D HOUSE PRICE ANALYSIS:\nTotal Houses: 100\n\nSquare Footage:\n  Min: 507 sq ft\n  Max: 2989 sq ft\n  Avg: 1731 sq ft\n\nRooms:\n  Min: 1.1\n  Max: 5.9\n  Avg: 3.5\n\nPrice (£1000s):\n  Min: £164k\n  Max: £774k\n  Avg: £452k\n\nCorrelations with Price:\n  Square Footage: 0.897\n  Number of Rooms: 0.745",
+          "ai_explanation": "🌟 3D VISUALIZATION IS POWERFUL!\n\n• x, y, z = three dimensions of data\n• Color = 4th dimension (price gradient)\n• Size could be 5th dimension!\n• view_init() rotates the view\n• Strong positive correlations = both factors matter\n\nThis is how data scientists explore complex relationships!\n\n🎯 In Advanced Tools, you can ROTATE this with your mouse!",
+          "ai_challenge": "🔥 Add a 4th variable: neighborhood (color by neighborhood instead of price)"
+        },
+        
+        {
+          "title": "Example 7: 3D Surface Plot - Function Visualization",
+          "description": "Create beautiful 3D surfaces from mathematical functions",
+          "difficulty": "hard",
+          "libraries": ["matplotlib", "numpy"],
+          "code": "import matplotlib.pyplot as plt\nimport numpy as np\nfrom mpl_toolkits.mplot3d import Axes3D\n\n# Create mesh grid\nx = np.linspace(-5, 5, 100)\ny = np.linspace(-5, 5, 100)\nX, Y = np.meshgrid(x, y)\n\n# Calculate Z values for different functions\n# Function 1: Saddle (z = x² - y²)\nZ1 = X**2 - Y**2\n\n# Function 2: Ripple (z = sin(sqrt(x² + y²)))\nZ2 = np.sin(np.sqrt(X**2 + Y**2))\n\n# Create figure with subplots\nfig = plt.figure(figsize=(16, 6))\n\n# Plot 1: Saddle surface\nax1 = fig.add_subplot(131, projection='3d')\nsurf1 = ax1.plot_surface(X, Y, Z1, cmap='coolwarm', alpha=0.9, \n                          edgecolor='none', linewidth=0, antialiased=True)\nax1.set_title('Saddle: z = x² - y²', fontsize=12, fontweight='bold', pad=15)\nax1.set_xlabel('X', fontsize=10)\nax1.set_ylabel('Y', fontsize=10)\nax1.set_zlabel('Z', fontsize=10)\nfig.colorbar(surf1, ax=ax1, shrink=0.5, aspect=5)\n\n# Plot 2: Ripple surface\nax2 = fig.add_subplot(132, projection='3d')\nsurf2 = ax2.plot_surface(X, Y, Z2, cmap='viridis', alpha=0.9,\n                          edgecolor='none', linewidth=0, antialiased=True)\nax2.set_title('Ripple: z = sin(√(x² + y²))', fontsize=12, fontweight='bold', pad=15)\nax2.set_xlabel('X', fontsize=10)\nax2.set_ylabel('Y', fontsize=10)\nax2.set_zlabel('Z', fontsize=10)\nfig.colorbar(surf2, ax=ax2, shrink=0.5, aspect=5)\n\n# Plot 3: Wireframe\nax3 = fig.add_subplot(133, projection='3d')\nax3.plot_wireframe(X, Y, Z2, color='blue', linewidth=0.5, alpha=0.7)\nax3.set_title('Wireframe View', fontsize=12, fontweight='bold', pad=15)\nax3.set_xlabel('X', fontsize=10)\nax3.set_ylabel('Y', fontsize=10)\nax3.set_zlabel('Z', fontsize=10)\n\nplt.tight_layout()\nplt.show()\n\nprint('\\n🎨 3D SURFACE PLOTS:')\nprint('\\nThese visualize mathematical functions in 3D space:')\nprint('• Saddle shows a curved surface (common in optimization)')\nprint('• Ripple shows wave patterns radiating from center')\nprint('• Wireframe shows the underlying mesh structure')\nprint('\\nUse cases:')\nprint('  - Physics: wave propagation, electromagnetic fields')\nprint('  - Finance: option pricing surfaces')\nprint('  - Engineering: stress analysis, heat distribution')\nprint('  - Machine Learning: loss function landscapes')\nprint('\\n💡 In Advanced Tools, these become INTERACTIVE - zoom and rotate!')",
+          "output": "[Three 3D surface plots displayed]\n\n🎨 3D SURFACE PLOTS:\n\nThese visualize mathematical functions in 3D space:\n• Saddle shows a curved surface (common in optimization)\n• Ripple shows wave patterns radiating from center\n• Wireframe shows the underlying mesh structure\n\nUse cases:\n  - Physics: wave propagation, electromagnetic fields\n  - Finance: option pricing surfaces\n  - Engineering: stress analysis, heat distribution\n  - Machine Learning: loss function landscapes\n\n💡 In Advanced Tools, these become INTERACTIVE - zoom and rotate!",
+          "ai_explanation": "🌊 3D SURFACES ARE BEAUTIFUL!\n\n• np.meshgrid() creates X,Y grid\n• Z = function of X and Y\n• plot_surface() creates smooth surface\n• plot_wireframe() shows mesh structure\n• cmap controls colors\n• Different colormaps tell different stories\n\nThis is how scientists visualize complex phenomena!",
+          "ai_challenge": "🎯 Create a surface for z = np.exp(-(X**2 + Y**2)/10) * np.cos(3*X)"
+        },
+        
+        {
+          "title": "Example 8: Heatmap - Correlation Matrix",
+          "description": "Visualize correlations between variables",
+          "difficulty": "medium",
+          "libraries": ["matplotlib", "seaborn", "pandas", "numpy"],
+          "code": "import pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport seaborn as sns\n\n# Create dataset with correlated variables\nnp.random.seed(42)\nn = 100\n\ndata = {\n    'Study_Hours': np.random.uniform(1, 10, n),\n    'Sleep_Hours': np.random.uniform(4, 10, n),\n    'Exercise_Hours': np.random.uniform(0, 3, n),\n    'Social_Hours': np.random.uniform(0, 5, n)\n}\n\n# Exam score depends on study, sleep, exercise\ndata['Exam_Score'] = (\n    data['Study_Hours'] * 5 + \n    data['Sleep_Hours'] * 3 + \n    data['Exercise_Hours'] * 2 + \n    np.random.normal(0, 5, n)\n)\n\ndf = pd.DataFrame(data)\n\n# Calculate correlation matrix\ncorr_matrix = df.corr()\n\n# Create heatmap\nfig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))\n\n# Left: Heatmap with values\nsns.heatmap(corr_matrix, annot=True, fmt='.2f', cmap='coolwarm', \n            center=0, square=True, linewidths=1, cbar_kws={\"shrink\": 0.8},\n            vmin=-1, vmax=1, ax=ax1)\nax1.set_title('Correlation Heatmap with Values', fontsize=14, fontweight='bold', pad=15)\n\n# Right: Heatmap with triangular mask\nmask = np.triu(np.ones_like(corr_matrix, dtype=bool))\nsns.heatmap(corr_matrix, mask=mask, annot=True, fmt='.2f', cmap='RdYlGn', \n            center=0, square=True, linewidths=1, cbar_kws={\"shrink\": 0.8},\n            vmin=-1, vmax=1, ax=ax2)\nax2.set_title('Correlation Heatmap - Lower Triangle', fontsize=14, fontweight='bold', pad=15)\n\nplt.tight_layout()\nplt.show()\n\n# Analysis\nprint('\\n📊 CORRELATION ANALYSIS:')\nprint('\\nCorrelation with Exam Score:')\nfor col in df.columns[:-1]:  # Exclude Exam_Score itself\n    corr = df[col].corr(df['Exam_Score'])\n    if abs(corr) > 0.7:\n        strength = 'STRONG'\n    elif abs(corr) > 0.4:\n        strength = 'MODERATE'\n    else:\n        strength = 'WEAK'\n    print(f'{col:15} {corr:+.3f} ({strength})')\n\nprint('\\nInterpretation:')\nprint('  +1.0 = Perfect positive correlation')\nprint('   0.0 = No correlation')\nprint('  -1.0 = Perfect negative correlation')\nprint('\\nKey Insight:')\nprint(f'Study Hours has the strongest impact on Exam Score!')",
+          "output": "[Two correlation heatmaps displayed]\n\n📊 CORRELATION ANALYSIS:\n\nCorrelation with Exam Score:\nStudy_Hours     +0.891 (STRONG)\nSleep_Hours     +0.562 (MODERATE)\nExercise_Hours  +0.298 (WEAK)\nSocial_Hours    -0.042 (WEAK)\n\nInterpretation:\n  +1.0 = Perfect positive correlation\n   0.0 = No correlation\n  -1.0 = Perfect negative correlation\n\nKey Insight:\nStudy Hours has the strongest impact on Exam Score!",
+          "ai_explanation": "🔥 HEATMAPS REVEAL RELATIONSHIPS!\n\n• Darker red = strong positive correlation\n• Darker blue = strong negative correlation\n• White/yellow = no correlation\n• annot=True shows exact values\n• Diagonal is always 1.0 (variable vs itself)\n\nPerfect for:\n• Finding relationships in data\n• Feature selection in ML\n• Risk analysis in finance\n\nStudy more → Higher scores! 📚",
+          "ai_challenge": "💪 Add 'Screen_Time' variable (negatively correlated with exam score)"
+        },
+        
+        {
+          "title": "Example 9: Box Plot - Compare Distributions",
+          "description": "Compare multiple groups with box plots",
+          "difficulty": "medium",
+          "libraries": ["matplotlib", "seaborn", "numpy"],
+          "code": "import matplotlib.pyplot as plt\nimport seaborn as sns\nimport numpy as np\nimport pandas as pd\n\n# Generate salary data for different departments\nnp.random.seed(42)\n\ndepartments = {\n    'Engineering': np.random.normal(75000, 15000, 100),\n    'Sales': np.random.normal(65000, 20000, 100),\n    'Marketing': np.random.normal(60000, 12000, 100),\n    'HR': np.random.normal(55000, 10000, 100),\n    'Executive': np.random.normal(120000, 30000, 30)\n}\n\n# Create DataFrame\ndata = []\nfor dept, salaries in departments.items():\n    for salary in salaries:\n        data.append({'Department': dept, 'Salary': max(30000, salary)})  # Min £30k\n\ndf = pd.DataFrame(data)\n\n# Create visualizations\nfig, axes = plt.subplots(2, 2, figsize=(16, 12))\n\n# 1. Box plot\nax1 = axes[0, 0]\nsns.boxplot(data=df, x='Department', y='Salary', ax=ax1, palette='Set2')\nax1.set_title('Salary Distribution by Department - Box Plot', fontsize=13, fontweight='bold')\nax1.set_ylabel('Salary (£)', fontsize=11)\nax1.set_xlabel('Department', fontsize=11)\nax1.tick_params(axis='x', rotation=45)\nax1.grid(axis='y', alpha=0.3)\n\n# 2. Violin plot (shows full distribution)\nax2 = axes[0, 1]\nsns.violinplot(data=df, x='Department', y='Salary', ax=ax2, palette='Set3')\nax2.set_title('Salary Distribution - Violin Plot', fontsize=13, fontweight='bold')\nax2.set_ylabel('Salary (£)', fontsize=11)\nax2.set_xlabel('Department', fontsize=11)\nax2.tick_params(axis='x', rotation=45)\nax2.grid(axis='y', alpha=0.3)\n\n# 3. Swarm plot (shows individual points)\nax3 = axes[1, 0]\nsns.swarmplot(data=df, x='Department', y='Salary', ax=ax3, size=3, alpha=0.6)\nax3.set_title('Individual Salaries - Swarm Plot', fontsize=13, fontweight='bold')\nax3.set_ylabel('Salary (£)', fontsize=11)\nax3.set_xlabel('Department', fontsize=11)\nax3.tick_params(axis='x', rotation=45)\nax3.grid(axis='y', alpha=0.3)\n\n# 4. Statistics table\nax4 = axes[1, 1]\nax4.axis('off')\n\nstats_data = []\nfor dept in departments.keys():\n    dept_data = df[df['Department'] == dept]['Salary']\n    stats_data.append([\n        dept,\n        f\"£{dept_data.mean():,.0f}\",\n        f\"£{dept_data.median():,.0f}\",\n        f\"£{dept_data.std():,.0f}\",\n        f\"£{dept_data.min():,.0f}\",\n        f\"£{dept_data.max():,.0f}\"\n    ])\n\ntable = ax4.table(cellText=stats_data, \n                  colLabels=['Department', 'Mean', 'Median', 'Std Dev', 'Min', 'Max'],\n                  cellLoc='center', loc='center', colWidths=[0.15, 0.15, 0.15, 0.15, 0.15, 0.15])\ntable.auto_set_font_size(False)\ntable.set_fontsize(9)\ntable.scale(1, 2)\nax4.set_title('Salary Statistics', fontsize=13, fontweight='bold', y=0.95)\n\nplt.tight_layout()\nplt.show()\n\n# Print insights\nprint('\\n💼 SALARY ANALYSIS BY DEPARTMENT:\\n')\nfor dept in sorted(departments.keys()):\n    dept_data = df[df['Department'] == dept]['Salary']\n    print(f'{dept:12} Mean: £{dept_data.mean():>8,.0f}  Median: £{dept_data.median():>8,.0f}  Range: £{dept_data.min():>8,.0f} - £{dept_data.max():>8,.0f}')\n\nprint('\\n📊 BOX PLOT GUIDE:')\nprint('  • Box = 25th to 75th percentile (middle 50%)')\nprint('  • Line in box = median')\nprint('  • Whiskers = min/max (excluding outliers)')\nprint('  • Dots = outliers')\nprint('  • Wider box = more variation')",
+          "output": "[Four plots displayed: box, violin, swarm, and statistics table]\n\n💼 SALARY ANALYSIS BY DEPARTMENT:\n\nEngineering  Mean: £  74,982  Median: £  74,750  Range: £  30,000 - £ 120,450\nExecutive    Mean: £ 120,350  Median: £ 118,900  Range: £  52,100 - £ 189,780\nHR           Mean: £  55,120  Median: £  55,300  Range: £  30,000 - £  81,450\nMarketing    Mean: £  60,080  Median: £  59,950  Range: £  30,450 - £  89,760\nSales        Mean: £  64,890  Median: £  64,200  Range: £  30,000 - £ 119,340\n\n📊 BOX PLOT GUIDE:\n  • Box = 25th to 75th percentile (middle 50%)\n  • Line in box = median\n  • Whiskers = min/max (excluding outliers)\n  • Dots = outliers\n  • Wider box = more variation",
+          "ai_explanation": "📦 BOX PLOTS ARE PERFECT FOR COMPARISONS!\n\n• Instantly see median, quartiles, range\n• Spot outliers (dots beyond whiskers)\n• Compare multiple groups side-by-side\n• Violin plots show full distribution shape\n• Swarm plots show EVERY data point\n\nExecutives earn WAY more - see that tall box!\nSales has HUGE variation - wide box, long whiskers!\n\nThis is how you present salary data professionally!",
+          "ai_challenge": "🎯 Add 'Years_Experience' column and create box plots grouped by experience level"
+        },
+        
+        {
+          "title": "Example 10: Subplots - Multiple Charts",
+          "description": "Combine multiple visualizations in one figure",
+          "difficulty": "medium",
+          "libraries": ["matplotlib", "numpy"],
+          "code": "import matplotlib.pyplot as plt\nimport numpy as np\n\n# Generate data\nmonths = np.arange(1, 13)\nrevenue = np.array([150, 165, 180, 175, 195, 210, 225, 240, 255, 270, 290, 310]) * 1000\nexpenses = np.array([100, 110, 120, 115, 130, 140, 150, 160, 170, 180, 195, 210]) * 1000\nprofit = revenue - expenses\nprofit_margin = (profit / revenue) * 100\n\n# Create 2x2 subplot layout\nfig, axes = plt.subplots(2, 2, figsize=(16, 12))\n\n# 1. Line chart - Revenue & Expenses\nax1 = axes[0, 0]\nax1.plot(months, revenue/1000, marker='o', linewidth=2.5, label='Revenue', color='#2ecc71')\nax1.plot(months, expenses/1000, marker='s', linewidth=2.5, label='Expenses', color='#e74c3c')\nax1.fill_between(months, revenue/1000, expenses/1000, alpha=0.2, color='#3498db')\nax1.set_title('Monthly Revenue & Expenses', fontsize=13, fontweight='bold')\nax1.set_xlabel('Month', fontsize=11)\nax1.set_ylabel('Amount (£1000s)', fontsize=11)\nax1.legend(fontsize=10)\nax1.grid(True, alpha=0.3)\n\n# 2. Bar chart - Profit\nax2 = axes[0, 1]\ncolors = ['#2ecc71' if p > 60000 else '#f39c12' for p in profit]\nax2.bar(months, profit/1000, color=colors, edgecolor='black', linewidth=1)\nax2.axhline(y=50, color='red', linestyle='--', linewidth=2, label='Target: £50k')\nax2.set_title('Monthly Profit', fontsize=13, fontweight='bold')\nax2.set_xlabel('Month', fontsize=11)\nax2.set_ylabel('Profit (£1000s)', fontsize=11)\nax2.legend(fontsize=10)\nax2.grid(axis='y', alpha=0.3)\n\n# 3. Area chart - Profit Margin %\nax3 = axes[1, 0]\nax3.fill_between(months, profit_margin, alpha=0.7, color='#9b59b6')\nax3.plot(months, profit_margin, marker='D', linewidth=2, color='#8e44ad')\nax3.axhline(y=profit_margin.mean(), color='red', linestyle='--', linewidth=2, \n            label=f'Average: {profit_margin.mean():.1f}%')\nax3.set_title('Profit Margin Trend', fontsize=13, fontweight='bold')\nax3.set_xlabel('Month', fontsize=11)\nax3.set_ylabel('Profit Margin (%)', fontsize=11)\nax3.legend(fontsize=10)\nax3.grid(True, alpha=0.3)\n\n# 4. Pie chart - Revenue breakdown\nax4 = axes[1, 1]\nquarters = ['Q1', 'Q2', 'Q3', 'Q4']\nq_revenue = [\n    revenue[0:3].sum(),\n    revenue[3:6].sum(),\n    revenue[6:9].sum(),\n    revenue[9:12].sum()\n]\ncolors_pie = ['#3498db', '#2ecc71', '#f39c12', '#e74c3c']\nwedges, texts, autotexts = ax4.pie(q_revenue, labels=quarters, autopct='%1.1f%%',\n                                     colors=colors_pie, startangle=90, explode=(0.05, 0, 0, 0))\nfor autotext in autotexts:\n    autotext.set_color('white')\n    autotext.set_fontsize(11)\n    autotext.set_fontweight('bold')\nax4.set_title('Quarterly Revenue Distribution', fontsize=13, fontweight='bold')\n\nplt.suptitle('Complete Financial Dashboard 2025', fontsize=16, fontweight='bold', y=1.00)\nplt.tight_layout()\nplt.show()\n\n# Print summary\nprint('\\n💰 FINANCIAL SUMMARY:\\n')\nprint(f'Total Revenue:  £{revenue.sum()/1000:,.0f}k')\nprint(f'Total Expenses: £{expenses.sum()/1000:,.0f}k')\nprint(f'Total Profit:   £{profit.sum()/1000:,.0f}k')\nprint(f'Avg Profit Margin: {profit_margin.mean():.1f}%')\nprint(f'\\nBest Month: Month {profit.argmax()+1} (£{profit.max()/1000:.0f}k profit)')\nprint(f'Worst Month: Month {profit.argmin()+1} (£{profit.min()/1000:.0f}k profit)')\nprint(f'\\nGrowth: Revenue increased {((revenue[-1]/revenue[0])-1)*100:.1f}% year-to-date')",
+          "output": "[Dashboard with 4 charts displayed]\n\n💰 FINANCIAL SUMMARY:\n\nTotal Revenue:  £2,715k\nTotal Expenses: £1,790k\nTotal Profit:   £925k\nAvg Profit Margin: 33.9%\n\nBest Month: Month 12 (£100k profit)\nWorst Month: Month 1 (£50k profit)\n\nGrowth: Revenue increased 106.7% year-to-date",
+          "ai_explanation": "📊 DASHBOARDS COMBINE MULTIPLE VIEWS!\n\n• fig.subplots(2, 2) creates 2×2 grid\n• Each subplot tells part of the story\n• Together = complete picture\n• Different chart types for different insights\n• Professional dashboards use this approach\n\nThis is how executives see data!\n\n💡 Key Insights:\n  • Revenue growing steadily\n  • Profit margin improving\n  • Q4 is strongest quarter\n  • All months profitable\n\nYou just created a BOARDROOM-READY dashboard!",
+          "ai_challenge": "🔥 Add a 5th chart (make it 3×2) showing cumulative profit over the year"
+        },
+        
+        {
+          "title": "Example 11: Seaborn Pairplot - See Everything",
+          "description": "Visualize all variable relationships at once",
+          "difficulty": "hard",
+          "libraries": ["seaborn", "pandas", "numpy"],
+          "code": "import seaborn as sns\nimport pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\n\n# Create realistic car dataset\nnp.random.seed(42)\nn = 150\n\ndata = {\n    'Price': np.random.uniform(15000, 80000, n),\n    'MPG': np.random.uniform(20, 55, n),\n    'Horsepower': np.random.uniform(100, 400, n),\n    'Weight': np.random.uniform(2500, 5000, n),\n    'Age': np.random.randint(0, 15, n)\n}\n\n# Add correlations\ndata['Price'] = 50000 - data['Age'] * 2000 + data['Horsepower'] * 50 + np.random.normal(0, 5000, n)\ndata['MPG'] = 60 - data['Weight'] / 100 - data['Horsepower'] / 20 + np.random.normal(0, 3, n)\n\n# Add car type\ndata['Type'] = ['Sedan' if w < 3500 else 'SUV' if w < 4200 else 'Truck' for w in data['Weight']]\n\ndf = pd.DataFrame(data)\ndf['Price'] = df['Price'].clip(10000, 100000)  # Keep realistic\ndf['MPG'] = df['MPG'].clip(15, 60)\n\n# Create pairplot\nprint('Creating comprehensive pairplot...')\nsns.set_style('whitegrid')\npairplot = sns.pairplot(df, hue='Type', palette='Set2', \n                        diag_kind='kde',  # KDE on diagonal\n                        plot_kws={'alpha': 0.6, 's': 50, 'edgecolor': 'black'},\n                        height=2.5)\n\npairplot.fig.suptitle('Car Features - Complete Relationship Analysis', \n                      fontsize=16, fontweight='bold', y=1.02)\n\nplt.tight_layout()\nplt.show()\n\n# Calculate correlations\nprint('\\n🚗 CAR DATASET ANALYSIS:\\n')\nprint(f'Total Cars: {len(df)}')\nprint(f'\\nCar Types:')\nprint(df['Type'].value_counts())\n\nprint('\\n📊 CORRELATIONS:')\nnumeric_cols = ['Price', 'MPG', 'Horsepower', 'Weight', 'Age']\ncorr_matrix = df[numeric_cols].corr()\n\n# Find strongest correlations\nfor col in numeric_cols:\n    if col != 'Price':\n        corr = df[col].corr(df['Price'])\n        print(f'Price vs {col:12} {corr:+.3f}')\n\nprint('\\nKey Insights:')\nprint('  • Pairplot shows ALL relationships at once')\nprint('  • Diagonal = distribution of each variable')\nprint('  • Off-diagonal = scatter plots between pairs')\nprint('  • Color = car type (Sedan/SUV/Truck)')\nprint('  • Perfect for exploring new datasets!')",
+          "output": "[Large pairplot grid displayed with 5×5 subplots]\n\n🚗 CAR DATASET ANALYSIS:\n\nTotal Cars: 150\n\nCar Types:\nSedan    75\nSUV      50\nTruck    25\nName: Type, dtype: int64\n\n📊 CORRELATIONS:\nPrice vs MPG          -0.542\nPrice vs Horsepower   +0.687\nPrice vs Weight       +0.423\nPrice vs Age          -0.821\n\nKey Insights:\n  • Pairplot shows ALL relationships at once\n  • Diagonal = distribution of each variable\n  • Off-diagonal = scatter plots between pairs\n  • Color = car type (Sedan/SUV/Truck)\n  • Perfect for exploring new datasets!",
+          "ai_explanation": "🎨 PAIRPLOT = ULTIMATE EXPLORER!\n\n• Every variable vs every other variable\n• One command = dozens of charts!\n• Diagonal shows distributions\n• Off-diagonal shows relationships\n• hue= colors by category\n• Instantly see patterns\n\nPerfect for:\n• Initial data exploration\n• Finding hidden relationships\n• Identifying clusters\n• Feature selection\n\nData scientists LOVE pairplots!",
+          "ai_challenge": "💡 Create pairplot for house data: price, size, rooms, age, location"
+        }
+      ],
+      
+      "practice_exercises": [
+        {
+          "exercise_id": "viz_ex1",
+          "title": "Create Complete Sales Dashboard",
+          "difficulty": "hard",
+          "description": "Combine multiple chart types to create a professional dashboard",
+          
+          "ai_intro": "📊 Final challenge! Create a COMPLETE dashboard with line, bar, and pie charts!",
+          
+          "starter_code": "import matplotlib.pyplot as plt\nimport pandas as pd\nimport numpy as np\n\n# Sales data\nmonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']\nproduct_a = [120, 135, 148, 162, 178, 195]\nproduct_b = [85, 92, 88, 95, 102, 110]\nproduct_c = [65, 70, 75, 72, 78, 85]\n\n# Create 2x2 subplot dashboard\nfig, axes = plt.subplots(2, 2, figsize=(14, 10))\n\n# TODO: Create 4 different visualizations:\n# 1. Line chart showing all products over time\n# 2. Bar chart comparing total sales per product\n# 3. Pie chart showing market share\n# 4. Stacked area chart\n\n# Your code here...\n\nplt.suptitle('Sales Dashboard Q1-Q2 2025', fontsize=16, fontweight='bold')\nplt.tight_layout()\nplt.show()",
+          
+          "hints": [
+            {
+              "level": 1,
+              "message": "💡 For line chart:\nax = axes[0, 0]\nax.plot(months, product_a, marker='o', label='Product A')\nax.plot(months, product_b, marker='s', label='Product B')\nax.plot(months, product_c, marker='^', label='Product C')\nax.legend()\nax.set_title('Sales Trend')"
+            },
+            {
+              "level": 2,
+              "message": "📊 For bar chart:\ntotals = [sum(product_a), sum(product_b), sum(product_c)]\nax = axes[0, 1]\nax.bar(['A', 'B', 'C'], totals)"
+            }
+          ],
+          
+          "solution": "import matplotlib.pyplot as plt\nimport pandas as pd\nimport numpy as np\n\nmonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']\nproduct_a = [120, 135, 148, 162, 178, 195]\nproduct_b = [85, 92, 88, 95, 102, 110]\nproduct_c = [65, 70, 75, 72, 78, 85]\n\nfig, axes = plt.subplots(2, 2, figsize=(14, 10))\n\n# 1. Line chart\nax1 = axes[0, 0]\nax1.plot(months, product_a, marker='o', linewidth=2, label='Product A')\nax1.plot(months, product_b, marker='s', linewidth=2, label='Product B')\nax1.plot(months, product_c, marker='^', linewidth=2, label='Product C')\nax1.set_title('Sales Trend')\nax1.legend()\nax1.grid(True, alpha=0.3)\n\n# 2. Bar chart\ntotals = [sum(product_a), sum(product_b), sum(product_c)]\nax2 = axes[0, 1]\nax2.bar(['Product A', 'Product B', 'Product C'], totals, color=['#FF6B6B', '#4ECDC4', '#45B7D1'])\nax2.set_title('Total Sales by Product')\n\n# 3. Pie chart\nax3 = axes[1, 0]\nax3.pie(totals, labels=['A', 'B', 'C'], autopct='%1.1f%%', startangle=90)\nax3.set_title('Market Share')\n\n# 4. Stacked area\nax4 = axes[1, 1]\nax4.stackplot(months, product_a, product_b, product_c, labels=['A', 'B', 'C'], alpha=0.7)\nax4.set_title('Cumulative Sales')\nax4.legend()\n\nplt.suptitle('Sales Dashboard Q1-Q2 2025', fontsize=16, fontweight='bold')\nplt.tight_layout()\nplt.show()",
+          
+          "ai_on_completion": "🏆 MASTERPIECE! You created a professional dashboard!\n\nYou combined:\n✓ Line chart (trends)\n✓ Bar chart (totals)\n✓ Pie chart (proportions)\n✓ Stacked area (cumulative)\n\n🎯 This is EXACTLY how data is presented in companies!\n\n🚀 READY FOR ADVANCED TOOLS?\n→ Make these charts INTERACTIVE with zoom, pan, tooltips!\n\n[Open Advanced Tools] 🎨"
+        }
+      ]
+    }
+  ],
+  
+  "advanced_tools_integration": {
+    "title": "🔬 Ready for Interactive 3D Visualizations?",
+    "description": "You've mastered static charts! Now create interactive 3D visualizations in Advanced Tools.",
+    
+    "what_you_can_do": [
+      "🌀 3D scatter plots you can ROTATE with your mouse",
+      "📊 Interactive charts with zoom and pan",
+      "🎨 Custom x, y, z axis data",
+      "💫 Real-time data updates",
+      "🎯 Hover tooltips showing exact values",
+      "🖼️ Export high-quality images",
+      "📈 Combine multiple 3D plots",
+      "🌈 Advanced color gradients"
+    ],
+    
+    "workflow": "1. Clean & prepare data ✓\n2. Analyze with pandas ✓\n3. Create static visualizations ✓\n4. Export to Advanced Tools → CREATE STUNNING INTERACTIVE 3D GRAPHS!\n5. Share with team/portfolio",
+    
+    "ai_message": "🎨 You've mastered the foundations! Now unleash the full power of 3D visualization in Advanced Tools!",
+    
+    "link": "/advanced-tools"
+  },
+  
+  "ai_general_responses": {
+    "encourage_on_error": [
+      "💪 Data work has errors - that's normal! Let me help debug...",
+      "🔍 I see the issue. Here's what's happening...",
+      "✨ Close! Just a small fix needed...",
+      "🎯 Good attempt! Let's debug together."
+    ],
+    
+    "celebrate_success": [
+      "🎉 Perfect visualization! That's presentation-ready!",
+      "📊 Stunning chart! You're a data viz pro!",
+      "🔥 Beautiful work! That tells the story perfectly!",
+      "💯 Professional quality! This belongs in a dashboard!"
+    ],
+    
+    "nudge_to_continue": [
+      "🚀 Ready to try 3D visualizations?",
+      "💪 Want to create an interactive dashboard?",
+      "⭐ Ready for Advanced Tools?",
+      "🎯 Let's make this chart interactive!"
+    ]
+  }
+}

@@ -1,0 +1,2608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYNAPSE - Vulnerability Assessment Task</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f3eef8;
+            color: #2d2235;
+            height: 100vh;
+            font-size: 16px;
+            overflow: hidden;
+        }
+
+        /* ══════════════════════════════════════════════════ */
+        /* UNIFIED HEADER - CLEAN DESIGN                      */
+        /* ══════════════════════════════════════════════════ */
+        .synapse-header {
+            background: linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #4f46e5 100%);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(79,70,229,0.25);
+        }
+
+        /* Row 1: Brand + Actions */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            padding: 12px 32px;
+            gap: 16px;
+        }
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .logo-text {
+            font-size: 26px;
+            font-weight: 800;
+            color: #FFFFFF;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .participant-badge {
+            background: rgba(255,255,255,0.2);
+            color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: monospace;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .group-badge {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .group-a { background: rgba(147,197,253,0.2); color: #bfdbfe; }
+        .group-b { background: rgba(252,211,77,0.2); color: #fde68a; }
+
+        /* Nav action buttons */
+        .top-bar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+        .nav-action-btn {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            color: white;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-action-btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.1);
+        }
+        .btn-shop { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 3px 12px rgba(245,158,11,0.3); }
+        .btn-java { background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 3px 12px rgba(59,130,246,0.3); }
+        .btn-submit { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 3px 12px rgba(16,185,129,0.3); }
+
+        /* Row 2: Tabs - seamless continuation */
+        .header-tabs {
+            display: flex;
+            padding: 0 32px;
+            gap: 2px;
+        }
+        .task-tab {
+            padding: 12px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.65);
+            cursor: pointer;
+            border: none;
+            border-bottom: 3px solid transparent;
+            background: transparent;
+            transition: all 0.2s;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .task-tab:hover {
+            color: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.06);
+        }
+        .task-tab.active {
+            color: #ffffff;
+            border-bottom-color: #fbbf24;
+            font-weight: 700;
+        }
+        .tab-count {
+            background: #fbbf24;
+            color: #1e1b4b;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        /* Accessibility toggle */
+        .access-toggle-wrap {
+            position: relative;
+        }
+        .access-menu-inline {
+            position: absolute;
+            top: 52px;
+            right: 0;
+            background: linear-gradient(135deg, #1e293b, #334155);
+            border: 1px solid #475569;
+            border-radius: 14px;
+            padding: 16px;
+            display: grid !important;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            justify-items: center;
+            z-index: 10003;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+            width: 300px;
+        }
+        .access-menu-inline[style*="display:none"],
+        .access-menu-inline[style*="display: none"] {
+            display: none !important;
+        }
+        .nav-btn-small {
+            padding: 0 !important;
+            font-size: 18px !important;
+            min-width: 44px; width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(255,255,255,0.1) !important;
+            color: white !important;
+        }
+        .nav-btn-small:hover {
+            transform: scale(1.1);
+            background: rgba(255,255,255,0.25) !important;
+        }
+        .nav-btn-small::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -32px; left: 50%;
+            transform: translateX(-50%) scale(0.8);
+            background: rgba(0,0,0,0.95);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s;
+        }
+        .nav-btn-small:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+
+        /* Submit button */
+        .submit-btn {
+            padding: 10px 22px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 3px 12px rgba(16,185,129,0.3);
+        }
+        .submit-btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .nav-icon-btn {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            padding: 0; min-width: 40px;
+            background: rgba(255,255,255,0.15) !important;
+            border: none; cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .nav-icon-btn img {
+            width: 28px; height: 28px; object-fit: contain;
+        }
+        .nav-icon-btn:hover {
+            transform: scale(1.1);
+            background: rgba(255,255,255,0.25) !important;
+        }
+
+        /* ── MAIN LAYOUT ────────────────────────────────── */
+        .main-content {
+            display: flex;
+            height: calc(100vh - 96px);
+        }
+
+        /* ── LEFT: TASK PANEL ───────────────────────────── */
+        .task-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-right: 2px solid #d8b4fe;
+        }
+
+        /* Tabs */
+
+        .task-tab {
+            padding: 10px 28px;
+            font-size: 16px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.8);
+            cursor: pointer;
+            border: none;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            background: transparent;
+            font-family: inherit;
+            border-right: none;
+            font-family: inherit;
+        }
+        .task-tab:hover { color: #fff; background: rgba(255,255,255,0.1); }
+        .task-tab.active { color: #fff; border-bottom-color: #fbbf24; background: rgba(255,255,255,0.1); font-weight: 800; }
+
+        .tab-count {
+            background: #fbbf24;
+            color: #1e1b4b;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 6px;
+            font-weight: 700;
+        }
+
+        /* Tab Content */
+        .tab-content { flex: 1; overflow-y: auto; padding: 20px; background: #f8f4fc; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* ── INSTRUCTIONS TAB ───────────────────────────── */
+        .cred-box {
+            background: #ffffff;
+            border: 1px solid #e0d4f5;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .cred-box h3 { color: #7c3aed; font-size: 19px; margin-bottom: 12px; }
+        .cred-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+        }
+        .cred-table th {
+            background: #ede5f5;
+            color: #374151;
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 15px;
+        }
+        .cred-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #e0d4f5;
+            font-family: monospace;
+            color: #0f172a;
+            font-size: 15px;
+        }
+        .cred-table tr:hover td { background: rgba(102,126,234,0.05); }
+
+        .target-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 28px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 15px;
+            margin: 12px 0;
+            transition: all 0.3s;
+        }
+        .target-link:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(102,126,234,0.4); }
+
+        .tips-list { color: #4b5563; font-size: 16px; line-height: 2; }
+
+        /* ── FINDINGS TAB ───────────────────────────────── */
+        .finding-card {
+            background: #ffffff;
+            border: 2px solid #e0d4f5;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: border-color 0.3s;
+            color: #000000;
+        }
+        .finding-card.has-content { border-color: #7c3aed; }
+
+        .finding-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .finding-number {
+            background: #667eea;
+            color: white;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .finding-timestamp {
+            font-size: 11px;
+            color: #6b7280;
+            font-family: monospace;
+        }
+        .finding-remove {
+            background: #fee2e2;
+            color: #991b1b;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .finding-field { margin-bottom: 14px; }
+        .finding-field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+        .finding-field textarea, .finding-field input, .finding-field select {
+            width: 100%;
+            padding: 10px 14px;
+            background: #f3eef8;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+        }
+        .finding-field textarea { min-height: 60px; }
+        .finding-field textarea:focus, .finding-field input:focus, .finding-field select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102,126,234,0.2);
+        }
+        .finding-field select { cursor: pointer; color: #1e293b !important; background: #f8fafc !important; }
+        .finding-field select option { background: #1e293b; }
+
+        .add-finding-btn {
+            width: 100%;
+            padding: 16px;
+            background: #f8f6ff;
+            border: 2px dashed #c4b5fd;
+            border-radius: 12px;
+            color: #6d28d9;
+            color: #94a3b8;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        .add-finding-btn:hover { border-color: #7c3aed; color: #7c3aed; background: #ede5f5; }
+
+        .findings-summary {
+            background: linear-gradient(135deg, #7c3aed, #6366f1);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            display: flex;
+            color: #ffffff;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+        .findings-count { color: #ffffff; font-weight: 700; font-size: 20px; background: rgba(255,255,255,0.2); padding: 2px 12px; border-radius: 10px; }
+
+        /* ── RIGHT PANEL: AI CHAT or OWASP ──────────────── */
+        .side-panel {
+            width: 420px;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+            position: fixed;
+            bottom: 16px;
+            right: 20px;
+            max-height: 65vh;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(79,70,229,0.2), 0 0 0 1px rgba(124,58,237,0.15);
+            z-index: 10005;
+            overflow: hidden;
+        }
+        .side-panel-header {
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #7c3aed, #6366f1);
+            font-weight: 700;
+            font-size: 16px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-radius: 16px 16px 0 0;
+            min-height: 52px;
+        }
+
+        /* AI Chat (Group A) */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        /* Chat message layout - avatar + bubble */
+        .chat-message {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            animation: chatSlideIn 0.3s ease;
+        }
+        @keyframes chatSlideIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-message.user-msg {
+            flex-direction: row-reverse;
+        }
+        .chat-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .chat-avatar.ai {
+            background: linear-gradient(135deg, #7c3aed, #6366f1);
+        }
+        .chat-avatar.user {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+        }
+        .chat-bubble {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-size: 15px;
+            line-height: 1.65;
+            max-width: 85%;
+        }
+        .chat-bubble pre { background: #1e293b; border-radius: 8px; padding: 10px; overflow-x: auto; margin: 8px 0; color: #e2e8f0; }
+        .chat-bubble code { font-family: 'Courier New', monospace; font-size: 13px; }
+        .chat-bubble p code { background: #f1f5f9; color: #e74c3c; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+        .chat-message.ai-msg .chat-bubble {
+            background: #f8f6ff;
+            color: #000000 !important;
+        }
+        .chat-message.user-msg .chat-bubble {
+            background: #7c3aed;
+            color: white;
+        }
+        .chat-message.system-msg {
+            justify-content: center;
+        }
+        .chat-message.system-msg .chat-bubble {
+            background: #f0ebff;
+            color: #6d28d9;
+            text-align: center;
+            max-width: 100%;
+            font-size: 13px;
+            font-style: normal;
+            border: none;
+        }
+
+        .chat-input-box {
+            display: flex;
+            padding: 12px;
+            gap: 8px;
+            border-top: 1px solid #ede5f5;
+            background: #faf8ff;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 10px 14px;
+            background: #f3eef8;
+            border: 1px solid #475569;
+            border-radius: 10px;
+            color: #e2e8f0;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .chat-input:focus { outline: none; border-color: #667eea; }
+        .chat-send {
+            background: #7c3aed;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* OWASP Reference (Group B) */
+        .owasp-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        .owasp-category {
+            background: #f3eef8;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .owasp-header {
+            padding: 12px 16px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            color: #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .owasp-header:hover { background: rgba(102,126,234,0.05); }
+        .owasp-body {
+            display: none;
+            padding: 0 16px 14px;
+            font-size: 13px;
+            color: #94a3b8;
+            line-height: 1.7;
+        }
+        .owasp-body.open { display: block; }
+        .owasp-tag {
+            display: inline-block;
+            background: #7c3aed;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-right: 8px;
+        }
+
+        /* ── ACCESSIBILITY ──────────────────────────────── */
+        .a11y-bar {
+            display: flex;
+            gap: 6px;
+            padding: 8px 18px;
+            background: #f3eef8;
+            border-top: 1px solid #334155;
+        }
+        .a11y-btn {
+            background: #ffffff;
+            border: 1px solid #e0d4f5;
+            color: #94a3b8;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .a11y-btn.active { background: #667eea; color: white; border-color: #667eea; }
+
+        /* Dyslexia font */
+        body.dyslexia-mode {
+            font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif;
+        }
+        /* Dark mode is default already */
+
+        /* ── AUTO-SAVE INDICATOR ────────────────────────── */
+        .save-indicator {
+            font-size: 11px;
+            color: #6b7280;
+            padding: 0 24px 8px;
+            text-align: right;
+        }
+        .save-indicator.saving { color: #f59e0b; }
+        .save-indicator.saved { color: #10b981; }
+
+        /* scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f3eef8; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+        .acc-btn { background:#334155; border:1px solid #475569; color:#e2e8f0; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:14px; transition:all 0.2s; }
+        .acc-btn:hover { background:#475569; border-color:#667eea; }
+        .dyslexic-font, .dyslexic-font * { font-family: 'OpenDyslexic', sans-serif !important; }
+        .high-contrast { filter: contrast(1.4) !important; }
+        .high-contrast .tab-pane, .high-contrast .cred-box { background: #000 !important; color: #fff !important; border-color: #fff !important; }
+        .focus-mode .tab-pane { max-width: 700px; margin: 0 auto; }
+        @font-face { font-family: 'OpenDyslexic'; src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/woff/OpenDyslexic-Regular.woff') format('woff'); }
+
+    /* ======== ACCESSIBILITY - copied from course.html ======== */
+
+    
+    .nav-icon-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0; min-width: 44px;
+      background: rgba(255,255,255,0.95) !important;
+      box-shadow: 0 4px 15px rgba(236,72,153,0.4), 0 0 0 3px rgba(236,72,153,0.3) !important;
+      border: none; cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .nav-icon-btn img {
+      width: 32px; height: 32px; object-fit: contain;
+    }
+    .nav-icon-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(236,72,153,0.5), 0 0 0 4px rgba(236,72,153,0.4) !important;
+    }
+    .nav-btn-small {
+      padding: 0 !important;
+      font-size: 18px !important;
+      min-width: 44px; width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      background: rgba(255,255,255,0.15) !important;
+      color: white !important;
+      box-shadow: none !important;
+      border-radius: 50%;
+      border: none; cursor: pointer;
+    }
+    .nav-btn-small:hover {
+      transform: scale(1.1);
+      background: rgba(255,255,255,0.3) !important;
+    }
+    .nav-btn-small::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: -32px; left: 50%;
+      transform: translateX(-50%) scale(0.8);
+      background: rgba(0,0,0,0.95);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s ease;
+      z-index: 100001;
+    }
+    .nav-btn-small:hover::after {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+
+    .nav-btn-reset:hover {
+      background: #b91c1c !important;
+    }
+    @media (max-width:1200px){.top-bar{flex-wrap:wrap!important;gap:6px!important;padding:10px 14px!important}.top-bar a[href*="shop"],.top-bar a[href*="java"],.submit-btn{font-size:13px!important;padding:8px 14px!important}}@media (max-width:768px){.access-toggle-wrap{position:relative!important;z-index:10004}.access-menu-inline{position:absolute!important;top:52px!important;right:0!important;bottom:auto!important;left:auto!important;width:min(280px,calc(100vw - 40px))!important;max-height:60vh!important;overflow-y:auto!important;grid-template-columns:repeat(4,1fr)!important}}@media (min-width:1201px){.access-menu-inline{right:56px!important;top:0!important}}
+    body.dyslexia-mode, body.dyslexia-mode * {
+      font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', 'OpenDyslexic', sans-serif !important;
+      letter-spacing: 0.05em;
+      word-spacing: 0.1em;
+      line-height: 1.8 !important;
+    }
+    body.high-contrast { filter: contrast(1.4); }
+    body.high-contrast .cred-box, body.high-contrast .tab-pane {
+      background: #000 !important; color: #fff !important; border: 2px solid #fff !important;
+    }
+    .reading-guide {
+      position: fixed; width: 100%;
+      pointer-events: none; z-index: 99999; display: none;
+      transition: top 0.05s;
+    }
+    .reading-guide.active { display: block; }
+    .tts-reading {
+      background: linear-gradient(120deg, #fef3c7, #fde68a) !important;
+      outline: 3px solid #f59e0b !important;
+      outline-offset: 2px; border-radius: 8px;
+      animation: pulse-glow 1.5s infinite;
+      padding: 8px !important;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 10px rgba(245,158,11,0.3); }
+      50% { box-shadow: 0 0 20px rgba(245,158,11,0.6); }
+    }
+    .focus-mode-overlay {
+      position: fixed; top:0; left:0; right:0; bottom:0;
+      background: rgba(0,0,0,0.75); z-index: 998;
+      pointer-events: none; display: none;
+    }
+    .focus-mode-overlay.active { display: block; }
+    @font-face { font-family: 'OpenDyslexic'; src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/woff/OpenDyslexic-Regular.woff') format('woff'); }
+    /* Light mode overrides */
+    body.light-mode { background: #f1f5f9 !important; color: #1e293b !important; }
+    body.light-mode .navbar { background: #e2e8f0 !important; color: #1e293b !important; }
+    body.light-mode .cred-box, body.light-mode .tab-pane, body.light-mode .tab-content { background: #ffffff !important; color: #1e293b !important; }
+    body.light-mode h3, body.light-mode p, body.light-mode span, body.light-mode td, body.light-mode th, body.light-mode label, body.light-mode strong { color: #1e293b !important; }
+    body.light-mode .chat-message.ai-msg .chat-bubble { background: #f3f0ff !important; color: #000000 !important; }
+    body.light-mode .chat-input { background: #fff !important; color: #1e293b !important; border-color: #cbd5e1 !important; }
+    body.light-mode .chat-send { background: #667eea !important; }
+    body.light-mode a { color: #4f46e5 !important; }
+    body.light-mode .group-badge { background: #e2e8f0 !important; color: #1e293b !important; }
+    body.light-mode .task-tab { color: rgba(255,255,255,0.7) !important; }
+    
+    
+
+    body.light-mode .findings-summary { background: linear-gradient(135deg, #7c3aed, #6366f1) !important; color: #fff !important; }
+    body.light-mode .findings-count { color: #fff !important; }
+    body.light-mode .side-panel { background: #f0e8f5 !important; }
+    body.light-mode .side-panel-header { background: linear-gradient(135deg, #7c3aed, #6366f1) !important; color: white !important; }
+    body.light-mode .task-panel { border-color: #cbd5e1 !important; }
+    body.light-mode .synapse-header { background: linear-gradient(135deg, #7c3aed, #6366f1, #4f46e5) !important; }
+    body.light-mode .finding-card { background: #ffffff !important; border-color: #cbd5e1 !important; }
+    body.light-mode .finding-field textarea, body.light-mode .finding-field select { background: #f8fafc !important; color: #1e293b !important; border-color: #cbd5e1 !important; }
+    body.light-mode .finding-field label { color: #475569 !important; }
+    body.light-mode .main-content { background: #f1f5f9 !important; }
+    body.light-mode .participant-badge { background: #e2e8f0 !important; color: #475569 !important; }
+    body.light-mode .nav-btn-small { color: #1e293b !important; }
+    body.light-mode .add-finding-btn { background: #f8fafc !important; color: #475569 !important; border-color: #cbd5e1 !important; }
+    body.light-mode .task-tab.active { color: #fff !important; border-bottom-color: #fbbf24 !important; }
+    /* Reading guide settings panel */
+    .guide-settings-panel { position:fixed; bottom:20px; left:20px; background:#1e293b; border:1px solid #475569; border-radius:12px; z-index:100000; box-shadow:0 10px 30px rgba(0,0,0,0.5); width:280px; padding:16px; display:none; }
+    .guide-settings-panel h4 { color:#e2e8f0; font-size:14px; margin:0 0 12px 0; }
+    .color-options { display:flex; gap:10px; margin-bottom:16px; }
+    .color-option { width:36px; height:36px; border-radius:8px; border:3px solid transparent; cursor:pointer; transition:all 0.2s; }
+    .color-option:hover { transform:scale(1.15); }
+    .color-option.selected { border-color:#fff; box-shadow:0 0 0 2px #667eea; }
+    .thickness-label { color:#94a3b8; font-size:13px; display:block; margin-bottom:8px; }
+    .thickness-slider { width:100%; accent-color:#667eea; }
+    .audio-control-panel { position:fixed; bottom:20px; left:20px; background:#1e293b; border:1px solid #475569; border-radius:12px; z-index:100000; box-shadow:0 10px 30px rgba(0,0,0,0.5); padding:12px 16px; display:none; align-items:center; gap:10px; }
+    /* ======== END ACCESSIBILITY ======== */
+
+    
+    /* FIX: Cursor Highlight visible on dark bg */
+    
+    /* FIX: Dictionary popup visible on dark bg */
+    .synapse-dictionary-popup {
+      background: #1e293b !important;
+      color: #e2e8f0 !important;
+      border: 2px solid #a78bfa !important;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6) !important;
+      padding: 12px !important;
+      border-radius: 10px !important;
+      font-size: 14px !important;
+      z-index: 100000 !important;
+    }
+    /* FIX: Progress bar visible on dark bg */
+    .synapse-progress-bar {
+      position: fixed !important;
+      top: 52px !important;
+      left: 0 !important;
+      height: 4px !important;
+      background: linear-gradient(90deg, #a78bfa, #6366f1, #ec4899) !important;
+      z-index: 10004 !important;
+      transition: width 0.2s !important;
+    }
+
+    
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #ffffff;
+            scroll-behavior: smooth;
+        }
+        .chat-input-box {
+            padding: 10px;
+            background: #f3eef8;
+            border-top: 1px solid #ddd6fe;
+        }
+        .chat-input {
+            font-size: 15px !important;
+            padding: 10px 14px !important;
+            border-radius: 10px !important;
+            border: 1px solid #c4b5fd !important;
+            background: white !important;
+            color: #1e293b !important;
+        }
+        .chat-send {
+            background: #7c3aed !important;
+            border-radius: 10px !important;
+            font-size: 18px !important;
+        }
+
+    
+    /* ── DARK MODE (via High Contrast / Dark button) ── */
+    body.dark-mode {
+      background: #0f172a !important;
+      color: #e2e8f0 !important;
+    }
+    body.dark-mode .top-bar {
+      background: linear-gradient(135deg, #1e293b, #334155) !important;
+      border-bottom-color: #475569 !important;
+    }
+    body.dark-mode .task-tabs {
+      background: #1e293b !important;
+      border-bottom-color: #334155 !important;
+    }
+    body.dark-mode .task-tab { color: #94a3b8 !important; }
+    body.dark-mode .task-tab.active { color: #a78bfa !important; border-bottom-color: #a78bfa !important; }
+    body.dark-mode .tab-content { background: #0f172a !important; }
+    body.dark-mode .cred-box { background: #1e293b !important; border-color: #334155 !important; }
+    body.dark-mode .cred-box h3 { color: #a78bfa !important; }
+    body.dark-mode .cred-table th { background: #334155 !important; color: #94a3b8 !important; }
+    body.dark-mode .cred-table td { color: #e2e8f0 !important; border-color: #334155 !important; }
+    body.dark-mode .task-panel { border-color: #334155 !important; }
+    body.dark-mode .finding-card { background: #1e293b !important; border-color: #334155 !important; }
+
+    body.dark-mode .findings-summary { background: linear-gradient(135deg, #4c1d95, #312e81) !important; color: #fff !important; }
+    body.dark-mode .add-finding-btn { background: #1e293b !important; color: #c4b5fd !important; border-color: #475569 !important; }
+    body.dark-mode .finding-card { background: #1e293b !important; color: #e2e8f0 !important; border-color: #334155 !important; }
+    body.dark-mode .findings-count { color: #fff !important; background: rgba(255,255,255,0.15) !important; }
+    body.dark-mode .side-panel { background: #1e293b !important; }
+    body.dark-mode .chat-messages { background: #0f172a !important; }
+    body.dark-mode .chat-message.system-msg .chat-bubble { background: #1e293b !important; color: #c4b5fd !important; border-color: #475569 !important; }
+    body.dark-mode .chat-message.ai-msg .chat-bubble { background: #1e293b !important; color: #e2e8f0 !important; }
+    body.dark-mode .chat-input-box { background: #1e293b !important; }
+    body.dark-mode .chat-input { background: #334155 !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    body.dark-mode .tips-list { color: #cbd5e1 !important; }
+    body.dark-mode .finding-field label { color: #94a3b8 !important; }
+    body.dark-mode .finding-field textarea,
+    body.dark-mode .finding-field select { background: #334155 !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+
+    
+    /* CONTRAST FIXES */
+    .cred-box p, .cred-box li, .cred-box span, .tab-content p, .tab-content li {
+      color: #2d2235 !important;
+      font-size: 15px !important;
+    }
+    .cred-box ol li { 
+      color: #2d2235 !important;
+      margin-bottom: 8px;
+    }
+    .cred-box ol li strong, .cred-box h3 {
+      color: #6d28d9 !important;
+    }
+    .main-content {
+      background: #f3eef8;
+    }
+    /* Logo text in navbar */
+    .logo-text {
+      font-size: 26px !important;
+      font-weight: 800 !important;
+      color: #FFFFFF !important;
+    }
+    /* Participant badge bigger */
+    .participant-badge {
+      font-size: 13px !important;
+      padding: 5px 12px !important;
+    }
+    /* Group badge bigger */
+    .group-badge {
+      font-size: 13px !important;
+      padding: 5px 12px !important;
+    }
+    /* Action buttons in navbar bigger */
+    .top-bar a[href*="shop"], .top-bar a[href*="java"], .submit-btn {
+      font-size: 15px !important;
+      padding: 10px 22px !important;
+      border-radius: 12px !important;
+    }
+    /* Tabs bigger */
+    .task-tab {
+      font-size: 15px !important;
+      padding: 14px 24px !important;
+    }
+    /* Table text bigger */
+    .cred-table td, .cred-table th {
+      font-size: 14px !important;
+      padding: 10px 14px !important;
+    }
+    /* Finding field labels */
+    .finding-field label {
+      color: #4c1d95 !important;
+      font-size: 14px !important;
+    }
+    /* The side panel header */
+    .side-panel-header {
+      font-size: 17px !important;
+      padding: 16px 20px !important;
+    }
+    /* Chat messages bigger */
+    .chat-msg {
+      font-size: 15px !important;
+    }
+    /* Height fix for main content */
+    .main-content {
+      height: calc(100vh - 96px) !important;
+    }
+    /* Focus overlay offset */
+    #focusAssistOverlay {
+      top: 96px !important;
+    }
+
+    
+    /* FONT SIZE BOOST */
+    body { font-size: 17px !important; }
+    .cred-box p, .cred-box li, .tab-content p, .tab-content li, .tab-content span {
+      font-size: 16px !important;
+      color: #1a1025 !important;
+      line-height: 1.8 !important;
+    }
+    .cred-box h3 { font-size: 19px !important; }
+    .cred-table td { font-size: 15px !important; color: #1a1025 !important; }
+    .cred-table th { font-size: 15px !important; }
+    .chat-msg { font-size: 16px !important; line-height: 1.7 !important; }
+    .chat-input { font-size: 16px !important; }
+
+    /* HIGH CONTRAST MODE */
+    body.high-contrast {
+      background: #000 !important;
+      color: #fff !important;
+    }
+    body.high-contrast .top-bar { background: #000 !important; border-bottom: 2px solid #fff !important; }
+    body.high-contrast .task-tabs { background: #111 !important; border-color: #fff !important; }
+    body.high-contrast .task-tab { color: #ccc !important; }
+    body.high-contrast .task-tab.active { color: #fff !important; border-bottom-color: #fff !important; }
+    body.high-contrast .tab-content { background: #000 !important; }
+    body.high-contrast .cred-box { background: #111 !important; border-color: #fff !important; }
+    body.high-contrast .cred-box h3 { color: #ffd700 !important; }
+    body.high-contrast .cred-box p, body.high-contrast .cred-box li,
+    body.high-contrast .cred-box span, body.high-contrast .tab-content p,
+    body.high-contrast .tab-content li { color: #fff !important; }
+    body.high-contrast .cred-table th { background: #222 !important; color: #fff !important; }
+    body.high-contrast .cred-table td { color: #fff !important; border-color: #444 !important; }
+    body.high-contrast .finding-card { background: #111 !important; border-color: #fff !important; color: #fff !important; }
+    body.high-contrast .finding-field label { color: #ffd700 !important; }
+    body.high-contrast .finding-field textarea,
+    body.high-contrast .finding-field select { background: #222 !important; color: #fff !important; border-color: #666 !important; }
+    body.high-contrast .synapse-header { background: #000 !important; border-bottom: 2px solid #fff !important; }
+
+    body.high-contrast .findings-summary { background: #000 !important; color: #fff !important; border: 2px solid #fff !important; }
+    body.high-contrast .add-finding-btn { background: #000 !important; color: #fff !important; border-color: #fff !important; }
+    body.high-contrast .finding-card { background: #000 !important; color: #fff !important; border-color: #fff !important; }
+    body.high-contrast .finding-card input, body.high-contrast .finding-card textarea, body.high-contrast .finding-card select { background: #222 !important; color: #fff !important; border-color: #666 !important; }
+    body.high-contrast .finding-field label { color: #fff !important; }
+    body.high-contrast .findings-count { color: #fff !important; background: #444 !important; }
+    body.high-contrast .side-panel { background: #111 !important; }
+    body.high-contrast .side-panel-header { background: #222 !important; color: #fff !important; }
+    body.high-contrast .chat-messages { background: #000 !important; }
+    body.high-contrast .chat-message.ai-msg .chat-bubble { background: #222 !important; color: #fff !important; }
+    body.high-contrast .chat-message.user-msg .chat-bubble { background: #444 !important; color: #fff !important; }
+    body.high-contrast .chat-input { background: #222 !important; color: #fff !important; border-color: #666 !important; }
+    body.high-contrast .chat-input-box { background: #111 !important; }
+    body.high-contrast .main-content { background: #000 !important; }
+    body.high-contrast .task-panel { border-color: #fff !important; }
+    body.high-contrast .logo-text { color: #fff !important; text-shadow: none !important; }
+    body.high-contrast .tips-list { color: #fff !important; }
+    body.high-contrast a { color: #7dd3fc !important; }
+
+
+
+    body.high-contrast .findings-summary span { color: #fff !important; }
+    body.high-contrast .add-finding-btn { color: #fff !important; font-size: 17px !important; }
+    body.dark-mode .findings-summary span { color: #fff !important; }
+    body.dark-mode .add-finding-btn { color: #c4b5fd !important; font-size: 17px !important; }
+
+
+    /* Active accessibility buttons glow */
+    .nav-btn-small.active {
+        background: #fbbf24 !important;
+        color: #1e1b4b !important;
+        box-shadow: 0 0 12px rgba(251,191,36,0.6) !important;
+        transform: scale(1.1);
+    }
+    /* GLOBAL TEXT BOOST */
+    .tab-pane p, .tab-pane li, .tab-pane td { font-size: 16px !important; color: #1e293b !important; line-height: 1.8 !important; }
+    .tab-pane h2 { font-size: 24px !important; color: #7c3aed !important; }
+    .tab-pane h3 { font-size: 20px !important; color: #6d28d9 !important; }
+    .tab-pane strong { color: #0f172a !important; }
+    .vuln-item, .target-vuln { font-size: 16px !important; }
+
+    /* FLOATABLE SIDE PANEL */
+    .chat-popup {
+      position: fixed;
+      bottom: 10px;
+      right: 20px;
+      width: 420px;
+      max-height: calc(100vh - 120px);
+      background: #f8f4fc;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+      border: 1px solid #d8b4fe;
+      display: none;
+      flex-direction: column;
+      z-index: 10005;
+      overflow: hidden;
+    }
+    .chat-popup.visible { display: flex; }
+    .chat-popup.maximized {
+      width: 55vw;
+      max-height: calc(100vh - 96px);
+      bottom: 10px;
+      right: 20px;
+      min-width: 600px;
+    }
+    .chat-popup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #7c3aed, #6366f1);
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .chat-popup-header-btns { display: flex; gap: 6px; }
+    .chat-popup-header-btns button {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .chat-popup-header-btns button:hover { background: rgba(255,255,255,0.3); }
+    .chat-popup-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      background: #f8f4fc;
+      max-height: calc(100vh - 280px);
+    }
+    .chat-popup.maximized .chat-popup-messages { max-height: calc(85vh - 160px); }
+    .chat-popup-input {
+      display: flex;
+      gap: 8px;
+      padding: 10px;
+      background: #ede5f5;
+      border-top: 1px solid #d8b4fe;
+    }
+    .chat-popup-input input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #c4b5fd;
+      border-radius: 10px;
+      font-size: 16px;
+      background: white;
+    }
+    .chat-popup-input button {
+      background: #7c3aed;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .chat-trigger-float {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #7c3aed, #6366f1);
+      border: none;
+      cursor: pointer;
+      font-size: 28px;
+      color: white;
+      box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+      z-index: 10004;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .chat-trigger-float:hover { transform: scale(1.1); }
+
+    
+
+
+    body.high-contrast .findings-summary span { color: #fff !important; }
+    body.high-contrast .add-finding-btn { color: #fff !important; font-size: 17px !important; }
+    body.dark-mode .findings-summary span { color: #fff !important; }
+    body.dark-mode .add-finding-btn { color: #c4b5fd !important; font-size: 17px !important; }
+
+
+    /* Active accessibility buttons glow */
+    .nav-btn-small.active {
+        background: #fbbf24 !important;
+        color: #1e1b4b !important;
+        box-shadow: 0 0 12px rgba(251,191,36,0.6) !important;
+        transform: scale(1.1);
+    }
+    /* GLOBAL TEXT BOOST */
+    .tab-pane p, .tab-pane li, .tab-pane td { font-size: 16px !important; color: #1e293b !important; line-height: 1.8 !important; }
+    .tab-pane h2 { font-size: 24px !important; color: #7c3aed !important; }
+    .tab-pane h3 { font-size: 20px !important; color: #6d28d9 !important; }
+    .tab-pane strong { color: #0f172a !important; }
+    .vuln-item, .target-vuln { font-size: 16px !important; }
+
+    /* FLOATABLE SIDE PANEL */
+    .side-panel {
+      position: fixed !important;
+      bottom: 10px;
+      right: 20px;
+      width: 440px;
+      height: calc(100vh - 120px);
+      max-height: calc(100vh - 120px);
+      background: #f8f4fc !important;
+      border-radius: 16px !important;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.25) !important;
+      border: 1px solid #d8b4fe !important;
+      z-index: 10005;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .side-panel.visible { display: flex !important; max-height: 65vh; }
+    .side-panel.maximized {
+      width: 55vw !important;
+      max-height: calc(100vh - 96px) !important;
+      bottom: 10px !important;
+      right: 20px !important;
+      min-width: 600px;
+    }
+    /* Header with controls */
+    .side-panel-header {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+    }
+    .chat-header-controls {
+      display: flex;
+      gap: 6px;
+    }
+    .chat-header-controls button {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: white;
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all 0.2s ease;
+    }
+    .chat-header-controls button:hover { background: rgba(255,255,255,0.3); }
+    /* Chat messages scrollable */
+    .chat-messages {
+      flex: 1 !important;
+      overflow-y: auto !important;
+      padding: 14px !important;
+      min-height: 300px;
+      max-height: calc(100vh - 280px);
+      height: calc(100vh - 280px);
+    }
+    .side-panel.maximized .chat-messages { max-height: calc(85vh - 160px); height: calc(85vh - 160px); }
+    /* Trigger button */
+    .chat-trigger-float {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #7c3aed, #6366f1);
+      border: none;
+      cursor: pointer;
+      font-size: 28px;
+      color: white;
+      box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+      z-index: 10004;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .chat-trigger-float:hover { transform: scale(1.1); }
+    /* Main content takes full width now */
+    .main-content {
+      display: block !important;
+    }
+    .task-panel {
+      border-right: none !important;
+      height: calc(100vh - 96px);
+      overflow-y: auto;
+    }
+
+    </style>
+    <link rel="stylesheet" href="/static/research_accessibility.css?v=2">
+    <link rel="stylesheet" href="/static/focus_assistant.css">
+    <link rel="stylesheet" href="/static/synapse_a11y.css?v=9">
+    <link rel="stylesheet" href="/static/butterfly_logo.css">
+    <style>
+    /* Animated butterfly logo */
+    .butterfly-logo {
+      display: inline-block;
+      font-size: 42px;
+      animation: butterflyFloat 3s ease-in-out infinite;
+      filter: drop-shadow(0 0 8px rgba(167,139,250,0.5));
+      cursor: default;
+    }
+    @keyframes butterflyFloat {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-3px) rotate(3deg); }
+      75% { transform: translateY(2px) rotate(-2deg); }
+    }
+    </style>
+<style>
+/* MISSION mode: hide butterfly access button (use /app for accessibility settings) */
+#butterflyAccessBtn, .access-toggle-wrap { display: none !important; }
+</style>
+<style>
+/* Mission page: dark-mode support — readable text and panels */
+body.dark-mode {
+    background: #0f172a !important;
+    color: #e2e8f0 !important;
+}
+body.dark-mode .main-content,
+body.dark-mode main,
+body.dark-mode section,
+body.dark-mode .task-info,
+body.dark-mode .finding-card,
+body.dark-mode .form-group,
+body.dark-mode .research-task-card,
+body.dark-mode .card,
+body.dark-mode .tab-content {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+body.dark-mode p,
+body.dark-mode li,
+body.dark-mode span,
+body.dark-mode label,
+body.dark-mode div {
+    color: #e2e8f0 !important;
+}
+body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4,
+body.dark-mode strong {
+    color: #ffffff !important;
+}
+body.dark-mode select, body.dark-mode input, body.dark-mode textarea {
+    background: #0f172a !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+body.dark-mode a { color: #93c5fd !important; }
+/* Keep top bar gradients intact */
+body.dark-mode .synapse-header, 
+body.dark-mode .synapse-header *,
+body.dark-mode .nav-action-btn,
+body.dark-mode .submit-btn,
+body.dark-mode .tab-btn {
+    color: inherit !important;
+}
+
+    /* === HIGH CONTRAST EMPHASIS FIX (Mission page) === */
+    body.high-contrast strong,
+    body.high-contrast b,
+    body.high-contrast em,
+    body.high-contrast i,
+    body.high-contrast .highlight,
+    body.high-contrast [class*="highlight"],
+    body.high-contrast [class*="keyword"],
+    body.high-contrast [class*="emphasis"],
+    body.high-contrast [class*="vuln"],
+    body.high-contrast [class*="term"] {
+      color: #ffff00 !important;
+      background: transparent !important;
+      font-weight: bold !important;
+    }
+    body.high-contrast a {
+      color: #00ffff !important;
+      text-decoration: underline !important;
+      background: transparent !important;
+    }
+    /* Override inline color styles in HC */
+    body.high-contrast [style*="color"] {
+      color: #ffff00 !important;
+    }
+    /* Re-apply yellow to nested emphasis inside paragraphs/lists */
+    body.high-contrast p strong, body.high-contrast p b, body.high-contrast p em,
+    body.high-contrast li strong, body.high-contrast li b, body.high-contrast li em,
+    body.high-contrast div strong, body.high-contrast div b, body.high-contrast div em {
+      color: #ffff00 !important;
+    }
+    /* === END HC EMPHASIS FIX === */
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- TOP BAR                                             -->
+<!-- ═══════════════════════════════════════════════════ -->
+<header class="synapse-header">
+<div class="top-bar">
+    <div class="top-bar-left">
+        <span class="logo-text">
+            <img src="/icons/butterfly_logo_bright.svg" style="width:56px;height:56px;vertical-align:middle;filter:drop-shadow(0 0 14px rgba(167,139,250,0.7));" onerror="this.outerHTML='<span style=\'font-size:42px;\'>🦋</span>'">
+            SYNAPSE
+        </span>
+        <span class="participant-badge" id="participantBadge">--------</span>
+        <span class="group-badge" id="groupBadgeTop"></span>
+    </div>
+
+    <div class="top-bar-actions">
+        <a href="#" id="btnShopSecure" target="_blank" class="nav-action-btn btn-shop" onclick="openIsolatedShopSecure(event)">&#128274; ShopSecure</a>
+        <a id="javaCourseBtn" href="/course/java-security" target="_blank" class="nav-action-btn btn-java">☕ Java Course</a>
+        <div class="access-toggle-wrap">
+            <button class="nav-icon-btn" id="butterflyAccessBtn" onclick="toggleAccessMenu()" title="Accessibility Menu">
+                <img src="/icons/access.png" alt="Accessibility" style="width:28px;height:28px;" onerror="this.outerHTML='&#129419;'">
+            </button>
+            <div class="access-menu-inline" id="accessMenuInline" style="display:none;">
+                <button class="nav-btn nav-btn-small" onclick="toggleDarkMode()" title="Dark Mode">&#127769;</button>
+                <button class="nav-btn nav-btn-small" onclick="toggleDyslexiaMode()" title="Dyslexia Font">&#128214;</button>
+                
+                <button class="nav-btn nav-btn-small" onclick="increaseTextSize()" title="Larger Text">A+</button>
+                <button class="nav-btn nav-btn-small" onclick="decreaseTextSize()" title="Smaller Text">A-</button>
+                <button class="nav-btn nav-btn-small" onclick="toggleReadingGuidePanel()" title="Reading Guide">&#128205;</button>
+                <button class="nav-btn nav-btn-small" onclick="toggleTextToSpeech()" title="Read Aloud">&#128266;</button>
+                <button class="nav-btn nav-btn-small" onclick="toggleHighContrast()" title="High Contrast">&#9899;&#9898;</button>
+                <button class="nav-btn nav-btn-small" onclick="toggleFocusMode()" title="Focus Mode">&#127919;</button>
+                <button class="nav-btn nav-btn-small" onclick="toggleFocusAssistant()" title="Focus Assistant">&#128161;</button>
+                <button class="nav-btn nav-btn-small" onclick="toggleCalmingAudio()" title="Calming Audio">&#127925;</button>
+                <button class="nav-btn nav-btn-small" onclick="toggleVoiceInput()" title="Voice Input">&#127908;</button>
+                <button class="nav-btn nav-btn-small" onclick="(typeof synapseToggleReduceMotion==='function') ? synapseToggleReduceMotion() : (typeof toggleReduceMotion==='function' ? toggleReduceMotion() : null)" title="Reduce Motion">&#9889;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleLineSpacing()" title="Line Spacing">&#8597;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleReadingMask()" title="Reading Mask">&#128306;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleColorOverlay()" title="Color Overlay">&#127912;</button>
+                <button class="nav-btn nav-btn-small" style="display:none" title="Cursor Highlight">&#128993;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleDictionary()" title="Dictionary">&#128218;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleCalmMode()" title="Calm Mode">&#129496;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleProgressBar()" title="Progress Bar">&#128202;</button>
+                <button class="nav-btn nav-btn-small" onclick="resetAccessibility()" title="Reset All" style="background:#991b1b !important;">&#128260;</button>
+            </div>
+        </div>
+        <button class="submit-btn" id="submitTaskBtn" onclick="submitTask()">&#9989; Check My Answers</button>
+    </div>
+</div>
+<div class="header-tabs">
+    <button class="task-tab active" data-tab="instructions">&#128203; Instructions</button>
+    <button class="task-tab" data-tab="findings">&#128270; Findings <span class="tab-count" id="findingsTabCount">0</span></button>
+</div>
+</header>
+
+<div class="main-content">
+
+    <!-- LEFT: TASK PANEL -->
+    <div class="task-panel">
+
+        <!-- INSTRUCTIONS TAB -->
+        <div class="tab-content">
+            <div class="tab-pane active" id="tab-instructions">
+
+                <div class="cred-box">
+                    <h3 style="padding-top:20px;">&#127919; Your Mission</h3>
+                    <p style="color:#1e293b; font-size:16px; line-height:1.7; margin-bottom:16px;">
+                        You are a security tester. ShopSecure has hired you to investigate <strong>3 vulnerabilities</strong> reported by a previous audit. Your job: <strong>reproduce the attack</strong>, document the <strong>impact on CIA</strong> (Confidentiality, Integrity, Availability), and recommend a <strong>mitigation</strong>.</p>
+                    <div style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:16px;margin-bottom:16px;">
+                        <p style="color:#6d28d9;font-size:16px;font-weight:600;margin-bottom:10px;">&#128269; The 3 vulnerabilities to find:</p>
+                        <p style="color:#1e293b; font-size:15px;line-height:1.8;">
+                        <strong style="color:#f87171;">1. Insecure Deserialisation (CWE-502)</strong> — The app imports user preferences using Python pickle. Can you exploit this to execute commands on the server or escalate your privileges?<br>
+                        <strong style="color:#fbbf24;">2. Path Traversal (CWE-22)</strong> — The app serves invoice files. Can you read confidential server files outside the intended directory?<br>
+                        <strong style="color:#34d399;">3. CSRF (CWE-352)</strong> — The transfer form has no protection. Can you build a page that steals money from a logged-in user without their knowledge?</p>
+                    </div>
+                    <p id="groupInstructions" style="color:#1e40af; font-size:15px; line-height:1.7; margin-top:10px; padding:10px; border-radius:8px; background:rgba(255,255,255,0.05);"></p>
+                    
+                </div>
+                <div class="cred-box">
+                    <h3>&#128273; Test Accounts</h3>
+                    <table class="cred-table">
+                        <tr><th>Role</th><th>Username</th><th>Password</th></tr>
+                        <tr><td>Admin</td><td>admin</td><td>adminShop2026</td></tr>
+                        <tr><td>User 1</td><td>user1</td><td>password123</td></tr>
+                        <tr><td>User 2</td><td>user2</td><td>mypassword</td></tr>
+                        <tr><td>User 3</td><td>user3</td><td>welcome2026</td></tr>
+                        <tr><td>User 4</td><td>user4</td><td>letmein</td></tr>
+                        <tr><td>User 5</td><td>user5</td><td>qwerty123</td></tr>
+                    </table>
+                </div>
+
+                <div class="cred-box">
+                    <h3>&#128221; How to Document</h3>
+                    <div class="tips-list">
+                        &#8226; Click <strong>+ Add Vulnerability Finding</strong> on the right panel<br>
+                        &#8226; Select the <strong>CWE code</strong> from the dropdown<br>
+                        &#8226; Describe the <strong>normal operation</strong>, the <strong>attack</strong>, <strong>CIA impact</strong>, and the <strong>mitigation</strong><br>
+                        &#8226; Use the <strong>AI Tutor</strong> chat if you need help<br>
+                        &#8226; Your findings auto-save every 30 seconds
+                    </div>
+                </div>
+            </div>
+
+            <!-- FINDINGS TAB -->
+            <div class="tab-pane" id="tab-findings">
+                <div class="findings-summary">
+                    <span style="color:inherit;font-size:17px;font-weight:700;">Documented Vulnerabilities</span>
+                    <span class="findings-count" id="findingsCount">0</span>
+                </div>
+
+                <div id="findingsContainer">
+                    <!-- Finding cards inserted by JS -->
+                </div>
+
+                <button class="add-finding-btn" onclick="addFinding()" style="font-size:17px;">+ Add Vulnerability Finding</button>
+
+                <div class="save-indicator" id="saveIndicator">Auto-saves every 30 seconds</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: SIDE PANEL (AI Chat or OWASP) -->
+    <div class="side-panel" id="sidePanel">
+
+        <!-- GROUP A: AI CHAT -->
+        <div id="aiChatPanel" style="display:flex; flex-direction:column; height:100%;">
+            <div class="side-panel-header">
+                <span>🦋 AI Tutor</span>
+                <span style="background:#10b981;color:white;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;margin-left:auto;">ACTIVE</span>
+                <div class="chat-header-controls">
+                  <button onclick="minimizeSideChat()" title="Minimize">─</button>
+                  <button onclick="maximizeSideChat()" title="Maximize" id="maxRestoreSide">☐</button>
+                  <button onclick="closeSideChat()" title="Close">✕</button>
+                </div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-message ai-msg">
+                    <div class="chat-avatar ai">🦋</div>
+                    <div class="chat-bubble">
+                        <span id="aiGreeting">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-box">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Ask me anything about security testing..." onkeypress="if(event.key==='Enter')sendChat()">
+                <button class="chat-send" onclick="sendChat()">&#10148;</button>
+            </div>
+        </div>
+
+        <!-- GROUP B: OWASP REFERENCE -->
+        <div id="owaspPanel" style="display:none; flex-direction:column; height:100%;">
+            <div class="side-panel-header">
+                &#128218; OWASP Top 10 Reference
+            </div>
+            <div class="owasp-content" id="owaspContent">
+                <!-- OWASP categories populated by JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ACCESSIBILITY BAR -->
+<div class="a11y-bar">
+
+</div>
+
+<script>
+// ============================================================
+// INIT — Get participant data
+// ============================================================
+const urlParams = new URLSearchParams(window.location.search);
+const participantCode = urlParams.get('participant') || '';
+
+// ============================================================================
+// ISOLATED LAB: click ShopSecure -> spawn/get personal container, open in new tab
+// ============================================================================
+let labSessionCache = null;
+
+async function openIsolatedShopSecure(event) {
+    event.preventDefault();
+    const btn = document.getElementById('btnShopSecure');
+    const originalText = btn.innerHTML;
+
+    if (labSessionCache && labSessionCache.lab_url) {
+        try {
+            const statusResp = await fetch('/api/labs/status?lab_type=shopsecure&participant_code=' + encodeURIComponent(participantCode));
+            const statusData = await statusResp.json();
+            if (statusData.has_session && statusData.status === 'ready') {
+                window.open(statusData.lab_url, '_blank');
+                return;
+            }
+        } catch (e) {}
+    }
+
+    btn.innerHTML = '⏳ Starting lab...';
+    btn.style.pointerEvents = 'none';
+
+    try {
+        const resp = await fetch('/api/labs/start', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                lab_type: 'shopsecure',
+                participant_code: participantCode
+            })
+        });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+            alert('Could not start lab: ' + (data.error || 'unknown error'));
+            btn.innerHTML = originalText;
+            btn.style.pointerEvents = '';
+            return;
+        }
+
+        labSessionCache = data;
+        window.open(data.lab_url, '_blank');
+        btn.innerHTML = originalText;
+        btn.style.pointerEvents = '';
+    } catch (e) {
+        alert('Network error: ' + e.message);
+        btn.innerHTML = originalText;
+        btn.style.pointerEvents = '';
+    }
+}
+
+
+let participantGroup = '';
+let participantNickname = '';
+let taskStartTime = null;
+let timerInterval = null;
+let totalSeconds = 0; // count up no limit
+let findings = [];
+let encouragementCount = 0;
+let autoSaveInterval = null;
+let lastActivityTime = Date.now();
+let idleCheckInterval = null;
+
+// Load participant info
+async function initTask() {
+    if (!participantCode && !urlParams.get('admin')) {
+        alert('No participant code. Please go back to signup.');
+        window.location.href = '/research/signup';
+        return;
+    }
+
+    document.getElementById('participantBadge').textContent = participantCode;
+
+    try {
+        if (urlParams.get('admin')) {
+            document.getElementById('participantBadge').textContent = 'ADMIN';
+            participantNickname = 'Admin';
+            const badge = document.getElementById('groupBadgeTop');
+            badge.className = 'group-badge group-a';
+            badge.textContent = '🦋 AI Tutored';
+            document.getElementById('groupInstructions').innerHTML = '🦋 You have an <strong>AI Security Tutor</strong>. Ask questions anytime!';
+            document.getElementById('aiChatPanel').style.display = 'flex';
+            document.getElementById('aiGreeting').innerHTML = 'Hi Admin! I am your AI Security Tutor.<br><br>Ask me anything about the vulnerabilities in ShopSecure!';
+            if (document.getElementById('owaspPanel')) document.getElementById('owaspPanel').style.display = 'none';
+            taskStartTime = new Date();
+            autoSaveInterval = setInterval(autoSaveFindings, 30000);
+            return;
+        }
+    // MISSION mode: skip research API validation (no DB entry needed)
+    if (participantCode.startsWith('MISSION_')) {
+        participantGroup = 'A';
+        participantNickname = window.MISSION_USER_NAME || 'Learner';
+        const badge = document.getElementById('groupBadgeTop');
+        if (badge) badge.style.display = 'none';
+        const partBadge = document.getElementById('participantBadge');
+        if (partBadge) partBadge.style.display = 'none';
+        const gi = document.getElementById('groupInstructions');
+        if (gi) gi.innerHTML = '🦋 You have an <strong>AI Security Tutor</strong>. Ask questions anytime!';
+        const chat = document.getElementById('aiChatPanel');
+        if (chat) chat.style.display = 'flex';
+        const greeting = document.getElementById('aiGreeting');
+        if (greeting) greeting.innerHTML = 'Hi ' + (participantNickname || 'there') + '! I am your SYNAPSE AI Security Tutor.<br><br>I am here to help you find 3 vulnerabilities in ShopSecure: <strong>Insecure Deserialisation (CWE-502)</strong>, <strong>Path Traversal (CWE-22)</strong>, and <strong>CSRF (CWE-352)</strong>.<br><br>Click <strong>Open ShopSecure</strong> to start exploring, then ask me anything!';
+        taskStartTime = new Date();
+        return;
+    }
+    const resp = await fetch('/api/research/participant?code=' + participantCode);
+        const data = await resp.json();
+
+        if (data.error) {
+            alert('Invalid participant code: ' + data.error);
+            return;
+        }
+
+        participantGroup = 'A'; // All participants get AI tutor
+        participantNickname = (data.nickname || 'there').charAt(0).toUpperCase() + (data.nickname || 'there').slice(1);
+        const badge = document.getElementById('groupBadgeTop');
+
+        // Everyone gets AI tutor
+        badge.className = 'group-badge group-a';
+        badge.textContent = '🦋 AI Tutored';
+        document.getElementById('groupInstructions').innerHTML = '🦋 You have an <strong>AI Security Tutor</strong> to help guide your learning. Ask questions anytime!';
+        document.getElementById('aiChatPanel').style.display = 'flex';
+        document.getElementById('aiGreeting').innerHTML = 'Hi ' + participantNickname + '! I am your AI Security Tutor.<br><br>I am here to help you learn about web security. Ask me anything — I will guide you step by step.<br><br>Try opening ShopSecure and tell me what you see!';
+        if (document.getElementById('owaspPanel')) document.getElementById('owaspPanel').style.display = 'none';
+
+        // Start timer
+        taskStartTime = new Date();
+        startTimer();
+
+        // Auto-save every 30 seconds
+        autoSaveInterval = setInterval(autoSaveFindings, 30000);
+
+        // Idle detection (Group A: AI encouragement)
+        if (true) { // Everyone gets idle detection
+            idleCheckInterval = setInterval(checkIdle, 10000);
+        }
+
+        console.log('Task init:', participantCode, 'Group:', participantGroup);
+
+        // ── Restore findings from DB on page reload ──
+        if (data.vulnerability_findings && data.vulnerability_findings.length > 0) {
+            findings = data.vulnerability_findings;
+            const container = document.getElementById('findingsContainer');
+            if (container) container.innerHTML = '';
+            findings.forEach((f, i) => {
+                f.finding_id = i + 1;
+                renderFinding(f, i);
+                // Restore field values
+                setTimeout(() => {
+                    const card = document.querySelectorAll('.finding-card')[i];
+                    if (card) {
+                        const inputs = card.querySelectorAll('input, textarea, select');
+                        inputs.forEach(input => {
+                            const name = input.name || input.placeholder?.toLowerCase() || '';
+                            if (name.includes('description') || name.includes('describe')) input.value = f.description || '';
+                            if (name.includes('exploit') || name.includes('steps')) input.value = f.exploitation || '';
+                            if (name.includes('impact')) input.value = f.impact || '';
+                            if (input.tagName === 'SELECT' && f.owasp_category) input.value = f.owasp_category;
+                        });
+                    }
+                }, 100);
+            });
+            console.log('Restored', findings.length, 'findings from DB');
+        }
+
+        // ── Restore chat history from DB on page reload ──
+        if (data.interaction_logs && data.interaction_logs.length > 0) {
+            const chatBox = document.getElementById('chatMessages');
+            data.interaction_logs.forEach(log => {
+                if (log.role === 'user' || log.role === 'assistant') {
+                    addChatMessage(log.role, log.content, true);
+                }
+            });
+            console.log('Restored', data.interaction_logs.length, 'chat messages from DB');
+        }
+
+    } catch (err) {
+        console.error('Init error:', err);
+        document.getElementById('aiChatPanel').style.display = 'flex';
+        document.getElementById('aiGreeting').innerHTML = 'Hi ' + (participantNickname || participantCode || 'there') + '! I am your SYNAPSE AI Security Tutor.<br><br>I am here to help you find 3 vulnerabilities in ShopSecure: <strong>Insecure Deserialisation (CWE-502)</strong>, <strong>Path Traversal (CWE-22)</strong>, and <strong>CSRF (CWE-352)</strong>.<br><br>Click <strong>Open ShopSecure</strong> to start exploring, then ask me anything!';
+        // Default to Group B if API fails
+        participantGroup = 'A';
+        var badge2 = document.getElementById('groupBadgeTop');
+        if(badge2){badge2.className='group-badge group-a';badge2.textContent='AI Tutored';}
+        document.getElementById('aiChatPanel').style.display = 'flex';
+        // owaspPanel disabled - everyone uses AI
+        startTimer();
+    }
+}
+
+// ============================================================
+// TIMER
+// ============================================================
+function startTimer() {
+    totalSeconds = 0;
+    timerInterval = setInterval(() => {
+        totalSeconds++;
+        updateTimerDisplay();
+    }, 1000);
+}
+
+function updateTimerDisplay() {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    const display = document.getElementById('timerDisplay');
+    if (display) {
+        display.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+        display.style.color = '#94a3b8';
+    }
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+document.querySelectorAll('.header-tabs .task-tab, .task-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.header-tabs .task-tab, .task-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+    });
+});
+
+// ============================================================
+// FINDINGS MANAGEMENT
+// ============================================================
+function addFinding() {
+    const id = findings.length + 1;
+    const finding = {
+        finding_id: id,
+        timestamp: new Date().toISOString(),
+        cwe_code: '',
+        description: '',
+        exploitation: '',
+        impact_cia: '',
+        impact: '',
+        mitigation: ''
+    };    
+
+    
+    findings.push(finding);
+    renderFinding(finding, findings.length - 1);
+    updateFindingsCount();
+    lastActivityTime = Date.now();
+}
+
+function renderFinding(finding, index) {
+    const container = document.getElementById('findingsContainer');
+    const card = document.createElement('div');
+    card.className = 'finding-card';
+    card.id = 'finding-' + index;
+    card.innerHTML = `
+        <div class="finding-header">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <span class="finding-number">${finding.finding_id}</span>
+                <span class="finding-timestamp">${new Date(finding.timestamp).toLocaleTimeString()}</span>
+            </div>
+            <button class="finding-remove" onclick="removeFinding(${index})">&#128465; Remove</button>
+        </div>
+        <div class="finding-field">
+            <label>Vulnerability (CWE)</label>
+            <select id="cwe_select_${index}" onchange="updateFinding(${index},'cwe_code',this.value);showCweFields(${index},this.value)">
+                <option value="">-- Select the vulnerability --</option>
+                <option value="CWE-502">CWE-502 — Insecure Deserialisation</option>
+                <option value="CWE-352">CWE-79 + CWE-352 — Stored XSS-to-CSRF chain</option>
+                <option value="CWE-22">CWE-22 — Path Traversal</option>
+            </select>
+        </div>
+        <div id="cweFields_${index}" style="display:none">
+            <div class="finding-field">
+                <label>1. What did you do? (Attack)</label>
+                <div id="attack_${index}">
+</div>
+            </div>
+            <div class="finding-field">
+                <label>2. CIA Impact</label>
+                <select onchange="updateFinding(${index},'impact_cia',this.value)">
+                    <option value="">-- Select impact --</option>
+                    <option value="Confidentiality">Confidentiality — Unauthorised access to data</option>
+                    <option value="Integrity">Integrity — Unauthorised modification of data</option>
+                    <option value="Availability">Availability — Service disruption</option>
+                    <option value="Confidentiality + Integrity">Confidentiality + Integrity</option>
+                    <option value="Integrity + Availability">Integrity + Availability</option>
+                    <option value="Confidentiality + Integrity + Availability">All three (C + I + A)</option>
+                </select>
+            </div>
+            <div class="finding-field">
+                <label>3. How would you fix this? (Mitigation)</label>
+                <select id="mitigation_${index}" onchange="updateFinding(${index},'mitigation',this.value)">
+                    <option value="">-- Select the best mitigation --</option>
+                </select>
+            </div>
+        </div>
+    `;
+    container.appendChild(card);
+
+    // Set OWASP dropdown if already selected
+    if (finding.owasp_category) {
+        card.querySelector('select').value = finding.owasp_category;
+    }
+
+    // Scroll to new finding
+    card.scrollIntoView({ behavior: 'smooth' });
+}
+
+function updateFinding(index, field, value) {
+    if (findings[index]) {
+        findings[index][field] = value;
+        // Mark card as having content
+        const card = document.getElementById('finding-' + index);
+        if (card) {
+            const hasContent = findings[index].description || findings[index].exploitation;
+            card.classList.toggle('has-content', !!hasContent);
+        }
+        updateFindingsCount();
+        lastActivityTime = Date.now();
+    }
+}
+
+
+var cweData = {
+    'CWE-502': {
+        attacks: [
+            {v:'reduce_rce', t:'I completed __reduce__ with os.system to execute commands on the server'},
+            {v:'tamper_role', t:'I edited the settings file to change my role to admin and increase balance'},
+            {v:'import_evil', t:'I imported a tampered .prefs file that the server loaded with pickle'}
+        ],
+        mitigations: [
+            {v:'json_correct', t:'Use JSON instead of pickle — JSON cannot execute code', correct:true},
+            {v:'whitelist_correct', t:'Validate and whitelist which fields can be imported', correct:true},
+            {v:'https_wrong', t:'Use HTTPS to encrypt the connection', correct:false},
+            {v:'password_wrong', t:'Add a stronger password to the server', correct:false}
+        ]
+    },
+    'CWE-22': {
+        attacks: [
+            {v:'passwd', t:'I typed ../../../etc/passwd to read system user files'},
+            {v:'source', t:'I accessed ../../../app/app.py to read the application source code'},
+            {v:'escape', t:'I used ../ sequences to escape the /invoices/ directory'}
+        ],
+        mitigations: [
+            {v:'whitelist_correct', t:'Whitelist allowed filenames with strict regex [a-zA-Z0-9_.]', correct:true},
+            {v:'canonical_correct', t:'Use canonical path check (realpath) to resolve and verify the path', correct:true},
+            {v:'block_get_wrong', t:'Block all GET requests to the server', correct:false},
+            {v:'encrypt_wrong', t:'Encrypt the filenames before storing them', correct:false}
+        ]
+    },
+    'CWE-352': {
+        attacks: [
+            {v:'xss_profile', t:'I stored an HTML payload (iframe/script) in my profile address field that renders on the victim view'},
+            {v:'xss_chain', t:'I crafted the stored payload to silently submit a /transfer request when the victim views my profile'},
+            {v:'hidden_form', t:'I built a hidden form that auto-submits a transfer using the victim session'},
+            {v:'iframe', t:'I used an iframe with a hidden form to silently submit the request'},
+            {v:'xhr', t:'I used XMLHttpRequest to POST a transfer without the user knowing'}
+        ],
+        mitigations: [
+            {v:'token_correct', t:'Add a CSRF token to every form and escape/sanitise HTML output on user profiles', correct:true},
+            {v:'samesite_encode_correct', t:'Set SameSite on session cookies and apply output encoding to prevent stored HTML rendering', correct:true},
+            {v:'longer_session_wrong', t:'Use a longer and more complex session ID', correct:false},
+            {v:'rate_limit_wrong', t:'Add rate limiting to the transfer form', correct:false}
+        ]
+    }
+};
+
+function showCweFields(index, cwe) {
+    var container = document.getElementById('cweFields_' + index);
+    if (!cwe || !cweData[cwe]) { container.style.display = 'none'; return; }
+    container.style.display = 'block';
+    var data = cweData[cwe];
+    // Build attack checkboxes
+    var aSel = document.getElementById('attack_' + index);
+    var html = '';
+    data.attacks.forEach(function(a) {
+        html += '<label style="display:block;padding:10px 14px;background:#f0f4ff;border:2px solid #93c5fd;border-radius:8px;margin-bottom:8px;cursor:pointer;font-size:14px;color:#1e293b;line-height:1.5">';
+        html += '<input type="checkbox" value="' + a.v + '" onchange="updateAttacks(' + index + ')" style="margin-right:10px;width:18px;height:18px;vertical-align:middle"> <span style="color:#1e293b">' + a.t + '</span></label>';
+    });
+    aSel.innerHTML = html;
+    // Build mitigation dropdown - shuffle options
+    var mSel = document.getElementById('mitigation_' + index);
+    mSel.innerHTML = '<option value="">-- Select the best mitigation --</option>';
+    var shuffled = data.mitigations.slice().sort(function() { return Math.random() - 0.5; });
+    shuffled.forEach(function(m) { mSel.innerHTML += '<option value="' + m.v + '">' + m.t + '</option>'; });
+}
+
+function updateAttacks(index) {
+    var container = document.getElementById('attack_' + index);
+    var checks = container.querySelectorAll('input[type=checkbox]:checked');
+    var vals = [];
+    checks.forEach(function(cb) { vals.push(cb.value); });
+    updateFinding(index, 'exploitation', vals.join(', '));
+}
+
+function removeFinding(index) {
+    if (confirm('Remove this finding?')) {
+        findings.splice(index, 1);
+        // Re-render all
+        const container = document.getElementById('findingsContainer');
+        container.innerHTML = '';
+        findings.forEach((f, i) => {
+            f.finding_id = i + 1;
+            renderFinding(f, i);
+        });
+        updateFindingsCount();
+    }
+}
+
+function updateFindingsCount() {
+    const filled = findings.filter(f => f.cwe_code).length;
+    document.getElementById('findingsCount').textContent = filled;
+    document.getElementById('findingsTabCount').textContent = filled;
+}
+
+// ============================================================
+// AUTO-SAVE
+// ============================================================
+async function autoSaveFindings() {
+    const indicator = document.getElementById('saveIndicator');
+    indicator.textContent = 'Saving...';
+    indicator.className = 'save-indicator saving';
+
+    try {
+        await fetch('/api/research/save_finding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                participant_code: participantCode,
+                findings: findings
+            })
+        });
+        indicator.textContent = '\u2705 Saved at ' + new Date().toLocaleTimeString();
+        indicator.className = 'save-indicator saved';
+    } catch (err) {
+        indicator.textContent = '\u26A0\uFE0F Save failed, retrying...';
+        indicator.className = 'save-indicator saving';
+    }
+}
+
+// ============================================================
+// SUBMIT TASK
+// ============================================================
+async function submitTask() {
+    const filledFindings = findings.filter(f => f.cwe_code);
+    if (filledFindings.length === 0) {
+        alert('Please document at least one finding before checking your answers.');
+        return;
+    }
+    const ciaPreferred = {
+        'CWE-502': ['Confidentiality + Integrity', 'Confidentiality + Integrity + Availability', 'Integrity + Availability'],
+        'CWE-22': ['Confidentiality', 'Confidentiality + Integrity'],
+        'CWE-352': ['Integrity', 'Confidentiality + Integrity', 'Integrity + Availability']
+    };
+    let totalPoints = 0;
+    const maxPoints = filledFindings.length * 3;
+    let perFindingHtml = '';
+    filledFindings.forEach(function(f) {
+        perFindingHtml += '<div style="background:#f8fafc;border-left:4px solid #6366f1;padding:16px;margin-bottom:16px;border-radius:8px">';
+        perFindingHtml += '<h3 style="color:#4f46e5;margin-bottom:12px">' + f.cwe_code + '</h3>';
+        const mit = f.mitigation || '';
+        if (mit.indexOf('_correct') !== -1) {
+            totalPoints++;
+            perFindingHtml += '<p style="color:#16a34a;margin-bottom:8px">\u2713 <strong>Mitigation correct</strong> \u2014 you identified an effective defence.</p>';
+        } else if (mit) {
+            perFindingHtml += '<p style="color:#dc2626;margin-bottom:8px">\u2717 <strong>Mitigation needs review</strong> \u2014 the option you chose does not fully prevent this vulnerability. Re-read the AI tutor explanation.</p>';
+        } else {
+            perFindingHtml += '<p style="color:#f59e0b;margin-bottom:8px">\u26a0 <strong>Mitigation not selected</strong></p>';
+        }
+        const cia = f.impact_cia || '';
+        const ciaIdeal = ciaPreferred[f.cwe_code] || [];
+        if (ciaIdeal.indexOf(cia) !== -1) {
+            totalPoints++;
+            perFindingHtml += '<p style="color:#16a34a;margin-bottom:8px">\u2713 <strong>CIA impact appropriate</strong> \u2014 your assessment matches the threat model.</p>';
+        } else if (cia) {
+            perFindingHtml += '<p style="color:#f59e0b;margin-bottom:8px">\u26a0 <strong>CIA impact partial</strong> \u2014 consider: ' + (ciaIdeal[0] || 'Confidentiality') + '.</p>';
+        } else {
+            perFindingHtml += '<p style="color:#f59e0b;margin-bottom:8px">\u26a0 <strong>CIA impact not selected</strong></p>';
+        }
+        const attacks = f.attacks || [];
+        if (Array.isArray(attacks) && attacks.length > 0) {
+            totalPoints++;
+            perFindingHtml += '<p style="color:#16a34a">\u2713 <strong>Attack documented</strong> \u2014 ' + attacks.length + ' technique' + (attacks.length>1?'s':'') + ' identified.</p>';
+        } else {
+            perFindingHtml += '<p style="color:#f59e0b">\u26a0 <strong>No attack technique documented</strong></p>';
+        }
+        perFindingHtml += '</div>';
+    });
+    const percent = Math.round((totalPoints / maxPoints) * 100);
+    let scoreColor = '#dc2626';
+    let scoreLabel = 'Needs more practice';
+    if (percent >= 80) { scoreColor = '#16a34a'; scoreLabel = 'Excellent \u2014 strong mastery'; }
+    else if (percent >= 60) { scoreColor = '#0891b2'; scoreLabel = 'Good \u2014 solid understanding'; }
+    else if (percent >= 40) { scoreColor = '#f59e0b'; scoreLabel = 'Partial \u2014 review the weakest areas'; }
+    const scoreBlock = '<div style="background:linear-gradient(135deg,' + scoreColor + '15,' + scoreColor + '05);border:2px solid ' + scoreColor + ';padding:20px;border-radius:12px;text-align:center;margin-bottom:24px"><div style="font-size:48px;font-weight:800;color:' + scoreColor + '">' + totalPoints + '/' + maxPoints + '</div><div style="color:' + scoreColor + ';font-weight:600;margin-top:4px">' + scoreLabel + '</div></div>';
+    const closeBtn = '<div style="text-align:center;margin-top:24px"><button onclick="closeSelfCheck()" style="padding:12px 32px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer">Close</button></div>';
+    let modal = document.getElementById('selfCheckModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'selfCheckModal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML = '<div style="background:white;border-radius:16px;padding:32px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)"><h2 style="color:#1e293b;margin-bottom:20px">\ud83d\udcca Self-Check Results</h2>' + scoreBlock + perFindingHtml + closeBtn + '</div>';
+    modal.style.display = 'flex';
+}
+function closeSelfCheck() {
+    const modal = document.getElementById('selfCheckModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function autoSubmit() {
+    alert('Time is up! Your findings will be submitted automatically.');
+    submitTask();
+}
+
+// ============================================================
+// AI CHAT (Group A only)
+// ============================================================
+async function sendChat() {
+    const input = document.getElementById('chatInput');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    input.value = '';
+    lastActivityTime = Date.now();
+
+    // Show user message
+    addChatMessage('user', msg);
+
+    // Log interaction
+    var msgType = 'question';
+    var msgLower = msg.toLowerCase();
+    if (msgLower.includes('hint') || msgLower.includes('help') || msgLower.includes('stuck') || msgLower.includes('aiuto') || msgLower.includes('suggerimento')) {
+        msgType = 'hint_request';
+    }
+    logInteraction('user', msg, msgType);
+
+    // Call AI
+    try {
+        const resp = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: msg,
+                student_id: participantCode,
+                context: 'shopsecure_vuln_assessment',
+                chat_history: (function(){
+                    var msgs = [];
+                    document.querySelectorAll('#chatMessages .chat-message').forEach(function(m){
+                        if (m.classList.contains('system-msg')) return;
+                        var role = m.classList.contains('user-msg') ? 'user' : 'assistant';
+                        var text = m.querySelector('.chat-bubble') ? m.querySelector('.chat-bubble').textContent.trim() : '';
+                        if (text && text.length > 0) msgs.push({role: role, content: text.substring(0, 300)});
+                    });
+                    return msgs.slice(-10);
+                })(),
+                extra_context: '[Current findings: ' + JSON.stringify(findings.map(function(f){return {cwe:f.cwe_code,attack:f.exploitation,cia:f.impact_cia,mitigation:f.mitigation}}).filter(function(f){return f.cwe})) + ']',
+                system_prompt: 'You are SYNAPSE, a warm and adaptive security tutor. You help ' + (participantNickname || 'the student') + ' find 3 vulnerabilities in ShopSecure.\n\n' +
+                'ABSOLUTE RULES:\n' +
+                '1. NEVER say "Hi ' + (participantNickname || 'friend') + '" more than once. If chat history exists, skip greetings entirely.\n' +
+                '2. If the student asks a SPECIFIC question, ANSWER IT DIRECTLY in 2-3 lines. No redirecting, no "before we start", no asking about experience.\n' +
+                '3. NEVER invent credentials. The real ShopSecure login is: admin / adminShop2026 (or user1 / user1Pass!, user2 / user2Pass!).\n' +
+                '4. If the student wants to try SQL injection on the login page, HELP THEM. Example: username = admin and password = x\' OR \'1\'=\'1 — this bypasses authentication.\n' +
+                '5. The 3 MAIN missions are CWE-502, CWE-22, CWE-352 but if the student wants to explore OTHER vulnerabilities first (like SQL injection), LET THEM and help.\n' +
+                '6. ONE short answer per message. No walls of text. No repeated questions.\n\n' +
+                'ADAPTIVE BEHAVIOUR:\n' +
+                '- If the student is a BEGINNER or says they have no experience: use everyday language, zero jargon, explain like talking to a friend. Guide with tiny steps: "Click on X", "Now look at Y", "What do you see?". Never dump theory — one action, one observation at a time.\n' +
+                '- If the student is EXPERIENCED: be more technical, give hints not answers, challenge them.\n' +
+                '- OBSERVE: if the student mentions a page or describes what they see, acknowledge it and guide from THERE — don\'t restart from scratch.\n' +
+                '- If the student seems frustrated or confused, slow down: "No worries! Let\'s take a step back. Tell me what you see on the screen right now."\n' +
+                '- Celebrate every small win: "Great observation!", "You\'re on the right track!"\n\n' +
+                'THE 3 MISSIONS (keep these secret — guide the student to discover them):\n' +
+                '1. CWE-502 Insecure Deserialisation — /shop/preferences page. The app uses pickle to store preferences. Student explores demo buttons and fill-in-the-blank exercise to see how an attacker could run commands.\n' +
+                '2. CWE-22 Path Traversal — /shop/invoice page. The app reads files based on user input. Student types paths like ../../etc/passwd to read files they shouldn\'t.\n' +
+                '3. CWE-352 CSRF — /shop/csrf-challenge page. The app has no CSRF protection. Student builds a fake page that tricks a victim into performing actions.\n\n' +
+                'RULES:\n' +
+                '1. MAXIMUM 3-4 LINES per response. Short, clear, one step at a time.\n' +
+                '2. If asked a QUESTION, ANSWER it directly. Never say "look it up".\n' +
+                '3. If the student is lost, ask: "Which mission are you working on?" or "What do you see on your screen right now?"\n' +
+                '4. ONE action per message. Wait for the student to respond before giving the next step.\n' +
+                '5. Respond in the SAME LANGUAGE as the student (English, Italian, etc.).\n' +
+                '6. Use the student name (' + (participantNickname || 'friend') + '). Be warm and encouraging.\n' +
+                '7. If the student asks about CIA impact: CWE-502=Confidentiality+Integrity (attacker can read data AND change roles via RCE). CWE-22=Confidentiality (reads sensitive files). CWE-352=Integrity (unauthorized actions like transfers).\n' +
+                '8. If student asks about mitigation or theory, explain in 2-3 simple lines then say "Want to try it now?"\n' +
+                '9. NEVER reveal the full solution. Guide step by step. Let the student discover.\n' +
+                '10. If the student has been working on one mission for a while, encourage them: "You\'ve made great progress! Want to try a different mission for a change?"'
+            })
+        });
+        const data = await resp.json();
+        const aiMsg = data.response || data.message || 'I\'m thinking about that... Could you tell me more?';
+        addChatMessage('assistant', aiMsg);
+        logInteraction('assistant', aiMsg.substring(0, 500), 'response');
+    } catch (err) {
+        addChatMessage('assistant', 'Sorry, I had a connection issue. Try asking again!');
+        logInteraction('assistant', 'connection_error', 'error');
+    }
+}
+
+function addChatMessage(role, text, silent) {
+    const container = document.getElementById('chatMessages');
+    const wrapper = document.createElement('div');
+
+    if (role === 'system') {
+        wrapper.className = 'chat-message system-msg';
+        wrapper.innerHTML = '<div class="chat-bubble">' + text + '</div>';
+    } else {
+        const isUser = (role === 'user');
+        wrapper.className = 'chat-message ' + (isUser ? 'user-msg' : 'ai-msg');
+
+        const avatar = document.createElement('div');
+        avatar.className = 'chat-avatar ' + (isUser ? 'user' : 'ai');
+        avatar.textContent = isUser ? '👤' : '🦋';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble';
+        // Support markdown-like formatting
+        let html = text
+            .replace(/\n/g, '<br>')
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        bubble.innerHTML = html;
+
+        wrapper.appendChild(avatar);
+        wrapper.appendChild(bubble);
+    }
+
+    container.appendChild(wrapper);
+    container.scrollTop = container.scrollHeight;
+}
+
+// ============================================================
+// IDLE DETECTION + AI ENCOURAGEMENT (Group A)
+// ============================================================
+function checkIdle() {
+    if (participantGroup !== 'A') return;
+
+    const idleTime = (Date.now() - lastActivityTime) / 1000;
+
+    const name = participantNickname || 'there';
+
+    const msgs40 = [
+        'Hey ' + name + ', how is the exploring going? Found anything interesting yet?',
+        'Take your time, ' + name + '. Security testing is about patience and curiosity. Need a hint?',
+        name + ', remember - every expert started as a beginner. What are you looking at right now?',
+        'Still working, ' + name + '? If you are stuck, just tell me what you see and we will figure it out together.',
+        name + ', try browsing the app like a regular customer would. Sometimes vulnerabilities hide in plain sight!',
+        'You are doing great, ' + name + '! Even professional pen testers spend time just observing before they act.',
+        name + ', have you tried logging in yet? Authentication is often where the fun begins!',
+        'Hey ' + name + ', what page are you on right now? I can give you some ideas for what to test there.',
+        name + ', a good approach is to ask yourself: what should I NOT be able to do here? Then try doing it!',
+        'No rush, ' + name + '. The best security researchers are the curious ones. What caught your eye so far?',
+        name + ', think like an attacker for a moment - if you wanted to break something, where would you start?',
+        'Keep going, ' + name + '! Every click and every test teaches you something new about how web apps work.'
+    ];
+
+    const msgs90 = [
+        name + ', have you tried looking at the URL bar? Sometimes changing numbers or parameters reveals interesting things.',
+        'Here is an idea, ' + name + ': open DevTools (F12) and check the Network tab while you click around. What do you notice?',
+        name + ', try logging in with one of the test accounts and explore what a normal user can do. Then ask yourself: can I do something I should not be able to?',
+        'No worries if it feels tricky, ' + name + '! Try submitting some unexpected characters in a form field and see how the app reacts.',
+        name + ', remember there are no wrong moves here. Every test teaches you something, even if it does not find a bug.',
+        'Quick tip, ' + name + ': right-click on the page and choose View Page Source. Do you see anything that should not be visible?',
+        name + ', try this: look at what happens when you enter a single quote character in a search or login field. The error message might tell you a lot!',
+        'Hey ' + name + ', have you checked if there is an admin panel? Try adding /admin to the URL and see what happens.',
+        name + ', sometimes the most valuable findings are about what information the app accidentally reveals. Check error messages closely!',
+        'You have great instincts, ' + name + '! Try looking at the cookies in DevTools. Are there any interesting values stored there?'
+    ];
+
+    const msgs180 = [
+        name + ', let us try a different approach. Pick one page in ShopSecure and tell me everything you notice about it. I will help you spot what matters.',
+        'You have been at this for a while, ' + name + ' - that shows real determination! Want me to walk you through one specific type of vulnerability step by step?',
+        name + ', here is a strategy: focus on forms and input fields first. Try typing something unusual and watch what happens. What do you see?',
+        'Still going strong, ' + name + '! Sometimes the best finds come from thinking: what would happen if I were NOT supposed to do this? Try accessing something as a different user.',
+        name + ', security testing can be challenging but you are doing great just by trying. Want me to explain one of the OWASP categories so you know what to look for?',
+        name + ', real talk: even experienced hackers get stuck. The difference is they keep trying different angles. Want to brainstorm together?',
+        'Here is what I suggest, ' + name + ': tell me one thing you have already tried, and I will point you toward something new to explore.',
+        name + ', you have already shown persistence and that is the number one skill in security testing. Let us pick one vulnerability type and hunt for it together.',
+        'Hey ' + name + ', sometimes it helps to take a step back. What do you already know about common web vulnerabilities? We can start from there.',
+        name + ', I believe in you! Security testing is like solving a puzzle. Tell me what pieces you have found so far and we will connect them together.'
+    ];
+
+    if (idleTime >= 180 && idleTime < 190) {
+        const msg = msgs180[Math.floor(Math.random() * msgs180.length)];
+        addChatMessage('assistant', msg);
+        encouragementCount++;
+        logInteraction('system', '180s idle: ' + msg.substring(0, 60), 'nudge');
+        lastActivityTime = Date.now() - 120000;
+    } else if (idleTime >= 90 && idleTime < 100) {
+        const msg = msgs90[Math.floor(Math.random() * msgs90.length)];
+        addChatMessage('assistant', msg);
+        encouragementCount++;
+        logInteraction('system', '90s idle: ' + msg.substring(0, 60), 'encouragement');
+    } else if (idleTime >= 40 && idleTime < 50) {
+        const msg = msgs40[Math.floor(Math.random() * msgs40.length)];
+        addChatMessage('assistant', msg);
+        encouragementCount++;
+        logInteraction('system', '40s idle: ' + msg.substring(0, 60), 'encouragement');
+    }
+}
+
+// ============================================================
+// INTERACTION LOGGING
+// ============================================================
+async function logInteraction(role, message, type) {
+    try {
+        await fetch('/api/research/log_interaction', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                participant_code: participantCode,
+                event: {
+                    timestamp: new Date().toISOString(),
+                    role: role,
+                    message: (typeof message === 'string' ? message : JSON.stringify(message)).substring(0, 500),
+                    type: type
+                }
+            })
+        });
+    } catch (err) {
+        console.error('Log error:', err);
+    }
+}
+
+// ============================================================
+// OWASP REFERENCE (Group B)
+// ============================================================
+function buildOwaspReference() {
+    const categories = [
+        { id: 'A01', name: 'Broken Access Control', desc: 'Users can act outside their intended permissions. This includes accessing other users\' data by changing IDs in URLs, accessing admin pages without proper authorisation, and modifying access control checks.', look: 'Try changing numbers in URLs (e.g., /order/1 to /order/2). Try accessing /admin pages. Check if you can view other users\' data.' },
+        { id: 'A02', name: 'Cryptographic Failures', desc: 'Sensitive data is not properly protected. This includes passwords stored in plain text, sensitive data transmitted without encryption, and weak cryptographic algorithms.', look: 'Check if passwords appear in plain text anywhere. Look at how data is transmitted. Check database contents if accessible.' },
+        { id: 'A03', name: 'Injection', desc: 'Untrusted data is sent to an interpreter as part of a command or query. Types include SQL injection, Cross-Site Scripting (XSS), and command injection.', look: 'Try entering special characters in forms: \' OR 1=1--, &lt;script&gt;alert(1)&lt;/script&gt;, ; ls. Check search fields, login forms, and any text inputs.' },
+        { id: 'A04', name: 'Insecure Design', desc: 'The application has fundamental design flaws that cannot be fixed by perfect implementation. Missing security controls, lack of input validation at the design level.', look: 'Think about what security checks SHOULD exist but don\'t. Are there rate limits? CAPTCHAs? Confirmation steps for sensitive actions?' },
+        { id: 'A05', name: 'Security Misconfiguration', desc: 'The application or server is configured insecurely. Default credentials, unnecessary features enabled, directory listing, verbose error messages.', look: 'Check for default usernames/passwords. Look at error messages for information leakage. Try accessing configuration files or directories.' },
+        { id: 'A06', name: 'Vulnerable Components', desc: 'Using components (libraries, frameworks) with known vulnerabilities. Running outdated software versions.', look: 'Check server response headers for software versions. Look at JavaScript libraries loaded. Check for known CVEs.' },
+        { id: 'A07', name: 'Authentication Failures', desc: 'Weaknesses in the login and session management. Weak passwords allowed, no brute-force protection, session IDs exposed.', look: 'Check if weak passwords are accepted. Try many login attempts. Look at session cookies. Check for password in URL or logs.' },
+        { id: 'A08', name: 'Data Integrity Failures', desc: 'Code and infrastructure that does not protect against integrity violations. Missing CSRF tokens, unsigned data, insecure deserialization.', look: 'Check if forms have CSRF tokens. Try submitting forms from external sites. Check if you can modify hidden fields.' },
+        { id: 'A09', name: 'Logging & Monitoring Failures', desc: 'Insufficient logging of security events. Failed logins not logged, no alerting for suspicious activity.', look: 'Check if your attack attempts trigger any alerts or blocks. Look for audit logs. Check if errors reveal too much information.' },
+        { id: 'A10', name: 'Server-Side Request Forgery (SSRF)', desc: 'The application fetches remote resources without validating the URL. An attacker can make the server request internal resources.', look: 'Look for features that fetch URLs or load external content. Try pointing them to internal addresses like localhost or 127.0.0.1.' }
+    ];
+
+    const container = document.getElementById('owaspContent');
+    categories.forEach(cat => {
+        const div = document.createElement('div');
+        div.className = 'owasp-category';
+        div.innerHTML = `
+            <div class="owasp-header" onclick="this.nextElementSibling.classList.toggle('open')">
+                <span><span class="owasp-tag">${cat.id}</span> ${cat.name}</span>
+                <span>&#9660;</span>
+            </div>
+            <div class="owasp-body">
+                <p style="margin-bottom:10px;">${cat.desc}</p>
+                <p><strong style="color:#a78bfa;">What to look for:</strong><br>${cat.look}</p>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// ============================================================
+// ACCESSIBILITY
+// ============================================================
+function toggleDyslexia(btn) {
+    document.body.classList.toggle('dyslexia-mode');
+    btn.classList.toggle('active');
+}
+
+function toggleReadingPointer(btn) {
+    btn.classList.toggle('active');
+    if (btn.classList.contains('active')) {
+        document.body.style.cursor = 'crosshair';
+    } else {
+        document.body.style.cursor = '';
+    }
+}
+
+// Track activity
+document.addEventListener('click', () => { lastActivityTime = Date.now(); });
+document.addEventListener('keypress', () => { lastActivityTime = Date.now(); });
+
+// ============================================================
+// INIT
+// ============================================================
+initTask();
+
+
+
+// === ACCESSIBILITY FUNCTIONS ===
+
+var focusAssistActive = false;
+var focusedElement = null;
+function toggleFocusAssistant(){
+  focusAssistActive = !focusAssistActive;
+  if(focusAssistActive){
+    document.addEventListener('click', focusClick, true);
+    document.body.style.cursor = 'crosshair';
+  }else{
+    document.removeEventListener('click', focusClick, true);
+    document.body.style.cursor = '';
+    clearFocus();
+  }
+}
+function focusClick(e){
+  if(!focusAssistActive) return;
+  if(e.target.closest('.navbar, .nav-btn, .nav-btn-small, .nav-icon-btn, .access-menu-inline')) return;
+  e.preventDefault();
+  e.stopPropagation();
+  var el = e.target.closest('.cred-box, .tab-pane, .chat-msg, table, .findings-summary, .chat-messages, #aiChatPanel, #owaspPanel');
+  if(!el) return;
+  clearFocus();
+  focusedElement = el;
+  el.style.position = 'relative';
+  el.style.zIndex = '999';
+  el.style.boxShadow = '0 0 0 4px #667eea, 0 0 40px rgba(102,126,234,0.4)';
+  el.style.borderRadius = '12px';
+  el.style.transition = 'all 0.3s ease';
+  var overlay = document.getElementById('focusAssistOverlay');
+  if(!overlay){
+    overlay = document.createElement('div');
+    overlay.id = 'focusAssistOverlay';
+    overlay.style.cssText = 'position:fixed;top:64px;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:998;pointer-events:none;';
+    document.body.appendChild(overlay);
+  }
+  overlay.style.display = 'block';
+}
+function clearFocus(){
+  if(focusedElement){
+    focusedElement.style.position='';
+    focusedElement.style.zIndex='';
+    focusedElement.style.boxShadow='';
+    focusedElement.style.borderRadius='';
+    focusedElement.style.transition='';
+    focusedElement = null;
+  }
+  var overlay = document.getElementById('focusAssistOverlay');
+  if(overlay) overlay.style.display = 'none';
+}
+
+let currentFontScale=1.0,speechEnabled=false,focusModeActive=false,readingGuideActive=false,guideColor='#667eea',guideThickness=4,calmingAudioEl=null;
+function toggleAccessMenu(){
+  var menu=document.getElementById('accessMenuInline');
+  if(!menu)return;
+  if(menu.style.display==='grid'){
+    menu.style.display='none';
+  } else {
+    menu.style.display='grid';
+  }
+}
+function toggleDarkMode(){
+  document.body.classList.toggle('dark-mode');
+  document.body.classList.remove('light-mode');
+  toggleBtnActive('toggleDarkMode');
+  synapseToast(document.body.classList.contains('dark-mode') ? '\u{1F319} Dark Mode: ON' : '\u{1F319} Dark Mode: OFF');
+}
+function toggleDyslexiaMode(){document.body.classList.toggle('dyslexia-mode');toggleBtnActive('toggleDyslexiaMode');localStorage.setItem('fontFamily',document.body.classList.contains('dyslexia-mode')?'dyslexic':'default')}
+function increaseTextSize(){
+  currentFontScale=Math.min(currentFontScale+0.1,1.5);
+  document.body.style.zoom=currentFontScale;
+  console.log('A+ zoom:',currentFontScale);
+}
+function decreaseTextSize(){
+  currentFontScale=Math.max(currentFontScale-0.1,0.8);
+  document.body.style.zoom=currentFontScale;
+  console.log('A- zoom:',currentFontScale);
+}
+
+function toggleReadingGuidePanel(){toggleBtnActive('toggleReadingGuidePanel');
+  readingGuideActive=!readingGuideActive;
+  var g=document.getElementById('readingGuideBar'),p=document.getElementById('guideSettingsPanel');
+  if(readingGuideActive){
+    if(!g){
+      g=document.createElement('div');g.id='readingGuideBar';
+      g.style.cssText='position:fixed;left:0;right:0;height:'+guideThickness+'px;pointer-events:none;z-index:99999;display:block;transition:top 0.05s linear;';
+      document.body.appendChild(g);
+    }
+    updateGuide();g.style.display='block';
+    document.addEventListener('mousemove',moveGuide);
+    if(!p){
+      p=document.createElement('div');p.id='guideSettingsPanel';p.className='guide-settings-panel';
+      var h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+      h+='<h4 style="margin:0;color:#e2e8f0;font-size:15px;">Reading Guide Settings</h4>';
+      h+='<button onclick="closeGuidePanel()" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;padding:0 4px;">✕</button>';
+      h+='</div>';
+      h+='<span class="thickness-label">Colour:</span><div class="color-options">';
+      var cols=['#667eea','#ef4444','#22c55e','#eab308','#ec4899','#ffffff'];
+      cols.forEach(function(clr,i){
+        h+='<div class="color-option'+(i===0?' selected':'')+'" style="background:'+clr+'" data-color="'+clr+'"></div>';
+      });
+      h+='</div>';
+      h+='<span class="thickness-label">Thickness: <span id="thickVal">'+guideThickness+'px</span></span>';
+      h+='<input type="range" class="thickness-slider" min="2" max="20" value="'+guideThickness+'">';
+      h+='<div style="margin-top:12px;text-align:center;">';
+      h+='<button onclick="toggleReadingGuidePanel()" style="background:#ef4444;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Turn Off Guide</button>';
+      h+='</div>';
+      p.innerHTML=h;
+      document.body.appendChild(p);
+      p.querySelectorAll('.color-option').forEach(function(el){
+        el.addEventListener('click',function(){
+          setGColor(this.getAttribute('data-color'),this);
+        });
+      });
+      p.querySelector('.thickness-slider').addEventListener('input',function(){
+        setGThick(this.value);
+      });
+    }
+    p.style.display='block';
+  }else{
+    if(g)g.style.display='none';
+    if(p)p.style.display='none';
+    document.removeEventListener('mousemove',moveGuide);
+  }
+}
+function closeGuidePanel(){
+  var p=document.getElementById('guideSettingsPanel');
+  if(p)p.style.display='none';
+}
+function moveGuide(e){
+  var g=document.getElementById('readingGuideBar');
+  if(g&&readingGuideActive){
+    g.style.top=(e.clientY-guideThickness/2)+'px';
+  }
+}
+function updateGuide(){
+  var g=document.getElementById('readingGuideBar');
+  if(!g)return;
+  g.style.height=guideThickness+'px';
+  g.style.background='linear-gradient(90deg,transparent,'+guideColor+',transparent)';
+  g.style.boxShadow='0 0 20px '+guideColor+'60';
+}
+function setGColor(c,el){guideColor=c;updateGuide();document.querySelectorAll('.color-option').forEach(function(o){o.classList.remove('selected')});if(el)el.classList.add('selected')}
+function setGThick(v){guideThickness=parseInt(v);updateGuide();var l=document.getElementById('thickVal');if(l)l.textContent=v+'px'}
+
+
+function toggleTextToSpeech(){toggleBtnActive('toggleTextToSpeech');
+  speechEnabled=!speechEnabled;
+  if(speechEnabled){
+    document.body.style.cursor='help';
+    document.addEventListener('click',handleTTS);
+    spk('Text to speech enabled. Click any text to hear it.');
+  }else{
+    document.body.style.cursor='';
+    document.removeEventListener('click',handleTTS);
+    window.speechSynthesis.cancel();
+  }
+}
+function handleTTS(e){
+  if(!speechEnabled)return;
+  if(['BUTTON','INPUT','TEXTAREA','SELECT'].indexOf(e.target.tagName)>=0)return;
+  if(window.speechSynthesis.speaking){window.speechSynthesis.cancel();document.querySelectorAll('.tts-reading').forEach(function(el){el.classList.remove('tts-reading')});return}
+  var el=e.target;
+  while(el&&el!==document.body){if(['P','DIV','LI','TD','H1','H2','H3','H4','SPAN','LABEL'].indexOf(el.tagName)>=0)break;el=el.parentElement}
+  var t=(el||e.target).innerText;
+  if(t&&t.trim().length>2){el.classList.add('tts-reading');var u=new SpeechSynthesisUtterance(t.substring(0,800));u.rate=0.9;u.onend=function(){el.classList.remove('tts-reading')};window.speechSynthesis.speak(u)}
+}
+function spk(t){var u=new SpeechSynthesisUtterance(t);u.rate=0.9;window.speechSynthesis.speak(u)}
+
+function toggleHighContrast(){toggleBtnActive('toggleHighContrast');
+  document.body.classList.toggle('high-contrast');
+  document.body.classList.remove('dark-mode');
+  synapseToast(document.body.classList.contains('high-contrast') ? '\u{26AB}\u{26AA} High Contrast: ON' : '\u{26AB}\u{26AA} High Contrast: OFF');
+}
+
+function toggleFocusMode(){toggleBtnActive('toggleFocusMode');
+  document.body.classList.toggle('focus-mode');
+  var cards=document.querySelectorAll('.finding-card,.finding-form');
+  cards.forEach(function(card){card.style.opacity=document.body.classList.contains('focus-mode')?'0.3':'1';});
+  console.log('Focus mode toggled');
+}
+
+
+function toggleCalmingAudio(){toggleBtnActive('toggleCalmingAudio');
+  if(!calmingAudioEl){
+    calmingAudioEl=document.createElement('audio');
+    calmingAudioEl.loop=true;calmingAudioEl.volume=0.3;
+    calmingAudioEl.innerHTML='<source src="/static/audio/adhd_calm.mp3" type="audio/mpeg"><source src="/static/audio/relax_sleep.mp3" type="audio/mpeg">';
+    document.body.appendChild(calmingAudioEl);
+    var c=document.createElement('div');c.id='audioControlPanel';c.className='audio-control-panel';
+    c.innerHTML='<span style="color:#e2e8f0;font-size:13px">Calming Audio</span><input type="range" min="0" max="100" value="30" style="width:100px;accent-color:#667eea" id="volSlider"><button id="stopAudioBtn" style="background:#991b1b;color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px">Stop</button>';
+    document.body.appendChild(c);
+    document.getElementById('volSlider').addEventListener('input',function(){if(calmingAudioEl)calmingAudioEl.volume=this.value/100});
+    document.getElementById('stopAudioBtn').addEventListener('click',function(){toggleCalmingAudio()});
+  }
+  if(calmingAudioEl.paused){
+    calmingAudioEl.play().then(function(){var c=document.getElementById('audioControlPanel');if(c)c.style.display='flex'}).catch(function(e){console.error('Audio:',e)});
+  }else{
+    calmingAudioEl.pause();var c=document.getElementById('audioControlPanel');if(c)c.style.display='none';
+  }
+}
+
+
+function toggleVoiceInput(){toggleBtnActive('toggleVoiceInput');
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('Voice input not supported. Try Chrome.');return}
+  var r=new SR();r.lang='en-GB';
+  r.onresult=function(e){var t=e.results[0][0].transcript;var i=document.getElementById('chatInput');if(i){i.value=t;i.focus()}};
+  r.start();
+}
+
+
+function resetAccessibility(){document.querySelectorAll('.nav-btn-small.active').forEach(function(b){b.classList.remove('active')});
+  document.body.classList.remove('dark-mode','dyslexia-mode','light-mode','high-contrast','synapse-calm-mode','focus-mode');
+  document.body.style.fontSize='';
+  localStorage.removeItem('fontSize');
+  localStorage.removeItem('fontFamily');
+  var m=document.getElementById('accessMenuInline');
+  if(m) m.style.display='none';
+  console.log('Reset all');
+}
+
+
+(function(){
+  var f=localStorage.getItem('fontFamily');
+  if(f==='dyslexic')document.body.classList.add('dyslexia-mode');
+  var s=localStorage.getItem('fontSize');
+  if(s){currentFontScale=parseFloat(s)/100;document.body.style.fontSize=s+'%'}
+})();
+
+</script>
+<script src="/static/focus_assistant.js"></script>
+<script src="/static/synapse_a11y.js?v=9"></script>
+
+
+
+
+<!-- CHAT TRIGGER BUTTERFLY -->
+<button class="chat-trigger-float" onclick="toggleSideChat()" title="Chat with AI Tutor">🦋</button>
+
+<script>
+function toggleSideChat() {
+  var panel = document.getElementById('sidePanel');
+  if (!panel) return;
+  panel.classList.toggle('visible');
+}
+function closeSideChat() {
+  var panel = document.getElementById('sidePanel');
+  if (panel) panel.classList.remove('visible');
+}
+function minimizeSideChat() {
+  closeSideChat();
+}
+function maximizeSideChat() {
+  var panel = document.getElementById('sidePanel');
+  if (!panel) return;
+  panel.classList.toggle('maximized');
+}
+// Show chat on load
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    var panel = document.getElementById('sidePanel');
+    if (panel) panel.classList.add('visible');
+  }, 1000);
+});
+
+// ============================================================
+// CURSOR HIGHLIGHT - accessibility feature
+// ============================================================
+
+// Toggle .active on the button that called this function
+function toggleBtnActive(funcName) {
+    var btns = document.querySelectorAll('.nav-btn-small');
+    btns.forEach(function(b) {
+        if (b.getAttribute('onclick') && b.getAttribute('onclick').indexOf(funcName) !== -1) {
+            b.classList.toggle('active');
+        }
+    });
+}
+</script>
+
+
+<script>
+(function(){
+    var btn = document.getElementById('javaCourseBtn');
+    if(btn){
+        var p = participantCode || new URLSearchParams(window.location.search).get('participant') || '';
+        // MISSION mode: don't propagate participant code to Java Course
+    }
+})();
+</script>
+<script>
+// Accessibility tracking - every 60 seconds
+(function(){
+    var rp = participantCode;
+    if (!rp) return;
+    setInterval(function(){
+        var data = {
+            participant_code: rp,
+            interaction_type: 'accessibility',
+            content: JSON.stringify({
+                dark_mode: document.body.classList.contains('dark-mode'),
+                dyslexia_font: document.body.classList.contains('dyslexia-mode') || document.body.classList.contains('dyslexia'),
+                focus_mode: document.body.classList.contains('calm-mode'),
+                reading_mask: !!document.querySelector('.reading-mask-active'),
+                high_contrast: document.body.classList.contains('high-contrast')
+            }),
+            context: 'accessibility_check',
+            page: window.location.pathname
+        };
+        fetch('/api/research/log_interaction', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).catch(function(){});
+    }, 60000);
+})();
+</script>
+    <script src="/static/idle_encouragement.js"></script>
+</body>
+</html>

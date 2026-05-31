@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYNAPSE - Post-Task Questionnaire</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #1e293b;
+        }
+        .container { max-width: 750px; margin: 0 auto; }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 28px; color: #667eea; margin-bottom: 10px; }
+        .header .subtitle { font-size: 16px; color: #64748b; line-height: 1.6; }
+
+        .progress-bar { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; margin-bottom: 8px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 4px; transition: width 0.4s; width: 0%; }
+        .progress-label { font-size: 13px; color: #94a3b8; text-align: right; margin-bottom: 20px; }
+
+        .form-section { display: none; animation: fadeIn 0.4s; }
+        .form-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .section-title { font-size: 22px; color: #1e293b; margin-bottom: 8px; padding-bottom: 10px; border-bottom: 3px solid #667eea; }
+        .section-desc { font-size: 14px; color: #64748b; margin-bottom: 24px; line-height: 1.6; }
+
+        .info-box { background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 14px 16px; border-radius: 8px; margin-bottom: 24px; }
+        .info-box strong { color: #1e40af; display: block; margin-bottom: 4px; }
+        .info-box p { color: #1e40af; font-size: 14px; line-height: 1.6; }
+
+        /* Quiz questions (post-test knowledge) */
+        .quiz-question { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 14px; padding: 18px; margin-bottom: 16px; transition: border-color 0.3s; }
+        .quiz-question.answered { border-color: #10b981; }
+        .quiz-number { display: inline-block; background: #667eea; color: white; width: 26px; height: 26px; border-radius: 50%; text-align: center; line-height: 26px; font-size: 12px; font-weight: 700; margin-right: 8px; }
+        .quiz-text { font-size: 15px; color: #1e293b; margin: 10px 0 12px; line-height: 1.6; }
+        .quiz-code { background: #1e293b; color: #e2e8f0; padding: 10px 14px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px; margin: 8px 0; overflow-x: auto; white-space: pre; }
+        .quiz-options { display: flex; flex-direction: column; gap: 6px; }
+        .quiz-option { padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 10px; background: white; cursor: pointer; font-size: 14px; text-align: left; transition: all 0.2s; color: #334155; font-family: inherit; }
+        .quiz-option:hover { border-color: #667eea; background: #f8f9ff; }
+        .quiz-option.selected { border-color: #667eea; background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1)); color: #4338ca; font-weight: 600; }
+        .quiz-progress { background: #f1f5f9; padding: 10px 16px; border-radius: 10px; text-align: center; font-size: 14px; color: #64748b; margin-bottom: 18px; font-weight: 600; }
+
+        /* NASA-TLX Sliders */
+        .tlx-item { margin-bottom: 28px; }
+        .tlx-label { font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+        .tlx-desc { font-size: 13px; color: #64748b; margin-bottom: 10px; }
+        .tlx-slider-row { display: flex; align-items: center; gap: 14px; }
+        .tlx-slider { flex: 1; -webkit-appearance: none; height: 8px; border-radius: 4px; background: #e2e8f0; outline: none; }
+        .tlx-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #667eea; cursor: pointer; }
+        .tlx-value { min-width: 40px; text-align: center; font-weight: 700; font-size: 18px; color: #667eea; }
+        .tlx-anchors { display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: 4px; }
+
+        /* Likert Scale */
+        .likert-item { margin-bottom: 20px; }
+        .likert-text { font-size: 15px; color: #1e293b; margin-bottom: 10px; line-height: 1.5; }
+        .likert-options { display: flex; gap: 8px; flex-wrap: wrap; }
+        .likert-btn { padding: 8px 16px; border: 2px solid #e2e8f0; border-radius: 10px; background: white; cursor: pointer; font-size: 13px; color: #475569; transition: all 0.2s; font-family: inherit; text-align: center; min-width: 50px; }
+        .likert-btn:hover { border-color: #667eea; }
+        .likert-btn.selected { border-color: #667eea; background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1)); color: #4338ca; font-weight: 600; }
+        .likert-labels { display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: 4px; padding: 0 4px; }
+
+        /* SUS */
+        .sus-item { margin-bottom: 20px; }
+        .sus-text { font-size: 14px; color: #1e293b; margin-bottom: 10px; line-height: 1.5; }
+
+        /* Qualitative */
+        .qual-group { margin-bottom: 24px; }
+        .qual-group label { display: block; font-size: 15px; font-weight: 600; color: #334155; margin-bottom: 8px; }
+        .qual-group textarea {
+            width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 10px;
+            font-size: 14px; font-family: inherit; resize: vertical; min-height: 80px; transition: border-color 0.3s;
+        }
+        .qual-group textarea:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.15); }
+
+        /* Buttons */
+        .button-group { display: flex; gap: 12px; margin-top: 30px; }
+        .btn { flex: 1; padding: 16px 32px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-family: inherit; }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; box-shadow: 0 4px 12px rgba(102,126,234,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: #f1f5f9; color: #64748b; }
+        .btn-secondary:hover { background: #e2e8f0; }
+
+        .footer { margin-top: 20px; font-size: 14px; color: rgba(255,255,255,0.9); text-align: center; }
+
+        @media (max-width: 768px) {
+            .card { padding: 28px 18px; }
+            .header h1 { font-size: 24px; }
+            .button-group { flex-direction: column; }
+            .likert-options { gap: 4px; }
+            .likert-btn { padding: 6px 10px; font-size: 12px; min-width: 40px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="card">
+        <div class="header">
+            <h1>&#128203; Post-Task Questionnaire</h1>
+            <p class="subtitle">Almost done! This takes about 3 minutes.</p>
+            <div style="margin-top:10px;">
+                <span id="participantBadge" style="background:#1e1b4b;color:#c4b5fd;padding:4px 12px;border-radius:8px;font-size:12px;font-family:monospace;font-weight:600;"></span>
+            </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-label" id="progressLabel">Section 1 of 3</div>
+    </div>
+
+    <div class="card" id="formCard">
+        <form id="postTestForm">
+        <form id="postTestForm">
+
+            <!-- ════════════════════════════════════════════════ -->
+            <!-- SECTION 1: SUS (Brooke 1996)                    -->
+            <!-- ════════════════════════════════════════════════ -->
+            <div class="form-section active" id="section1">
+                <h2 class="section-title">&#128187; Platform Usability</h2>
+                <div class="info-box">
+                    <strong>&#128161; Almost done!</strong>
+                    <p>Rate your experience with SYNAPSE. Select one option per statement. There are no right or wrong answers.</p>
+                </div>
+                <div id="susContainer"></div>
+                <div class="button-group">
+                    <button type="button" class="btn btn-primary" onclick="nextSection(1)">Next &#8594;</button>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════════════════════════ -->
+            <!-- SECTION 2: Engagement + Workload                -->
+            <!-- ════════════════════════════════════════════════ -->
+            <div class="form-section" id="section2">
+                <h2 class="section-title">&#128172; Your Learning Experience</h2>
+                <p class="section-desc">How much do you agree with each statement? (1 = Strongly Disagree, 5 = Strongly Agree)</p>
+                <div id="engagementContainer"></div>
+
+                <h3 style="margin-top:24px;color:#667eea;border-top:2px solid #e2e8f0;padding-top:16px;">&#129504; How did the task feel?</h3>
+
+                <div style="margin-bottom:16px;">
+                    <div style="font-weight:600;color:#334155;margin-bottom:6px;">How mentally demanding was the task?</div>
+                    <div class="likert-options">
+                        <button type="button" class="likert-btn" data-field="nasa_mental" data-value="1">1</button>
+                        <button type="button" class="likert-btn" data-field="nasa_mental" data-value="2">2</button>
+                        <button type="button" class="likert-btn" data-field="nasa_mental" data-value="3">3</button>
+                        <button type="button" class="likert-btn" data-field="nasa_mental" data-value="4">4</button>
+                        <button type="button" class="likert-btn" data-field="nasa_mental" data-value="5">5</button>
+                    </div>
+                    <div class="likert-labels"><span>Very Low</span><span>Very High</span></div>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <div style="font-weight:600;color:#334155;margin-bottom:6px;">How hard did you have to work?</div>
+                    <div class="likert-options">
+                        <button type="button" class="likert-btn" data-field="nasa_effort" data-value="1">1</button>
+                        <button type="button" class="likert-btn" data-field="nasa_effort" data-value="2">2</button>
+                        <button type="button" class="likert-btn" data-field="nasa_effort" data-value="3">3</button>
+                        <button type="button" class="likert-btn" data-field="nasa_effort" data-value="4">4</button>
+                        <button type="button" class="likert-btn" data-field="nasa_effort" data-value="5">5</button>
+                    </div>
+                    <div class="likert-labels"><span>Very Low</span><span>Very High</span></div>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <div style="font-weight:600;color:#334155;margin-bottom:6px;">How frustrated or stressed did you feel?</div>
+                    <div class="likert-options">
+                        <button type="button" class="likert-btn" data-field="nasa_frustration" data-value="1">1</button>
+                        <button type="button" class="likert-btn" data-field="nasa_frustration" data-value="2">2</button>
+                        <button type="button" class="likert-btn" data-field="nasa_frustration" data-value="3">3</button>
+                        <button type="button" class="likert-btn" data-field="nasa_frustration" data-value="4">4</button>
+                        <button type="button" class="likert-btn" data-field="nasa_frustration" data-value="5">5</button>
+                    </div>
+                    <div class="likert-labels"><span>Very Low</span><span>Very High</span></div>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn btn-secondary" onclick="prevSection(2)">&#8592; Back</button>
+                    <button type="button" class="btn btn-primary" onclick="nextSection(2)">Next &#8594;</button>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════════════════════════ -->
+            <!-- SECTION 3: Reflections + Confidence             -->
+            <!-- ════════════════════════════════════════════════ -->
+            <div class="form-section" id="section3">
+                <h2 class="section-title">&#128221; Your Reflections</h2>
+                <p class="section-desc">Tell us about your experience in your own words.</p>
+
+                <div class="qual-group">
+                    <label>What was most helpful about SYNAPSE and the AI tutor?</label>
+                    <textarea id="qual_helpful" placeholder="Tell us what worked well for you..."></textarea>
+                </div>
+
+                <div class="qual-group">
+                    <label>What would you improve about the platform?</label>
+                    <textarea id="qual_improve" placeholder="Any suggestions, frustrations, or ideas..."></textarea>
+                </div>
+
+                <div class="qual-group">
+                    <label>Overall confidence: How confident do you now feel about what you learned?</label>
+                    <div class="likert-options" id="confidenceRating">
+                        <button type="button" class="likert-btn" data-field="confidence_post" data-value="1">1</button>
+                        <button type="button" class="likert-btn" data-field="confidence_post" data-value="2">2</button>
+                        <button type="button" class="likert-btn" data-field="confidence_post" data-value="3">3</button>
+                        <button type="button" class="likert-btn" data-field="confidence_post" data-value="4">4</button>
+                        <button type="button" class="likert-btn" data-field="confidence_post" data-value="5">5</button>
+                    </div>
+                    <div class="likert-labels"><span>Not confident at all</span><span>Very confident</span></div>
+                </div>
+
+                <div class="qual-group">
+                    <label>How helpful was the AI tutor in your learning? (1-5)</label>
+                    <div class="likert-options">
+                        <button type="button" class="likert-btn" data-field="ai_helpfulness" data-value="1">1</button>
+                        <button type="button" class="likert-btn" data-field="ai_helpfulness" data-value="2">2</button>
+                        <button type="button" class="likert-btn" data-field="ai_helpfulness" data-value="3">3</button>
+                        <button type="button" class="likert-btn" data-field="ai_helpfulness" data-value="4">4</button>
+                        <button type="button" class="likert-btn" data-field="ai_helpfulness" data-value="5">5</button>
+                    </div>
+                    <div class="likert-labels"><span>Not helpful at all</span><span>Extremely helpful</span></div>
+                </div>
+                <div class="qual-group">
+                    <label>Can you share a moment when the AI tutor helped you understand something?</label>
+                    <textarea id="qual_ai_moment" placeholder="Describe a specific moment when the AI helped you..."></textarea>
+                </div>
+                <div class="button-group">
+                    <button type="button" class="btn btn-secondary" onclick="prevSection(3)">&#8592; Back</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Submit &amp; Finish &#127881;</button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="footer"><p>SYNAPSE &#128156; Thank you for participating in our research!</p></div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const urlParams = new URLSearchParams(window.location.search);
+const participantCode = urlParams.get('participant') || '';
+let participantGroup = '';
+let totalSections = 3;
+let currentSection = 1;
+const formData = {};
+
+document.getElementById('participantBadge').textContent = participantCode;
+
+// Load participant info
+async function init() {
+    try {
+        const resp = await fetch('/api/research/participant?code=' + participantCode);
+        const data = await resp.json();
+        participantGroup = data.group || 'B';
+
+        // All participants get SUS + engagement
+        buildSUS();
+        buildPerceptionItems();
+        console.log('Post-test init:', participantCode);
+    } catch (err) {
+        console.error('Init error:', err);
+        buildSUS();
+        buildPerceptionItems();
+    }
+}
+
+// ============================================================
+// POST-TEST KNOWLEDGE QUESTIONS (Parallel Form)
+// Different questions, same difficulty, same Bloom's levels
+// ============================================================
+const postTestQuestions = []; // Removed
+
+// Build quiz
+const postQuizContainer = null; // Removed
+const postQuizAnswers = {};
+let postQuizCount = 0;
+
+// Quiz rendering removed - questions moved to course
+
+function selectPostQuiz(btn) {
+    const qId = btn.dataset.question;
+    const qDiv = document.getElementById('pquiz_' + qId);
+    qDiv.querySelectorAll('.quiz-option').forEach(o => o.classList.remove('selected'));
+    btn.classList.add('selected');
+    if (!postQuizAnswers[qId]) postQuizCount++;
+    postQuizAnswers[qId] = btn.dataset.value;
+    qDiv.classList.add('answered');
+    document.getElementById('postQuizProgress').textContent = 'Answered ' + postQuizCount + ' of ' + postTestQuestions.length + ' questions';
+}
+
+function scorePostTest() { return {score:0,max:0,answers:{}}; } // Removed
+
+// ============================================================
+// SUS (Brooke 1996) — Group A only
+// ============================================================
+const susItems = [
+    'I would like to use this AI tutor frequently',
+    'I found the AI tutor unnecessarily complex',
+    'I thought the AI tutor was easy to use',
+    'I think I would need technical support to use this AI tutor',
+    'I found the various functions of the AI tutor were well integrated',
+    'I thought there was too much inconsistency in the AI tutor',
+    'I imagine most people would learn to use this AI tutor very quickly',
+    'I found the AI tutor very awkward to use',
+    'I felt very confident using the AI tutor',
+    'I needed to learn a lot of things before I could get going with this AI tutor'
+];
+
+function buildSUS() {
+    const container = document.getElementById('susContainer');
+    susItems.forEach((item, idx) => {
+        const num = idx + 1;
+        let html = '<div class="sus-item">';
+        html += '<div class="sus-text">' + num + '. ' + item + '</div>';
+        html += '<div class="likert-options">';
+        ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'].forEach((label, i) => {
+            html += '<button type="button" class="likert-btn" data-field="sus_q' + num + '" data-value="' + (i + 1) + '">' + (i + 1) + '</button>';
+        });
+        html += '</div>';
+        html += '<div class="likert-labels"><span>Strongly Disagree</span><span>Strongly Agree</span></div>';
+        html += '</div>';
+        container.innerHTML += html;
+    });
+}
+
+// ============================================================
+// PERCEPTION LIKERT
+// ============================================================
+function buildPerceptionItems() {
+    const items = [
+        'I felt engaged throughout the session',
+        'The AI tutor helped me when I was stuck',
+        'I learned something new today',
+        'I felt motivated to keep trying even when stuck',
+        'The difficulty level was appropriate for me',
+        'I feel more confident about what I learned than before',
+        'The instructions were clear and easy to follow',
+        'The pace of learning was comfortable for me',
+        'I would use this platform again to learn',
+        'I would recommend SYNAPSE to a friend'
+    ];
+    const container = document.getElementById('engagementContainer');
+    items.forEach((item, idx) => {
+        const num = idx + 1;
+        let html = '<div class="likert-item">';
+        html += '<div class="likert-text">' + num + '. ' + item + '</div>';
+        html += '<div class="likert-options">';
+        for (let v = 1; v <= 5; v++) {
+            html += '<button type="button" class="likert-btn" data-field="perception_q' + num + '" data-value="' + v + '">' + v + '</button>';
+        }
+        html += '</div>';
+        html += '<div class="likert-labels"><span>Strongly Disagree</span><span>Strongly Agree</span></div>';
+        html += '</div>';
+        container.innerHTML += html;
+    });
+}
+
+// ============================================================
+// LIKERT BUTTON HANDLER
+// ============================================================
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('likert-btn')) {
+        const field = e.target.dataset.field;
+        const value = e.target.dataset.value;
+        // Deselect siblings
+        e.target.parentElement.querySelectorAll('.likert-btn').forEach(b => b.classList.remove('selected'));
+        e.target.classList.add('selected');
+        formData[field] = parseInt(value);
+    }
+});
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function updateProgress() {
+    const pct = ((currentSection - 1) / totalSections) * 100;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = 'Section ' + currentSection + ' of ' + totalSections;
+}
+
+function nextSection(from) {
+    if (!validateSection(from)) return;
+
+    // Group B: skip SUS (section 3)
+    let next = from + 1;
+    // No group skipping - all participants see all sections
+
+    document.getElementById('section' + from).classList.remove('active');
+    currentSection = next;
+    document.getElementById('section' + currentSection).classList.add('active');
+    updateProgress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function prevSection(from) {
+    let prev = from - 1;
+    // No group skipping
+
+    document.getElementById('section' + from).classList.remove('active');
+    currentSection = prev;
+    document.getElementById('section' + currentSection).classList.add('active');
+    updateProgress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function validateSection(section) {
+    // SUS validation: check at least 8 of 10 answered
+    if (section === 1) {
+        var susAnswered = 0;
+        for (var i = 1; i <= 10; i++) {
+            if (document.querySelector('[data-field="sus_q' + i + '"].selected')) susAnswered++;
+        }
+        if (susAnswered < 8) {
+            alert('Please answer at least 8 of the 10 usability questions.');
+            return false;
+        }
+    }
+    return true;
+}
+
+// ============================================================
+// SUBMIT
+// ============================================================
+document.getElementById('postTestForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    // Build payload - new format
+    const payload = {
+        participant_code: participantCode,
+        // SUS (10 items)
+        ...Object.fromEntries(Object.entries(formData).filter(([k]) => k.startsWith('sus_'))),
+        // Engagement (stored as perception_q1-q10)
+        ...Object.fromEntries(Object.entries(formData).filter(([k]) => k.startsWith('perception_'))),
+        // NASA-TLX (3 Likert items)
+        nasa_mental_demand: parseInt(formData.nasa_mental || 0),
+        nasa_effort: parseInt(formData.nasa_effort || 0),
+        nasa_frustration: parseInt(formData.nasa_frustration || 0),
+        // Qualitative
+        qual_easiest_vuln: document.getElementById('qual_helpful') ? document.getElementById('qual_helpful').value : '',
+        qual_hardest_vuln: document.getElementById('qual_improve') ? document.getElementById('qual_improve').value : '',
+        qual_confidence_rating: parseInt(formData.confidence_post || 0),
+        qual_ai_helpfulness: parseInt(formData.ai_helpfulness || 0),
+        qual_ai_moment: document.getElementById('qual_ai_moment') ? document.getElementById('qual_ai_moment').value : ''
+    
+    };
+
+    console.log('Submitting post-test:', payload);
+
+    try {
+        const resp = await fetch('/api/research/submit_post_test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await resp.json();
+
+        if (result.success) {
+            // Show thank-you page
+            document.getElementById('formCard').innerHTML = '<div style="text-align:center;padding:60px 20px;"><div style="font-size:80px;margin-bottom:20px;">&#127881;</div><h1 style="font-size:32px;color:#667eea;margin-bottom:16px;">Thank You!</h1><p style="font-size:18px;color:#64748b;line-height:1.7;max-width:500px;margin:0 auto;">Your responses have been recorded. You have made a valuable contribution to our research on AI-powered adaptive learning.</p><div style="margin-top:30px;padding:20px;background:#f0fdf4;border-radius:12px;"><strong style="color:#166534;">Thank you for completing the survey!</strong></div><p style="margin-top:30px;font-size:14px;color:#94a3b8;">You can close this window now.</p></div>';
+        } else {
+            alert('Error: ' + (result.error || 'Unknown error'));
+            btn.disabled = false;
+            btn.textContent = 'Submit & Finish \uD83C\uDF89';
+        }
+    } catch (err) {
+        alert('Connection error. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Submit & Finish \uD83C\uDF89';
+    }
+});
+
+updateProgress();
+init();
+</script>
+</body>
+</html>

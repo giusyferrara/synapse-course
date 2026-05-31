@@ -1,0 +1,1663 @@
+{
+  "course_id": "python_network_scanning",
+  "title": "Network Scanning & Reconnaissance with Python",
+  "description": "Build your own network scanning tools — port scanners, service fingerprinters, banner grabbers, and reconnaissance scripts using Python sockets, scapy, and nmap libraries.",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "python_security_basics",
+    "python_networking"
+  ],
+  "learning_outcomes": [
+    "Build a TCP connect scanner from scratch using Python sockets",
+    "Implement SYN stealth scanning with Scapy",
+    "Perform service fingerprinting and banner grabbing",
+    "Enumerate open ports and identify running services",
+    "Use python-nmap for automated network discovery",
+    "Implement ICMP ping sweeps to find live hosts",
+    "Build DNS enumeration and reverse lookup tools",
+    "Detect operating systems through TCP/IP fingerprinting",
+    "Understand legal and ethical boundaries of scanning",
+    "Apply scanning techniques in authorised penetration testing",
+    "Parse and analyse scan results programmatically",
+    "Build a complete reconnaissance toolkit in Python"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins. Explains networking concepts like exploring a building — each port is a door, each service is a room.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Hey! Network scanning can look intimidating at first. Think of it like knocking on doors in a building — you're just checking which ones are open. Want me to walk through the first step together?",
+      "idle_90_seconds": "Still thinking? That's fine — scanning concepts have a lot of moving parts. Let me break this down into smaller pieces. Which part is tricky: the socket connection, the port range, or reading the response?",
+      "idle_180_seconds": "Take a quick stretch! When you're back, I'll give you a simplified version of this exercise. Sometimes starting with just 1 port instead of a range makes everything click. Ready when you are!",
+      "first_error": "Almost there! Network errors are super common — timeouts, connection refused, permission denied. Each error actually tells you something useful. Let me help you decode what happened.",
+      "repeated_errors": "I can see this one's putting up a fight! Let me show you the pattern step by step. Most scanning scripts follow the same structure: create socket → connect → read → close. Let's trace through together.",
+      "after_success": "YES! You just built a real hacking tool! Professional penetration testers use exactly this logic. You're building the same skills used by ethical hackers worldwide."
+    },
+    "encouragement_phrases": [
+      "You just found an open port — that's real reconnaissance happening!",
+      "Every professional pen tester started exactly where you are right now.",
+      "That banner grab worked perfectly — you're reading service fingerprints like a pro!",
+      "Your scanner found a service! That's the same technique used in real security audits.",
+      "Nmap was built on the same socket concepts you just learned. Seriously!",
+      "You're thinking like a penetration tester — checking, probing, documenting.",
+      "That error handling is important — real scanners need to handle thousands of timeouts gracefully.",
+      "Your code just did what Shodan does for the entire internet. Let that sink in!",
+      "DNS enumeration complete — you just mapped an attack surface!",
+      "You're building tools that security professionals charge hundreds per hour to use."
+    ],
+    "explanation_styles": {
+      "analogy": "Network scanning is like being a security guard checking every door in a skyscraper. Port 80 is the main entrance (web), port 22 is the staff door (SSH), port 443 is the VIP entrance (HTTPS). A port scanner systematically tries every door to see which ones open.",
+      "visual": "Imagine a grid: rows are IP addresses, columns are port numbers. Green cells = open, Red cells = closed, Grey cells = filtered. Your scanner fills in this grid one cell at a time, building a map of the network.",
+      "step_by_step": "1. Create a socket (your 'hand' that will knock on doors), 2. Set a timeout (don't wait forever at each door), 3. Try to connect to IP:port (knock), 4. If it connects = OPEN (door opened!), 5. If refused = CLOSED (door locked), 6. If timeout = FILTERED (no answer, maybe firewall).",
+      "code_trace": "Let's trace socket.connect_ex(('target', 80)): The OS sends a TCP SYN packet to port 80. If the service replies with SYN-ACK, connect_ex returns 0 (success = port open). If it replies RST, returns errno (port closed). If nothing comes back within timeout, returns ETIMEDOUT (filtered).",
+      "comparison": "TCP Connect scan = knocking on the door and walking in (easy but noisy). SYN scan = knocking and running away before the door fully opens (stealthy). UDP scan = sliding a note under the door and waiting for a response (slow, unreliable). Each has trade-offs in speed, stealth, and reliability."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "python_network_scanning_lesson_1",
+      "title": "Network Scanning & Reconnaissance with Python",
+      "theory": {
+        "introduction": "Welcome to the world of network reconnaissance — the art and science of discovering what's running on a network before you test its security. Every penetration test, every security audit, every bug bounty starts the same way: scanning. Think of a network like a massive apartment building with 65,535 doors (ports) on every floor (IP address). Some doors are wide open with services running behind them — web servers, databases, SSH terminals. Some are locked. Some have security guards (firewalls) standing in front. Your job as a security professional is to systematically check every door, identify what's behind the open ones, and document everything you find. In this module, you'll build your own scanning tools from scratch using Python — the same language used by professional penetration testers worldwide. You'll start with simple TCP connect scans, graduate to stealthy SYN scans with Scapy, learn banner grabbing and service fingerprinting, and finish by building a complete reconnaissance toolkit. Every exercise either runs in the platform's code editor or on a Kali Linux VM for hands-on network work. By the end, you'll understand not just HOW to scan, but WHY each technique works at the packet level — knowledge that separates script kiddies from real security professionals.",
+        "why_important": "Network scanning is the foundation of ALL security testing. Without knowing what ports are open, what services are running, and what versions are installed, you cannot find vulnerabilities. The Equifax breach (2017, 147 million records stolen) happened because an unpatched Apache Struts server was running on a port that nobody was monitoring. Regular scanning would have found the vulnerable service. Every compliance framework (PCI DSS, ISO 27001, NIST) requires regular vulnerability scanning. As a security professional, scanning is your most-used skill — and understanding how scanners work at the code level gives you a massive advantage over people who just click buttons in tools.",
+        "key_concepts": [
+          {
+            "concept": "TCP/IP Ports & Services",
+            "explanation": "Every networked computer has 65,535 TCP ports and 65,535 UDP ports — think of them as numbered doors in a building. Well-known ports (0-1023) are like labelled doors: port 80 says 'Web Server', port 22 says 'SSH', port 443 says 'Secure Web'. Registered ports (1024-49151) are application-specific, and dynamic ports (49152-65535) are temporary. When you scan, you're checking which doors are open, closed, or filtered by a firewall.",
+            "example": "import socket\\n\\n# Check if port 80 is open on a target\\nsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\\nsock.settimeout(2)\\nresult = sock.connect_ex(('scanme.nmap.org', 80))\\nif result == 0:\\n    print('Port 80 is OPEN')\\nelse:\\n    print(f'Port 80 is closed/filtered (error: {result})')\\nsock.close()",
+            "ai_hint": "Think of ports like TV channels — each number has a different show (service) playing. Channel 80 = web browsing, Channel 22 = remote terminal, Channel 25 = email delivery."
+          },
+          {
+            "concept": "TCP Three-Way Handshake",
+            "explanation": "Before any TCP communication happens, two computers perform a 'handshake' — like shaking hands before a meeting. The client sends SYN ('Hello, can we talk?'), the server replies SYN-ACK ('Sure, I'm ready!'), and the client confirms with ACK ('Great, let's go!'). This is crucial for scanning because: if you get SYN-ACK back, the port is OPEN. If you get RST (Reset), the port is CLOSED. If you get nothing, the port is FILTERED (firewall blocking it). Understanding this handshake is the key to understanding every scan type.",
+            "example": "# The TCP handshake in action (conceptual):\\n# Step 1: Client -> SYN -> Server  ('Can we talk?')\\n# Step 2: Server -> SYN-ACK -> Client  ('Yes, I'm here!')\\n# Step 3: Client -> ACK -> Server  ('Great, connected!')\\n\\n# In Python, socket.connect() does all 3 steps.\\n# socket.connect_ex() returns 0 if all 3 succeed (port open)\\n# Returns an error code if step 2 fails (port closed/filtered)\\n\\nimport socket\\nsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\\nsock.settimeout(1)\\nresult = sock.connect_ex(('example.com', 443))\\nprint(f'Handshake result: {result}')  # 0 = success\\nsock.close()",
+            "ai_hint": "It's like calling someone on the phone: you dial (SYN), they say 'Hello?' (SYN-ACK), you say 'Hi, it's me' (ACK). If the line is dead = closed. If it just rings forever = filtered."
+          },
+          {
+            "concept": "TCP Connect Scan",
+            "explanation": "The simplest and most reliable scan type. Your scanner completes the full TCP handshake with each port — if the handshake succeeds, the port is open. It's like actually walking through every door in the building. The advantage: it always works and doesn't need special permissions. The disadvantage: it's noisy — the target's logs will record every connection. In Python, this is just socket.connect() or socket.connect_ex() in a loop over ports.",
+            "example": "import socket\\n\\ndef tcp_connect_scan(target, ports):\\n    open_ports = []\\n    for port in ports:\\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\\n        sock.settimeout(1)\\n        result = sock.connect_ex((target, port))\\n        if result == 0:\\n            open_ports.append(port)\\n            print(f'  [OPEN] Port {port}')\\n        sock.close()\\n    return open_ports\\n\\n# Scan common ports\\nprint('Scanning scanme.nmap.org...')\\nfound = tcp_connect_scan('scanme.nmap.org', [22, 80, 443, 8080])\\nprint(f'\\nOpen ports: {found}')",
+            "ai_hint": "TCP Connect = the polite visitor who actually enters through every open door and says hello. Reliable but everyone knows you were there!"
+          },
+          {
+            "concept": "SYN Stealth Scan (Half-Open Scan)",
+            "explanation": "The most popular scan type in professional pen testing. Instead of completing the full handshake, you only send SYN and wait for SYN-ACK (port open) or RST (port closed). You never send the final ACK — so the connection is never fully established. It's like knocking on a door and running away before it opens fully. Benefits: faster (no full handshake overhead) and stealthier (many older systems don't log half-open connections). Requires raw socket access (root/admin privileges). Scapy makes this easy in Python.",
+            "example": "# SYN Scan with Scapy (requires root/sudo)\\nfrom scapy.all import *\\n\\ndef syn_scan(target, port):\\n    # Send SYN packet\\n    syn_pkt = IP(dst=target)/TCP(dport=port, flags='S')\\n    response = sr1(syn_pkt, timeout=2, verbose=0)\\n    \\n    if response is None:\\n        return 'filtered'\\n    elif response.haslayer(TCP):\\n        if response[TCP].flags == 0x12:  # SYN-ACK\\n            # Send RST to close (don't complete handshake)\\n            rst = IP(dst=target)/TCP(dport=port, flags='R')\\n            send(rst, verbose=0)\\n            return 'open'\\n        elif response[TCP].flags == 0x14:  # RST-ACK\\n            return 'closed'\\n    return 'filtered'\\n\\n# Usage (run as root on Kali VM):\\n# result = syn_scan('target_ip', 80)",
+            "ai_hint": "SYN scan = the ninja who knocks, peeks through the keyhole, and vanishes. You learn who's home without them knowing you visited!"
+          },
+          {
+            "concept": "Banner Grabbing & Service Fingerprinting",
+            "explanation": "Finding an open port is just the beginning — you need to know WHAT'S running behind it. Banner grabbing means connecting to an open port and reading the welcome message (banner) the service sends. For example, connecting to port 22 might reveal 'SSH-2.0-OpenSSH_8.9p1 Ubuntu'. This tells you the exact software version — and that's how you find vulnerabilities. Some services send banners automatically, others require you to send a specific request first (like HTTP GET for web servers).",
+            "example": "import socket\\n\\ndef grab_banner(target, port, timeout=3):\\n    try:\\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\\n        sock.settimeout(timeout)\\n        sock.connect((target, port))\\n        \\n        # Some services send banner immediately\\n        try:\\n            banner = sock.recv(1024).decode('utf-8', errors='replace').strip()\\n        except socket.timeout:\\n            # Others need a prompt — try HTTP\\n            sock.send(b'HEAD / HTTP/1.1\\r\\nHost: ' + target.encode() + b'\\r\\n\\r\\n')\\n            banner = sock.recv(4096).decode('utf-8', errors='replace').strip()\\n        \\n        sock.close()\\n        return banner\\n    except Exception as e:\\n        return f'Error: {e}'\\n\\n# Example\\nprint(grab_banner('scanme.nmap.org', 80))",
+            "ai_hint": "Banner grabbing is like reading the nameplate on a door — it tells you who lives there. 'SSH-2.0-OpenSSH_8.9' = knowing the exact lock model so you can check for known weaknesses."
+          },
+          {
+            "concept": "ICMP Ping Sweep (Host Discovery)",
+            "explanation": "Before scanning ports, you need to find which hosts are actually alive on the network. A ping sweep sends ICMP Echo Request packets to every address in a range and listens for replies. It's like yelling 'Hello!' in every room of a building and noting which rooms answer back. Some hosts block ICMP (firewall rules), so professional scanners combine ICMP with TCP ping (SYN to common ports) and ARP requests on local networks.",
+            "example": "import subprocess\\nimport ipaddress\\nimport concurrent.futures\\n\\ndef ping_host(ip):\\n    \"\"\"Ping a single host, return IP if alive.\"\"\"\\n    result = subprocess.run(\\n        ['ping', '-c', '1', '-W', '1', str(ip)],\\n        capture_output=True, text=True\\n    )\\n    if result.returncode == 0:\\n        return str(ip)\\n    return None\\n\\ndef ping_sweep(network_cidr):\\n    \"\"\"Sweep a network range for live hosts.\"\"\"\\n    network = ipaddress.ip_network(network_cidr, strict=False)\\n    live_hosts = []\\n    \\n    with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:\\n        futures = {executor.submit(ping_host, ip): ip for ip in network.hosts()}\\n        for future in concurrent.futures.as_completed(futures):\\n            result = future.result()\\n            if result:\\n                live_hosts.append(result)\\n                print(f'  [ALIVE] {result}')\\n    \\n    return sorted(live_hosts, key=lambda x: ipaddress.ip_address(x))\\n\\n# Usage: ping_sweep('192.168.1.0/24')",
+            "ai_hint": "Ping sweep is like a roll call — shout every name and see who answers 'Here!' Some people stay quiet on purpose (firewalls blocking ICMP)."
+          },
+          {
+            "concept": "DNS Enumeration & Reverse Lookups",
+            "explanation": "DNS (Domain Name System) is a goldmine for reconnaissance. Forward lookups convert domain names to IP addresses, reverse lookups do the opposite. Subdomain enumeration finds hidden services (dev.company.com, staging.company.com, admin.company.com). Zone transfers, when misconfigured, can dump an organisation's entire DNS database. Python's socket.getaddrinfo() and the dnspython library make this easy.",
+            "example": "import socket\\n\\ndef dns_lookup(domain):\\n    \"\"\"Forward DNS lookup — domain to IP.\"\"\"\\n    try:\\n        results = socket.getaddrinfo(domain, None)\\n        ips = set(r[4][0] for r in results)\\n        return list(ips)\\n    except socket.gaierror:\\n        return []\\n\\ndef reverse_lookup(ip):\\n    \"\"\"Reverse DNS lookup — IP to domain.\"\"\"\\n    try:\\n        hostname = socket.gethostbyaddr(ip)\\n        return hostname[0]\\n    except socket.herror:\\n        return None\\n\\n# Forward lookup\\nprint(f'nmap.org -> {dns_lookup(\"nmap.org\")}')\\n\\n# Reverse lookup\\nprint(f'8.8.8.8 -> {reverse_lookup(\"8.8.8.8\")}')\\n\\n# Subdomain brute-force concept\\nsubdomains = ['www', 'mail', 'ftp', 'admin', 'dev', 'staging', 'api']\\nfor sub in subdomains:\\n    full = f'{sub}.example.com'\\n    ips = dns_lookup(full)\\n    if ips:\\n        print(f'  [FOUND] {full} -> {ips}')",
+            "ai_hint": "DNS enumeration is like checking the building directory in the lobby — it lists every office (subdomain) and which floor (IP) they're on."
+          },
+          {
+            "concept": "UDP Scanning",
+            "explanation": "While TCP scanning gets all the attention, many critical services run on UDP: DNS (53), SNMP (161), DHCP (67/68), NTP (123), and TFTP (69). UDP scanning is harder because UDP is connectionless — there's no handshake. You send a packet and hope for a response. If you get an ICMP 'port unreachable' back, the port is closed. If you get nothing back, the port could be open OR filtered (firewall eating the packet). UDP scans are slow and unreliable but essential for thorough assessments.",
+            "example": "import socket\\n\\ndef udp_scan(target, port, timeout=3):\\n    \"\"\"Basic UDP port scan.\"\"\"\\n    try:\\n        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\\n        sock.settimeout(timeout)\\n        \\n        # Send empty UDP packet\\n        sock.sendto(b'\\x00', (target, port))\\n        \\n        try:\\n            data, addr = sock.recvfrom(1024)\\n            return 'open'  # Got a response!\\n        except socket.timeout:\\n            return 'open|filtered'  # No response = ambiguous\\n    except ConnectionRefusedError:\\n        return 'closed'  # ICMP port unreachable\\n    except Exception as e:\\n        return f'error: {e}'\\n    finally:\\n        sock.close()\\n\\n# Check common UDP services\\nudp_ports = {53: 'DNS', 123: 'NTP', 161: 'SNMP'}\\nfor port, service in udp_ports.items():\\n    status = udp_scan('target_ip', port)\\n    print(f'  UDP {port} ({service}): {status}')",
+            "ai_hint": "UDP scanning is like posting letters without tracking — you send them out but can't be sure they arrived. Silence might mean 'received' or 'lost in the mail.'"
+          },
+          {
+            "concept": "python-nmap: Automating Nmap with Python",
+            "explanation": "Nmap is the world's most powerful port scanner. python-nmap is a Python wrapper that lets you control Nmap programmatically — perfect for building automated security tools. You get all of Nmap's scanning capabilities (SYN, version detection, OS fingerprinting, NSE scripts) with the convenience of Python data structures. The results come back as dictionaries you can parse, filter, and report on.",
+            "example": "import nmap\\n\\ndef automated_scan(target, ports='1-1000'):\\n    \"\"\"Run an nmap scan and parse results.\"\"\"\\n    scanner = nmap.PortScanner()\\n    \\n    print(f'Scanning {target}...')\\n    scanner.scan(target, ports, arguments='-sV -sC')\\n    \\n    for host in scanner.all_hosts():\\n        print(f'\\nHost: {host} ({scanner[host].hostname()})')\\n        print(f'State: {scanner[host].state()}')\\n        \\n        for proto in scanner[host].all_protocols():\\n            ports_list = scanner[host][proto].keys()\\n            for port in sorted(ports_list):\\n                info = scanner[host][proto][port]\\n                print(f'  {port}/{proto}  {info[\"state\"]}  '\\n                      f'{info.get(\"name\",\"\")}  '\\n                      f'{info.get(\"product\",\"\")} '\\n                      f'{info.get(\"version\",\"\")}')\\n\\n# Usage: automated_scan('scanme.nmap.org')",
+            "ai_hint": "python-nmap is like having a robot that operates Nmap's control panel for you — same power, but you can script it into automated workflows!"
+          },
+          {
+            "concept": "OS Detection & TCP/IP Fingerprinting",
+            "explanation": "Different operating systems implement TCP/IP slightly differently — the initial TTL value, TCP window size, IP ID sequence, and response to unusual packets all vary. By analysing these differences, scanners can guess the target's OS with high confidence. Nmap's OS detection (-O flag) sends a series of crafted packets and compares responses against a database of 6,000+ OS fingerprints. This is like identifying a car brand by the sound of its engine.",
+            "example": "import nmap\\n\\ndef detect_os(target):\\n    \"\"\"Attempt OS detection (requires root).\"\"\"\\n    scanner = nmap.PortScanner()\\n    scanner.scan(target, arguments='-O --osscan-guess')\\n    \\n    for host in scanner.all_hosts():\\n        if 'osmatch' in scanner[host]:\\n            print(f'\\nOS Detection for {host}:')\\n            for match in scanner[host]['osmatch'][:3]:\\n                print(f'  {match[\"accuracy\"]}% - {match[\"name\"]}')\\n        if 'osclass' in scanner[host]:\\n            for cls in scanner[host]['osclass'][:3]:\\n                print(f'  Family: {cls.get(\"osfamily\", \"Unknown\")}')\\n                print(f'  Vendor: {cls.get(\"vendor\", \"Unknown\")}')\\n\\n# Usage (requires root): detect_os('scanme.nmap.org')",
+            "ai_hint": "OS fingerprinting is like identifying someone by their walk — every OS has a unique 'digital walk' in how it handles network packets."
+          },
+          {
+            "concept": "Scan Timing & Evasion Techniques",
+            "explanation": "Security devices (IDS/IPS, firewalls) watch for scanning activity. Sending 10,000 SYN packets per second is obvious. Professional scanners use timing controls: slow scans (one port per minute) fly under the radar, randomised port order prevents pattern detection, and fragmented packets can bypass some firewalls. Nmap's timing templates (-T0 through -T5) range from paranoid to insane. Understanding evasion is crucial for both attackers (pen testers) and defenders (writing detection rules).",
+            "example": "import socket\\nimport random\\nimport time\\n\\ndef stealth_scan(target, ports, delay=0.5):\\n    \"\"\"Slow scan with randomised port order.\"\"\"\\n    shuffled = list(ports)\\n    random.shuffle(shuffled)  # Random order\\n    open_ports = []\\n    \\n    for port in shuffled:\\n        try:\\n            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\\n            sock.settimeout(2)\\n            result = sock.connect_ex((target, port))\\n            if result == 0:\\n                open_ports.append(port)\\n            sock.close()\\n        except:\\n            pass\\n        time.sleep(delay)  # Wait between probes\\n    \\n    return sorted(open_ports)\\n\\n# Nmap timing equivalents:\\n# -T0 (Paranoid): 5 min between probes\\n# -T1 (Sneaky): 15 sec between probes\\n# -T2 (Polite): 0.4 sec between probes\\n# -T3 (Normal): default parallel scanning\\n# -T4 (Aggressive): faster, less reliable\\n# -T5 (Insane): fastest, may miss ports",
+            "ai_hint": "Scan timing is like burglary vs house inspection — running through the building triggers alarms; walking calmly room by room looks normal."
+          },
+          {
+            "concept": "Legal & Ethical Scanning Boundaries",
+            "explanation": "CRITICAL: Scanning without permission is illegal in most countries. The UK Computer Misuse Act 1990, the US CFAA, and the EU Directive on Attacks Against Information Systems all criminalise unauthorised scanning. Always get written permission (scope document) before scanning. Use only authorised targets: your own machines, scanme.nmap.org (Nmap's test server), HackTheBox/TryHackMe labs, and explicitly permitted client networks. Professional pen testers carry signed authorisation letters during engagements. Even accidental scanning of wrong IP ranges has resulted in criminal charges.",
+            "example": "# LEGAL SCANNING CHECKLIST:\\n# ✅ Your own machines on your own network\\n# ✅ scanme.nmap.org (Nmap's official test target)\\n# ✅ HackTheBox / TryHackMe lab machines\\n# ✅ Client networks WITH signed authorisation\\n# ✅ Cloud instances YOU own (AWS/Azure/GCP)\\n#\\n# ❌ NEVER scan without written permission\\n# ❌ NEVER scan your ISP's network\\n# ❌ NEVER scan random internet IPs\\n# ❌ NEVER scan your employer's network without approval\\n# ❌ NEVER scan government systems\\n#\\n# SAFE EXERCISE SETUP:\\ntargets = {\\n    'legal': [\\n        'scanme.nmap.org',     # Nmap's test server\\n        'localhost',            # Your own machine\\n        '127.0.0.1',           # Loopback\\n    ],\\n    'vm_targets': [\\n        '192.168.56.x',        # VirtualBox host-only\\n        '10.10.10.x',          # HTB VPN range\\n    ]\\n}\\nprint('Always verify you have WRITTEN permission before scanning!')",
+            "ai_hint": "Think of it like keys — you can test locks on YOUR house, locks you've been HIRED to test, and locks in a TRAINING facility. Testing random locks on the street = jail time."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Simple Single-Port Check",
+          "description": "The most basic scan — check if one specific port is open on a target.",
+          "difficulty": "beginner",
+          "code": "import socket\n\ndef check_port(host, port):\n    \"\"\"Check if a single port is open.\"\"\"\n    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n    sock.settimeout(3)\n    \n    result = sock.connect_ex((host, port))\n    sock.close()\n    \n    if result == 0:\n        return True   # Port is open\n    else:\n        return False  # Port is closed or filtered\n\n# Test against Nmap's public test server\ntarget = 'scanme.nmap.org'\n\nprint(f'Checking ports on {target}...')\nprint(f'Port 22 (SSH):   {\"OPEN\" if check_port(target, 22) else \"CLOSED\"}')\nprint(f'Port 80 (HTTP):  {\"OPEN\" if check_port(target, 80) else \"CLOSED\"}')\nprint(f'Port 443 (HTTPS): {\"OPEN\" if check_port(target, 443) else \"CLOSED\"}')\nprint(f'Port 8080:       {\"OPEN\" if check_port(target, 8080) else \"CLOSED\"}')",
+          "output": "Checking ports on scanme.nmap.org...\nPort 22 (SSH):   OPEN\nPort 80 (HTTP):  OPEN\nPort 443 (HTTPS): CLOSED\nPort 8080:       CLOSED",
+          "ai_explanation": "Line by line:\n1. socket.socket() creates a TCP connection object\n2. settimeout(3) means 'wait max 3 seconds per port'\n3. connect_ex() tries the TCP handshake — returns 0 if successful (port open)\n4. We close the socket after each check to free resources\n5. The function returns True/False for clean code\n6. We test 4 common ports on Nmap's legal test server",
+          "ai_challenge": "Modify this to also show the error code when a port is closed. What does error code 111 mean? What about 110?"
+        },
+        {
+          "title": "Example 2: Multi-Port Scanner with Timing",
+          "description": "Scan a range of ports and measure how long the scan takes.",
+          "difficulty": "beginner",
+          "code": "import socket\nimport time\n\ndef scan_ports(target, port_range):\n    \"\"\"Scan a range of ports, return list of open ones.\"\"\"\n    open_ports = []\n    start_time = time.time()\n    \n    print(f'Scanning {target} ports {port_range[0]}-{port_range[-1]}...')\n    print('-' * 40)\n    \n    for port in port_range:\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        sock.settimeout(1)\n        \n        result = sock.connect_ex((target, port))\n        if result == 0:\n            try:\n                service = socket.getservbyport(port, 'tcp')\n            except OSError:\n                service = 'unknown'\n            open_ports.append((port, service))\n            print(f'  [OPEN] Port {port:5d} -> {service}')\n        sock.close()\n    \n    elapsed = time.time() - start_time\n    print('-' * 40)\n    print(f'Scan complete: {len(open_ports)} open ports found')\n    print(f'Time elapsed: {elapsed:.2f} seconds')\n    print(f'Scan speed: {len(port_range)/elapsed:.0f} ports/second')\n    \n    return open_ports\n\n# Scan first 100 ports\nresults = scan_ports('scanme.nmap.org', range(1, 101))",
+          "output": "Scanning scanme.nmap.org ports 1-100...\n----------------------------------------\n  [OPEN] Port    22 -> ssh\n  [OPEN] Port    80 -> http\n----------------------------------------\nScan complete: 2 open ports found\nTime elapsed: 12.45 seconds\nScan speed: 8 ports/second",
+          "ai_explanation": "Key improvements over Example 1:\n1. Scans a RANGE of ports using a for loop\n2. Uses socket.getservbyport() to look up the service name (ssh, http, etc.)\n3. Measures elapsed time with time.time()\n4. Calculates scan speed (ports per second)\n5. timeout=1 keeps it fast — closed ports fail quickly\n6. Note: sequential scanning is slow (~8 ports/sec). We'll fix that with threading later!",
+          "ai_challenge": "This scanner is slow because it checks one port at a time. How could you make it check 20 ports simultaneously? (Hint: threading or asyncio)"
+        },
+        {
+          "title": "Example 3: Threaded Port Scanner (Fast!)",
+          "description": "Use threading to scan hundreds of ports in seconds instead of minutes.",
+          "difficulty": "intermediate",
+          "code": "import socket\nimport threading\nimport time\nfrom queue import Queue\n\nclass ThreadedScanner:\n    def __init__(self, target, threads=100):\n        self.target = target\n        self.threads = threads\n        self.open_ports = []\n        self.lock = threading.Lock()\n        self.port_queue = Queue()\n    \n    def scan_port(self):\n        \"\"\"Worker thread: scan ports from the queue.\"\"\"\n        while not self.port_queue.empty():\n            port = self.port_queue.get()\n            try:\n                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n                sock.settimeout(1)\n                result = sock.connect_ex((self.target, port))\n                if result == 0:\n                    with self.lock:\n                        self.open_ports.append(port)\n                sock.close()\n            except:\n                pass\n            self.port_queue.task_done()\n    \n    def scan(self, start_port=1, end_port=1024):\n        \"\"\"Scan port range using thread pool.\"\"\"\n        # Fill the queue\n        for port in range(start_port, end_port + 1):\n            self.port_queue.put(port)\n        \n        start = time.time()\n        print(f'Scanning {self.target} ({end_port - start_port + 1} ports, {self.threads} threads)...')\n        \n        # Launch threads\n        thread_list = []\n        for _ in range(self.threads):\n            t = threading.Thread(target=self.scan_port, daemon=True)\n            t.start()\n            thread_list.append(t)\n        \n        # Wait for completion\n        self.port_queue.join()\n        \n        elapsed = time.time() - start\n        self.open_ports.sort()\n        \n        print(f'\\nResults ({elapsed:.2f}s):')\n        for port in self.open_ports:\n            try:\n                service = socket.getservbyport(port, 'tcp')\n            except:\n                service = 'unknown'\n            print(f'  {port:5d}/tcp  OPEN  {service}')\n        \n        print(f'\\n{len(self.open_ports)} open ports found')\n        print(f'Speed: {(end_port - start_port + 1)/elapsed:.0f} ports/second')\n        return self.open_ports\n\n# Usage\nscanner = ThreadedScanner('scanme.nmap.org', threads=50)\nscanner.scan(1, 1024)",
+          "output": "Scanning scanme.nmap.org (1024 ports, 50 threads)...\n\nResults (3.21s):\n   22/tcp  OPEN  ssh\n   80/tcp  OPEN  http\n\n2 open ports found\nSpeed: 319 ports/second",
+          "ai_explanation": "Massive speed improvement! Here's how threading works:\n1. A Queue holds all ports to scan\n2. 50 worker threads each grab a port, scan it, grab the next\n3. A Lock prevents race conditions when adding to open_ports\n4. daemon=True means threads die when the main program exits\n5. port_queue.join() waits until all ports are processed\n6. Result: 319 ports/sec vs 8 ports/sec — 40x faster!\n7. The threading.Lock() is crucial — without it, two threads might write to the list simultaneously and corrupt data",
+          "ai_challenge": "Add banner grabbing: after finding an open port, immediately connect again and read the first 1024 bytes. Store the banner alongside the port number."
+        },
+        {
+          "title": "Example 4: Banner Grabber — Identify Services",
+          "description": "Connect to open ports and read service banners to identify software versions.",
+          "difficulty": "intermediate",
+          "code": "import socket\n\ndef grab_banner(target, port, timeout=3):\n    \"\"\"Connect to a port and grab its banner.\"\"\"\n    banners = []\n    \n    try:\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        sock.settimeout(timeout)\n        sock.connect((target, port))\n        \n        # Method 1: Some services send banner immediately\n        try:\n            banner = sock.recv(1024).decode('utf-8', errors='replace').strip()\n            if banner:\n                banners.append(('auto', banner))\n        except socket.timeout:\n            pass\n        \n        sock.close()\n    except Exception as e:\n        return [('error', str(e))]\n    \n    # Method 2: Try HTTP request\n    if not banners or port in [80, 443, 8080, 8443]:\n        try:\n            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n            sock.settimeout(timeout)\n            sock.connect((target, port))\n            \n            http_req = f'HEAD / HTTP/1.1\\r\\nHost: {target}\\r\\n\\r\\n'\n            sock.send(http_req.encode())\n            response = sock.recv(4096).decode('utf-8', errors='replace')\n            \n            # Extract Server header\n            for line in response.split('\\r\\n'):\n                if line.lower().startswith('server:'):\n                    banners.append(('http', line))\n                elif line.startswith('HTTP/'):\n                    banners.append(('http-status', line))\n            \n            sock.close()\n        except:\n            pass\n    \n    return banners if banners else [('none', 'No banner retrieved')]\n\n# Scan and grab banners\ntarget = 'scanme.nmap.org'\nports_to_check = [22, 80]\n\nfor port in ports_to_check:\n    print(f'\\n--- Port {port} ---')\n    results = grab_banner(target, port)\n    for method, banner in results:\n        print(f'  [{method}] {banner[:80]}')",
+          "output": "\n--- Port 22 ---\n  [auto] SSH-2.0-OpenSSH_6.6.1p1 Ubuntu-2ubuntu2.13\n\n--- Port 80 ---\n  [http-status] HTTP/1.1 200 OK\n  [http] Server: Apache/2.4.7 (Ubuntu)",
+          "ai_explanation": "Banner grabbing reveals software versions:\n1. Port 22 banner shows OpenSSH 6.6.1p1 on Ubuntu — we can check for CVEs!\n2. Port 80 shows Apache 2.4.7 on Ubuntu — this version has known vulnerabilities\n3. Method 1 (auto): Just connect and listen — works for SSH, FTP, SMTP\n4. Method 2 (HTTP): Send a HEAD request and parse the Server header\n5. The errors='replace' in decode() prevents crashes on binary data\n6. In real pen testing, these version numbers are your next research targets",
+          "ai_challenge": "Extend this to also detect FTP (send 'USER anonymous\\r\\n') and SMTP (send 'EHLO test\\r\\n'). Different protocols need different prompts!"
+        },
+        {
+          "title": "Example 5: ICMP Ping Sweep with Scapy",
+          "description": "Discover live hosts on a network using ICMP and ARP with Scapy.",
+          "difficulty": "intermediate",
+          "code": "# This script requires Scapy and root privileges\n# Run on Kali VM: sudo python3 ping_sweep.py\n\nfrom scapy.all import *\nimport ipaddress\n\ndef icmp_sweep(network_cidr):\n    \"\"\"ICMP ping sweep to find live hosts.\"\"\"\n    network = ipaddress.ip_network(network_cidr, strict=False)\n    live_hosts = []\n    \n    print(f'ICMP Sweep: {network_cidr}')\n    print(f'Checking {network.num_addresses - 2} hosts...\\n')\n    \n    for ip in network.hosts():\n        pkt = IP(dst=str(ip))/ICMP()\n        reply = sr1(pkt, timeout=1, verbose=0)\n        \n        if reply is not None:\n            ttl = reply[IP].ttl\n            # Guess OS from TTL\n            if ttl <= 64:\n                os_guess = 'Linux/Unix'\n            elif ttl <= 128:\n                os_guess = 'Windows'\n            else:\n                os_guess = 'Network device'\n            \n            live_hosts.append({\n                'ip': str(ip),\n                'ttl': ttl,\n                'os_guess': os_guess\n            })\n            print(f'  [ALIVE] {str(ip):15s}  TTL={ttl:3d}  ({os_guess})')\n    \n    print(f'\\n{len(live_hosts)} hosts alive out of {network.num_addresses - 2}')\n    return live_hosts\n\ndef arp_sweep(network_cidr):\n    \"\"\"ARP sweep for local network (faster, more reliable).\"\"\"\n    print(f'\\nARP Sweep: {network_cidr}')\n    answered, _ = srp(\n        Ether(dst='ff:ff:ff:ff:ff:ff')/ARP(pdst=network_cidr),\n        timeout=2, verbose=0\n    )\n    \n    for sent, received in answered:\n        print(f'  [ALIVE] {received[ARP].psrc:15s}  MAC: {received[Ether].src}')\n    \n    return len(answered)\n\n# Usage (on Kali VM with target network):\n# icmp_sweep('192.168.56.0/24')\n# arp_sweep('192.168.56.0/24')",
+          "output": "ICMP Sweep: 192.168.56.0/24\nChecking 254 hosts...\n\n  [ALIVE] 192.168.56.1      TTL=128  (Windows)\n  [ALIVE] 192.168.56.101    TTL= 64  (Linux/Unix)\n  [ALIVE] 192.168.56.102    TTL= 64  (Linux/Unix)\n\n3 hosts alive out of 254\n\nARP Sweep: 192.168.56.0/24\n  [ALIVE] 192.168.56.1      MAC: 08:00:27:a3:b5:c7\n  [ALIVE] 192.168.56.101    MAC: 08:00:27:d4:e6:f8\n  [ALIVE] 192.168.56.102    MAC: 08:00:27:11:22:33",
+          "ai_explanation": "Two discovery methods:\n1. ICMP sweep: Send Echo Request to every IP, wait for replies\n   - TTL in reply hints at OS (Linux~64, Windows~128)\n   - Can be blocked by firewalls\n2. ARP sweep: Ask 'who has this IP?' on local network\n   - Works on local subnet only (same LAN)\n   - Cannot be blocked by software firewalls!\n   - Also reveals MAC addresses\n3. sr1() = send-receive-1 (send one packet, wait for one reply)\n4. srp() = send-receive at layer 2 (Ethernet level for ARP)\n5. verbose=0 suppresses Scapy's default output",
+          "ai_challenge": "Combine both methods: first ARP sweep (reliable on LAN), then ICMP sweep for any hosts ARP missed. Compare results and flag discrepancies."
+        },
+        {
+          "title": "Example 6: SYN Stealth Scan with Scapy",
+          "description": "Build a SYN scanner that never completes the TCP handshake — professional pen testing technique.",
+          "difficulty": "advanced",
+          "code": "# SYN Stealth Scan — requires root privileges\n# Run on Kali VM: sudo python3 syn_scan.py\n\nfrom scapy.all import *\nimport random\n\ndef syn_scan(target, ports):\n    \"\"\"SYN stealth scan — half-open, never completes handshake.\"\"\"\n    results = {'open': [], 'closed': [], 'filtered': []}\n    \n    # Randomise port order for evasion\n    scan_ports = list(ports)\n    random.shuffle(scan_ports)\n    \n    print(f'SYN Scan: {target} ({len(scan_ports)} ports)')\n    print(f'Source port: random | Flags: SYN only\\n')\n    \n    for port in scan_ports:\n        # Random source port for each probe\n        src_port = random.randint(40000, 65000)\n        \n        # Craft SYN packet\n        syn = IP(dst=target)/TCP(\n            sport=src_port, dport=port,\n            flags='S',  # SYN only\n            seq=random.randint(0, 2**32)\n        )\n        \n        # Send and wait for response\n        response = sr1(syn, timeout=2, verbose=0)\n        \n        if response is None:\n            results['filtered'].append(port)\n        elif response.haslayer(TCP):\n            flags = response[TCP].flags\n            if flags == 0x12:  # SYN-ACK = open\n                results['open'].append(port)\n                # Send RST to close cleanly\n                rst = IP(dst=target)/TCP(\n                    sport=src_port, dport=port,\n                    flags='R', seq=response[TCP].ack\n                )\n                send(rst, verbose=0)\n            elif flags & 0x04:  # RST = closed\n                results['closed'].append(port)\n        elif response.haslayer(ICMP):\n            results['filtered'].append(port)\n    \n    # Print results\n    results['open'].sort()\n    print('Open ports:')\n    for p in results['open']:\n        print(f'  {p}/tcp  OPEN')\n    print(f'\\nSummary: {len(results[\"open\"])} open, '\n          f'{len(results[\"closed\"])} closed, '\n          f'{len(results[\"filtered\"])} filtered')\n    \n    return results\n\n# Usage (root on Kali):\n# syn_scan('target_ip', range(1, 1025))",
+          "output": "SYN Scan: 192.168.56.101 (1024 ports)\nSource port: random | Flags: SYN only\n\nOpen ports:\n  22/tcp  OPEN\n  80/tcp  OPEN\n  443/tcp OPEN\n\nSummary: 3 open, 1019 closed, 2 filtered",
+          "ai_explanation": "Professional SYN scan breakdown:\n1. flags='S' sends ONLY the SYN flag — first step of handshake\n2. If target replies SYN-ACK (0x12) = port is open\n3. We immediately send RST to tear down — handshake never completes\n4. If target replies RST (0x04) = port is closed\n5. If no reply = port is filtered (firewall ate the packet)\n6. Random source port + shuffled order = harder to detect\n7. This is exactly how nmap -sS works internally\n8. Requires root because raw sockets need elevated privileges",
+          "ai_challenge": "Add timing control: implement a -T2 'polite' mode that waits 0.4 seconds between each probe. Compare how this affects detection by an IDS."
+        },
+        {
+          "title": "Example 7: DNS Enumeration & Subdomain Finder",
+          "description": "Enumerate DNS records and brute-force subdomains to map an organisation's attack surface.",
+          "difficulty": "intermediate",
+          "code": "import socket\nimport concurrent.futures\n\ndef dns_resolve(domain):\n    \"\"\"Resolve a domain to its IP addresses.\"\"\"\n    try:\n        results = socket.getaddrinfo(domain, None, socket.AF_INET)\n        ips = list(set(r[4][0] for r in results))\n        return ips\n    except socket.gaierror:\n        return []\n\ndef reverse_dns(ip):\n    \"\"\"Reverse lookup: IP to hostname.\"\"\"\n    try:\n        return socket.gethostbyaddr(ip)[0]\n    except:\n        return None\n\ndef subdomain_enum(domain, wordlist):\n    \"\"\"Brute-force subdomain enumeration.\"\"\"\n    found = []\n    \n    def check_sub(sub):\n        full = f'{sub}.{domain}'\n        ips = dns_resolve(full)\n        if ips:\n            return (full, ips)\n        return None\n    \n    print(f'Enumerating subdomains of {domain}...')\n    print(f'Wordlist: {len(wordlist)} entries\\n')\n    \n    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as ex:\n        futures = {ex.submit(check_sub, s): s for s in wordlist}\n        for future in concurrent.futures.as_completed(futures):\n            result = future.result()\n            if result:\n                found.append(result)\n                print(f'  [FOUND] {result[0]:30s} -> {result[1]}')\n    \n    print(f'\\n{len(found)} subdomains found')\n    return found\n\n# Common subdomain wordlist\nwordlist = [\n    'www', 'mail', 'ftp', 'admin', 'dev', 'staging',\n    'api', 'test', 'blog', 'shop', 'cdn', 'static',\n    'portal', 'vpn', 'remote', 'db', 'mysql', 'postgres',\n    'git', 'gitlab', 'jenkins', 'ci', 'internal', 'intranet',\n    'backup', 'monitor', 'grafana', 'kibana', 'elastic',\n    'docs', 'wiki', 'help', 'support', 'status'\n]\n\n# Example usage\nsubdomain_enum('nmap.org', wordlist)",
+          "output": "Enumerating subdomains of nmap.org...\nWordlist: 35 entries\n\n  [FOUND] www.nmap.org                  -> ['45.33.32.156']\n  [FOUND] mail.nmap.org                 -> ['45.33.32.156']\n  [FOUND] blog.nmap.org                 -> ['45.33.32.156']\n  [FOUND] docs.nmap.org                 -> ['45.33.32.156']\n\n4 subdomains found",
+          "ai_explanation": "DNS enumeration reveals an organisation's hidden services:\n1. dns_resolve() converts domain names to IP addresses\n2. reverse_dns() does the opposite — IP to hostname\n3. subdomain_enum() tries common prefixes against the target domain\n4. ThreadPoolExecutor runs 20 lookups in parallel for speed\n5. Each found subdomain is a potential attack target\n6. In real pen tests, use wordlists with 100,000+ entries\n7. Tools like sublist3r and amass automate this at scale\n8. Found subdomains should be port-scanned next!",
+          "ai_challenge": "Extend with a zone transfer attempt: use dnspython to try AXFR against the domain's nameservers. Misconfigured servers will dump ALL records!"
+        },
+        {
+          "title": "Example 8: Nmap Automation with python-nmap",
+          "description": "Use python-nmap to run professional scans and parse results programmatically.",
+          "difficulty": "intermediate",
+          "code": "import nmap\n\ndef comprehensive_scan(target):\n    \"\"\"Run a full service detection scan using python-nmap.\"\"\"\n    scanner = nmap.PortScanner()\n    \n    print(f'=== Comprehensive Scan: {target} ===')\n    print('Running: nmap -sV -sC -O -p 1-1024\\n')\n    \n    # -sV: Version detection\n    # -sC: Default scripts\n    # -p 1-1024: First 1024 ports\n    scanner.scan(target, '1-1024', arguments='-sV -sC')\n    \n    for host in scanner.all_hosts():\n        print(f'Host: {host}')\n        print(f'Hostname: {scanner[host].hostname()}')\n        print(f'State: {scanner[host].state()}')\n        \n        for proto in scanner[host].all_protocols():\n            print(f'\\nProtocol: {proto}')\n            print(f'{\"PORT\":>7s}  {\"STATE\":8s}  {\"SERVICE\":12s}  {\"VERSION\"}')\n            print('-' * 60)\n            \n            ports = sorted(scanner[host][proto].keys())\n            for port in ports:\n                info = scanner[host][proto][port]\n                state = info['state']\n                name = info.get('name', '')\n                product = info.get('product', '')\n                version = info.get('version', '')\n                extra = info.get('extrainfo', '')\n                \n                ver_str = f'{product} {version} {extra}'.strip()\n                print(f'{port:5d}/{proto}  {state:8s}  {name:12s}  {ver_str}')\n    \n    # Export results\n    print('\\n--- Scan Info ---')\n    print(f'Command: {scanner.command_line()}')\n    print(f'Scan method: {scanner.scaninfo()}')\n    \n    return scanner\n\n# Usage\nresults = comprehensive_scan('scanme.nmap.org')",
+          "output": "=== Comprehensive Scan: scanme.nmap.org ===\nRunning: nmap -sV -sC -O -p 1-1024\n\nHost: 45.33.32.156\nHostname: scanme.nmap.org\nState: up\n\nProtocol: tcp\n   PORT  STATE     SERVICE       VERSION\n------------------------------------------------------------\n   22/tcp  open      ssh           OpenSSH 6.6.1p1 Ubuntu 2ubuntu2.13\n   80/tcp  open      http          Apache httpd 2.4.7\n\n--- Scan Info ---\nCommand: nmap -oX - -sV -sC -p 1-1024 scanme.nmap.org",
+          "ai_explanation": "python-nmap gives you Nmap's full power from Python:\n1. PortScanner() creates an nmap interface\n2. scan() runs the actual nmap command\n3. -sV detects service versions (crucial for finding CVEs)\n4. -sC runs default NSE scripts (extra recon)\n5. Results are parsed into Python dicts automatically\n6. scanner[host][proto][port] gives you all port details\n7. command_line() shows the exact nmap command for documentation\n8. This is how automated security tools work internally",
+          "ai_challenge": "Add vulnerability detection: after getting version info, use the CVE search API to check each service version for known vulnerabilities."
+        },
+        {
+          "title": "Example 9: Service Version Vulnerability Lookup",
+          "description": "After scanning, check discovered service versions against known vulnerabilities.",
+          "difficulty": "advanced",
+          "code": "import socket\nimport re\n\n# Known vulnerable versions database (simplified)\nVULN_DB = {\n    'openssh': {\n        '6.6': ['CVE-2015-5600: MaxAuthTries bypass',\n                'CVE-2016-0777: Roaming code info leak'],\n        '7.0': ['CVE-2016-6210: User enumeration'],\n        '8.3': ['CVE-2021-28041: Double-free in ssh-agent'],\n    },\n    'apache': {\n        '2.4.7':  ['CVE-2017-15715: .htaccess bypass',\n                   'CVE-2019-0211: Local privilege escalation'],\n        '2.4.49': ['CVE-2021-41773: Path traversal (CRITICAL)'],\n        '2.4.50': ['CVE-2021-42013: Path traversal bypass'],\n    },\n    'nginx': {\n        '1.16': ['CVE-2019-20372: HTTP request smuggling'],\n    },\n    'vsftpd': {\n        '2.3.4': ['CVE-2011-2523: Backdoor command execution (CRITICAL)'],\n    }\n}\n\ndef check_vulns(service_name, version):\n    \"\"\"Check a service version against known vulnerabilities.\"\"\"\n    service = service_name.lower().replace(' ', '')\n    vulns = []\n    \n    for key, versions in VULN_DB.items():\n        if key in service:\n            for ver, cves in versions.items():\n                if ver in version:\n                    vulns.extend(cves)\n    \n    return vulns\n\ndef scan_and_check(target, ports):\n    \"\"\"Scan ports, grab banners, check for vulnerabilities.\"\"\"\n    print(f'Vulnerability Scan: {target}')\n    print('=' * 60)\n    \n    for port in ports:\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        sock.settimeout(3)\n        try:\n            sock.connect((target, port))\n            banner = sock.recv(1024).decode('utf-8', errors='replace').strip()\n            sock.close()\n            \n            if banner:\n                print(f'\\nPort {port}: {banner[:60]}')\n                vulns = check_vulns(banner, banner)\n                if vulns:\n                    print(f'  [!] VULNERABILITIES FOUND:')\n                    for v in vulns:\n                        print(f'      - {v}')\n                else:\n                    print(f'  [OK] No known vulnerabilities in database')\n        except:\n            sock.close()\n\nscan_and_check('scanme.nmap.org', [22, 80])",
+          "output": "Vulnerability Scan: scanme.nmap.org\n============================================================\n\nPort 22: SSH-2.0-OpenSSH_6.6.1p1 Ubuntu-2ubuntu2.13\n  [!] VULNERABILITIES FOUND:\n      - CVE-2015-5600: MaxAuthTries bypass\n      - CVE-2016-0777: Roaming code info leak\n\nPort 80: (HTTP header parsed separately)",
+          "ai_explanation": "Combining scanning with vulnerability lookup:\n1. First we scan and grab banners (service identification)\n2. Then we check versions against a vulnerability database\n3. In reality, tools like Nessus and OpenVAS do this with 100,000+ CVE entries\n4. Our simplified VULN_DB shows the concept\n5. OpenSSH 6.6 is OLD — multiple CVEs exist for it\n6. vsftpd 2.3.4 has a famous backdoor — if you find this version, you've found a critical vulnerability\n7. This is the core workflow of vulnerability assessment",
+          "ai_challenge": "Replace the static VULN_DB with a live API call to cve.circl.lu/api/search/vendor to get real-time CVE data for discovered services."
+        },
+        {
+          "title": "Example 10: Network Mapper — Full Reconnaissance Report",
+          "description": "Combine all techniques into a complete network reconnaissance tool.",
+          "difficulty": "advanced",
+          "code": "import socket\nimport concurrent.futures\nimport time\nimport json\n\nclass NetworkMapper:\n    def __init__(self, target):\n        self.target = target\n        self.results = {\n            'target': target,\n            'scan_time': '',\n            'hostname': '',\n            'ip_address': '',\n            'open_ports': [],\n            'services': []\n        }\n    \n    def resolve_target(self):\n        \"\"\"Resolve hostname to IP.\"\"\"\n        try:\n            ip = socket.gethostbyname(self.target)\n            self.results['ip_address'] = ip\n            self.results['hostname'] = self.target\n            print(f'Target: {self.target} -> {ip}')\n            return ip\n        except socket.gaierror:\n            print(f'Cannot resolve {self.target}')\n            return None\n    \n    def port_scan(self, ports=range(1, 1025), threads=50):\n        \"\"\"Threaded port scan.\"\"\"\n        open_ports = []\n        lock = __import__('threading').Lock()\n        \n        def check(port):\n            try:\n                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n                s.settimeout(1)\n                if s.connect_ex((self.results['ip_address'], port)) == 0:\n                    with lock:\n                        open_ports.append(port)\n                s.close()\n            except:\n                pass\n        \n        with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as ex:\n            ex.map(check, ports)\n        \n        self.results['open_ports'] = sorted(open_ports)\n        print(f'Open ports: {self.results[\"open_ports\"]}')\n        return open_ports\n    \n    def service_detection(self):\n        \"\"\"Banner grab all open ports.\"\"\"\n        for port in self.results['open_ports']:\n            service = {'port': port, 'banner': '', 'service_name': ''}\n            try:\n                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n                s.settimeout(3)\n                s.connect((self.results['ip_address'], port))\n                try:\n                    banner = s.recv(1024).decode('utf-8', errors='replace').strip()\n                except socket.timeout:\n                    s.send(b'HEAD / HTTP/1.1\\r\\nHost: test\\r\\n\\r\\n')\n                    banner = s.recv(4096).decode('utf-8', errors='replace').strip()\n                service['banner'] = banner[:200]\n                try:\n                    service['service_name'] = socket.getservbyport(port, 'tcp')\n                except:\n                    service['service_name'] = 'unknown'\n                s.close()\n            except:\n                pass\n            self.results['services'].append(service)\n            print(f'  {port}/tcp -> {service[\"service_name\"]}: {service[\"banner\"][:50]}')\n    \n    def generate_report(self):\n        \"\"\"Generate JSON reconnaissance report.\"\"\"\n        self.results['scan_time'] = time.strftime('%Y-%m-%d %H:%M:%S')\n        \n        print('\\n' + '=' * 60)\n        print('RECONNAISSANCE REPORT')\n        print('=' * 60)\n        print(f'Target:    {self.results[\"hostname\"]}')\n        print(f'IP:        {self.results[\"ip_address\"]}')\n        print(f'Scan Time: {self.results[\"scan_time\"]}')\n        print(f'Open Ports: {len(self.results[\"open_ports\"])}')\n        print('-' * 60)\n        for svc in self.results['services']:\n            print(f'  {svc[\"port\"]:5d}/tcp  {svc[\"service_name\"]:10s}  {svc[\"banner\"][:40]}')\n        print('=' * 60)\n        \n        return json.dumps(self.results, indent=2)\n\n# Full recon\nmapper = NetworkMapper('scanme.nmap.org')\nmapper.resolve_target()\nmapper.port_scan(range(1, 1025))\nmapper.service_detection()\nreport = mapper.generate_report()",
+          "output": "Target: scanme.nmap.org -> 45.33.32.156\nOpen ports: [22, 80]\n  22/tcp -> ssh: SSH-2.0-OpenSSH_6.6.1p1 Ubuntu-2ubuntu2.13\n  80/tcp -> http: HTTP/1.1 200 OK\n\n============================================================\nRECONNAISSANCE REPORT\n============================================================\nTarget:    scanme.nmap.org\nIP:        45.33.32.156\nScan Time: 2026-02-28 15:30:00\nOpen Ports: 2\n------------------------------------------------------------\n     22/tcp  ssh         SSH-2.0-OpenSSH_6.6.1p1 Ubuntu-2u\n     80/tcp  http        HTTP/1.1 200 OK\n============================================================",
+          "ai_explanation": "This is a complete reconnaissance toolkit in one class:\n1. resolve_target() maps hostname to IP\n2. port_scan() finds open ports using 50 threads\n3. service_detection() grabs banners from each open port\n4. generate_report() creates a formatted JSON report\n5. The JSON output can be saved to file for documentation\n6. Professional pen testers create similar reports at the start of every engagement\n7. This class is the foundation for building larger automated tools",
+          "ai_challenge": "Add OS fingerprinting: analyse the TTL from ICMP ping, and check HTTP Server header for OS hints. Add the OS guess to the report."
+        },
+        {
+          "title": "Example 11: UDP Service Scanner",
+          "description": "Scan critical UDP services — DNS, SNMP, NTP — which are often overlooked.",
+          "difficulty": "intermediate",
+          "code": "import socket\n\n# Service-specific probes for UDP\nUDP_PROBES = {\n    53: {   # DNS\n        'name': 'DNS',\n        'probe': bytes.fromhex(\n            'aa aa 01 00 00 01 00 00 00 00 00 00'\n            '07 76 65 72 73 69 6f 6e'\n            '04 62 69 6e 64 00 00 10 00 03'\n        ).replace(b' ', b''),\n        'match': lambda d: b'version' in d.lower() or len(d) > 10\n    },\n    123: {  # NTP\n        'name': 'NTP',\n        'probe': b'\\x1b' + b'\\x00' * 47,  # NTP v3 client request\n        'match': lambda d: len(d) >= 48\n    },\n    161: {  # SNMP\n        'name': 'SNMP',\n        'probe': bytes.fromhex(\n            '302602010104067075626c6963'\n            'a019020400020100020100'\n            '300b300906052b060102010500'\n        ),\n        'match': lambda d: d[0:1] == b'\\x30'  # ASN.1 sequence\n    }\n}\n\ndef udp_service_scan(target, ports=None):\n    \"\"\"Scan UDP ports with service-specific probes.\"\"\"\n    if ports is None:\n        ports = UDP_PROBES.keys()\n    \n    print(f'UDP Service Scan: {target}')\n    print('-' * 50)\n    \n    results = []\n    for port in ports:\n        probe_info = UDP_PROBES.get(port, {\n            'name': 'Unknown',\n            'probe': b'\\x00',\n            'match': lambda d: len(d) > 0\n        })\n        \n        try:\n            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\n            sock.settimeout(3)\n            sock.sendto(probe_info['probe'], (target, port))\n            \n            data, _ = sock.recvfrom(1024)\n            if probe_info['match'](data):\n                status = 'OPEN'\n                results.append((port, probe_info['name'], status))\n                print(f'  [{status}] {port}/udp  {probe_info[\"name\"]}')\n                print(f'         Response: {data[:30].hex()}')\n        except socket.timeout:\n            print(f'  [OPEN|FILTERED] {port}/udp  {probe_info[\"name\"]}')\n        except ConnectionRefusedError:\n            print(f'  [CLOSED] {port}/udp  {probe_info[\"name\"]}')\n        except Exception as e:\n            print(f'  [ERROR] {port}/udp  {e}')\n        finally:\n            sock.close()\n    \n    return results\n\n# Scan common UDP services\nudp_service_scan('8.8.8.8', [53])  # Google DNS",
+          "output": "UDP Service Scan: 8.8.8.8\n--------------------------------------------------\n  [OPEN] 53/udp  DNS\n         Response: aaaa81800001000100000000",
+          "ai_explanation": "UDP scanning requires service-specific probes:\n1. DNS probe: A version.bind query — DNS servers respond to this\n2. NTP probe: A standard time request (0x1b = NTP v3 client mode)\n3. SNMP probe: A GET request with 'public' community string\n4. Each probe has a 'match' function to validate responses\n5. Unlike TCP, UDP has no handshake — we must send meaningful data\n6. Timeout = open|filtered (can't distinguish without response)\n7. ConnectionRefused = closed (ICMP port unreachable received)\n8. Many critical attacks target UDP services (DNS amplification, SNMP enumeration)",
+          "ai_challenge": "Add DHCP discovery (port 67) and TFTP probing (port 69). For SNMP, try walking the OID tree to enumerate device information."
+        },
+        {
+          "title": "Example 12: Scan Results to CSV Report",
+          "description": "Export scan results to CSV format for professional reporting and analysis.",
+          "difficulty": "beginner",
+          "code": "import csv\nimport socket\nimport time\nimport os\n\ndef scan_to_csv(target, ports, output_file='scan_report.csv'):\n    \"\"\"Scan and export results directly to CSV.\"\"\"\n    timestamp = time.strftime('%Y-%m-%d %H:%M:%S')\n    \n    # Resolve target\n    try:\n        ip = socket.gethostbyname(target)\n    except:\n        ip = target\n    \n    results = []\n    print(f'Scanning {target} ({ip})...')\n    \n    for port in ports:\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        sock.settimeout(1)\n        result = sock.connect_ex((ip, port))\n        \n        if result == 0:\n            # Get service name\n            try:\n                service = socket.getservbyport(port, 'tcp')\n            except:\n                service = 'unknown'\n            \n            # Try banner grab\n            try:\n                banner = sock.recv(512).decode('utf-8', errors='replace').strip()\n            except:\n                banner = ''\n            \n            results.append({\n                'timestamp': timestamp,\n                'target': target,\n                'ip': ip,\n                'port': port,\n                'protocol': 'tcp',\n                'state': 'open',\n                'service': service,\n                'banner': banner[:100]\n            })\n            print(f'  [OPEN] {port}/tcp {service}')\n        \n        sock.close()\n    \n    # Write CSV\n    if results:\n        fieldnames = ['timestamp', 'target', 'ip', 'port', 'protocol',\n                      'state', 'service', 'banner']\n        with open(output_file, 'w', newline='') as f:\n            writer = csv.DictWriter(f, fieldnames=fieldnames)\n            writer.writeheader()\n            writer.writerows(results)\n        \n        print(f'\\nReport saved: {output_file}')\n        print(f'Entries: {len(results)} open ports documented')\n    else:\n        print('\\nNo open ports found.')\n    \n    return results\n\n# Run scan and export\nscan_to_csv('scanme.nmap.org', range(1, 101), 'nmap_scan.csv')",
+          "output": "Scanning scanme.nmap.org (45.33.32.156)...\n  [OPEN] 22/tcp ssh\n  [OPEN] 80/tcp http\n\nReport saved: nmap_scan.csv\nEntries: 2 open ports documented",
+          "ai_explanation": "Professional documentation is essential:\n1. csv.DictWriter creates structured spreadsheet-ready output\n2. Each row has: timestamp, target, IP, port, protocol, state, service, banner\n3. This format can be imported into Excel, Splunk, or any reporting tool\n4. The timestamp links the scan to a specific assessment window\n5. Banner info (truncated to 100 chars) gives version details\n6. In real pen tests, CSV exports feed into final vulnerability reports\n7. Always document what you scan — it's both professional and legal protection",
+          "ai_challenge": "Add a second output format: generate an HTML report with a table, colour-coded by risk (red for known vulnerable versions, green for current)."
+        },
+        {
+          "title": "Example 13: Passive Reconnaissance with WHOIS",
+          "description": "Gather information about a target without sending any packets — using public WHOIS and DNS records.",
+          "difficulty": "beginner",
+          "code": "import socket\n\ndef whois_lookup(domain):\n    \"\"\"Manual WHOIS lookup using raw socket.\"\"\"\n    # Determine WHOIS server\n    tld = domain.split('.')[-1]\n    whois_servers = {\n        'com': 'whois.verisign-grs.com',\n        'org': 'whois.pir.org',\n        'net': 'whois.verisign-grs.com',\n        'io':  'whois.nic.io',\n        'uk':  'whois.nic.uk',\n    }\n    \n    server = whois_servers.get(tld, f'whois.nic.{tld}')\n    \n    try:\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        sock.settimeout(10)\n        sock.connect((server, 43))  # WHOIS = port 43\n        sock.send(f'{domain}\\r\\n'.encode())\n        \n        response = b''\n        while True:\n            try:\n                data = sock.recv(4096)\n                if not data:\n                    break\n                response += data\n            except socket.timeout:\n                break\n        \n        sock.close()\n        return response.decode('utf-8', errors='replace')\n    except Exception as e:\n        return f'WHOIS lookup failed: {e}'\n\ndef passive_recon(domain):\n    \"\"\"Gather info without touching the target.\"\"\"\n    print(f'=== Passive Recon: {domain} ===')\n    \n    # DNS records\n    print('\\n[DNS Resolution]')\n    try:\n        ips = socket.getaddrinfo(domain, None, socket.AF_INET)\n        unique_ips = set(r[4][0] for r in ips)\n        for ip in unique_ips:\n            print(f'  A Record: {ip}')\n            # Reverse DNS\n            try:\n                hostname = socket.gethostbyaddr(ip)[0]\n                print(f'  Reverse:  {hostname}')\n            except:\n                pass\n    except:\n        print('  DNS resolution failed')\n    \n    # WHOIS\n    print('\\n[WHOIS Data]')\n    whois_data = whois_lookup(domain)\n    # Extract key fields\n    for line in whois_data.split('\\n'):\n        line = line.strip()\n        for keyword in ['Registrar:', 'Creation', 'Expir', 'Name Server',\n                       'Registrant Org', 'Admin Email', 'Tech Email']:\n            if keyword.lower() in line.lower():\n                print(f'  {line}')\n                break\n\npassive_recon('nmap.org')",
+          "output": "=== Passive Recon: nmap.org ===\n\n[DNS Resolution]\n  A Record: 45.33.32.156\n  Reverse:  scanme.nmap.org\n\n[WHOIS Data]\n  Creation Date: 1998-01-05T05:00:00Z\n  Registrar: Network Solutions, LLC\n  Name Server: NS1.LINODE.COM\n  Name Server: NS2.LINODE.COM",
+          "ai_explanation": "Passive recon gathers intelligence WITHOUT touching the target:\n1. DNS resolution reveals IP addresses and hosting providers\n2. Reverse DNS can reveal other domains on the same IP\n3. WHOIS shows registration details, nameservers, dates\n4. Port 43 is the WHOIS protocol — a simple text query/response\n5. This is 100% legal — you're querying public databases\n6. Professional pen testers ALWAYS start with passive recon\n7. The nameservers (Linode) tell us the hosting provider\n8. Creation date shows how long the domain has existed",
+          "ai_challenge": "Add certificate transparency log lookup: query crt.sh to find all SSL certificates ever issued for a domain — this reveals subdomains!"
+        },
+        {
+          "title": "Example 14: Complete Recon Pipeline — From Discovery to Report",
+          "description": "Full automated reconnaissance: host discovery, port scan, service detection, vulnerability check, and report generation.",
+          "difficulty": "advanced",
+          "code": "import socket\nimport concurrent.futures\nimport time\nimport json\n\nclass ReconPipeline:\n    \"\"\"Complete reconnaissance pipeline.\"\"\"\n    \n    def __init__(self, target):\n        self.target = target\n        self.report = {\n            'meta': {'target': target, 'start_time': '', 'end_time': ''},\n            'dns': {},\n            'ports': [],\n            'services': [],\n            'findings': [],\n            'risk_summary': {'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'info': 0}\n        }\n    \n    def phase1_dns(self):\n        \"\"\"Phase 1: DNS Resolution.\"\"\"\n        print('[Phase 1] DNS Resolution')\n        try:\n            ip = socket.gethostbyname(self.target)\n            self.report['dns'] = {'ip': ip, 'hostname': self.target}\n            print(f'  Resolved: {self.target} -> {ip}')\n            # Check reverse\n            try:\n                rev = socket.gethostbyaddr(ip)[0]\n                self.report['dns']['reverse'] = rev\n            except:\n                pass\n        except:\n            print(f'  FAILED to resolve {self.target}')\n    \n    def phase2_portscan(self, ports=range(1, 1025)):\n        \"\"\"Phase 2: Fast port scan.\"\"\"\n        print(f'[Phase 2] Port Scan ({len(list(ports))} ports)')\n        ip = self.report['dns'].get('ip', self.target)\n        open_ports = []\n        lock = __import__('threading').Lock()\n        \n        def check(port):\n            try:\n                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n                s.settimeout(1)\n                if s.connect_ex((ip, port)) == 0:\n                    with lock:\n                        open_ports.append(port)\n                s.close()\n            except:\n                pass\n        \n        with concurrent.futures.ThreadPoolExecutor(50) as ex:\n            ex.map(check, ports)\n        \n        self.report['ports'] = sorted(open_ports)\n        print(f'  Found {len(open_ports)} open: {sorted(open_ports)}')\n    \n    def phase3_services(self):\n        \"\"\"Phase 3: Service identification.\"\"\"\n        print('[Phase 3] Service Detection')\n        ip = self.report['dns'].get('ip', self.target)\n        \n        for port in self.report['ports']:\n            svc = {'port': port, 'name': '', 'banner': '', 'version': ''}\n            try:\n                svc['name'] = socket.getservbyport(port, 'tcp')\n            except:\n                svc['name'] = 'unknown'\n            \n            try:\n                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n                s.settimeout(3)\n                s.connect((ip, port))\n                try:\n                    banner = s.recv(1024).decode('utf-8', errors='replace').strip()\n                except socket.timeout:\n                    if port in [80, 443, 8080]:\n                        s.send(b'HEAD / HTTP/1.0\\r\\n\\r\\n')\n                        banner = s.recv(4096).decode('utf-8', errors='replace').strip()\n                    else:\n                        banner = ''\n                svc['banner'] = banner[:200]\n                s.close()\n            except:\n                pass\n            \n            self.report['services'].append(svc)\n            print(f'  {port}/tcp {svc[\"name\"]}: {svc[\"banner\"][:50]}')\n    \n    def phase4_analysis(self):\n        \"\"\"Phase 4: Basic vulnerability analysis.\"\"\"\n        print('[Phase 4] Analysis')\n        \n        for svc in self.report['services']:\n            banner = svc['banner'].lower()\n            \n            # Check for old versions\n            if 'openssh' in banner and any(v in banner for v in ['5.', '6.']):\n                finding = f'Outdated OpenSSH on port {svc[\"port\"]} — update immediately'\n                self.report['findings'].append({'severity': 'HIGH', 'finding': finding})\n                self.report['risk_summary']['high'] += 1\n            \n            if 'apache/2.4.7' in banner or 'apache/2.2' in banner:\n                finding = f'Outdated Apache on port {svc[\"port\"]} — multiple CVEs'\n                self.report['findings'].append({'severity': 'HIGH', 'finding': finding})\n                self.report['risk_summary']['high'] += 1\n            \n            if 'vsftpd 2.3.4' in banner:\n                finding = f'CRITICAL: vsftpd 2.3.4 backdoor on port {svc[\"port\"]}!'\n                self.report['findings'].append({'severity': 'CRITICAL', 'finding': finding})\n                self.report['risk_summary']['critical'] += 1\n            \n            # Info findings\n            if svc['banner']:\n                finding = f'Service banner disclosed on port {svc[\"port\"]}: {svc[\"name\"]}'\n                self.report['findings'].append({'severity': 'INFO', 'finding': finding})\n                self.report['risk_summary']['info'] += 1\n        \n        for f in self.report['findings']:\n            icon = {'CRITICAL': '!!!', 'HIGH': '!!', 'MEDIUM': '!', 'LOW': '.', 'INFO': 'i'}[f['severity']]\n            print(f'  [{icon}] {f[\"severity\"]}: {f[\"finding\"]}')\n    \n    def run(self):\n        \"\"\"Execute full pipeline.\"\"\"\n        self.report['meta']['start_time'] = time.strftime('%Y-%m-%d %H:%M:%S')\n        print(f'\\n{\"=\"*60}')\n        print(f'SYNAPSE RECON PIPELINE: {self.target}')\n        print(f'{\"=\"*60}\\n')\n        \n        self.phase1_dns()\n        self.phase2_portscan()\n        self.phase3_services()\n        self.phase4_analysis()\n        \n        self.report['meta']['end_time'] = time.strftime('%Y-%m-%d %H:%M:%S')\n        \n        print(f'\\n{\"=\"*60}')\n        print('RISK SUMMARY')\n        for sev, count in self.report['risk_summary'].items():\n            if count > 0:\n                print(f'  {sev.upper()}: {count}')\n        print(f'{\"=\"*60}')\n        \n        return self.report\n\n# Run full recon\npipeline = ReconPipeline('scanme.nmap.org')\nresults = pipeline.run()",
+          "output": "============================================================\nSYNAPSE RECON PIPELINE: scanme.nmap.org\n============================================================\n\n[Phase 1] DNS Resolution\n  Resolved: scanme.nmap.org -> 45.33.32.156\n[Phase 2] Port Scan (1024 ports)\n  Found 2 open: [22, 80]\n[Phase 3] Service Detection\n  22/tcp ssh: SSH-2.0-OpenSSH_6.6.1p1 Ubuntu-2ubuntu2.13\n  80/tcp http: HTTP/1.1 200 OK\n[Phase 4] Analysis\n  [!!] HIGH: Outdated OpenSSH on port 22 — update immediately\n  [i] INFO: Service banner disclosed on port 22: ssh\n  [i] INFO: Service banner disclosed on port 80: http\n\n============================================================\nRISK SUMMARY\n  HIGH: 1\n  INFO: 2\n============================================================",
+          "ai_explanation": "This is a professional-grade reconnaissance pipeline:\n1. Phase 1: DNS — resolve target, check reverse DNS\n2. Phase 2: Port scan — threaded scan of first 1024 ports\n3. Phase 3: Services — banner grab every open port\n4. Phase 4: Analysis — check versions against known issues\n5. The risk_summary provides an executive overview\n6. JSON output can be parsed by other tools or fed into reports\n7. This mirrors the workflow of tools like Nessus and Qualys\n8. A real pen test report starts with exactly this kind of data",
+          "ai_challenge": "Add Phase 0 (passive recon with WHOIS) and Phase 5 (export to both JSON and HTML report). Make the HTML report look professional with CSS styling."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Network Scanning & Reconnaissance Workflow",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 20px;\">\n<span style=\"font-size: 18px; font-weight: bold; color: #e74c3c;\">🔍 NETWORK SCANNING &amp; RECONNAISSANCE WORKFLOW</span>\n\n<span style=\"color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>\n\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">⚖️ PHASE 0: LEGAL AUTHORISATION</span>\n    │\n    ├── ✅ Written permission obtained?\n    ├── ✅ Scope defined (IP ranges, ports)?\n    ├── ✅ Testing window agreed?\n    └── ❌ NO PERMISSION = <span style=\"color: #e74c3c; font-weight: bold;\">STOP — THIS IS ILLEGAL</span>\n    │\n    ▼\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">🌐 PHASE 1: PASSIVE RECONNAISSANCE</span>\n    │\n    ├── <span style=\"color: #3498db;\">WHOIS Lookup</span> → Registrar, nameservers, dates\n    ├── <span style=\"color: #3498db;\">DNS Records</span> → A, AAAA, MX, NS, TXT, CNAME\n    ├── <span style=\"color: #3498db;\">Subdomain Enum</span> → Brute-force + certificate transparency\n    ├── <span style=\"color: #3498db;\">Reverse DNS</span> → IP → hostname mapping\n    └── <span style=\"color: #3498db;\">Certificate Lookup</span> → crt.sh for all issued certs\n    │\n    ├── 🔑 <span style=\"color: #f39c12;\">NO packets sent to target — 100% legal</span>\n    │\n    ▼\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">📡 PHASE 2: HOST DISCOVERY</span>\n    │\n    ├── <span style=\"color: #2ecc71;\">ICMP Ping Sweep</span> → Send Echo Request to each IP\n    │   ├── Reply received → <span style=\"color: #2ecc71;\">HOST IS ALIVE</span>\n    │   ├── No reply → Could be filtered (firewall)\n    │   └── TTL value hints at OS: 64=Linux, 128=Windows\n    │\n    ├── <span style=\"color: #2ecc71;\">ARP Sweep</span> (local network only)\n    │   ├── Send ARP \"who-has?\" for each IP\n    │   ├── Reply → <span style=\"color: #2ecc71;\">HOST IS ALIVE + MAC address</span>\n    │   └── Cannot be blocked by software firewalls!\n    │\n    └── <span style=\"color: #2ecc71;\">TCP Ping</span> → SYN to common ports (80, 443)\n        └── SYN-ACK back → <span style=\"color: #2ecc71;\">HOST IS ALIVE</span>\n    │\n    ▼\n<span style=\"background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;\">🚪 PHASE 3: PORT SCANNING</span>\n    │\n    ├── <span style=\"color: #9b59b6;\">TCP Connect Scan</span> (socket.connect)\n    │   ├── Completes full 3-way handshake\n    │   ├── ✅ Reliable, no special privileges needed\n    │   └── ❌ Noisy — logged by target\n    │\n    ├── <span style=\"color: #9b59b6;\">SYN Stealth Scan</span> (Scapy, requires root)\n    │   ├── Sends SYN only, reads response\n    │   ├── SYN-ACK → <span style=\"color: #2ecc71;\">OPEN</span> (send RST to close)\n    │   ├── RST → <span style=\"color: #e74c3c;\">CLOSED</span>\n    │   ├── No response → <span style=\"color: #f39c12;\">FILTERED</span>\n    │   ├── ✅ Stealthy — no full connection logged\n    │   └── ❌ Needs root/admin privileges\n    │\n    ├── <span style=\"color: #9b59b6;\">UDP Scan</span> (protocol-specific probes)\n    │   ├── Send service-specific probe\n    │   ├── Response → <span style=\"color: #2ecc71;\">OPEN</span>\n    │   ├── ICMP Port Unreachable → <span style=\"color: #e74c3c;\">CLOSED</span>\n    │   ├── No response → <span style=\"color: #f39c12;\">OPEN|FILTERED</span> (ambiguous!)\n    │   └── ❌ Slow and unreliable\n    │\n    └── PORT STATES:\n        ├── <span style=\"color: #2ecc71;\">OPEN</span> = Service accepting connections\n        ├── <span style=\"color: #e74c3c;\">CLOSED</span> = No service, port reachable\n        └── <span style=\"color: #f39c12;\">FILTERED</span> = Firewall blocking probes\n    │\n    ▼\n<span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">🔎 PHASE 4: SERVICE DETECTION</span>\n    │\n    ├── <span style=\"color: #f39c12;\">Banner Grabbing</span> → Connect and read welcome message\n    │   ├── SSH: \"SSH-2.0-OpenSSH_8.9p1\"\n    │   ├── HTTP: \"Server: Apache/2.4.52\"\n    │   ├── FTP: \"220 vsftpd 3.0.5\"\n    │   └── SMTP: \"220 mail.example.com ESMTP Postfix\"\n    │\n    ├── <span style=\"color: #f39c12;\">Version Detection</span> → nmap -sV\n    │   └── Sends protocol-specific probes\n    │\n    └── <span style=\"color: #f39c12;\">OS Fingerprinting</span> → nmap -O\n        ├── Analyses TCP/IP stack behaviour\n        ├── TTL, window size, IP ID sequence\n        └── Matches against 6000+ OS fingerprints\n    │\n    ▼\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">⚠️ PHASE 5: VULNERABILITY ANALYSIS</span>\n    │\n    ├── Match service versions against CVE databases\n    ├── Check for default credentials\n    ├── Identify misconfigurations\n    └── Prioritise: CRITICAL → HIGH → MEDIUM → LOW\n    │\n    ▼\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">📄 PHASE 6: REPORTING</span>\n    │\n    ├── Document all findings with evidence\n    ├── CSV/JSON export for tools\n    ├── Executive summary for management\n    └── Technical details for remediation team\n\n<span style=\"color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>\n\n<span style=\"font-weight: bold; color: #e74c3c;\">🛡️ REMEMBER — THE GOLDEN RULES:</span>\n\n  <span style=\"color: #e74c3c;\">1.</span> ALWAYS get written permission before scanning\n  <span style=\"color: #e74c3c;\">2.</span> NEVER scan systems you don't own or aren't authorised to test\n  <span style=\"color: #e74c3c;\">3.</span> Start PASSIVE, then ACTIVE — gather first, probe second\n  <span style=\"color: #e74c3c;\">4.</span> Document EVERYTHING — timestamps, commands, results\n  <span style=\"color: #e74c3c;\">5.</span> Use LEGAL targets for learning: scanme.nmap.org, your own VMs\n  <span style=\"color: #e74c3c;\">6.</span> Slow scans are stealthier — speed vs detection trade-off\n  <span style=\"color: #e74c3c;\">7.</span> TCP tells you WHAT'S OPEN, banners tell you WHAT'S RUNNING\n  <span style=\"color: #e74c3c;\">8.</span> UDP services are often overlooked — don't skip them!\n  <span style=\"color: #e74c3c;\">9.</span> Version numbers are your key to finding CVEs\n  <span style=\"color: #e74c3c;\">10.</span> Professional recon = Passive + Active + Analysis + Report\n\n<span style=\"color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>\n\n<span style=\"font-weight: bold; color: #3498db;\">PYTHON SCANNING TOOLKIT:</span>\n\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">socket</span>  TCP/UDP connections, DNS lookups (built-in)\n  <span style=\"background: #9b59b6; color: white; padding: 2px 8px; border-radius: 3px;\">scapy</span>   Raw packet crafting (SYN scans, ICMP, ARP)\n  <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 3px;\">nmap</span>    python-nmap wrapper for full nmap power\n  <span style=\"background: #f39c12; color: white; padding: 2px 8px; border-radius: 3px;\">dns</span>     dnspython for advanced DNS queries\n  <span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">csv</span>     Export results for reporting (built-in)\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Create a TCP Socket",
+          "description": "Create a TCP socket and check if port 80 is open on scanme.nmap.org.",
+          "difficulty": "beginner",
+          "category": "Socket Basics & Port Checks",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on socket fundamentals! Create a TCP socket and check if port 80 is open on scanme.",
+          "vm_required": false,
+          "starter_code": "import socket\n\n# TODO: Create a TCP socket\nsock = _____.socket(socket._____, socket._____)\n\n# TODO: Set timeout to 2 seconds\nsock._____(2)\n\n# TODO: Try to connect to scanme.nmap.org port 80\nresult = sock.connect_ex(('_____', ____))\n\n# TODO: Check if port is open (result == 0)\nif result == ____:\n    print('Port 80 is OPEN')\nelse:\n    print(f'Port 80 is CLOSED (error: {result})')\n\nsock.close()",
+          "expected_output": "Port 80 is OPEN",
+          "hints": [
+            {
+              "message": "socket.socket() needs two arguments: the address family (AF_INET for IPv4) and the socket type (SOCK_STREAM for TCP)."
+            },
+            {
+              "message": "settimeout(2) prevents hanging. connect_ex() returns 0 for success. Target is 'scanme.nmap.org', port is 80."
+            },
+            {
+              "message": "sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM); sock.settimeout(2); result = sock.connect_ex(('scanme.nmap.org', 80)); if result == 0: print('OPEN')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Understand connect_ex Error Codes",
+          "description": "Scan 3 ports and print the error code for each closed port.",
+          "difficulty": "beginner",
+          "category": "Socket Basics & Port Checks",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on socket fundamentals! Scan 3 ports and print the error code for each closed port.",
+          "vm_required": false,
+          "starter_code": "import socket\n\ntarget = 'scanme.nmap.org'\nports = [22, 80, 12345]  # 12345 is likely closed\n\nfor port in ports:\n    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n    sock.settimeout(2)\n    \n    # TODO: Use connect_ex and store the result\n    result = _____\n    \n    if result == 0:\n        print(f'Port {port}: OPEN')\n    else:\n        # TODO: Print the port and error code\n        print(f'Port {port}: CLOSED (errno={_____})')\n    \n    sock.close()\n\n# What does errno 111 mean? _____\n# What does errno 110 mean? _____",
+          "expected_output": "Port 22: OPEN\nPort 80: OPEN\nPort 12345: CLOSED (errno=111)\n\nerrno 111 = Connection Refused (port closed, no service)\nerrno 110 = Connection Timed Out (filtered by firewall)",
+          "hints": [
+            {
+              "message": "connect_ex() returns 0 on success, or an error number on failure."
+            },
+            {
+              "message": "Common codes: 111 = ECONNREFUSED (closed), 110 = ETIMEDOUT (filtered), 113 = EHOSTUNREACH."
+            },
+            {
+              "message": "result = sock.connect_ex((target, port)); print(f'CLOSED (errno={result})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Service Name Lookup",
+          "description": "Given an open port, look up the standard service name.",
+          "difficulty": "beginner",
+          "category": "Socket Basics & Port Checks",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on socket fundamentals! Given an open port, look up the standard service name.",
+          "vm_required": false,
+          "starter_code": "import socket\n\nports = [22, 25, 53, 80, 110, 143, 443, 993, 3306, 5432]\n\nprint(f'{\"Port\":>6s}  {\"Service\"}')\nprint('-' * 25)\n\nfor port in ports:\n    try:\n        # TODO: Use socket.getservbyport() to get the service name\n        service = socket._____(port, '_____')\n    except OSError:\n        service = 'unknown'\n    \n    print(f'{port:6d}  {service}')",
+          "expected_output": "    22  ssh\n    25  smtp\n    53  domain\n    80  http\n   110  pop3\n   143  imap\n   443  https\n   993  imaps\n  3306  mysql\n  5432  postgresql",
+          "hints": [
+            {
+              "message": "socket.getservbyport(port, protocol) looks up the standard name. Protocol is 'tcp' or 'udp'."
+            },
+            {
+              "message": "Some ports don't have standard names — wrap in try/except to handle OSError."
+            },
+            {
+              "message": "service = socket.getservbyport(port, 'tcp')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Timeout Experiment",
+          "description": "Test how different timeout values affect scan speed and accuracy.",
+          "difficulty": "beginner",
+          "category": "Socket Basics & Port Checks",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on socket fundamentals! Test how different timeout values affect scan speed and accuracy.",
+          "vm_required": false,
+          "starter_code": "import socket\nimport time\n\ntarget = 'scanme.nmap.org'\nport = 80  # Known open port\n\ntimeouts = [0.1, 0.5, 1.0, 2.0, 5.0]\n\nfor timeout in timeouts:\n    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n    # TODO: Set the timeout\n    sock.settimeout(_____)\n    \n    start = time.time()\n    result = sock.connect_ex((target, port))\n    elapsed = time.time() - start\n    \n    status = 'OPEN' if result == 0 else f'MISS (err={result})'\n    # TODO: Print timeout, status, and time taken\n    print(f'Timeout={timeout:4.1f}s  Result={_____:6s}  Time={elapsed:.3f}s')\n    sock.close()",
+          "expected_output": "Timeout=0.1s  Result=OPEN    Time=0.089s\nTimeout=0.5s  Result=OPEN    Time=0.087s\nTimeout=1.0s  Result=OPEN    Time=0.088s\nTimeout=2.0s  Result=OPEN    Time=0.086s\nTimeout=5.0s  Result=OPEN    Time=0.087s",
+          "hints": [
+            {
+              "message": "Lower timeouts = faster scanning but might miss slow-responding ports."
+            },
+            {
+              "message": "For reliable scans, 1-2 seconds is standard. For speed, 0.5s works on fast networks."
+            },
+            {
+              "message": "sock.settimeout(timeout); print(f'Timeout={timeout:4.1f}s  Result={status:6s}  Time={elapsed:.3f}s')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: IPv4 Address Validation",
+          "description": "Write a function to validate if a string is a valid IPv4 address.",
+          "difficulty": "beginner",
+          "category": "Socket Basics & Port Checks",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on socket fundamentals! Write a function to validate if a string is a valid IPv4 address.",
+          "vm_required": false,
+          "starter_code": "import ipaddress\n\ndef validate_target(target):\n    \"\"\"Check if target is valid IPv4, hostname, or CIDR.\"\"\"\n    # Check if it's a valid IP\n    try:\n        ip = ipaddress.ip_address(target)\n        return f'Valid IPv4: {ip}'\n    except ValueError:\n        pass\n    \n    # Check if it's a valid CIDR\n    try:\n        network = ipaddress.ip_network(target, strict=False)\n        # TODO: Return network info with number of hosts\n        return f'Valid network: {network} ({network._____} hosts)'\n    except ValueError:\n        pass\n    \n    # Check if it's a resolvable hostname\n    import socket\n    try:\n        ip = socket._____(target)\n        return f'Hostname resolved: {target} -> {ip}'\n    except socket.gaierror:\n        return f'Invalid target: {target}'\n\n# Test cases\ntests = ['192.168.1.1', '10.0.0.0/24', 'scanme.nmap.org', '999.999.999.999', 'not-a-host']\nfor t in tests:\n    print(f'  {t:25s} -> {validate_target(t)}')",
+          "expected_output": "  192.168.1.1               -> Valid IPv4: 192.168.1.1\n  10.0.0.0/24               -> Valid network: 10.0.0.0/24 (256 hosts)\n  scanme.nmap.org           -> Hostname resolved: scanme.nmap.org -> 45.33.32.156\n  999.999.999.999           -> Invalid target: 999.999.999.999\n  not-a-host                -> Invalid target: not-a-host",
+          "hints": [
+            {
+              "message": "ipaddress.ip_address() validates single IPs, ip_network() validates CIDR notation."
+            },
+            {
+              "message": "num_addresses gives the total count. gethostbyname resolves hostnames to IPs."
+            },
+            {
+              "message": "network.num_addresses for host count; socket.gethostbyname(target) for hostname resolution"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Scan Top 10 Common Ports",
+          "description": "Scan the NMAP top 10 most common ports on a target.",
+          "difficulty": "beginner",
+          "category": "Socket Basics & Port Checks",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on socket fundamentals! Scan the NMAP top 10 most common ports on a target.",
+          "vm_required": false,
+          "starter_code": "import socket\n\n# Nmap's top 10 most commonly open ports\nTOP_10 = {\n    21: 'FTP', 22: 'SSH', 23: 'Telnet', 25: 'SMTP', 53: 'DNS',\n    80: 'HTTP', 110: 'POP3', 143: 'IMAP', 443: 'HTTPS', 3389: 'RDP'\n}\n\ndef quick_scan(target):\n    \"\"\"Scan only the top 10 ports.\"\"\"\n    print(f'Quick Scan: {target}')\n    print(f'{\"PORT\":>6s}  {\"SERVICE\":8s}  {\"STATE\"}')\n    print('-' * 30)\n    \n    open_count = 0\n    for port, name in TOP_10.items():\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        sock.settimeout(1)\n        result = sock.connect_ex((target, port))\n        \n        # TODO: Determine state and print result\n        state = '_____ ' if result == 0 else 'closed'\n        if result == 0:\n            open_count += 1\n        print(f'{port:6d}  {name:8s}  {state}')\n        sock.close()\n    \n    print(f'\\n{open_count} of {len(TOP_10)} ports open')\n\nquick_scan('scanme.nmap.org')",
+          "expected_output": "Quick Scan: scanme.nmap.org\n  PORT  SERVICE   STATE\n------------------------------\n    21  FTP       closed\n    22  SSH       OPEN\n    23  Telnet    closed\n    25  SMTP      closed\n    53  DNS       closed\n    80  HTTP      OPEN\n   110  POP3      closed\n   143  IMAP      closed\n   443  HTTPS     closed\n  3389  RDP       closed\n\n2 of 10 ports open",
+          "hints": [
+            {
+              "message": "The top 10 ports cover the most common services found on the internet."
+            },
+            {
+              "message": "state = 'OPEN' if result == 0 else 'closed'. Count opens as you go."
+            },
+            {
+              "message": "state = 'OPEN  ' if result == 0 else 'closed'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: DNS Forward and Reverse Lookup",
+          "description": "Resolve a domain to IP and then reverse it back.",
+          "difficulty": "beginner",
+          "category": "Socket Basics & Port Checks",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on socket fundamentals! Resolve a domain to IP and then reverse it back.",
+          "vm_required": false,
+          "starter_code": "import socket\n\ndef full_lookup(domain):\n    \"\"\"Forward + reverse DNS lookup.\"\"\"\n    print(f'Looking up: {domain}')\n    \n    # Forward: domain -> IP\n    try:\n        ip = socket._____(domain)\n        print(f'  Forward: {domain} -> {ip}')\n    except socket.gaierror:\n        print(f'  Forward: FAILED')\n        return\n    \n    # Reverse: IP -> hostname\n    try:\n        hostname, aliases, ips = socket._____(ip)\n        print(f'  Reverse: {ip} -> {hostname}')\n        if aliases:\n            print(f'  Aliases: {aliases}')\n    except socket.herror:\n        print(f'  Reverse: No PTR record for {ip}')\n\n# Test with several domains\ndomains = ['nmap.org', 'google.com', 'github.com']\nfor d in domains:\n    full_lookup(d)\n    print()",
+          "expected_output": "Looking up: nmap.org\n  Forward: nmap.org -> 45.33.32.156\n  Reverse: 45.33.32.156 -> scanme.nmap.org\n\nLooking up: google.com\n  Forward: google.com -> 142.250.187.206\n  Reverse: 142.250.187.206 -> lhr25s34-in-f14.1e100.net",
+          "hints": [
+            {
+              "message": "gethostbyname() does forward DNS (domain to IP). gethostbyaddr() does reverse DNS (IP to hostname)."
+            },
+            {
+              "message": "Forward = socket.gethostbyname(domain). Reverse = socket.gethostbyaddr(ip) which returns (hostname, aliases, ips)."
+            },
+            {
+              "message": "socket.gethostbyname(domain) for forward; socket.gethostbyaddr(ip) for reverse"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Handle Socket Exceptions Gracefully",
+          "description": "Write a scanner that handles ALL possible socket errors.",
+          "difficulty": "beginner",
+          "category": "Socket Basics & Port Checks",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on socket fundamentals! Write a scanner that handles ALL possible socket errors.",
+          "vm_required": false,
+          "starter_code": "import socket\nimport errno\n\ndef safe_scan(target, port):\n    \"\"\"Scan with comprehensive error handling.\"\"\"\n    try:\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        sock.settimeout(2)\n        result = sock.connect_ex((target, port))\n        \n        if result == 0:\n            return 'open'\n        elif result == errno.ECONNREFUSED:  # 111\n            return 'closed (connection refused)'\n        elif result == errno.ETIMEDOUT:  # 110\n            return 'filtered (timeout)'\n        elif result == errno.EHOSTUNREACH:  # 113\n            return 'host unreachable'\n        else:\n            return f'error (errno={result})'\n    \n    # TODO: Handle these exceptions\n    except socket.timeout:\n        return '_____'\n    except socket.gaierror:\n        return '_____'\n    except PermissionError:\n        return '_____'\n    except OSError as e:\n        return f'OS error: {e}'\n    finally:\n        try:\n            sock.close()\n        except:\n            pass\n\n# Test various scenarios\nprint(safe_scan('scanme.nmap.org', 80))\nprint(safe_scan('scanme.nmap.org', 12345))\nprint(safe_scan('nonexistent.invalid', 80))",
+          "expected_output": "open\nclosed (connection refused)\nDNS resolution failed",
+          "hints": [
+            {
+              "message": "socket.timeout = connection took too long. socket.gaierror = DNS couldn't resolve the hostname."
+            },
+            {
+              "message": "PermissionError happens when scanning privileged ports without root. Always use finally to close the socket."
+            },
+            {
+              "message": "except socket.timeout: return 'filtered (socket timeout)'; except socket.gaierror: return 'DNS resolution failed'; except PermissionError: return 'permission denied'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Measure Network Latency",
+          "description": "Measure the round-trip time to a target on different ports.",
+          "difficulty": "beginner",
+          "category": "Socket Basics & Port Checks",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on socket fundamentals! Measure the round-trip time to a target on different ports.",
+          "vm_required": false,
+          "starter_code": "import socket\nimport time\n\ndef measure_rtt(target, port, attempts=5):\n    \"\"\"Measure TCP round-trip time.\"\"\"\n    times = []\n    \n    for i in range(attempts):\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        sock.settimeout(5)\n        \n        start = time.time()\n        result = sock.connect_ex((target, port))\n        elapsed = (time.time() - start) * 1000  # Convert to ms\n        \n        if result == 0:\n            times.append(elapsed)\n        sock.close()\n    \n    if times:\n        # TODO: Calculate min, max, average\n        avg = sum(times) / len(times)\n        print(f'  {target}:{port} — min={min(times):.1f}ms  '\n              f'max={_____(times):.1f}ms  avg={_____:.1f}ms  '\n              f'({len(times)}/{attempts} successful)')\n    else:\n        print(f'  {target}:{port} — all attempts failed')\n\nprint('Network Latency Test:')\nmeasure_rtt('scanme.nmap.org', 80)\nmeasure_rtt('scanme.nmap.org', 22)",
+          "expected_output": "Network Latency Test:\n  scanme.nmap.org:80 — min=85.2ms  max=92.1ms  avg=88.4ms  (5/5 successful)\n  scanme.nmap.org:22 — min=84.9ms  max=91.8ms  avg=87.6ms  (5/5 successful)",
+          "hints": [
+            {
+              "message": "RTT (round-trip time) tells you how far away the target is. Lower = closer/faster."
+            },
+            {
+              "message": "Use min(), max(), and sum()/len() for statistics. Multiply by 1000 to convert seconds to milliseconds."
+            },
+            {
+              "message": "max(times) for maximum; avg for average (already calculated above)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Port Range Parser",
+          "description": "Parse port specifications like nmap does: '22,80,443' and '1-100'.",
+          "difficulty": "beginner",
+          "category": "Socket Basics & Port Checks",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on socket fundamentals! Parse port specifications like nmap does: '22,80,443' and '1-100'.",
+          "vm_required": false,
+          "starter_code": "def parse_ports(port_spec):\n    \"\"\"Parse port specification string into a list of ports.\n    Supports: single (80), range (1-100), comma-separated (22,80,443),\n    and mixed (22,80-90,443,8000-8100)\n    \"\"\"\n    ports = set()\n    \n    for part in port_spec.split(','):\n        part = part.strip()\n        if '-' in part:\n            # TODO: Handle range like '80-90'\n            start, end = part.split('-')\n            for p in range(int(start), int(_____) + 1):\n                if 1 <= p <= 65535:\n                    ports.add(p)\n        else:\n            # TODO: Handle single port\n            p = int(part)\n            if 1 <= p <= _____:\n                ports.add(p)\n    \n    return sorted(ports)\n\n# Test cases\nprint(parse_ports('80'))\nprint(parse_ports('22,80,443'))\nprint(parse_ports('1-10'))\nprint(parse_ports('22,80-90,443,8000-8010'))\nprint(f'Total ports in last spec: {len(parse_ports(\"22,80-90,443,8000-8010\"))}')",
+          "expected_output": "[80]\n[22, 80, 443]\n[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\n[22, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 443, 8000, 8001, 8002, 8003, 8004, 8005, 8006, 8007, 8008, 8009, 8010]\nTotal ports in last spec: 24",
+          "hints": [
+            {
+              "message": "Split by comma first, then check each part for '-' (range) or single number."
+            },
+            {
+              "message": "For ranges, split on '-' and use range(start, end+1). Validate each port is 1-65535."
+            },
+            {
+              "message": "int(end) + 1 for range end; 65535 for max port validation"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Sequential Port Scanner",
+          "description": "Build a scanner that checks ports 1-100 and times the scan.",
+          "difficulty": "intermediate",
+          "category": "Multi-Port & Threaded Scanning",
+          "estimated_minutes": 6,
+          "ai_intro": "Time for faster scanning! Build a scanner that checks ports 1-100 and times the scan.",
+          "vm_required": false,
+          "starter_code": "import socket\nimport time\n\ndef sequential_scan(target, start=1, end=100):\n    open_ports = []\n    start_time = time.time()\n    \n    for port in range(start, end + 1):\n        # TODO: Create socket, set timeout, try connect\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        sock.settimeout(_____)  # fast timeout\n        result = sock.connect_ex((target, port))\n        if result == 0:\n            open_ports.append(port)\n        sock.close()\n    \n    elapsed = time.time() - start_time\n    print(f'Scanned {end - start + 1} ports in {elapsed:.2f}s')\n    print(f'Speed: {(end - start + 1)/elapsed:.0f} ports/sec')\n    print(f'Open: {open_ports}')\n    return open_ports\n\nsequential_scan('scanme.nmap.org')",
+          "expected_output": "Scanned 100 ports in 12.50s\nSpeed: 8 ports/sec\nOpen: [22, 80]",
+          "hints": [
+            {
+              "message": "A sequential scanner checks one port at a time. Set timeout to 1 second for reasonable speed."
+            },
+            {
+              "message": "sock.settimeout(1) gives a good balance between speed and accuracy."
+            },
+            {
+              "message": "sock.settimeout(1)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Threaded Scanner with Queue",
+          "description": "Use threading.Thread and Queue for parallel scanning.",
+          "difficulty": "intermediate",
+          "category": "Multi-Port & Threaded Scanning",
+          "estimated_minutes": 6,
+          "ai_intro": "Time for faster scanning! Use threading.",
+          "vm_required": false,
+          "starter_code": "import socket\nimport threading\nfrom queue import Queue\nimport time\n\ndef threaded_scan(target, ports, num_threads=50):\n    open_ports = []\n    lock = threading.Lock()\n    q = Queue()\n    \n    for p in ports:\n        q.put(p)\n    \n    def worker():\n        while not q.empty():\n            port = q.get()\n            try:\n                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n                s.settimeout(1)\n                if s.connect_ex((target, port)) == 0:\n                    with _____:  # TODO: use the lock\n                        open_ports.append(port)\n                s.close()\n            except:\n                pass\n            q.task_done()\n    \n    start = time.time()\n    threads = []\n    for _ in range(num_threads):\n        t = threading.Thread(target=_____, daemon=True)  # TODO: target function\n        t.start()\n        threads.append(t)\n    \n    q.join()\n    elapsed = time.time() - start\n    \n    print(f'{len(sorted(open_ports))} open ports in {elapsed:.2f}s')\n    print(f'Speed: {len(ports)/elapsed:.0f} ports/sec')\n    return sorted(open_ports)\n\nresult = threaded_scan('scanme.nmap.org', range(1, 1025))",
+          "expected_output": "2 open ports in 3.20s\nSpeed: 320 ports/sec",
+          "hints": [
+            {
+              "message": "A Queue distributes work across threads. A Lock prevents race conditions when adding to the shared list."
+            },
+            {
+              "message": "'with lock:' acquires the lock before modifying open_ports. target=worker tells each thread what function to run."
+            },
+            {
+              "message": "with lock: (the lock variable); target=worker (the function name)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: concurrent.futures Scanner",
+          "description": "Use ThreadPoolExecutor for cleaner threaded scanning.",
+          "difficulty": "intermediate",
+          "category": "Multi-Port & Threaded Scanning",
+          "estimated_minutes": 6,
+          "ai_intro": "Time for faster scanning! Use ThreadPoolExecutor for cleaner threaded scanning.",
+          "vm_required": false,
+          "starter_code": "import socket\nimport concurrent.futures\nimport time\n\ndef check_port(args):\n    target, port = args\n    try:\n        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        s.settimeout(1)\n        result = s.connect_ex((target, port))\n        s.close()\n        return (port, result == 0)\n    except:\n        return (port, False)\n\ndef pool_scan(target, ports, workers=100):\n    start = time.time()\n    open_ports = []\n    \n    # TODO: Create ThreadPoolExecutor with workers\n    with concurrent.futures.ThreadPoolExecutor(max_workers=_____) as executor:\n        # TODO: Map check_port across all (target, port) pairs\n        args = [(target, p) for p in ports]\n        results = executor._____(check_port, args)\n        \n        for port, is_open in results:\n            if is_open:\n                open_ports.append(port)\n    \n    elapsed = time.time() - start\n    print(f'Found {len(open_ports)} open ports in {elapsed:.2f}s')\n    print(f'Ports: {sorted(open_ports)}')\n\npool_scan('scanme.nmap.org', range(1, 1025))",
+          "expected_output": "Found 2 open ports in 2.80s\nPorts: [22, 80]",
+          "hints": [
+            {
+              "message": "ThreadPoolExecutor manages a pool of worker threads automatically. max_workers controls parallelism."
+            },
+            {
+              "message": "executor.map() applies the function to each item in the iterable, similar to built-in map()."
+            },
+            {
+              "message": "max_workers=workers; executor.map(check_port, args)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Scan Progress Bar",
+          "description": "Add a progress indicator to a port scanner.",
+          "difficulty": "intermediate",
+          "category": "Multi-Port & Threaded Scanning",
+          "estimated_minutes": 6,
+          "ai_intro": "Time for faster scanning! Add a progress indicator to a port scanner.",
+          "vm_required": false,
+          "starter_code": "import socket\nimport sys\nimport time\n\ndef scan_with_progress(target, ports):\n    total = len(ports)\n    open_ports = []\n    \n    for i, port in enumerate(ports):\n        # TODO: Calculate percentage\n        pct = (i + 1) / total * _____\n        \n        # Progress bar\n        bar_len = 30\n        filled = int(bar_len * (i + 1) / total)\n        bar = '█' * filled + '░' * (bar_len - filled)\n        sys.stdout.write(f'\\r[{bar}] {pct:.0f}% ({i+1}/{total})')\n        sys.stdout.flush()\n        \n        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        s.settimeout(0.5)\n        if s.connect_ex((target, port)) == 0:\n            open_ports.append(port)\n        s.close()\n    \n    print(f'\\nDone! Open: {open_ports}')\n\nscan_with_progress('scanme.nmap.org', range(1, 51))",
+          "expected_output": "[██████████████████████████████] 100% (50/50)\nDone! Open: [22]",
+          "hints": [
+            {
+              "message": "Percentage = (current / total) * 100. Use \\r to overwrite the same line."
+            },
+            {
+              "message": "sys.stdout.write with \\r carriage return updates the line. flush() forces display."
+            },
+            {
+              "message": "pct = (i + 1) / total * 100"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Async Scanner with asyncio",
+          "description": "Build an asynchronous port scanner using asyncio for maximum speed.",
+          "difficulty": "advanced",
+          "category": "Multi-Port & Threaded Scanning",
+          "estimated_minutes": 8,
+          "ai_intro": "Time for faster scanning! Build an asynchronous port scanner using asyncio for maximum speed.",
+          "vm_required": false,
+          "starter_code": "import asyncio\nimport time\n\nasync def check_port_async(target, port, timeout=1):\n    try:\n        _, writer = await asyncio.wait_for(\n            asyncio.open_connection(target, port),\n            timeout=timeout\n        )\n        writer.close()\n        await writer.wait_closed()\n        return (port, True)\n    except:\n        return (port, False)\n\nasync def async_scan(target, ports):\n    start = time.time()\n    \n    # TODO: Create tasks for all ports\n    tasks = [check_port_async(target, p) for p in _____]\n    \n    # TODO: Run all tasks concurrently\n    results = await asyncio._____(tasks)\n    \n    open_ports = [p for p, is_open in results if is_open]\n    elapsed = time.time() - start\n    \n    print(f'Async scan: {len(open_ports)} open in {elapsed:.2f}s')\n    print(f'Speed: {len(ports)/elapsed:.0f} ports/sec')\n    print(f'Open: {sorted(open_ports)}')\n\nasyncio.run(async_scan('scanme.nmap.org', range(1, 1025)))",
+          "expected_output": "Async scan: 2 open in 1.50s\nSpeed: 683 ports/sec\nOpen: [22, 80]",
+          "hints": [
+            {
+              "message": "asyncio.open_connection is the async equivalent of socket.connect. Tasks run concurrently without threads."
+            },
+            {
+              "message": "Create a list of coroutines and use asyncio.gather() to run them all at once."
+            },
+            {
+              "message": "tasks = [check_port_async(target, p) for p in ports]; results = await asyncio.gather(*tasks)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Scan Results Comparison",
+          "description": "Run two scan types and compare results.",
+          "difficulty": "intermediate",
+          "category": "Multi-Port & Threaded Scanning",
+          "estimated_minutes": 6,
+          "ai_intro": "Time for faster scanning! Run two scan types and compare results.",
+          "vm_required": false,
+          "starter_code": "import socket\nimport time\nimport concurrent.futures\n\ndef sequential(target, ports):\n    start = time.time()\n    open_p = []\n    for p in ports:\n        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        s.settimeout(1)\n        if s.connect_ex((target, p)) == 0:\n            open_p.append(p)\n        s.close()\n    return sorted(open_p), time.time() - start\n\ndef threaded(target, ports, workers=50):\n    start = time.time()\n    open_p = []\n    lock = __import__('threading').Lock()\n    def check(p):\n        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        s.settimeout(1)\n        if s.connect_ex((target, p)) == 0:\n            with lock: open_p.append(p)\n        s.close()\n    with concurrent.futures.ThreadPoolExecutor(workers) as ex:\n        ex.map(check, ports)\n    return sorted(open_p), time.time() - start\n\nports = range(1, 201)\nprint('Comparing scan methods on 200 ports:')\nprint()\n\nseq_ports, seq_time = sequential('scanme.nmap.org', ports)\nprint(f'Sequential: {len(seq_ports)} open, {seq_time:.2f}s, {200/seq_time:.0f} p/s')\n\nthr_ports, thr_time = threaded('scanme.nmap.org', ports)\nprint(f'Threaded:   {len(thr_ports)} open, {thr_time:.2f}s, {200/thr_time:.0f} p/s')\n\n# TODO: Calculate speedup\nspeedup = seq_time / _____\nprint(f'\\nSpeedup: {speedup:.1f}x faster with threading')\nprint(f'Same results? {seq_ports == thr_ports}')",
+          "expected_output": "Comparing scan methods on 200 ports:\n\nSequential: 2 open, 25.00s, 8 p/s\nThreaded:   2 open, 2.50s, 80 p/s\n\nSpeedup: 10.0x faster with threading\nSame results? True",
+          "hints": [
+            {
+              "message": "Speedup = sequential_time / threaded_time. Both should find the same open ports."
+            },
+            {
+              "message": "If results differ, it might be because the timeout is too aggressive for threaded scanning."
+            },
+            {
+              "message": "speedup = seq_time / thr_time"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Scan with Randomised Port Order",
+          "description": "Randomise port scanning order for basic evasion.",
+          "difficulty": "intermediate",
+          "category": "Multi-Port & Threaded Scanning",
+          "estimated_minutes": 6,
+          "ai_intro": "Time for faster scanning! Randomise port scanning order for basic evasion.",
+          "vm_required": false,
+          "starter_code": "import socket\nimport random\nimport time\n\ndef randomised_scan(target, ports, seed=42):\n    port_list = list(ports)\n    \n    # TODO: Shuffle the port list using the seed\n    random.seed(seed)\n    random._____(port_list)\n    \n    print(f'First 10 ports in scan order: {port_list[:10]}')\n    print(f'(Sequential would be: {list(ports)[:10]})')\n    \n    open_ports = []\n    for port in port_list:\n        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        s.settimeout(1)\n        if s.connect_ex((target, port)) == 0:\n            open_ports.append(port)\n        s.close()\n    \n    print(f'Open (discovery order): {open_ports}')\n    print(f'Open (sorted): {sorted(open_ports)}')\n\nrandomised_scan('scanme.nmap.org', range(1, 101))",
+          "expected_output": "First 10 ports in scan order: [82, 16, 71, 53, 94, 32, 45, 8, 67, 28]\n(Sequential would be: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])\nOpen (discovery order): [80, 22]\nOpen (sorted): [22, 80]",
+          "hints": [
+            {
+              "message": "random.shuffle() randomises a list in-place. This prevents sequential scanning patterns that IDS systems detect."
+            },
+            {
+              "message": "Using a seed makes the shuffle reproducible for debugging. Remove the seed in production for true randomness."
+            },
+            {
+              "message": "random.shuffle(port_list)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Port Knocking Detector",
+          "description": "Detect if a service requires port knocking by testing access before and after a knock sequence.",
+          "difficulty": "advanced",
+          "category": "Multi-Port & Threaded Scanning",
+          "estimated_minutes": 8,
+          "ai_intro": "Time for faster scanning! Detect if a service requires port knocking by testing access before and after a knock sequence.",
+          "vm_required": false,
+          "starter_code": "import socket\nimport time\n\ndef port_knock(target, knock_sequence, final_port):\n    \"\"\"Try port knocking: connect to sequence then check final port.\"\"\"\n    # Step 1: Check if final port is already open\n    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n    s.settimeout(2)\n    before = s.connect_ex((target, final_port)) == 0\n    s.close()\n    print(f'Before knock: port {final_port} is {\"OPEN\" if before else \"CLOSED\"}')\n    \n    # Step 2: Send the knock sequence\n    print(f'Knocking: {knock_sequence}')\n    for port in knock_sequence:\n        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        s.settimeout(0.5)\n        s.connect_ex((target, port))  # Just try to connect\n        s.close()\n        # TODO: Small delay between knocks\n        time.sleep(_____)\n    \n    # Step 3: Check final port again\n    time.sleep(0.5)  # Wait for firewall rule to activate\n    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n    s.settimeout(2)\n    after = s.connect_ex((target, final_port)) == 0\n    s.close()\n    print(f'After knock:  port {final_port} is {\"OPEN\" if after else \"CLOSED\"}')\n    \n    if not before and after:\n        print(f'Port knocking WORKS! Sequence: {knock_sequence}')\n    elif before:\n        print('Port was already open (no knocking needed)')\n    else:\n        print('Port still closed (wrong sequence or no knocking configured)')\n\n# Example: knock on 7000,8000,9000 then check SSH\nport_knock('scanme.nmap.org', [7000, 8000, 9000], 22)",
+          "expected_output": "Before knock: port 22 is OPEN\nKnocking: [7000, 8000, 9000]\nAfter knock:  port 22 is OPEN\nPort was already open (no knocking needed)",
+          "hints": [
+            {
+              "message": "Port knocking is a security technique where a sequence of connections to specific ports opens a hidden service."
+            },
+            {
+              "message": "Each knock needs a small delay (0.1-0.5 seconds) for the firewall to register it."
+            },
+            {
+              "message": "time.sleep(0.2) for a 200ms delay between knocks"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Scan Output Formatter",
+          "description": "Format scan results in nmap-style output.",
+          "difficulty": "intermediate",
+          "category": "Multi-Port & Threaded Scanning",
+          "estimated_minutes": 6,
+          "ai_intro": "Time for faster scanning! Format scan results in nmap-style output.",
+          "vm_required": false,
+          "starter_code": "import socket\nimport time\n\ndef nmap_style_scan(target, ports):\n    start = time.time()\n    ip = socket.gethostbyname(target)\n    \n    # TODO: Print nmap-style header\n    print(f'Starting Synapse Scanner at {time.strftime(\"%Y-%m-%d %H:%M\")}')\n    print(f'Scan report for {target} ({ip})')\n    print(f'Not shown: {{}} closed ports'  # Will fill in later)\n    print(f'{\"PORT\":>9s}  {\"STATE\":8s}  {\"SERVICE\"}')\n    \n    open_ports = []\n    closed = 0\n    for p in ports:\n        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        s.settimeout(1)\n        result = s.connect_ex((ip, p))\n        if result == 0:\n            try:\n                svc = socket.getservbyport(p, 'tcp')\n            except:\n                svc = 'unknown'\n            open_ports.append((p, svc))\n        else:\n            closed += 1\n        s.close()\n    \n    # Print results\n    for port, svc in open_ports:\n        print(f'{port:5d}/tcp  {\"open\":8s}  {svc}')\n    \n    elapsed = time.time() - start\n    print(f'\\nScan done: 1 IP ({len(ports)} ports) in {elapsed:.2f}s')\n\nnmap_style_scan('scanme.nmap.org', range(1, 101))",
+          "expected_output": "Starting Synapse Scanner at 2026-02-28 15:30\nScan report for scanme.nmap.org (45.33.32.156)\nNot shown: 98 closed ports\n     PORT  STATE     SERVICE\n   22/tcp  open      ssh\n   80/tcp  open      http\n\nScan done: 1 IP (100 ports) in 12.50s",
+          "hints": [
+            {
+              "message": "Professional output formatting builds trust in your tool. Match nmap's style for familiarity."
+            },
+            {
+              "message": "Right-align port numbers, pad state with spaces, and show timing at the bottom."
+            },
+            {
+              "message": "Follow the nmap output format: PORT/protocol STATE SERVICE"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Subnet Scanner",
+          "description": "Scan an entire /24 subnet for a specific open port.",
+          "difficulty": "intermediate",
+          "category": "Multi-Port & Threaded Scanning",
+          "estimated_minutes": 6,
+          "ai_intro": "Time for faster scanning! Scan an entire /24 subnet for a specific open port.",
+          "vm_required": false,
+          "starter_code": "import socket\nimport ipaddress\nimport concurrent.futures\n\ndef subnet_scan(network_cidr, port, workers=50):\n    network = ipaddress.ip_network(network_cidr, strict=False)\n    live_hosts = []\n    \n    def check_host(ip):\n        try:\n            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n            s.settimeout(1)\n            if s.connect_ex((str(ip), port)) == 0:\n                return str(ip)\n            s.close()\n        except:\n            pass\n        return None\n    \n    print(f'Scanning {network_cidr} for port {port}...')\n    \n    # TODO: Use ThreadPoolExecutor to scan all hosts\n    with concurrent.futures.ThreadPoolExecutor(max_workers=_____) as ex:\n        results = ex.map(check_host, network._____())\n        for r in results:\n            if r:\n                live_hosts.append(r)\n                print(f'  [FOUND] {r}:{port} is open')\n    \n    print(f'\\n{len(live_hosts)} hosts with port {port} open')\n    return live_hosts\n\n# Example: find all web servers on a subnet\n# subnet_scan('192.168.1.0/24', 80)",
+          "expected_output": "Scanning 192.168.1.0/24 for port 80...\n  [FOUND] 192.168.1.1:80 is open\n  [FOUND] 192.168.1.100:80 is open\n\n2 hosts with port 80 open",
+          "hints": [
+            {
+              "message": "ip_network() creates an iterable of all IPs in the range. .hosts() skips network and broadcast addresses."
+            },
+            {
+              "message": "max_workers controls parallelism. network.hosts() gives all usable IPs in the subnet."
+            },
+            {
+              "message": "max_workers=workers; network.hosts()"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Basic Banner Grab",
+          "description": "Connect to port 22 and read the SSH banner.",
+          "difficulty": "beginner",
+          "category": "Banner Grabbing & Service Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Service detection time! Connect to port 22 and read the SSH banner.",
+          "vm_required": false,
+          "starter_code": "import socket\n\ndef grab_ssh_banner(target):\n    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n    sock.settimeout(3)\n    sock.connect((target, 22))\n    \n    # TODO: Receive up to 1024 bytes and decode\n    banner = sock.recv(_____).decode('utf-8', errors='replace').strip()\n    sock.close()\n    \n    print(f'SSH Banner: {banner}')\n    \n    # TODO: Extract version info\n    parts = banner.split(' ')\n    if len(parts) >= 1:\n        print(f'Protocol: {parts[0]}')\n    if len(parts) >= 2:\n        print(f'Software: {parts[1] if len(parts) > 1 else \"unknown\"}')\n\ngrab_ssh_banner('scanme.nmap.org')",
+          "expected_output": "SSH Banner: SSH-2.0-OpenSSH_6.6.1p1 Ubuntu-2ubuntu2.13\nProtocol: SSH-2.0-OpenSSH_6.6.1p1\nSoftware: Ubuntu-2ubuntu2.13",
+          "hints": [
+            {
+              "message": "SSH servers send their banner immediately upon connection — no need to send anything first."
+            },
+            {
+              "message": "recv(1024) reads up to 1024 bytes. decode() converts bytes to string."
+            },
+            {
+              "message": "sock.recv(1024).decode('utf-8', errors='replace').strip()"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: HTTP Header Extraction",
+          "description": "Send an HTTP HEAD request and parse response headers.",
+          "difficulty": "intermediate",
+          "category": "Banner Grabbing & Service Detection",
+          "estimated_minutes": 7,
+          "ai_intro": "Service detection time! Send an HTTP HEAD request and parse response headers.",
+          "vm_required": false,
+          "starter_code": "import socket\n\ndef http_headers(target, port=80):\n    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n    sock.settimeout(5)\n    sock.connect((target, port))\n    \n    # TODO: Send HTTP HEAD request\n    request = f'HEAD / HTTP/1.1\\r\\nHost: {target}\\r\\n\\r\\n'\n    sock.send(request._____())\n    \n    response = sock.recv(4096).decode('utf-8', errors='replace')\n    sock.close()\n    \n    print('Response Headers:')\n    for line in response.split('\\r\\n'):\n        if line:\n            print(f'  {line}')\n    \n    # Extract specific security-relevant headers\n    print('\\nSecurity Analysis:')\n    headers_lower = response.lower()\n    checks = [\n        ('server:', 'Server version disclosed'),\n        ('x-powered-by:', 'Technology stack disclosed'),\n        ('strict-transport-security:', 'HSTS enabled'),\n        ('x-frame-options:', 'Clickjacking protection'),\n        ('content-security-policy:', 'CSP enabled'),\n    ]\n    for header, meaning in checks:\n        found = header in headers_lower\n        icon = '✅' if ('strict' in header or 'x-frame' in header or 'content-security' in header) and found else '⚠️' if found else '❌'\n        status = 'FOUND' if found else 'MISSING'\n        print(f'  {icon} {meaning}: {status}')\n\nhttp_headers('scanme.nmap.org')",
+          "expected_output": "Response Headers:\n  HTTP/1.1 200 OK\n  Server: Apache/2.4.7 (Ubuntu)\n  ...\n\nSecurity Analysis:\n  ⚠️ Server version disclosed: FOUND\n  ❌ Technology stack disclosed: MISSING\n  ❌ HSTS enabled: MISSING\n  ❌ Clickjacking protection: MISSING\n  ❌ CSP enabled: MISSING",
+          "hints": [
+            {
+              "message": "HTTP HEAD requests return only headers (no body). encode() converts the string to bytes for sending."
+            },
+            {
+              "message": "Check for security headers: their absence is a finding in security assessments."
+            },
+            {
+              "message": "request.encode() to send; check for each header in the response"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Multi-Protocol Banner Grabber",
+          "description": "Grab banners from SSH, HTTP, and FTP with protocol-specific probes.",
+          "difficulty": "intermediate",
+          "category": "Banner Grabbing & Service Detection",
+          "estimated_minutes": 7,
+          "ai_intro": "Service detection time! Grab banners from SSH, HTTP, and FTP with protocol-specific probes.",
+          "vm_required": false,
+          "starter_code": "import socket\n\nPROTOCOL_PROBES = {\n    'ssh': {'send': None, 'port': 22},\n    'http': {'send': b'HEAD / HTTP/1.0\\r\\n\\r\\n', 'port': 80},\n    'ftp': {'send': None, 'port': 21},\n    'smtp': {'send': b'EHLO scanner\\r\\n', 'port': 25},\n}\n\ndef multi_banner(target):\n    for proto, config in PROTOCOL_PROBES.items():\n        port = config['port']\n        try:\n            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n            s.settimeout(3)\n            s.connect((target, port))\n            \n            if config['send'] is None:\n                # TODO: Just receive (auto-banner)\n                data = s.recv(1024)\n            else:\n                # TODO: Send probe then receive\n                s.send(config['_____'])\n                data = s.recv(4096)\n            \n            banner = data.decode('utf-8', errors='replace').strip()[:80]\n            print(f'  [{proto:5s}] Port {port}: {banner}')\n            s.close()\n        except Exception as e:\n            print(f'  [{proto:5s}] Port {port}: {e}')\n\nmulti_banner('scanme.nmap.org')",
+          "expected_output": "  [ssh  ] Port 22: SSH-2.0-OpenSSH_6.6.1p1 Ubuntu-2ubuntu2.13\n  [http ] Port 80: HTTP/1.1 200 OK\n  [ftp  ] Port 21: [Errno 111] Connection refused\n  [smtp ] Port 25: [Errno 111] Connection refused",
+          "hints": [
+            {
+              "message": "Different protocols have different behaviours: SSH/FTP send banners automatically, HTTP/SMTP need prompting."
+            },
+            {
+              "message": "config['send'] is the probe to send. If None, just recv. Otherwise send first then recv."
+            },
+            {
+              "message": "config['send'] for the probe data"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: SSL/TLS Certificate Inspector",
+          "description": "Connect via SSL and inspect the certificate details.",
+          "difficulty": "intermediate",
+          "category": "Banner Grabbing & Service Detection",
+          "estimated_minutes": 7,
+          "ai_intro": "Service detection time! Connect via SSL and inspect the certificate details.",
+          "vm_required": false,
+          "starter_code": "import ssl\nimport socket\nimport datetime\n\ndef inspect_cert(target, port=443):\n    context = ssl.create_default_context()\n    context.check_hostname = False\n    context.verify_mode = ssl.CERT_NONE\n    \n    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n    sock.settimeout(5)\n    \n    # TODO: Wrap socket with SSL\n    ssl_sock = context.wrap_socket(sock, server_hostname=_____)\n    ssl_sock.connect((target, port))\n    \n    cert = ssl_sock.getpeercert(binary_form=False)\n    \n    if cert:\n        print(f'Certificate for {target}:{port}')\n        print(f'  Subject: {cert.get(\"subject\", \"N/A\")}')\n        print(f'  Issuer:  {cert.get(\"issuer\", \"N/A\")}')\n        print(f'  Valid from: {cert.get(\"notBefore\", \"N/A\")}')\n        print(f'  Valid until: {cert.get(\"notAfter\", \"N/A\")}')\n    else:\n        print('No certificate data available (self-signed or CERT_NONE)')\n    \n    # Protocol version\n    print(f'  Protocol: {ssl_sock.version()}')\n    print(f'  Cipher:   {ssl_sock.cipher()}')\n    \n    ssl_sock.close()\n\ninspect_cert('scanme.nmap.org')",
+          "expected_output": "Certificate for scanme.nmap.org:443\n  Protocol: TLSv1.3\n  Cipher:   ('TLS_AES_256_GCM_SHA384', 'TLSv1.3', 256)",
+          "hints": [
+            {
+              "message": "ssl.wrap_socket() upgrades a TCP connection to encrypted. server_hostname enables SNI."
+            },
+            {
+              "message": "server_hostname=target tells the server which certificate to present (important for shared hosting)."
+            },
+            {
+              "message": "server_hostname=target"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Version Vulnerability Checker",
+          "description": "Check if a discovered service version has known CVEs.",
+          "difficulty": "intermediate",
+          "category": "Banner Grabbing & Service Detection",
+          "estimated_minutes": 7,
+          "ai_intro": "Service detection time! Check if a discovered service version has known CVEs.",
+          "vm_required": false,
+          "starter_code": "# Simplified vulnerability database\nVULN_DB = {\n    'openssh': {'6.6': ['CVE-2015-5600'], '7.2': ['CVE-2016-6210'], '8.3': ['CVE-2021-28041']},\n    'apache': {'2.4.7': ['CVE-2017-15715', 'CVE-2019-0211'], '2.4.49': ['CVE-2021-41773']},\n    'nginx': {'1.16': ['CVE-2019-20372']},\n}\n\ndef check_version(banner):\n    findings = []\n    banner_lower = banner.lower()\n    \n    for product, versions in VULN_DB.items():\n        if product in banner_lower:\n            for ver, cves in versions.items():\n                if ver in banner:\n                    for cve in cves:\n                        findings.append({\n                            'product': product,\n                            'version': ver,\n                            'cve': cve\n                        })\n    \n    return findings\n\n# TODO: Test with sample banners\nbanners = [\n    'SSH-2.0-OpenSSH_6.6.1p1 Ubuntu',\n    'Apache/2.4.49 (Ubuntu)',\n    'nginx/1.20.1',\n]\n\nfor b in banners:\n    vulns = check_version(b)\n    print(f'Banner: {b}')\n    if vulns:\n        for v in vulns:\n            print(f'  ⚠️ {v[\"cve\"]} ({v[\"product\"]} {v[\"version\"]})')\n    else:\n        print(f'  ✅ No known vulnerabilities')\n    print()",
+          "expected_output": "Banner: SSH-2.0-OpenSSH_6.6.1p1 Ubuntu\n  ⚠️ CVE-2015-5600 (openssh 6.6)\n\nBanner: Apache/2.4.49 (Ubuntu)\n  ⚠️ CVE-2021-41773 (apache 2.4.49)\n\nBanner: nginx/1.20.1\n  ✅ No known vulnerabilities",
+          "hints": [
+            {
+              "message": "Match product names and version numbers from banners against a vulnerability database."
+            },
+            {
+              "message": "check_version() searches the banner for known product names and versions."
+            },
+            {
+              "message": "Run the function on each banner and print results. CVE-2021-41773 is the famous Apache path traversal!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Automated Service Fingerprint",
+          "description": "Identify services by sending protocol-specific probes and matching responses.",
+          "difficulty": "advanced",
+          "category": "Banner Grabbing & Service Detection",
+          "estimated_minutes": 7,
+          "ai_intro": "Service detection time! Identify services by sending protocol-specific probes and matching responses.",
+          "vm_required": false,
+          "starter_code": "import socket\nimport re\n\nFINGERPRINTS = [\n    {'name': 'SSH', 'match': r'^SSH-\\d\\.\\d', 'probe': None},\n    {'name': 'HTTP', 'match': r'^HTTP/\\d\\.\\d', 'probe': b'GET / HTTP/1.0\\r\\n\\r\\n'},\n    {'name': 'FTP', 'match': r'^220[- ]', 'probe': None},\n    {'name': 'SMTP', 'match': r'^220[- ].*SMTP', 'probe': None},\n    {'name': 'MySQL', 'match': r'^.\\x00\\x00\\x00\\x0a', 'probe': None},\n    {'name': 'Redis', 'match': r'^-ERR|^\\+', 'probe': b'PING\\r\\n'},\n]\n\ndef identify_service(target, port):\n    for fp in FINGERPRINTS:\n        try:\n            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n            s.settimeout(3)\n            s.connect((target, port))\n            \n            if fp['probe']:\n                s.send(fp['probe'])\n            \n            data = s.recv(1024).decode('utf-8', errors='replace')\n            s.close()\n            \n            # TODO: Match response against fingerprint regex\n            if re.search(fp['_____'], data):\n                return fp['name'], data.strip()[:60]\n        except:\n            pass\n    \n    return 'Unknown', ''\n\n# Test\nfor port in [22, 80]:\n    service, banner = identify_service('scanme.nmap.org', port)\n    print(f'Port {port}: {service} — {banner}')",
+          "expected_output": "Port 22: SSH — SSH-2.0-OpenSSH_6.6.1p1 Ubuntu-2ubuntu2.13\nPort 80: HTTP — HTTP/1.1 200 OK",
+          "hints": [
+            {
+              "message": "Each fingerprint has a regex pattern. Try each probe until one matches the response."
+            },
+            {
+              "message": "re.search(pattern, data) returns a match if the pattern appears anywhere in the response."
+            },
+            {
+              "message": "fp['match'] is the regex pattern to search for"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Detect Web Technologies",
+          "description": "Identify web server technologies from HTTP response headers and body.",
+          "difficulty": "intermediate",
+          "category": "Banner Grabbing & Service Detection",
+          "estimated_minutes": 7,
+          "ai_intro": "Service detection time! Identify web server technologies from HTTP response headers and body.",
+          "vm_required": false,
+          "starter_code": "import socket\n\ndef detect_web_tech(target, port=80):\n    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n    s.settimeout(5)\n    s.connect((target, port))\n    \n    req = f'GET / HTTP/1.1\\r\\nHost: {target}\\r\\n\\r\\n'\n    s.send(req.encode())\n    resp = s.recv(8192).decode('utf-8', errors='replace')\n    s.close()\n    \n    techs = []\n    resp_lower = resp.lower()\n    \n    # Header checks\n    tech_headers = {\n        'x-powered-by: php': 'PHP',\n        'x-powered-by: asp.net': 'ASP.NET',\n        'server: apache': 'Apache',\n        'server: nginx': 'Nginx',\n        'server: iis': 'Microsoft IIS',\n        'x-drupal': 'Drupal CMS',\n    }\n    \n    for header, tech in tech_headers.items():\n        if header in resp_lower:\n            techs.append(tech)\n    \n    # Body checks\n    body_checks = {\n        'wp-content': 'WordPress',\n        'joomla': 'Joomla CMS',\n        'drupal.js': 'Drupal CMS',\n        'react': 'React.js',\n        'angular': 'Angular',\n    }\n    \n    for marker, tech in body_checks.items():\n        if marker in resp_lower and tech not in techs:\n            techs.append(tech)\n    \n    print(f'Technologies detected on {target}:')\n    for t in techs:\n        print(f'  ✓ {t}')\n    if not techs:\n        print('  No technologies detected')\n\ndetect_web_tech('scanme.nmap.org')",
+          "expected_output": "Technologies detected on scanme.nmap.org:\n  ✓ Apache",
+          "hints": [
+            {
+              "message": "HTTP headers and page content reveal what technologies a site uses."
+            },
+            {
+              "message": "Server header shows the web server. X-Powered-By reveals the backend language. Body content reveals CMS."
+            },
+            {
+              "message": "Match known technology markers in both headers and body content"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: OS Guess from TTL",
+          "description": "Guess the operating system based on ICMP TTL values.",
+          "difficulty": "beginner",
+          "category": "Banner Grabbing & Service Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Service detection time! Guess the operating system based on ICMP TTL values.",
+          "vm_required": false,
+          "starter_code": "import subprocess\nimport re\n\ndef guess_os(target):\n    \"\"\"Ping target and guess OS from TTL.\"\"\"\n    try:\n        result = subprocess.run(\n            ['ping', '-c', '1', '-W', '2', target],\n            capture_output=True, text=True, timeout=5\n        )\n        \n        # TODO: Extract TTL from ping output\n        ttl_match = re.search(r'ttl=(\\d+)', result.stdout, re.IGNORECASE)\n        \n        if ttl_match:\n            ttl = int(ttl_match.group(1))\n            \n            # TODO: Guess OS based on TTL value\n            if ttl <= 64:\n                os_guess = 'Linux/Unix/macOS'\n            elif ttl <= _____:\n                os_guess = 'Windows'\n            else:\n                os_guess = 'Network device (router/switch)'\n            \n            print(f'Target: {target}')\n            print(f'TTL: {ttl}')\n            print(f'OS Guess: {os_guess}')\n        else:\n            print(f'No response from {target}')\n    except:\n        print(f'Ping failed for {target}')\n\nguess_os('scanme.nmap.org')\nguess_os('google.com')",
+          "expected_output": "Target: scanme.nmap.org\nTTL: 50\nOS Guess: Linux/Unix/macOS\n\nTarget: google.com\nTTL: 118\nOS Guess: Windows",
+          "hints": [
+            {
+              "message": "Default TTL values: Linux/Unix = 64, Windows = 128, Cisco = 255. Each router hop decrements TTL by 1."
+            },
+            {
+              "message": "TTL of 50 means ~14 hops from a Linux box (64-14=50). TTL of 118 = ~10 hops from Windows (128-10=118)."
+            },
+            {
+              "message": "ttl <= 128 for Windows guess"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Scan Results to JSON Report",
+          "description": "Export comprehensive scan results to a structured JSON file.",
+          "difficulty": "intermediate",
+          "category": "Banner Grabbing & Service Detection",
+          "estimated_minutes": 7,
+          "ai_intro": "Service detection time! Export comprehensive scan results to a structured JSON file.",
+          "vm_required": false,
+          "starter_code": "import socket\nimport json\nimport time\n\ndef json_scan(target, ports, output='scan_results.json'):\n    report = {\n        'scan_info': {\n            'target': target,\n            'ip': socket.gethostbyname(target),\n            'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S'),\n            'ports_scanned': len(list(ports))\n        },\n        'results': []\n    }\n    \n    for port in ports:\n        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        s.settimeout(1)\n        result = s.connect_ex((report['scan_info']['ip'], port))\n        \n        if result == 0:\n            try:\n                svc = socket.getservbyport(port, 'tcp')\n            except:\n                svc = 'unknown'\n            report['results'].append({\n                'port': port, 'state': 'open',\n                'service': svc, 'protocol': 'tcp'\n            })\n        s.close()\n    \n    # TODO: Write JSON with pretty formatting\n    with open(output, 'w') as f:\n        json._____(report, f, indent=_____)\n    \n    print(f'Report saved: {output}')\n    print(json.dumps(report, indent=2))\n\njson_scan('scanme.nmap.org', range(1, 101))",
+          "expected_output": "Report saved: scan_results.json\n{\n  \"scan_info\": {\n    \"target\": \"scanme.nmap.org\",\n    ...\n  },\n  \"results\": [\n    {\"port\": 22, \"state\": \"open\", \"service\": \"ssh\", \"protocol\": \"tcp\"},\n    {\"port\": 80, \"state\": \"open\", \"service\": \"http\", \"protocol\": \"tcp\"}\n  ]\n}",
+          "hints": [
+            {
+              "message": "json.dump() writes to a file, json.dumps() returns a string. indent makes it readable."
+            },
+            {
+              "message": "json.dump(report, f, indent=2) for pretty-printed output to file."
+            },
+            {
+              "message": "json.dump(report, f, indent=2)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Compare Scans Over Time",
+          "description": "Load two scan results and show what changed.",
+          "difficulty": "advanced",
+          "category": "Banner Grabbing & Service Detection",
+          "estimated_minutes": 7,
+          "ai_intro": "Service detection time! Load two scan results and show what changed.",
+          "vm_required": false,
+          "starter_code": "import json\n\ndef diff_scans(scan1_data, scan2_data):\n    \"\"\"Compare two scan results and report differences.\"\"\"\n    ports1 = {r['port'] for r in scan1_data['results']}\n    ports2 = {r['port'] for r in scan2_data['results']}\n    \n    # TODO: Find new, closed, and unchanged ports\n    new_ports = ports2 - _____  # In scan2 but not scan1\n    closed_ports = ports1 - _____  # In scan1 but not scan2\n    unchanged = ports1 & ports2  # In both\n    \n    print(f'Scan 1: {scan1_data[\"scan_info\"][\"timestamp\"]}')\n    print(f'Scan 2: {scan2_data[\"scan_info\"][\"timestamp\"]}')\n    print()\n    \n    if new_ports:\n        print(f'🆕 NEW open ports: {sorted(new_ports)}')\n    if closed_ports:\n        print(f'🔒 CLOSED ports: {sorted(closed_ports)}')\n    if unchanged:\n        print(f'✅ Unchanged: {sorted(unchanged)}')\n    if not new_ports and not closed_ports:\n        print('No changes detected.')\n\n# Example data\nscan1 = {'scan_info': {'timestamp': '2026-01-01'}, 'results': [{'port': 22}, {'port': 80}]}\nscan2 = {'scan_info': {'timestamp': '2026-02-01'}, 'results': [{'port': 22}, {'port': 80}, {'port': 443}]}\ndiff_scans(scan1, scan2)",
+          "expected_output": "Scan 1: 2026-01-01\nScan 2: 2026-02-01\n\n🆕 NEW open ports: [443]\n✅ Unchanged: [22, 80]",
+          "hints": [
+            {
+              "message": "Set operations make comparisons easy: difference (-) finds what's in one but not the other, intersection (&) finds what's in both."
+            },
+            {
+              "message": "new_ports = ports2 - ports1 (what appeared). closed_ports = ports1 - ports2 (what disappeared)."
+            },
+            {
+              "message": "new_ports = ports2 - ports1; closed_ports = ports1 - ports2"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Subdomain Brute-Force",
+          "description": "DNS subdomain enumeration using Python.",
+          "difficulty": "intermediate",
+          "category": "DNS Enumeration & Passive Recon",
+          "estimated_minutes": 7,
+          "ai_intro": "Passive recon reveals so much without touching the target! DNS subdomain enumeration.",
+          "vm_required": false,
+          "starter_code": "# Subdomain Brute-Force\n# DNS subdomain enumeration\nimport socket\n\ndef subdomain_brute_force(target):\n    # TODO: Implement DNS subdomain enumeration\n    # Hint 1: Start with socket.getaddrinfo() for DNS\n    # Hint 2: Use concurrent.futures for speed\n    # Hint 3: Always handle exceptions gracefully\n    pass\n\n# Test with a legal target\n# subdomain_brute_force('nmap.org')",
+          "expected_output": "Results for nmap.org:\n  DNS subdomain enumeration completed successfully\n  Found entries documented in report",
+          "hints": [
+            {
+              "message": "Start by understanding what DNS subdomain enumeration means conceptually."
+            },
+            {
+              "message": "Use socket library functions and consider threading for speed."
+            },
+            {
+              "message": "Full implementation: resolve target, iterate through entries, document findings."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: DNS Record Types",
+          "description": "Look up A, MX, NS records using Python.",
+          "difficulty": "beginner",
+          "category": "DNS Enumeration & Passive Recon",
+          "estimated_minutes": 5,
+          "ai_intro": "Passive recon reveals so much without touching the target! Look up A, MX, NS records.",
+          "vm_required": false,
+          "starter_code": "# DNS Record Types\n# Look up A, MX, NS records\nimport socket\n\ndef dns_record_types(target):\n    # TODO: Implement Look up A, MX, NS records\n    # Hint 1: Start with socket.getaddrinfo() for DNS\n    # Hint 2: Use concurrent.futures for speed\n    # Hint 3: Always handle exceptions gracefully\n    pass\n\n# Test with a legal target\n# dns_record_types('nmap.org')",
+          "expected_output": "Results for nmap.org:\n  Look up A, MX, NS records completed successfully\n  Found entries documented in report",
+          "hints": [
+            {
+              "message": "Start by understanding what Look up A, MX, NS records means conceptually."
+            },
+            {
+              "message": "Use socket library functions and consider threading for speed."
+            },
+            {
+              "message": "Full implementation: resolve target, iterate through entries, document findings."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Reverse DNS Sweep",
+          "description": "Reverse lookup across IP range using Python.",
+          "difficulty": "intermediate",
+          "category": "DNS Enumeration & Passive Recon",
+          "estimated_minutes": 7,
+          "ai_intro": "Passive recon reveals so much without touching the target! Reverse lookup across IP range.",
+          "vm_required": false,
+          "starter_code": "# Reverse DNS Sweep\n# Reverse lookup across IP range\nimport socket\n\ndef reverse_dns_sweep(target):\n    # TODO: Implement Reverse lookup across IP range\n    # Hint 1: Start with socket.getaddrinfo() for DNS\n    # Hint 2: Use concurrent.futures for speed\n    # Hint 3: Always handle exceptions gracefully\n    pass\n\n# Test with a legal target\n# reverse_dns_sweep('nmap.org')",
+          "expected_output": "Results for nmap.org:\n  Reverse lookup across IP range completed successfully\n  Found entries documented in report",
+          "hints": [
+            {
+              "message": "Start by understanding what Reverse lookup across IP range means conceptually."
+            },
+            {
+              "message": "Use socket library functions and consider threading for speed."
+            },
+            {
+              "message": "Full implementation: resolve target, iterate through entries, document findings."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Zone Transfer Attempt",
+          "description": "Try AXFR against nameservers using Python.",
+          "difficulty": "advanced",
+          "category": "DNS Enumeration & Passive Recon",
+          "estimated_minutes": 7,
+          "ai_intro": "Passive recon reveals so much without touching the target! Try AXFR against nameservers.",
+          "vm_required": false,
+          "starter_code": "# Zone Transfer Attempt\n# Try AXFR against nameservers\nimport socket\n\ndef zone_transfer_attempt(target):\n    # TODO: Implement Try AXFR against nameservers\n    # Hint 1: Start with socket.getaddrinfo() for DNS\n    # Hint 2: Use concurrent.futures for speed\n    # Hint 3: Always handle exceptions gracefully\n    pass\n\n# Test with a legal target\n# zone_transfer_attempt('nmap.org')",
+          "expected_output": "Results for nmap.org:\n  Try AXFR against nameservers completed successfully\n  Found entries documented in report",
+          "hints": [
+            {
+              "message": "Start by understanding what Try AXFR against nameservers means conceptually."
+            },
+            {
+              "message": "Use socket library functions and consider threading for speed."
+            },
+            {
+              "message": "Full implementation: resolve target, iterate through entries, document findings."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: WHOIS Raw Lookup",
+          "description": "Manual WHOIS via socket port 43 using Python.",
+          "difficulty": "intermediate",
+          "category": "DNS Enumeration & Passive Recon",
+          "estimated_minutes": 7,
+          "ai_intro": "Passive recon reveals so much without touching the target! Manual WHOIS via socket port 43.",
+          "vm_required": false,
+          "starter_code": "# WHOIS Raw Lookup\n# Manual WHOIS via socket port 43\nimport socket\n\ndef whois_raw_lookup(target):\n    # TODO: Implement Manual WHOIS via socket port 43\n    # Hint 1: Start with socket.getaddrinfo() for DNS\n    # Hint 2: Use concurrent.futures for speed\n    # Hint 3: Always handle exceptions gracefully\n    pass\n\n# Test with a legal target\n# whois_raw_lookup('nmap.org')",
+          "expected_output": "Results for nmap.org:\n  Manual WHOIS via socket port 43 completed successfully\n  Found entries documented in report",
+          "hints": [
+            {
+              "message": "Start by understanding what Manual WHOIS via socket port 43 means conceptually."
+            },
+            {
+              "message": "Use socket library functions and consider threading for speed."
+            },
+            {
+              "message": "Full implementation: resolve target, iterate through entries, document findings."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Certificate Transparency Search",
+          "description": "Query crt.sh for subdomain discovery using Python.",
+          "difficulty": "advanced",
+          "category": "DNS Enumeration & Passive Recon",
+          "estimated_minutes": 7,
+          "ai_intro": "Passive recon reveals so much without touching the target! Query crt.sh for subdomain discovery.",
+          "vm_required": false,
+          "starter_code": "# Certificate Transparency Search\n# Query crt.sh for subdomain discovery\nimport socket\n\ndef certificate_transparency_search(target):\n    # TODO: Implement Query crt.sh for subdomain discovery\n    # Hint 1: Start with socket.getaddrinfo() for DNS\n    # Hint 2: Use concurrent.futures for speed\n    # Hint 3: Always handle exceptions gracefully\n    pass\n\n# Test with a legal target\n# certificate_transparency_search('nmap.org')",
+          "expected_output": "Results for nmap.org:\n  Query crt.sh for subdomain discovery completed successfully\n  Found entries documented in report",
+          "hints": [
+            {
+              "message": "Start by understanding what Query crt.sh for subdomain discovery means conceptually."
+            },
+            {
+              "message": "Use socket library functions and consider threading for speed."
+            },
+            {
+              "message": "Full implementation: resolve target, iterate through entries, document findings."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Google Dork Builder",
+          "description": "Build search queries for passive recon using Python.",
+          "difficulty": "intermediate",
+          "category": "DNS Enumeration & Passive Recon",
+          "estimated_minutes": 7,
+          "ai_intro": "Passive recon reveals so much without touching the target! Build search queries for passive recon.",
+          "vm_required": false,
+          "starter_code": "# Google Dork Builder\n# Build search queries for passive recon\nimport socket\n\ndef google_dork_builder(target):\n    # TODO: Implement Build search queries for passive recon\n    # Hint 1: Start with socket.getaddrinfo() for DNS\n    # Hint 2: Use concurrent.futures for speed\n    # Hint 3: Always handle exceptions gracefully\n    pass\n\n# Test with a legal target\n# google_dork_builder('nmap.org')",
+          "expected_output": "Results for nmap.org:\n  Build search queries for passive recon completed successfully\n  Found entries documented in report",
+          "hints": [
+            {
+              "message": "Start by understanding what Build search queries for passive recon means conceptually."
+            },
+            {
+              "message": "Use socket library functions and consider threading for speed."
+            },
+            {
+              "message": "Full implementation: resolve target, iterate through entries, document findings."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Email Harvester",
+          "description": "Extract emails from web pages using Python.",
+          "difficulty": "advanced",
+          "category": "DNS Enumeration & Passive Recon",
+          "estimated_minutes": 7,
+          "ai_intro": "Passive recon reveals so much without touching the target! Extract emails from web pages.",
+          "vm_required": false,
+          "starter_code": "# Email Harvester\n# Extract emails from web pages\nimport socket\n\ndef email_harvester(target):\n    # TODO: Implement Extract emails from web pages\n    # Hint 1: Start with socket.getaddrinfo() for DNS\n    # Hint 2: Use concurrent.futures for speed\n    # Hint 3: Always handle exceptions gracefully\n    pass\n\n# Test with a legal target\n# email_harvester('nmap.org')",
+          "expected_output": "Results for nmap.org:\n  Extract emails from web pages completed successfully\n  Found entries documented in report",
+          "hints": [
+            {
+              "message": "Start by understanding what Extract emails from web pages means conceptually."
+            },
+            {
+              "message": "Use socket library functions and consider threading for speed."
+            },
+            {
+              "message": "Full implementation: resolve target, iterate through entries, document findings."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Shodan-Style Query Builder",
+          "description": "Build structured search queries using Python.",
+          "difficulty": "intermediate",
+          "category": "DNS Enumeration & Passive Recon",
+          "estimated_minutes": 7,
+          "ai_intro": "Passive recon reveals so much without touching the target! Build structured search queries.",
+          "vm_required": false,
+          "starter_code": "# Shodan-Style Query Builder\n# Build structured search queries\nimport socket\n\ndef shodan_style_query_builder(target):\n    # TODO: Implement Build structured search queries\n    # Hint 1: Start with socket.getaddrinfo() for DNS\n    # Hint 2: Use concurrent.futures for speed\n    # Hint 3: Always handle exceptions gracefully\n    pass\n\n# Test with a legal target\n# shodan_style_query_builder('nmap.org')",
+          "expected_output": "Results for nmap.org:\n  Build structured search queries completed successfully\n  Found entries documented in report",
+          "hints": [
+            {
+              "message": "Start by understanding what Build structured search queries means conceptually."
+            },
+            {
+              "message": "Use socket library functions and consider threading for speed."
+            },
+            {
+              "message": "Full implementation: resolve target, iterate through entries, document findings."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Passive Recon Report Generator",
+          "description": "Compile all passive data into report using Python.",
+          "difficulty": "intermediate",
+          "category": "DNS Enumeration & Passive Recon",
+          "estimated_minutes": 7,
+          "ai_intro": "Passive recon reveals so much without touching the target! Compile all passive data into report.",
+          "vm_required": false,
+          "starter_code": "# Passive Recon Report Generator\n# Compile all passive data into report\nimport socket\n\ndef passive_recon_report_generator(target):\n    # TODO: Implement Compile all passive data into report\n    # Hint 1: Start with socket.getaddrinfo() for DNS\n    # Hint 2: Use concurrent.futures for speed\n    # Hint 3: Always handle exceptions gracefully\n    pass\n\n# Test with a legal target\n# passive_recon_report_generator('nmap.org')",
+          "expected_output": "Results for nmap.org:\n  Compile all passive data into report completed successfully\n  Found entries documented in report",
+          "hints": [
+            {
+              "message": "Start by understanding what Compile all passive data into report means conceptually."
+            },
+            {
+              "message": "Use socket library functions and consider threading for speed."
+            },
+            {
+              "message": "Full implementation: resolve target, iterate through entries, document findings."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: SYN Scan Single Port",
+          "description": "Scapy SYN scan one port — requires Scapy and root privileges.",
+          "difficulty": "advanced",
+          "category": "Scapy & Advanced Scanning",
+          "estimated_minutes": 8,
+          "ai_intro": "Advanced scanning with raw packets! Scapy SYN scan one port. Run this on your Kali VM.",
+          "vm_required": true,
+          "starter_code": "# SYN Scan Single Port — Run on Kali VM with sudo\n# Scapy SYN scan one port\nfrom scapy.all import *\n\ndef syn_scan_single_port(target, port=80):\n    # TODO: Implement Scapy SYN scan one port\n    # Step 1: Craft the packet with IP()/TCP()\n    # Step 2: Send with sr1() and analyse response\n    # Step 3: Interpret TCP flags in response\n    pass\n\n# Usage (root required):\n# sudo python3 this_script.py\n# syn_scan_single_port('target_ip')",
+          "expected_output": "Scan result: port analysis complete\nFlags received: [interpreted]\nPort state determined: open/closed/filtered",
+          "hints": [
+            {
+              "message": "Scapy crafts packets layer by layer: IP(dst=target)/TCP(dport=port, flags='S')."
+            },
+            {
+              "message": "sr1() sends one packet and returns one response. Check response[TCP].flags for the answer."
+            },
+            {
+              "message": "Full solution: pkt = IP(dst=target)/TCP(dport=port, flags='S'); resp = sr1(pkt, timeout=2, verbose=0); analyse resp[TCP].flags"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: SYN Scan Port Range",
+          "description": "SYN scan multiple ports with Scapy — requires Scapy and root privileges.",
+          "difficulty": "advanced",
+          "category": "Scapy & Advanced Scanning",
+          "estimated_minutes": 8,
+          "ai_intro": "Advanced scanning with raw packets! SYN scan multiple ports with Scapy. Run this on your Kali VM.",
+          "vm_required": true,
+          "starter_code": "# SYN Scan Port Range — Run on Kali VM with sudo\n# SYN scan multiple ports with Scapy\nfrom scapy.all import *\n\ndef syn_scan_port_range(target, port=80):\n    # TODO: Implement SYN scan multiple ports with Scapy\n    # Step 1: Craft the packet with IP()/TCP()\n    # Step 2: Send with sr1() and analyse response\n    # Step 3: Interpret TCP flags in response\n    pass\n\n# Usage (root required):\n# sudo python3 this_script.py\n# syn_scan_port_range('target_ip')",
+          "expected_output": "Scan result: port analysis complete\nFlags received: [interpreted]\nPort state determined: open/closed/filtered",
+          "hints": [
+            {
+              "message": "Scapy crafts packets layer by layer: IP(dst=target)/TCP(dport=port, flags='S')."
+            },
+            {
+              "message": "sr1() sends one packet and returns one response. Check response[TCP].flags for the answer."
+            },
+            {
+              "message": "Full solution: pkt = IP(dst=target)/TCP(dport=port, flags='S'); resp = sr1(pkt, timeout=2, verbose=0); analyse resp[TCP].flags"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: ICMP Ping with Scapy",
+          "description": "Send ICMP Echo Request — requires Scapy and root privileges.",
+          "difficulty": "intermediate",
+          "category": "Scapy & Advanced Scanning",
+          "estimated_minutes": 8,
+          "ai_intro": "Advanced scanning with raw packets! Send ICMP Echo Request. Run this on your Kali VM.",
+          "vm_required": true,
+          "starter_code": "# ICMP Ping with Scapy — Run on Kali VM with sudo\n# Send ICMP Echo Request\nfrom scapy.all import *\n\ndef icmp_ping_with_scapy(target, port=80):\n    # TODO: Implement Send ICMP Echo Request\n    # Step 1: Craft the packet with IP()/TCP()\n    # Step 2: Send with sr1() and analyse response\n    # Step 3: Interpret TCP flags in response\n    pass\n\n# Usage (root required):\n# sudo python3 this_script.py\n# icmp_ping_with_scapy('target_ip')",
+          "expected_output": "Scan result: port analysis complete\nFlags received: [interpreted]\nPort state determined: open/closed/filtered",
+          "hints": [
+            {
+              "message": "Scapy crafts packets layer by layer: IP(dst=target)/TCP(dport=port, flags='S')."
+            },
+            {
+              "message": "sr1() sends one packet and returns one response. Check response[TCP].flags for the answer."
+            },
+            {
+              "message": "Full solution: pkt = IP(dst=target)/TCP(dport=port, flags='S'); resp = sr1(pkt, timeout=2, verbose=0); analyse resp[TCP].flags"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: ARP Discovery",
+          "description": "ARP sweep local network — requires Scapy and root privileges.",
+          "difficulty": "intermediate",
+          "category": "Scapy & Advanced Scanning",
+          "estimated_minutes": 8,
+          "ai_intro": "Advanced scanning with raw packets! ARP sweep local network. Run this on your Kali VM.",
+          "vm_required": true,
+          "starter_code": "# ARP Discovery — Run on Kali VM with sudo\n# ARP sweep local network\nfrom scapy.all import *\n\ndef arp_discovery(target, port=80):\n    # TODO: Implement ARP sweep local network\n    # Step 1: Craft the packet with IP()/TCP()\n    # Step 2: Send with sr1() and analyse response\n    # Step 3: Interpret TCP flags in response\n    pass\n\n# Usage (root required):\n# sudo python3 this_script.py\n# arp_discovery('target_ip')",
+          "expected_output": "Scan result: port analysis complete\nFlags received: [interpreted]\nPort state determined: open/closed/filtered",
+          "hints": [
+            {
+              "message": "Scapy crafts packets layer by layer: IP(dst=target)/TCP(dport=port, flags='S')."
+            },
+            {
+              "message": "sr1() sends one packet and returns one response. Check response[TCP].flags for the answer."
+            },
+            {
+              "message": "Full solution: pkt = IP(dst=target)/TCP(dport=port, flags='S'); resp = sr1(pkt, timeout=2, verbose=0); analyse resp[TCP].flags"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: TCP Flag Analysis",
+          "description": "Analyse response TCP flags — requires Scapy and root privileges.",
+          "difficulty": "advanced",
+          "category": "Scapy & Advanced Scanning",
+          "estimated_minutes": 8,
+          "ai_intro": "Advanced scanning with raw packets! Analyse response TCP flags. Run this on your Kali VM.",
+          "vm_required": true,
+          "starter_code": "# TCP Flag Analysis — Run on Kali VM with sudo\n# Analyse response TCP flags\nfrom scapy.all import *\n\ndef tcp_flag_analysis(target, port=80):\n    # TODO: Implement Analyse response TCP flags\n    # Step 1: Craft the packet with IP()/TCP()\n    # Step 2: Send with sr1() and analyse response\n    # Step 3: Interpret TCP flags in response\n    pass\n\n# Usage (root required):\n# sudo python3 this_script.py\n# tcp_flag_analysis('target_ip')",
+          "expected_output": "Scan result: port analysis complete\nFlags received: [interpreted]\nPort state determined: open/closed/filtered",
+          "hints": [
+            {
+              "message": "Scapy crafts packets layer by layer: IP(dst=target)/TCP(dport=port, flags='S')."
+            },
+            {
+              "message": "sr1() sends one packet and returns one response. Check response[TCP].flags for the answer."
+            },
+            {
+              "message": "Full solution: pkt = IP(dst=target)/TCP(dport=port, flags='S'); resp = sr1(pkt, timeout=2, verbose=0); analyse resp[TCP].flags"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Xmas Tree Scan",
+          "description": "Send FIN+PSH+URG flags — requires Scapy and root privileges.",
+          "difficulty": "advanced",
+          "category": "Scapy & Advanced Scanning",
+          "estimated_minutes": 8,
+          "ai_intro": "Advanced scanning with raw packets! Send FIN+PSH+URG flags. Run this on your Kali VM.",
+          "vm_required": true,
+          "starter_code": "# Xmas Tree Scan — Run on Kali VM with sudo\n# Send FIN+PSH+URG flags\nfrom scapy.all import *\n\ndef xmas_tree_scan(target, port=80):\n    # TODO: Implement Send FIN+PSH+URG flags\n    # Step 1: Craft the packet with IP()/TCP()\n    # Step 2: Send with sr1() and analyse response\n    # Step 3: Interpret TCP flags in response\n    pass\n\n# Usage (root required):\n# sudo python3 this_script.py\n# xmas_tree_scan('target_ip')",
+          "expected_output": "Scan result: port analysis complete\nFlags received: [interpreted]\nPort state determined: open/closed/filtered",
+          "hints": [
+            {
+              "message": "Scapy crafts packets layer by layer: IP(dst=target)/TCP(dport=port, flags='S')."
+            },
+            {
+              "message": "sr1() sends one packet and returns one response. Check response[TCP].flags for the answer."
+            },
+            {
+              "message": "Full solution: pkt = IP(dst=target)/TCP(dport=port, flags='S'); resp = sr1(pkt, timeout=2, verbose=0); analyse resp[TCP].flags"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: NULL Scan",
+          "description": "Send packet with no flags — requires Scapy and root privileges.",
+          "difficulty": "advanced",
+          "category": "Scapy & Advanced Scanning",
+          "estimated_minutes": 8,
+          "ai_intro": "Advanced scanning with raw packets! Send packet with no flags. Run this on your Kali VM.",
+          "vm_required": true,
+          "starter_code": "# NULL Scan — Run on Kali VM with sudo\n# Send packet with no flags\nfrom scapy.all import *\n\ndef null_scan(target, port=80):\n    # TODO: Implement Send packet with no flags\n    # Step 1: Craft the packet with IP()/TCP()\n    # Step 2: Send with sr1() and analyse response\n    # Step 3: Interpret TCP flags in response\n    pass\n\n# Usage (root required):\n# sudo python3 this_script.py\n# null_scan('target_ip')",
+          "expected_output": "Scan result: port analysis complete\nFlags received: [interpreted]\nPort state determined: open/closed/filtered",
+          "hints": [
+            {
+              "message": "Scapy crafts packets layer by layer: IP(dst=target)/TCP(dport=port, flags='S')."
+            },
+            {
+              "message": "sr1() sends one packet and returns one response. Check response[TCP].flags for the answer."
+            },
+            {
+              "message": "Full solution: pkt = IP(dst=target)/TCP(dport=port, flags='S'); resp = sr1(pkt, timeout=2, verbose=0); analyse resp[TCP].flags"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: FIN Scan",
+          "description": "Send only FIN flag — requires Scapy and root privileges.",
+          "difficulty": "advanced",
+          "category": "Scapy & Advanced Scanning",
+          "estimated_minutes": 8,
+          "ai_intro": "Advanced scanning with raw packets! Send only FIN flag. Run this on your Kali VM.",
+          "vm_required": true,
+          "starter_code": "# FIN Scan — Run on Kali VM with sudo\n# Send only FIN flag\nfrom scapy.all import *\n\ndef fin_scan(target, port=80):\n    # TODO: Implement Send only FIN flag\n    # Step 1: Craft the packet with IP()/TCP()\n    # Step 2: Send with sr1() and analyse response\n    # Step 3: Interpret TCP flags in response\n    pass\n\n# Usage (root required):\n# sudo python3 this_script.py\n# fin_scan('target_ip')",
+          "expected_output": "Scan result: port analysis complete\nFlags received: [interpreted]\nPort state determined: open/closed/filtered",
+          "hints": [
+            {
+              "message": "Scapy crafts packets layer by layer: IP(dst=target)/TCP(dport=port, flags='S')."
+            },
+            {
+              "message": "sr1() sends one packet and returns one response. Check response[TCP].flags for the answer."
+            },
+            {
+              "message": "Full solution: pkt = IP(dst=target)/TCP(dport=port, flags='S'); resp = sr1(pkt, timeout=2, verbose=0); analyse resp[TCP].flags"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Packet Capture Analysis",
+          "description": "Read pcap and extract scan patterns — requires Scapy and root privileges.",
+          "difficulty": "advanced",
+          "category": "Scapy & Advanced Scanning",
+          "estimated_minutes": 8,
+          "ai_intro": "Advanced scanning with raw packets! Read pcap and extract scan patterns. Run this on your Kali VM.",
+          "vm_required": true,
+          "starter_code": "# Packet Capture Analysis — Run on Kali VM with sudo\n# Read pcap and extract scan patterns\nfrom scapy.all import *\n\ndef packet_capture_analysis(target, port=80):\n    # TODO: Implement Read pcap and extract scan patterns\n    # Step 1: Craft the packet with IP()/TCP()\n    # Step 2: Send with sr1() and analyse response\n    # Step 3: Interpret TCP flags in response\n    pass\n\n# Usage (root required):\n# sudo python3 this_script.py\n# packet_capture_analysis('target_ip')",
+          "expected_output": "Scan result: port analysis complete\nFlags received: [interpreted]\nPort state determined: open/closed/filtered",
+          "hints": [
+            {
+              "message": "Scapy crafts packets layer by layer: IP(dst=target)/TCP(dport=port, flags='S')."
+            },
+            {
+              "message": "sr1() sends one packet and returns one response. Check response[TCP].flags for the answer."
+            },
+            {
+              "message": "Full solution: pkt = IP(dst=target)/TCP(dport=port, flags='S'); resp = sr1(pkt, timeout=2, verbose=0); analyse resp[TCP].flags"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: IDS Evasion Techniques",
+          "description": "Fragment and randomise packets — requires Scapy and root privileges.",
+          "difficulty": "advanced",
+          "category": "Scapy & Advanced Scanning",
+          "estimated_minutes": 8,
+          "ai_intro": "Advanced scanning with raw packets! Fragment and randomise packets. Run this on your Kali VM.",
+          "vm_required": true,
+          "starter_code": "# IDS Evasion Techniques — Run on Kali VM with sudo\n# Fragment and randomise packets\nfrom scapy.all import *\n\ndef ids_evasion_techniques(target, port=80):\n    # TODO: Implement Fragment and randomise packets\n    # Step 1: Craft the packet with IP()/TCP()\n    # Step 2: Send with sr1() and analyse response\n    # Step 3: Interpret TCP flags in response\n    pass\n\n# Usage (root required):\n# sudo python3 this_script.py\n# ids_evasion_techniques('target_ip')",
+          "expected_output": "Scan result: port analysis complete\nFlags received: [interpreted]\nPort state determined: open/closed/filtered",
+          "hints": [
+            {
+              "message": "Scapy crafts packets layer by layer: IP(dst=target)/TCP(dport=port, flags='S')."
+            },
+            {
+              "message": "sr1() sends one packet and returns one response. Check response[TCP].flags for the answer."
+            },
+            {
+              "message": "Full solution: pkt = IP(dst=target)/TCP(dport=port, flags='S'); resp = sr1(pkt, timeout=2, verbose=0); analyse resp[TCP].flags"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Build a Recon Toolkit",
+          "description": "Combine all techniques into one tool — apply everything you've learned.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios & CTF",
+          "estimated_minutes": 10,
+          "ai_intro": "Real-world application! Combine all techniques into one tool. This is what professionals do.",
+          "vm_required": true,
+          "starter_code": "# Build a Recon Toolkit\n# Combine all techniques into one tool\nimport socket\nimport json\nimport time\nimport concurrent.futures\n\ndef build_a_recon_toolkit(target):\n    \"\"\"Real-world scenario: Combine all techniques into one tool\"\"\"\n    report = {'target': target, 'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S')}\n    \n    # TODO: Phase 1 - DNS resolution\n    # TODO: Phase 2 - Port scanning\n    # TODO: Phase 3 - Service detection\n    # TODO: Phase 4 - Analysis\n    # TODO: Phase 5 - Report generation\n    \n    return report\n\n# build_a_recon_toolkit('scanme.nmap.org')",
+          "expected_output": "Assessment complete for target\nPhases 1-5 executed successfully\nReport generated with findings",
+          "hints": [
+            {
+              "message": "Break the problem into phases: DNS, scanning, service detection, analysis, reporting."
+            },
+            {
+              "message": "Reuse code from earlier exercises. Combine threaded scanning with banner grabbing."
+            },
+            {
+              "message": "Full pipeline: resolve DNS, threaded port scan, banner grab opens, check versions against CVE list, output JSON report."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Scan Schedule Automator",
+          "description": "Schedule recurring scans with Python — apply everything you've learned.",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenarios & CTF",
+          "estimated_minutes": 7,
+          "ai_intro": "Real-world application! Schedule recurring scans with Python. This is what professionals do.",
+          "vm_required": false,
+          "starter_code": "# Scan Schedule Automator\n# Schedule recurring scans with Python\nimport socket\nimport json\nimport time\nimport concurrent.futures\n\ndef scan_schedule_automator(target):\n    \"\"\"Real-world scenario: Schedule recurring scans with Python\"\"\"\n    report = {'target': target, 'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S')}\n    \n    # TODO: Phase 1 - DNS resolution\n    # TODO: Phase 2 - Port scanning\n    # TODO: Phase 3 - Service detection\n    # TODO: Phase 4 - Analysis\n    # TODO: Phase 5 - Report generation\n    \n    return report\n\n# scan_schedule_automator('scanme.nmap.org')",
+          "expected_output": "Assessment complete for target\nPhases 1-5 executed successfully\nReport generated with findings",
+          "hints": [
+            {
+              "message": "Break the problem into phases: DNS, scanning, service detection, analysis, reporting."
+            },
+            {
+              "message": "Reuse code from earlier exercises. Combine threaded scanning with banner grabbing."
+            },
+            {
+              "message": "Full pipeline: resolve DNS, threaded port scan, banner grab opens, check versions against CVE list, output JSON report."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Scan Diff Alerter",
+          "description": "Alert when new ports open on a target — apply everything you've learned.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios & CTF",
+          "estimated_minutes": 10,
+          "ai_intro": "Real-world application! Alert when new ports open on a target. This is what professionals do.",
+          "vm_required": true,
+          "starter_code": "# Scan Diff Alerter\n# Alert when new ports open on a target\nimport socket\nimport json\nimport time\nimport concurrent.futures\n\ndef scan_diff_alerter(target):\n    \"\"\"Real-world scenario: Alert when new ports open on a target\"\"\"\n    report = {'target': target, 'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S')}\n    \n    # TODO: Phase 1 - DNS resolution\n    # TODO: Phase 2 - Port scanning\n    # TODO: Phase 3 - Service detection\n    # TODO: Phase 4 - Analysis\n    # TODO: Phase 5 - Report generation\n    \n    return report\n\n# scan_diff_alerter('scanme.nmap.org')",
+          "expected_output": "Assessment complete for target\nPhases 1-5 executed successfully\nReport generated with findings",
+          "hints": [
+            {
+              "message": "Break the problem into phases: DNS, scanning, service detection, analysis, reporting."
+            },
+            {
+              "message": "Reuse code from earlier exercises. Combine threaded scanning with banner grabbing."
+            },
+            {
+              "message": "Full pipeline: resolve DNS, threaded port scan, banner grab opens, check versions against CVE list, output JSON report."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Network Inventory Builder",
+          "description": "Map all hosts and services on a LAN — apply everything you've learned.",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenarios & CTF",
+          "estimated_minutes": 7,
+          "ai_intro": "Real-world application! Map all hosts and services on a LAN. This is what professionals do.",
+          "vm_required": false,
+          "starter_code": "# Network Inventory Builder\n# Map all hosts and services on a LAN\nimport socket\nimport json\nimport time\nimport concurrent.futures\n\ndef network_inventory_builder(target):\n    \"\"\"Real-world scenario: Map all hosts and services on a LAN\"\"\"\n    report = {'target': target, 'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S')}\n    \n    # TODO: Phase 1 - DNS resolution\n    # TODO: Phase 2 - Port scanning\n    # TODO: Phase 3 - Service detection\n    # TODO: Phase 4 - Analysis\n    # TODO: Phase 5 - Report generation\n    \n    return report\n\n# network_inventory_builder('scanme.nmap.org')",
+          "expected_output": "Assessment complete for target\nPhases 1-5 executed successfully\nReport generated with findings",
+          "hints": [
+            {
+              "message": "Break the problem into phases: DNS, scanning, service detection, analysis, reporting."
+            },
+            {
+              "message": "Reuse code from earlier exercises. Combine threaded scanning with banner grabbing."
+            },
+            {
+              "message": "Full pipeline: resolve DNS, threaded port scan, banner grab opens, check versions against CVE list, output JSON report."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Compliance Port Checker",
+          "description": "Verify only approved ports are open — apply everything you've learned.",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenarios & CTF",
+          "estimated_minutes": 7,
+          "ai_intro": "Real-world application! Verify only approved ports are open. This is what professionals do.",
+          "vm_required": false,
+          "starter_code": "# Compliance Port Checker\n# Verify only approved ports are open\nimport socket\nimport json\nimport time\nimport concurrent.futures\n\ndef compliance_port_checker(target):\n    \"\"\"Real-world scenario: Verify only approved ports are open\"\"\"\n    report = {'target': target, 'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S')}\n    \n    # TODO: Phase 1 - DNS resolution\n    # TODO: Phase 2 - Port scanning\n    # TODO: Phase 3 - Service detection\n    # TODO: Phase 4 - Analysis\n    # TODO: Phase 5 - Report generation\n    \n    return report\n\n# compliance_port_checker('scanme.nmap.org')",
+          "expected_output": "Assessment complete for target\nPhases 1-5 executed successfully\nReport generated with findings",
+          "hints": [
+            {
+              "message": "Break the problem into phases: DNS, scanning, service detection, analysis, reporting."
+            },
+            {
+              "message": "Reuse code from earlier exercises. Combine threaded scanning with banner grabbing."
+            },
+            {
+              "message": "Full pipeline: resolve DNS, threaded port scan, banner grab opens, check versions against CVE list, output JSON report."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Firewall Rule Tester",
+          "description": "Test which ports a firewall blocks — apply everything you've learned.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios & CTF",
+          "estimated_minutes": 10,
+          "ai_intro": "Real-world application! Test which ports a firewall blocks. This is what professionals do.",
+          "vm_required": true,
+          "starter_code": "# Firewall Rule Tester\n# Test which ports a firewall blocks\nimport socket\nimport json\nimport time\nimport concurrent.futures\n\ndef firewall_rule_tester(target):\n    \"\"\"Real-world scenario: Test which ports a firewall blocks\"\"\"\n    report = {'target': target, 'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S')}\n    \n    # TODO: Phase 1 - DNS resolution\n    # TODO: Phase 2 - Port scanning\n    # TODO: Phase 3 - Service detection\n    # TODO: Phase 4 - Analysis\n    # TODO: Phase 5 - Report generation\n    \n    return report\n\n# firewall_rule_tester('scanme.nmap.org')",
+          "expected_output": "Assessment complete for target\nPhases 1-5 executed successfully\nReport generated with findings",
+          "hints": [
+            {
+              "message": "Break the problem into phases: DNS, scanning, service detection, analysis, reporting."
+            },
+            {
+              "message": "Reuse code from earlier exercises. Combine threaded scanning with banner grabbing."
+            },
+            {
+              "message": "Full pipeline: resolve DNS, threaded port scan, banner grab opens, check versions against CVE list, output JSON report."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: CTF Port Discovery Challenge",
+          "description": "Find hidden services on a CTF target — apply everything you've learned.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios & CTF",
+          "estimated_minutes": 10,
+          "ai_intro": "Real-world application! Find hidden services on a CTF target. This is what professionals do.",
+          "vm_required": true,
+          "starter_code": "# CTF Port Discovery Challenge\n# Find hidden services on a CTF target\nimport socket\nimport json\nimport time\nimport concurrent.futures\n\ndef ctf_port_discovery_challenge(target):\n    \"\"\"Real-world scenario: Find hidden services on a CTF target\"\"\"\n    report = {'target': target, 'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S')}\n    \n    # TODO: Phase 1 - DNS resolution\n    # TODO: Phase 2 - Port scanning\n    # TODO: Phase 3 - Service detection\n    # TODO: Phase 4 - Analysis\n    # TODO: Phase 5 - Report generation\n    \n    return report\n\n# ctf_port_discovery_challenge('scanme.nmap.org')",
+          "expected_output": "Assessment complete for target\nPhases 1-5 executed successfully\nReport generated with findings",
+          "hints": [
+            {
+              "message": "Break the problem into phases: DNS, scanning, service detection, analysis, reporting."
+            },
+            {
+              "message": "Reuse code from earlier exercises. Combine threaded scanning with banner grabbing."
+            },
+            {
+              "message": "Full pipeline: resolve DNS, threaded port scan, banner grab opens, check versions against CVE list, output JSON report."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Bug Bounty Recon Workflow",
+          "description": "Complete recon for a bug bounty target — apply everything you've learned.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios & CTF",
+          "estimated_minutes": 10,
+          "ai_intro": "Real-world application! Complete recon for a bug bounty target. This is what professionals do.",
+          "vm_required": true,
+          "starter_code": "# Bug Bounty Recon Workflow\n# Complete recon for a bug bounty target\nimport socket\nimport json\nimport time\nimport concurrent.futures\n\ndef bug_bounty_recon_workflow(target):\n    \"\"\"Real-world scenario: Complete recon for a bug bounty target\"\"\"\n    report = {'target': target, 'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S')}\n    \n    # TODO: Phase 1 - DNS resolution\n    # TODO: Phase 2 - Port scanning\n    # TODO: Phase 3 - Service detection\n    # TODO: Phase 4 - Analysis\n    # TODO: Phase 5 - Report generation\n    \n    return report\n\n# bug_bounty_recon_workflow('scanme.nmap.org')",
+          "expected_output": "Assessment complete for target\nPhases 1-5 executed successfully\nReport generated with findings",
+          "hints": [
+            {
+              "message": "Break the problem into phases: DNS, scanning, service detection, analysis, reporting."
+            },
+            {
+              "message": "Reuse code from earlier exercises. Combine threaded scanning with banner grabbing."
+            },
+            {
+              "message": "Full pipeline: resolve DNS, threaded port scan, banner grab opens, check versions against CVE list, output JSON report."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Automated Pen Test Scanner",
+          "description": "Build scan phase of a pen test — apply everything you've learned.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios & CTF",
+          "estimated_minutes": 10,
+          "ai_intro": "Real-world application! Build scan phase of a pen test. This is what professionals do.",
+          "vm_required": true,
+          "starter_code": "# Automated Pen Test Scanner\n# Build scan phase of a pen test\nimport socket\nimport json\nimport time\nimport concurrent.futures\n\ndef automated_pen_test_scanner(target):\n    \"\"\"Real-world scenario: Build scan phase of a pen test\"\"\"\n    report = {'target': target, 'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S')}\n    \n    # TODO: Phase 1 - DNS resolution\n    # TODO: Phase 2 - Port scanning\n    # TODO: Phase 3 - Service detection\n    # TODO: Phase 4 - Analysis\n    # TODO: Phase 5 - Report generation\n    \n    return report\n\n# automated_pen_test_scanner('scanme.nmap.org')",
+          "expected_output": "Assessment complete for target\nPhases 1-5 executed successfully\nReport generated with findings",
+          "hints": [
+            {
+              "message": "Break the problem into phases: DNS, scanning, service detection, analysis, reporting."
+            },
+            {
+              "message": "Reuse code from earlier exercises. Combine threaded scanning with banner grabbing."
+            },
+            {
+              "message": "Full pipeline: resolve DNS, threaded port scan, banner grab opens, check versions against CVE list, output JSON report."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Capstone: Full Network Assessment",
+          "description": "Complete assessment with report — apply everything you've learned.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios & CTF",
+          "estimated_minutes": 10,
+          "ai_intro": "Real-world application! Complete assessment with report. This is what professionals do.",
+          "vm_required": true,
+          "starter_code": "# Capstone: Full Network Assessment\n# Complete assessment with report\nimport socket\nimport json\nimport time\nimport concurrent.futures\n\ndef capstone:_full_network_assessment(target):\n    \"\"\"Real-world scenario: Complete assessment with report\"\"\"\n    report = {'target': target, 'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S')}\n    \n    # TODO: Phase 1 - DNS resolution\n    # TODO: Phase 2 - Port scanning\n    # TODO: Phase 3 - Service detection\n    # TODO: Phase 4 - Analysis\n    # TODO: Phase 5 - Report generation\n    \n    return report\n\n# capstone:_full_network_assessment('scanme.nmap.org')",
+          "expected_output": "Assessment complete for target\nPhases 1-5 executed successfully\nReport generated with findings",
+          "hints": [
+            {
+              "message": "Break the problem into phases: DNS, scanning, service detection, analysis, reporting."
+            },
+            {
+              "message": "Reuse code from earlier exercises. Combine threaded scanning with banner grabbing."
+            },
+            {
+              "message": "Full pipeline: resolve DNS, threaded port scan, banner grab opens, check versions against CVE list, output JSON report."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

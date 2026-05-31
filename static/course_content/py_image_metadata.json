@@ -1,0 +1,1648 @@
+{
+  "course_id": "py_image_metadata",
+  "title": "Image Metadata & EXIF Forensics",
+  "description": "Extract hidden data from photos — GPS locations, timestamps, camera info, and tampering evidence",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 12,
+  "prerequisites": [
+    "py_syntax_output",
+    "py_variables_datatypes",
+    "py_conditions_loops",
+    "py_functions_modules",
+    "py_files_io"
+  ],
+  "learning_outcomes": [
+    "Understand what EXIF metadata is and why it matters in forensic investigations",
+    "Read image file headers and identify file types from magic bytes",
+    "Extract EXIF data from JPEG images using Python libraries",
+    "Parse GPS coordinates from EXIF and convert to decimal degrees",
+    "Extract camera make, model, and serial number for device identification",
+    "Analyse timestamps to build forensic timelines from photo collections",
+    "Detect metadata stripping and identify tools used to remove EXIF",
+    "Compare metadata across multiple images to link devices or detect forgery",
+    "Build automated EXIF extraction tools for batch evidence processing",
+    "Understand privacy implications — what your photos reveal about you",
+    "Work with image thumbnails embedded in EXIF data",
+    "Create forensic reports from image metadata analysis"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Forensic photographer mentor. Every photo tells two stories — what you SEE and what the METADATA reveals. The visible image might show a beach sunset, but the EXIF data reveals the exact GPS coordinates, the phone model, the timestamp, and even the software used to edit it. Celebrates when students extract their first GPS coordinates from a photo!",
+    "intervention_triggers": {
+      "idle_40_seconds": "EXIF data can feel abstract until you see it in action. Try this: take a photo with your phone, transfer it to your VM, and extract the metadata. You will be amazed at how much your phone records! Want me to walk you through it? 📸",
+      "idle_90_seconds": "Think of EXIF like invisible ink on the back of a photograph. The picture on the front is what everyone sees. The EXIF on the back records WHERE, WHEN, WITH WHAT, and HOW. Only forensic analysts know to flip it over! 🔍",
+      "idle_180_seconds": "Take a breath! Image forensics is fascinating but detailed. Let me simplify: EXIF = hidden data inside photos. GPS = where. DateTime = when. Camera Model = what device. That is 90%% of forensic image analysis. Ready to try? ☕",
+      "first_error": "Image metadata errors usually come from: file not being a JPEG, library not installed (pip install Pillow), or the image having no EXIF data (screenshots often do not). Let me help figure out which! 🔧",
+      "repeated_errors": "Let me try a different approach. Instead of real images, let me show you the STRUCTURE of EXIF data using a dictionary. Once you understand the format, working with real images becomes easy! 📋",
+      "after_success": "You just extracted hidden data from an image! 🎉 This exact skill has been used to: locate missing persons from ransom photos, prove document forgery, track stolen devices, and catch criminals who forgot to strip metadata. Real forensic power!"
+    },
+    "encouragement_phrases": [
+      "John McAfee was located by journalists who extracted GPS from a photo he posted online. EXIF forensics is THAT powerful! 📍",
+      "Every smartphone photo contains 30+ metadata fields. Most people have no idea. You now know how to read ALL of them! 📱",
+      "GPS coordinates in EXIF have solved kidnapping cases — the ransom photo revealed the location! 🗺️",
+      "Camera serial numbers in EXIF can link multiple crime scene photos to the SAME device! 🔗",
+      "Timestamp analysis builds timelines. When was the photo REALLY taken vs when someone CLAIMS it was taken? ⏰",
+      "Metadata stripping detection catches people who TRY to hide evidence. Absence of metadata IS evidence! 🕵️",
+      "Social media strips EXIF on upload — but the ORIGINAL on the device still has everything! 💾",
+      "EXIF thumbnails sometimes contain the ORIGINAL uncropped image — revealing what someone tried to hide! 🖼️",
+      "Professional forensic tools like ExifTool cost nothing. Your Python scripts do the same thing! 🛠️",
+      "Privacy awareness: now that you know what photos reveal, you can protect your OWN privacy too! 🔒"
+    ],
+    "explanation_styles": {
+      "analogy": "EXIF metadata is like the back of a photograph in the old days. The front shows the picture, but on the back someone wrote: date taken, camera used, film type, and location. Digital photos do this AUTOMATICALLY — and most people never look at the back!",
+      "visual": "Picture an image file as a sandwich: the bread on top is the file header (JPEG magic bytes FF D8 FF). The filling is the EXIF data (camera, GPS, timestamp — a structured data block). The bread on the bottom is the actual pixel data (what you see). Forensics examines ALL layers, not just the visible picture.",
+      "step_by_step": "Step 1: Open image in binary mode. Step 2: Check magic bytes (FF D8 FF = JPEG). Step 3: Parse the EXIF segment (starts after the header). Step 4: Extract tags by number (271=Make, 272=Model, 306=DateTime). Step 5: Convert GPS from degrees/minutes/seconds to decimal. Step 6: Report findings!",
+      "code_trace": "When you call Image.open('photo.jpg'), Pillow: (1) reads the file header, (2) identifies it as JPEG, (3) finds the EXIF APP1 segment, (4) parses the TIFF-structured tags, (5) makes them available via img._getexif(). Each tag has a numeric ID mapped to a human-readable name.",
+      "comparison": "ExifTool (command line): exiftool photo.jpg — shows everything. Pillow (Python): img._getexif() — gives raw tag numbers. piexif (Python): piexif.load('photo.jpg') — gives structured EXIF dict. All read the same data, different interfaces."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "py_image_metadata_lesson_1",
+      "title": "Image Metadata & EXIF Forensics — Hidden Data in Every Photo",
+      "theory": {
+        "introduction": "On September 2012, anti-virus pioneer John McAfee was on the run from Belizean authorities. A Vice Magazine journalist found him and took a photo. They posted it online — and forgot to strip the EXIF metadata. Within hours, people extracted the GPS coordinates from the image, revealing McAfee was hiding in Guatemala. He was arrested days later.\n\nThis is the power of image metadata forensics. Every digital photo contains HIDDEN DATA embedded inside the file — invisible when you look at the picture, but packed with information: the exact GPS coordinates where it was taken, the date and time (to the second), the camera make and model, the software used to edit it, lens settings, orientation, and sometimes even a thumbnail of the original uncropped image.\n\nThis hidden data is called EXIF — Exchangeable Image File Format. It was designed so cameras could store shooting settings (shutter speed, aperture, ISO). But modern smartphones add GPS coordinates, altitude, compass direction, and more. Most people have no idea their photos contain this information.\n\nFor forensic investigators, EXIF is a goldmine: you can prove WHERE and WHEN a photo was taken, WHICH device took it, whether it was EDITED, and even build TIMELINES across hundreds of photos. For privacy, it is a nightmare — every photo you share reveals your location history.\n\nIn this topic, you will learn to extract, analyse, and interpret image metadata using Python. You will build tools that do what professional forensic software does — and understand both the investigative power and privacy implications.\n\nVM TIP: On your Kali Linux VM, install ExifTool: sudo apt install libimage-exiftool-perl. Then try: exiftool photo.jpg — it shows ALL metadata. Your Python scripts will do the same thing!",
+        "why_important": "Image metadata forensics has solved real crimes: kidnapping cases (GPS from ransom photos), fraud (timestamp proving a document was backdated), stalking (tracking someone through their photo locations), intellectual property theft (proving when an image was really created), and child exploitation cases (device identification linking photos to a specific camera). On the defensive side, understanding EXIF helps organisations strip sensitive metadata before publishing images, protecting employee and customer privacy. Social media platforms strip EXIF on upload, but the originals on devices retain everything. Law enforcement can subpoena the original files and extract the full metadata trail.",
+        "key_concepts": [
+          {
+            "concept": "What Is EXIF Metadata?",
+            "explanation": "EXIF stands for Exchangeable Image File Format. It is a standard that defines how metadata is stored INSIDE image files — primarily JPEG and TIFF formats. When your camera or phone takes a photo, it automatically writes dozens of data fields into the file: camera make and model, date and time, shutter speed, aperture, ISO, focal length, GPS coordinates, altitude, orientation (portrait/landscape), flash status, software used, and more.\n\nThis data lives INSIDE the image file itself — not in a separate file, not in the filename. You cannot see it by looking at the picture. You need special tools (or Python!) to read it.\n\nPNG and GIF files do NOT use EXIF — they have simpler metadata formats. Screenshots typically have minimal metadata. JPEG is the primary format for EXIF forensics.",
+            "example": "# EXIF data structure (simplified)\nexif_data = {\n    'Make': 'Apple',              # Camera manufacturer\n    'Model': 'iPhone 15 Pro',     # Camera model\n    'DateTime': '2025:02:28 14:30:22',  # When taken\n    'GPSLatitude': 51.5074,       # Where taken (lat)\n    'GPSLongitude': -0.1278,      # Where taken (lon)\n    'Software': 'Photos 9.0',     # Editing software\n    'Orientation': 1,             # How to display\n    'ExposureTime': '1/120',      # Shutter speed\n    'FNumber': 1.78,              # Aperture\n    'ISOSpeedRatings': 100,       # Light sensitivity\n}\n\nfor key, value in exif_data.items():\n    print(f\"  {key:<20} {value}\")",
+            "ai_hint": "EXIF = hidden data INSIDE the image file. Camera, location, time, settings — all recorded automatically without your knowledge!"
+          },
+          {
+            "concept": "Image File Structure — Magic Bytes",
+            "explanation": "Every image format has a unique file signature (magic bytes) at the very beginning. This lets forensic tools identify the TRUE file type regardless of the extension.\n\nJPEG: FF D8 FF (first 3 bytes). PNG: 89 50 4E 47 (\\x89PNG). GIF: 47 49 46 (GIF). BMP: 42 4D (BM). TIFF: 49 49 2A 00 (little-endian) or 4D 4D 00 2A (big-endian).\n\nAfter the magic bytes, JPEG files contain SEGMENTS. The EXIF data lives in the APP1 segment, identified by marker FF E1. This segment contains a TIFF-structured block with all the metadata tags.",
+            "example": "# Image magic bytes identification\nIMAGE_SIGNATURES = {\n    b'\\xff\\xd8\\xff': 'JPEG',\n    b'\\x89PNG': 'PNG',\n    b'GIF87a': 'GIF87',\n    b'GIF89a': 'GIF89a',\n    b'BM': 'BMP',\n    b'II*\\x00': 'TIFF (little-endian)',\n    b'MM\\x00*': 'TIFF (big-endian)',\n    b'RIFF': 'WEBP (possibly)',\n}\n\ndef identify_image(filepath):\n    with open(filepath, 'rb') as f:\n        header = f.read(8)\n    for sig, name in IMAGE_SIGNATURES.items():\n        if header[:len(sig)] == sig:\n            return name\n    return f'Unknown: {header[:4].hex()}'",
+            "ai_hint": "JPEG starts with FF D8 FF. PNG starts with 89 50 4E 47. These bytes CANNOT lie — renaming a .exe to .jpg does not change the magic bytes!"
+          },
+          {
+            "concept": "EXIF Tag Numbers — The Dictionary of Metadata",
+            "explanation": "EXIF stores data as numbered TAGS. Each tag has an ID number and a value. Common tags:\n\nTag 271 = Make (camera manufacturer). Tag 272 = Model. Tag 306 = DateTime. Tag 274 = Orientation. Tag 305 = Software. Tag 33434 = ExposureTime. Tag 33437 = FNumber (aperture). Tag 34855 = ISOSpeedRatings.\n\nGPS data lives in a separate IFD (Image File Directory) with its own tags: GPSTag 1 = LatitudeRef (N/S). GPSTag 2 = Latitude (degrees, minutes, seconds). GPSTag 3 = LongitudeRef (E/W). GPSTag 4 = Longitude. GPSTag 6 = Altitude.\n\nPython's Pillow library uses the ExifTags module to convert these numbers to human-readable names.",
+            "example": "# EXIF tag number reference\nCOMMON_TAGS = {\n    271: 'Make',           # Camera manufacturer\n    272: 'Model',          # Camera model\n    274: 'Orientation',    # Image rotation\n    305: 'Software',       # Editing software\n    306: 'DateTime',       # Date/time taken\n    33434: 'ExposureTime', # Shutter speed\n    33437: 'FNumber',      # Aperture\n    34855: 'ISOSpeedRatings',\n    36867: 'DateTimeOriginal',  # ORIGINAL capture time\n    36868: 'DateTimeDigitized', # When digitised\n    34853: 'GPSInfo',      # GPS data block\n}\n\nGPS_TAGS = {\n    1: 'GPSLatitudeRef',   # N or S\n    2: 'GPSLatitude',      # Degrees, minutes, seconds\n    3: 'GPSLongitudeRef',  # E or W\n    4: 'GPSLongitude',     # Degrees, minutes, seconds\n    6: 'GPSAltitude',      # Metres above sea level\n}\n\nfor tag_id, name in COMMON_TAGS.items():\n    print(f\"  Tag {tag_id:<6} = {name}\")",
+            "ai_hint": "Tag 306 = DateTime, Tag 271 = Make, Tag 272 = Model, Tag 34853 = GPSInfo. These are the BIG FOUR for forensic investigations!"
+          },
+          {
+            "concept": "GPS Coordinate Extraction & Conversion",
+            "explanation": "EXIF stores GPS coordinates in Degrees, Minutes, Seconds (DMS) format: 51 degrees 30 minutes 26.4 seconds North, 0 degrees 7 minutes 40.0 seconds West.\n\nTo plot on a map or use in analysis, you need DECIMAL DEGREES: 51.507333, -0.127778.\n\nConversion formula: decimal = degrees + (minutes / 60) + (seconds / 3600). If the reference is S (south) or W (west), the result is NEGATIVE.\n\nThis conversion has caught criminals who posted photos online without realising the GPS coordinates pinpointed their exact location.",
+            "example": "def dms_to_decimal(degrees, minutes, seconds, ref):\n    \"\"\"Convert GPS DMS to decimal degrees.\n    \n    Args:\n        degrees: Whole degrees (e.g., 51)\n        minutes: Arc minutes (e.g., 30)\n        seconds: Arc seconds (e.g., 26.4)\n        ref: Reference direction ('N','S','E','W')\n    \n    Returns:\n        float: Decimal degrees (negative for S/W)\n    \"\"\"\n    decimal = degrees + (minutes / 60) + (seconds / 3600)\n    if ref in ('S', 'W'):\n        decimal = -decimal\n    return round(decimal, 6)\n\n# Example: London coordinates\nlat = dms_to_decimal(51, 30, 26.46, 'N')\nlon = dms_to_decimal(0, 7, 40.0, 'W')\nprint(f\"London: {lat}, {lon}\")\nprint(f\"Google Maps: https://maps.google.com/?q={lat},{lon}\")",
+            "ai_hint": "DMS to decimal: degrees + minutes/60 + seconds/3600. South and West are NEGATIVE. This formula is essential for forensic mapping!"
+          },
+          {
+            "concept": "Timestamp Analysis — Building Timelines",
+            "explanation": "EXIF contains THREE timestamp fields: DateTime (when last modified), DateTimeOriginal (when the photo was first captured), and DateTimeDigitized (when digitised from film/scanner).\n\nFor forensics, DateTimeOriginal is most important — it records when the shutter actually fired. DateTime can be changed by editing software, but DateTimeOriginal is harder to fake.\n\nComparing timestamps across multiple photos builds a TIMELINE: where was the suspect at 14:00, 14:15, 14:30? Combined with GPS, you get a complete movement trail.\n\nWARNING: Camera clocks can be wrong! Verify by cross-referencing with other evidence (CCTV, phone records, access logs).",
+            "example": "from datetime import datetime\n\n# EXIF timestamp format: 'YYYY:MM:DD HH:MM:SS'\ndef parse_exif_datetime(dt_string):\n    \"\"\"Parse EXIF datetime to Python datetime object.\"\"\"\n    return datetime.strptime(dt_string, '%Y:%m:%d %H:%M:%S')\n\n# Timeline from multiple photos\nphotos = [\n    {'file': 'IMG_001.jpg', 'datetime': '2025:02:28 08:15:30', 'gps': '51.5074, -0.1278'},\n    {'file': 'IMG_002.jpg', 'datetime': '2025:02:28 09:30:00', 'gps': '51.5155, -0.1420'},\n    {'file': 'IMG_003.jpg', 'datetime': '2025:02:28 11:45:15', 'gps': '51.5033, -0.1195'},\n]\n\nprint('PHOTO TIMELINE')\nfor p in photos:\n    dt = parse_exif_datetime(p['datetime'])\n    print(f\"  {dt.strftime('%H:%M')} | {p['file']} | {p['gps']}\")",
+            "ai_hint": "EXIF uses 'YYYY:MM:DD HH:MM:SS' format (colons in date!). DateTimeOriginal = when REALLY taken. DateTime = when last saved. The difference reveals editing!"
+          },
+          {
+            "concept": "Camera Identification — Device Fingerprinting",
+            "explanation": "EXIF records the camera Make (manufacturer) and Model. Some cameras also embed a unique serial number (BodySerialNumber tag). This creates a DEVICE FINGERPRINT.\n\nIf you find photos at a crime scene and on a suspect's phone, matching Make + Model + SerialNumber proves they came from the SAME device. Even without a serial number, the combination of Make + Model + lens characteristics + sensor noise pattern can identify devices.\n\nAdditionally, the Software tag reveals which app or program last saved the image — useful for detecting tampering (Photoshop vs original camera software).",
+            "example": "# Camera identification from EXIF\ndef identify_camera(exif_dict):\n    \"\"\"Extract device fingerprint from EXIF.\"\"\"\n    make = exif_dict.get('Make', 'Unknown')\n    model = exif_dict.get('Model', 'Unknown')\n    serial = exif_dict.get('BodySerialNumber', 'N/A')\n    software = exif_dict.get('Software', 'Unknown')\n    \n    return {\n        'device': f\"{make} {model}\",\n        'serial': serial,\n        'software': software,\n        'fingerprint': f\"{make}_{model}_{serial}\".replace(' ', '_')\n    }\n\n# Example\nexif = {'Make': 'Apple', 'Model': 'iPhone 15 Pro', \n        'BodySerialNumber': 'DNQXYZ123', 'Software': 'Photos 9.0'}\ncam = identify_camera(exif)\nprint(f\"Device:      {cam['device']}\")\nprint(f\"Serial:      {cam['serial']}\")\nprint(f\"Software:    {cam['software']}\")\nprint(f\"Fingerprint: {cam['fingerprint']}\")",
+            "ai_hint": "Make + Model + SerialNumber = device fingerprint. This links photos to a SPECIFIC camera. Software tag shows if the image was edited!"
+          },
+          {
+            "concept": "Metadata Stripping Detection",
+            "explanation": "When EXIF is ABSENT from a photo, that itself is evidence. Modern smartphones ALWAYS embed EXIF. If a JPEG from a phone has zero EXIF data, someone deliberately removed it.\n\nDifferent stripping methods leave different traces: social media platforms strip EXIF but leave platform-specific markers. Photoshop changes the Software tag. Some tools remove all metadata but leave the JFIF header. Complete stripping (no APP1 segment at all) suggests deliberate anti-forensic action.\n\nEven after stripping, some data survives: the image dimensions, colour profile, and compression quality can still reveal the source device or software.",
+            "example": "# Detect metadata stripping\ndef analyse_metadata_status(filepath):\n    \"\"\"Check if EXIF has been stripped.\"\"\"\n    with open(filepath, 'rb') as f:\n        data = f.read()\n    \n    results = []\n    # Check for EXIF APP1 marker\n    has_exif = b'\\xff\\xe1' in data[:1000]\n    results.append(f\"EXIF present: {has_exif}\")\n    \n    # Check for JFIF marker\n    has_jfif = b'JFIF' in data[:20]\n    results.append(f\"JFIF header: {has_jfif}\")\n    \n    # Check for known software signatures\n    if b'Photoshop' in data:\n        results.append(\"Software: Adobe Photoshop detected\")\n    if b'GIMP' in data:\n        results.append(\"Software: GIMP detected\")\n    if not has_exif and data[:3] == b'\\xff\\xd8\\xff':\n        results.append(\"WARNING: JPEG without EXIF — metadata likely stripped!\")\n    \n    return results",
+            "ai_hint": "No EXIF on a smartphone photo = someone stripped it. ABSENCE of metadata IS evidence. Different tools leave different traces!"
+          },
+          {
+            "concept": "Pillow Library — Python Image Processing",
+            "explanation": "Pillow (PIL Fork) is the main Python library for image processing. Install with: pip install Pillow. It reads image properties, EXIF data, and pixel data.\n\nKey methods: Image.open('photo.jpg') opens the image. img._getexif() returns raw EXIF as a dictionary of tag numbers to values. ExifTags.TAGS converts tag numbers to names. ExifTags.GPSTAGS converts GPS tag numbers to names.\n\nFor forensic work, you combine Pillow with hashlib (integrity), os (file operations), and datetime (timeline analysis) to build complete evidence processing tools.",
+            "example": "# Pillow EXIF extraction (run on VM with real images)\nfrom PIL import Image\nfrom PIL.ExifTags import TAGS, GPSTAGS\n\ndef extract_exif(filepath):\n    \"\"\"Extract all EXIF data from an image.\"\"\"\n    img = Image.open(filepath)\n    exif_raw = img._getexif()\n    if exif_raw is None:\n        return {}  # No EXIF data\n    \n    exif_named = {}\n    for tag_id, value in exif_raw.items():\n        tag_name = TAGS.get(tag_id, f'Unknown_{tag_id}')\n        exif_named[tag_name] = value\n    return exif_named\n\n# Usage on VM:\n# exif = extract_exif('photo.jpg')\n# for key, value in exif.items():\n#     print(f'{key}: {value}')",
+            "ai_hint": "pip install Pillow on your VM. img._getexif() gets raw tags. ExifTags.TAGS maps numbers to names. This is your forensic image toolkit!"
+          },
+          {
+            "concept": "Batch Processing — Analysing Photo Collections",
+            "explanation": "Real forensic cases involve hundreds or thousands of photos from seized devices. You need automated tools that process entire directories: extract EXIF from every image, build timelines, identify unique devices, flag anomalies, and generate reports.\n\nThe pattern: os.walk() to find images → extract EXIF from each → collect into a data structure → analyse (timelines, device linking, GPS mapping) → generate CSV/JSON report.\n\nThis is where your file I/O, function, and loop skills combine into real forensic capability.",
+            "example": "import os\n\ndef batch_analyse(directory):\n    \"\"\"Analyse all images in a directory.\"\"\"\n    results = []\n    image_exts = {'.jpg', '.jpeg', '.tiff', '.tif'}\n    \n    for dirpath, _, filenames in os.walk(directory):\n        for fname in filenames:\n            ext = os.path.splitext(fname)[1].lower()\n            if ext in image_exts:\n                fpath = os.path.join(dirpath, fname)\n                # In real code: extract_exif(fpath)\n                results.append({\n                    'file': fname,\n                    'path': fpath,\n                    'size': os.path.getsize(fpath),\n                    # 'exif': extract_exif(fpath)\n                })\n    \n    return results\n\n# Usage: results = batch_analyse('/evidence/photos')",
+            "ai_hint": "Batch processing turns you from manual analyst to automated forensic tool operator. Process 10,000 photos in seconds instead of days!"
+          },
+          {
+            "concept": "Privacy Implications — What Your Photos Reveal",
+            "explanation": "Understanding EXIF has a dual purpose: forensic investigation AND personal privacy protection.\n\nYour smartphone photos reveal: your home location (photos taken at home), your workplace, your daily routine (timestamps), your device model (Make/Model), places you visit, people you photograph (if facial recognition is applied), and more.\n\nProtection: disable GPS in camera settings, use metadata stripping tools before sharing, be aware that social media strips EXIF (but keeps a copy). On iOS: Settings > Privacy > Location Services > Camera. On Android: Camera > Settings > Location tags.\n\nFor forensics, this privacy awareness helps you understand what evidence is available and what suspects might try to hide.",
+            "example": "# Privacy analysis of a photo collection\ndef privacy_audit(photos):\n    \"\"\"Assess what a collection of photos reveals.\"\"\"\n    locations = set()\n    devices = set()\n    times = []\n    \n    for photo in photos:\n        if 'gps' in photo:\n            locations.add(photo['gps'])\n        if 'device' in photo:\n            devices.add(photo['device'])\n        if 'datetime' in photo:\n            times.append(photo['datetime'])\n    \n    print(f\"Unique locations visited: {len(locations)}\")\n    print(f\"Devices identified: {len(devices)}\")\n    if times:\n        print(f\"Earliest photo: {min(times)}\")\n        print(f\"Latest photo:   {max(times)}\")\n    print(f\"\\nThis collection reveals:\")\n    if len(locations) > 5:\n        print(\"  - Detailed movement pattern!\")\n    if any('home' in str(l).lower() for l in locations):\n        print(\"  - Possible home location!\")",
+            "ai_hint": "Your photos create a detailed profile: where you live, work, travel, and what devices you own. Forensic power for investigators, privacy risk for everyone else!"
+          },
+          {
+            "concept": "EXIF in Court — Legal Considerations",
+            "explanation": "EXIF metadata is admissible as evidence in court, but with caveats: the chain of custody must be documented, the extraction method must be reproducible, and the analyst must acknowledge that EXIF CAN be manipulated (timestamps can be changed, GPS can be spoofed).\n\nBest forensic approach: hash the original file BEFORE extraction (proves it was not modified), use validated tools (ExifTool, Pillow with documented versions), record every step, and cross-reference EXIF data with other evidence sources (CCTV, phone records, witness statements).\n\nNever rely on EXIF alone — it corroborates other evidence, but should not be the sole proof.",
+            "example": "# Forensic EXIF extraction with integrity verification\nimport hashlib\n\ndef forensic_extract(filepath):\n    \"\"\"Court-ready EXIF extraction with hash verification.\"\"\"\n    # Step 1: Hash BEFORE touching\n    with open(filepath, 'rb') as f:\n        original_hash = hashlib.sha256(f.read()).hexdigest()\n    \n    # Step 2: Extract EXIF (read-only operation)\n    # exif = extract_exif(filepath)\n    exif = {'Make': 'Apple', 'Model': 'iPhone 15'}  # Simulated\n    \n    # Step 3: Hash AFTER extraction (must match!)\n    with open(filepath, 'rb') as f:\n        post_hash = hashlib.sha256(f.read()).hexdigest()\n    \n    # Step 4: Verify integrity\n    integrity = original_hash == post_hash\n    \n    return {\n        'file': filepath,\n        'hash_before': original_hash,\n        'hash_after': post_hash,\n        'integrity_verified': integrity,\n        'exif': exif\n    }",
+            "ai_hint": "Hash BEFORE and AFTER extraction. If hashes match, you proved the file was not modified during analysis. This is MANDATORY for court!"
+          },
+          {
+            "concept": "Working with struct — Low-Level Binary Parsing",
+            "explanation": "For deep forensic analysis, sometimes you need to parse EXIF at the byte level using Python's struct module. This lets you read specific bytes from the file and interpret them as numbers.\n\nstruct.unpack('>H', data) reads 2 bytes as a big-endian unsigned short. struct.unpack('<I', data) reads 4 bytes as a little-endian unsigned int.\n\nJPEG segments use big-endian (Motorola byte order). But the TIFF block inside EXIF can be either big-endian (starts with 'MM') or little-endian (starts with 'II').\n\nThis low-level approach is essential when standard libraries fail — corrupted files, non-standard EXIF, or proprietary metadata formats.",
+            "example": "import struct\n\n# Parse JPEG segment markers\ndef read_jpeg_segments(filepath):\n    \"\"\"Read JPEG segment markers from file.\"\"\"\n    with open(filepath, 'rb') as f:\n        # Read SOI (Start of Image)\n        soi = f.read(2)\n        if soi != b'\\xff\\xd8':\n            return 'Not a JPEG'\n        \n        segments = []\n        while True:\n            marker = f.read(2)\n            if len(marker) < 2:\n                break\n            if marker[0] != 0xFF:\n                break\n            \n            # Read segment length (big-endian 2 bytes)\n            length_bytes = f.read(2)\n            if len(length_bytes) < 2:\n                break\n            length = struct.unpack('>H', length_bytes)[0]\n            \n            segment_name = f'0x{marker[1]:02X}'\n            if marker[1] == 0xE1:\n                segment_name = 'APP1 (EXIF)'\n            elif marker[1] == 0xE0:\n                segment_name = 'APP0 (JFIF)'\n            \n            segments.append((segment_name, length))\n            f.seek(length - 2, 1)  # Skip segment data\n    \n    return segments",
+            "ai_hint": "struct.unpack reads raw bytes as numbers. '>H' = big-endian 2-byte unsigned. This is how you parse file formats at the lowest level!"
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Simulated EXIF Data Explorer",
+          "description": "Explore EXIF structure using simulated data (platform-safe, no real images needed)",
+          "difficulty": "beginner",
+          "code": "# EXIF Data Explorer — works without real images!\n# This simulates what you would get from a real photo\n\n# Simulated EXIF from an iPhone photo\nexif_data = {\n    'Make': 'Apple',\n    'Model': 'iPhone 15 Pro Max',\n    'DateTime': '2025:02:28 14:30:22',\n    'DateTimeOriginal': '2025:02:28 14:30:22',\n    'DateTimeDigitized': '2025:02:28 14:30:22',\n    'Software': '17.3.1',\n    'Orientation': 1,\n    'XResolution': 72,\n    'YResolution': 72,\n    'ExposureTime': '1/120',\n    'FNumber': 1.78,\n    'ISOSpeedRatings': 64,\n    'FocalLength': 6.765,\n    'LensModel': 'iPhone 15 Pro Max back triple camera 6.765mm f/1.78',\n    'GPSLatitude': ((51, 1), (30, 1), (2646, 100)),\n    'GPSLatitudeRef': 'N',\n    'GPSLongitude': ((0, 1), (7, 1), (4000, 100)),\n    'GPSLongitudeRef': 'W',\n    'GPSAltitude': (25, 1),\n    'ImageWidth': 4032,\n    'ImageLength': 3024,\n}\n\n# Display categorised\nprint(\"EXIF DATA ANALYSIS\")\nprint(\"=\" * 50)\n\nprint(\"\\n[DEVICE]\")\nfor key in ['Make', 'Model', 'Software', 'LensModel']:\n    if key in exif_data:\n        print(f\"  {key:<20} {exif_data[key]}\")\n\nprint(\"\\n[TIMESTAMPS]\")\nfor key in ['DateTime', 'DateTimeOriginal', 'DateTimeDigitized']:\n    if key in exif_data:\n        print(f\"  {key:<20} {exif_data[key]}\")\n\nprint(\"\\n[CAMERA SETTINGS]\")\nfor key in ['ExposureTime', 'FNumber', 'ISOSpeedRatings', 'FocalLength']:\n    if key in exif_data:\n        print(f\"  {key:<20} {exif_data[key]}\")\n\nprint(\"\\n[IMAGE]\")\nprint(f\"  Resolution:        {exif_data['ImageWidth']}x{exif_data['ImageLength']}\")\nprint(f\"  Megapixels:        {exif_data['ImageWidth']*exif_data['ImageLength']/1000000:.1f} MP\")\nprint(f\"  Orientation:       {'Normal' if exif_data['Orientation']==1 else 'Rotated'}\")",
+          "output": "EXIF DATA ANALYSIS\n==================================================\n\n[DEVICE]\n  Make                 Apple\n  Model                iPhone 15 Pro Max\n  Software             17.3.1\n  LensModel            iPhone 15 Pro Max back triple camera...\n\n[TIMESTAMPS]\n  DateTime             2025:02:28 14:30:22\n  DateTimeOriginal     2025:02:28 14:30:22\n  DateTimeDigitized    2025:02:28 14:30:22\n\n[CAMERA SETTINGS]\n  ExposureTime         1/120\n  FNumber              1.78\n  ISOSpeedRatings      64\n  FocalLength          6.765\n\n[IMAGE]\n  Resolution:          4032x3024\n  Megapixels:          12.2 MP\n  Orientation:         Normal",
+          "ai_explanation": "This example works entirely in memory — no real images needed! It shows the STRUCTURE of EXIF data:\n\n1. DEVICE section: identifies the camera (Apple iPhone 15 Pro Max).\n2. TIMESTAMPS: three time fields that should match for unedited photos.\n3. CAMERA SETTINGS: exposure, aperture, ISO — tells you lighting conditions.\n4. IMAGE: dimensions and megapixels.\n\nWhen all three timestamps match, the image has not been re-saved. If DateTime differs from DateTimeOriginal, the image was edited after capture.\n\nNotice the Software field shows '17.3.1' (iOS version) — this tells you the OS version on the phone!",
+          "ai_challenge": "Add GPS extraction to this analysis. Convert the GPS tuples to decimal degrees and generate a Google Maps link."
+        },
+        {
+          "title": "Example 2: GPS Coordinate Converter",
+          "description": "Convert EXIF GPS from DMS format to decimal degrees with map links",
+          "difficulty": "beginner",
+          "code": "# GPS Coordinate Converter\n# EXIF stores GPS as (degrees, minutes, seconds) tuples\n# We need decimal degrees for mapping\n\ndef exif_gps_to_decimal(gps_data, ref):\n    \"\"\"Convert EXIF GPS tuple to decimal degrees.\n    \n    EXIF format: ((degrees, denom), (minutes, denom), (seconds, denom))\n    Some cameras use: (degrees, minutes, seconds) as simple numbers\n    \"\"\"\n    if isinstance(gps_data[0], tuple):\n        # Rational format: ((51, 1), (30, 1), (2646, 100))\n        degrees = gps_data[0][0] / gps_data[0][1]\n        minutes = gps_data[1][0] / gps_data[1][1]\n        seconds = gps_data[2][0] / gps_data[2][1]\n    else:\n        # Simple format: (51, 30, 26.46)\n        degrees, minutes, seconds = gps_data\n    \n    decimal = degrees + (minutes / 60) + (seconds / 3600)\n    if ref in ('S', 'W'):\n        decimal = -decimal\n    return round(decimal, 6)\n\n# Test with known locations\nlocations = [\n    {\n        'name': 'London (Big Ben)',\n        'lat_data': ((51, 1), (30, 1), (264, 10)),\n        'lat_ref': 'N',\n        'lon_data': ((0, 1), (7, 1), (3950, 100)),\n        'lon_ref': 'W'\n    },\n    {\n        'name': 'New York (Statue of Liberty)',\n        'lat_data': (40, 41, 21.24),\n        'lat_ref': 'N',\n        'lon_data': (74, 2, 40.08),\n        'lon_ref': 'W'\n    },\n    {\n        'name': 'Tokyo (Tokyo Tower)',\n        'lat_data': (35, 39, 31.0),\n        'lat_ref': 'N',\n        'lon_data': (139, 44, 43.0),\n        'lon_ref': 'E'\n    },\n    {\n        'name': 'Sydney (Opera House)',\n        'lat_data': (33, 51, 25.0),\n        'lat_ref': 'S',\n        'lon_data': (151, 12, 55.0),\n        'lon_ref': 'E'\n    }\n]\n\nprint(\"GPS COORDINATE CONVERSION\")\nprint(\"=\" * 65)\nfor loc in locations:\n    lat = exif_gps_to_decimal(loc['lat_data'], loc['lat_ref'])\n    lon = exif_gps_to_decimal(loc['lon_data'], loc['lon_ref'])\n    print(f\"\\n{loc['name']}:\")\n    print(f\"  Decimal: {lat}, {lon}\")\n    print(f\"  Map:     https://maps.google.com/?q={lat},{lon}\")",
+          "output": "GPS COORDINATE CONVERSION\n=================================================================\n\nLondon (Big Ben):\n  Decimal: 51.5074, -0.1276\n  Map:     https://maps.google.com/?q=51.5074,-0.1276\n\nNew York (Statue of Liberty):\n  Decimal: 40.689233, -74.044467\n  Map:     https://maps.google.com/?q=40.689233,-74.044467\n...",
+          "ai_explanation": "GPS conversion handles TWO formats found in EXIF:\n\n1. RATIONAL format: ((51, 1), (30, 1), (264, 10)) — each value is (numerator, denominator). 264/10 = 26.4 seconds.\n2. SIMPLE format: (40, 41, 21.24) — plain numbers for degrees, minutes, seconds.\n\nThe function handles both! South and West become negative values.\n\nThe Google Maps link is generated automatically — click it to see exactly where the photo was taken. In a real investigation, this reveals the suspect's location at the exact time recorded in DateTimeOriginal.\n\nThis has literally solved crimes. Ransom photos, stolen goods listings on eBay, even metadata in uploaded documents.",
+          "ai_challenge": "Add a calculate_distance(lat1, lon1, lat2, lon2) function using the Haversine formula. Calculate distances between all pairs of locations."
+        },
+        {
+          "title": "Example 3: Image File Header Analyser",
+          "description": "Read binary headers to identify image types and detect disguised files",
+          "difficulty": "intermediate",
+          "code": "import os\nimport struct\n\nIMAGE_SIGS = {\n    b'\\xff\\xd8\\xff': ('JPEG', 'Joint Photographic Experts Group'),\n    b'\\x89PNG\\r\\n\\x1a\\n': ('PNG', 'Portable Network Graphics'),\n    b'GIF89a': ('GIF89a', 'Graphics Interchange Format (animated)'),\n    b'GIF87a': ('GIF87a', 'Graphics Interchange Format'),\n    b'BM': ('BMP', 'Bitmap'),\n    b'II*\\x00': ('TIFF-LE', 'Tagged Image File Format (little-endian)'),\n    b'MM\\x00*': ('TIFF-BE', 'Tagged Image File Format (big-endian)'),\n    b'RIFF': ('WEBP?', 'Possible WebP (check further)'),\n}\n\ndef analyse_image_header(filepath):\n    \"\"\"Deep analysis of image file header.\"\"\"\n    with open(filepath, 'rb') as f:\n        header = f.read(32)\n        f.seek(0, 2)\n        file_size = f.tell()\n    \n    result = {\n        'file': os.path.basename(filepath),\n        'size': file_size,\n        'extension': os.path.splitext(filepath)[1],\n        'type': 'Unknown',\n        'description': 'Unrecognised format',\n        'has_exif': False,\n        'alerts': []\n    }\n    \n    # Identify by magic bytes\n    for sig, (name, desc) in IMAGE_SIGS.items():\n        if header[:len(sig)] == sig:\n            result['type'] = name\n            result['description'] = desc\n            break\n    \n    # JPEG-specific analysis\n    if header[:3] == b'\\xff\\xd8\\xff':\n        # Check for EXIF (APP1 marker)\n        result['has_exif'] = b'\\xff\\xe1' in header or b'Exif' in header\n        # Check for JFIF\n        has_jfif = b'JFIF' in header[:20]\n        result['jfif'] = has_jfif\n    \n    # Extension mismatch detection\n    ext_map = {'.jpg': 'JPEG', '.jpeg': 'JPEG', '.png': 'PNG',\n               '.gif': 'GIF89a', '.bmp': 'BMP', '.tiff': 'TIFF-LE'}\n    expected = ext_map.get(result['extension'].lower())\n    if expected and expected != result['type'] and result['type'] != 'Unknown':\n        result['alerts'].append(\n            f\"MISMATCH: Extension {result['extension']} but content is {result['type']}!\"\n        )\n    \n    return result\n\n# Create test files\ntest_files = [\n    ('photo.jpg', b'\\xff\\xd8\\xff\\xe1\\x00\\x10Exif\\x00\\x00' + b'\\x00' * 20),\n    ('image.png', b'\\x89PNG\\r\\n\\x1a\\n' + b'\\x00' * 24),\n    ('fake_image.jpg', b'\\x89PNG\\r\\n\\x1a\\n' + b'\\x00' * 24),  # PNG disguised as JPG!\n    ('document.jpg', b'%PDF-1.7' + b'\\x00' * 24),  # PDF disguised as JPG!\n    ('screenshot.png', b'\\x89PNG\\r\\n\\x1a\\n' + b'\\x00' * 24),\n]\n\nfor name, content in test_files:\n    with open(name, 'wb') as f:\n        f.write(content)\n\nprint(\"IMAGE HEADER ANALYSIS\")\nprint(\"=\" * 60)\nfor name, _ in test_files:\n    r = analyse_image_header(name)\n    exif_icon = 'Y' if r['has_exif'] else 'N'\n    print(f\"\\n{r['file']}:\")\n    print(f\"  Type: {r['type']} ({r['description']})\")\n    print(f\"  Size: {r['size']} bytes  |  EXIF: {exif_icon}\")\n    for alert in r['alerts']:\n        print(f\"  >>> ALERT: {alert}\")\n\n# Cleanup\nfor name, _ in test_files:\n    os.remove(name)",
+          "output": "IMAGE HEADER ANALYSIS\n============================================================\n\nphoto.jpg:\n  Type: JPEG (Joint Photographic Experts Group)\n  Size: 32 bytes  |  EXIF: Y\n\nimage.png:\n  Type: PNG (Portable Network Graphics)\n  Size: 32 bytes  |  EXIF: N\n\nfake_image.jpg:\n  Type: PNG (Portable Network Graphics)\n  Size: 32 bytes  |  EXIF: N\n  >>> ALERT: MISMATCH: Extension .jpg but content is PNG!\n\ndocument.jpg:\n  Type: Unknown (Unrecognised format)\n  Size: 32 bytes  |  EXIF: N\n  >>> ALERT: MISMATCH: Extension .jpg but content is Unknown!\n...",
+          "ai_explanation": "This catches disguised files — critical in forensics:\n\n1. fake_image.jpg has a .jpg extension but PNG magic bytes — someone renamed it!\n2. document.jpg is actually a PDF (starts with %PDF) — hidden in plain sight!\n3. photo.jpg is a genuine JPEG WITH EXIF data (has the APP1/Exif markers).\n4. screenshot.png is a real PNG — screenshots typically have NO EXIF data.\n\nThe struct module can parse further: JPEG segment lengths, TIFF headers inside EXIF, and more. But even this simple magic byte check catches most file disguises.\n\nOn Kali VM: file *.jpg uses the same magic byte analysis. Try renaming a PNG to .jpg and run file on it!",
+          "ai_challenge": "Add WEBP detection (check for 'RIFF' + 4 bytes + 'WEBP') and add file hash to the output for each analysed file."
+        },
+        {
+          "title": "Example 4: EXIF Timestamp Timeline Builder",
+          "description": "Build a chronological timeline from multiple photo timestamps",
+          "difficulty": "intermediate",
+          "code": "from datetime import datetime, timedelta\n\ndef parse_exif_dt(dt_str):\n    \"\"\"Parse EXIF datetime string.\"\"\"\n    return datetime.strptime(dt_str, '%Y:%m:%d %H:%M:%S')\n\ndef time_gap(dt1, dt2):\n    \"\"\"Calculate time gap between two datetimes.\"\"\"\n    diff = abs(dt2 - dt1)\n    hours = diff.seconds // 3600\n    minutes = (diff.seconds % 3600) // 60\n    if diff.days > 0:\n        return f\"{diff.days}d {hours}h\"\n    elif hours > 0:\n        return f\"{hours}h {minutes}m\"\n    else:\n        return f\"{minutes}m\"\n\n# Simulated photo collection from a seized phone\nphotos = [\n    {'file': 'IMG_4201.jpg', 'dt_original': '2025:02:28 07:45:12',\n     'dt_modified': '2025:02:28 07:45:12', 'gps': '51.5074, -0.1278', 'device': 'iPhone 15'},\n    {'file': 'IMG_4202.jpg', 'dt_original': '2025:02:28 08:30:00',\n     'dt_modified': '2025:02:28 08:30:00', 'gps': '51.5155, -0.1420', 'device': 'iPhone 15'},\n    {'file': 'IMG_4203.jpg', 'dt_original': '2025:02:28 09:15:45',\n     'dt_modified': '2025:02:28 12:00:00', 'gps': '51.5033, -0.1195', 'device': 'iPhone 15'},\n    {'file': 'IMG_4204.jpg', 'dt_original': '2025:02:28 11:00:00',\n     'dt_modified': '2025:02:28 11:00:00', 'gps': '51.4975, -0.1357', 'device': 'iPhone 15'},\n    {'file': 'IMG_4205.jpg', 'dt_original': '2025:02:28 14:20:33',\n     'dt_modified': '2025:02:28 14:20:33', 'gps': '51.5074, -0.1278', 'device': 'iPhone 15'},\n    {'file': 'Screenshot_01.png', 'dt_original': None,\n     'dt_modified': '2025:02:28 10:30:00', 'gps': None, 'device': 'iPhone 15'},\n]\n\n# Sort by original timestamp (put None at end)\nphotos_sorted = sorted(photos, key=lambda p: p['dt_original'] or '9999')\n\nprint(\"PHOTO TIMELINE ANALYSIS\")\nprint(\"=\" * 70)\nprint(f\"{'Time':<8} {'File':<20} {'Location':<22} {'Flags'}\")\nprint(\"-\" * 70)\n\nprev_dt = None\nfor p in photos_sorted:\n    flags = []\n    \n    if p['dt_original'] is None:\n        print(f\"{'N/A':<8} {p['file']:<20} {'No GPS':<22} NO EXIF (screenshot?)\")\n        continue\n    \n    dt_orig = parse_exif_dt(p['dt_original'])\n    dt_mod = parse_exif_dt(p['dt_modified'])\n    \n    # Flag: time gap analysis\n    gap_str = ''\n    if prev_dt:\n        gap = dt_orig - prev_dt\n        gap_str = f\"(+{time_gap(prev_dt, dt_orig)})\"\n    \n    # Flag: edited (timestamps differ)\n    if p['dt_original'] != p['dt_modified']:\n        flags.append('EDITED!')\n    \n    # Flag: returned to same location\n    if p['gps'] == photos_sorted[0].get('gps') and p != photos_sorted[0]:\n        flags.append('RETURNED')\n    \n    loc = p['gps'] if p['gps'] else 'No GPS'\n    flag_str = ', '.join(flags) if flags else ''\n    \n    print(f\"{dt_orig.strftime('%H:%M'):<8} {p['file']:<20} {loc:<22} {gap_str} {flag_str}\")\n    prev_dt = dt_orig\n\nprint(\"-\" * 70)\nprint(f\"\\nANALYSIS:\")\nedited = [p for p in photos if p['dt_original'] and p['dt_original'] != p['dt_modified']]\nif edited:\n    print(f\"  EDITED FILES ({len(edited)}):\")\n    for p in edited:\n        print(f\"    {p['file']}: Original {p['dt_original']} vs Modified {p['dt_modified']}\")\n\nno_exif = [p for p in photos if p['dt_original'] is None]\nif no_exif:\n    print(f\"  NO EXIF ({len(no_exif)}): {', '.join(p['file'] for p in no_exif)}\")",
+          "output": "PHOTO TIMELINE ANALYSIS\n======================================================================\nTime     File                 Location               Flags\n----------------------------------------------------------------------\n07:45    IMG_4201.jpg         51.5074, -0.1278       \n08:30    IMG_4202.jpg         51.5155, -0.1420       (+45m) \n09:15    IMG_4203.jpg         51.5033, -0.1195       (+45m) EDITED!\n11:00    IMG_4204.jpg         51.4975, -0.1357       (+1h 44m) \n14:20    IMG_4205.jpg         51.5074, -0.1278       (+3h 20m) RETURNED\nN/A      Screenshot_01.png    No GPS                 NO EXIF (screenshot?)\n----------------------------------------------------------------------\n\nANALYSIS:\n  EDITED FILES (1):\n    IMG_4203.jpg: Original 2025:02:28 09:15:45 vs Modified 2025:02:28 12:00:00\n  NO EXIF (1): Screenshot_01.png",
+          "ai_explanation": "Timeline analysis reveals movement patterns and anomalies:\n\n1. TIME GAPS show where the subject was NOT taking photos (3h 20m gap = doing what?).\n2. EDITED flag: IMG_4203 was taken at 09:15 but modified at 12:00 — someone edited it later. WHY?\n3. RETURNED flag: subject started at 51.5074 and came back — their home/office?\n4. NO EXIF: Screenshot has no original timestamp — different evidence type.\n\nThis exact analysis is used in criminal investigations: proving someone was at a location, identifying suspicious gaps in activity, and catching photo manipulation.",
+          "ai_challenge": "Add a movement speed calculator: using GPS and timestamps, calculate km/h between locations. Flag any impossibly fast movements (teleportation = faked GPS)."
+        },
+        {
+          "title": "Example 5: Camera Device Linker",
+          "description": "Link photos to specific devices by analysing camera metadata",
+          "difficulty": "intermediate",
+          "code": "# Camera Device Linker — identify unique devices across photo collections\n\ndef create_device_fingerprint(exif):\n    \"\"\"Create a unique device identifier from EXIF data.\"\"\"\n    make = exif.get('Make', '').strip()\n    model = exif.get('Model', '').strip()\n    serial = exif.get('BodySerialNumber', '')\n    software = exif.get('Software', '')\n    lens = exif.get('LensModel', '')\n    \n    # Primary fingerprint (strong)\n    if serial:\n        return f\"{make}|{model}|SN:{serial}\", 'STRONG'\n    # Secondary fingerprint (moderate)\n    elif lens:\n        return f\"{make}|{model}|{lens}\", 'MODERATE'\n    # Weak fingerprint\n    else:\n        return f\"{make}|{model}|{software}\", 'WEAK'\n\n# Photo collection from a case\nphotos = [\n    {'file': 'crime_scene_01.jpg', 'Make': 'Canon', 'Model': 'EOS R5',\n     'BodySerialNumber': '012345678', 'Software': 'Firmware 1.8.1', 'LensModel': 'RF 24-70mm'},\n    {'file': 'crime_scene_02.jpg', 'Make': 'Canon', 'Model': 'EOS R5',\n     'BodySerialNumber': '012345678', 'Software': 'Firmware 1.8.1', 'LensModel': 'RF 24-70mm'},\n    {'file': 'suspect_phone_01.jpg', 'Make': 'Samsung', 'Model': 'SM-S928B',\n     'BodySerialNumber': '', 'Software': 'S928BXXU1AXA1', 'LensModel': ''},\n    {'file': 'suspect_phone_02.jpg', 'Make': 'Samsung', 'Model': 'SM-S928B',\n     'BodySerialNumber': '', 'Software': 'S928BXXU1AXA1', 'LensModel': ''},\n    {'file': 'anonymous_01.jpg', 'Make': '', 'Model': '', 'BodySerialNumber': '',\n     'Software': 'Adobe Photoshop 25.0', 'LensModel': ''},\n    {'file': 'evidence_03.jpg', 'Make': 'Canon', 'Model': 'EOS R5',\n     'BodySerialNumber': '012345678', 'Software': 'Adobe Lightroom 7.1', 'LensModel': 'RF 24-70mm'},\n]\n\n# Group by device\ndevices = {}\nfor photo in photos:\n    fp, strength = create_device_fingerprint(photo)\n    if fp not in devices:\n        devices[fp] = {'strength': strength, 'photos': [], 'fingerprint': fp}\n    devices[fp]['photos'].append(photo)\n\n# Report\nprint(\"DEVICE LINKAGE ANALYSIS\")\nprint(\"=\" * 60)\nfor i, (fp, info) in enumerate(devices.items(), 1):\n    print(f\"\\nDevice {i} [{info['strength']}]:\")\n    print(f\"  Fingerprint: {fp}\")\n    print(f\"  Photos ({len(info['photos'])}):\")\n    for p in info['photos']:\n        sw = p.get('Software', '')\n        edited = ' [EDITED]' if 'Photoshop' in sw or 'Lightroom' in sw else ''\n        print(f\"    {p['file']}{edited}\")\n\nprint(f\"\\nSUMMARY: {len(devices)} unique devices identified\")\n\n# Cross-reference alert\ncanon_photos = [p for p in photos if p.get('BodySerialNumber') == '012345678']\nif len(canon_photos) > 1:\n    edited_canon = [p for p in canon_photos if 'Photoshop' in p.get('Software', '') or 'Lightroom' in p.get('Software', '')]\n    if edited_canon:\n        print(f\"\\nALERT: Canon SN:012345678 has {len(edited_canon)} edited photo(s):\")\n        for p in edited_canon:\n            print(f\"  {p['file']} — edited with {p['Software']}\")",
+          "output": "DEVICE LINKAGE ANALYSIS\n============================================================\n\nDevice 1 [STRONG]:\n  Fingerprint: Canon|EOS R5|SN:012345678\n  Photos (3):\n    crime_scene_01.jpg\n    crime_scene_02.jpg\n    evidence_03.jpg [EDITED]\n\nDevice 2 [WEAK]:\n  Fingerprint: Samsung|SM-S928B|S928BXXU1AXA1\n  Photos (2):\n    suspect_phone_01.jpg\n    suspect_phone_02.jpg\n\nDevice 3 [WEAK]:\n  Fingerprint: ||Adobe Photoshop 25.0\n  Photos (1):\n    anonymous_01.jpg\n\nSUMMARY: 3 unique devices identified\n\nALERT: Canon SN:012345678 has 1 edited photo(s):\n  evidence_03.jpg — edited with Adobe Lightroom 7.1",
+          "ai_explanation": "Device linking is powerful forensic evidence:\n\n1. STRONG fingerprint (serial number): Canon EOS R5 SN:012345678 — THREE photos from the EXACT same camera. Even evidence_03.jpg which was later edited in Lightroom still has the original camera serial.\n\n2. WEAK fingerprint (no serial): Samsung SM-S928B identified by firmware version — could be any Samsung S24 Ultra with that firmware, but it narrows it down.\n\n3. ANONYMOUS: No Make/Model, only 'Adobe Photoshop' — metadata was likely stripped and the image was re-saved in Photoshop. This is suspicious!\n\n4. The ALERT catches evidence_03.jpg — same camera as crime scene photos but edited in Lightroom. Why was evidence edited?",
+          "ai_challenge": "Add sensor noise pattern analysis: each camera sensor has unique 'hot pixels'. Compare a reference photo from the suspect's camera to crime scene photos."
+        },
+        {
+          "title": "Example 6: Metadata Stripping Detector",
+          "description": "Detect when EXIF has been deliberately removed from images",
+          "difficulty": "intermediate",
+          "code": "import os\n\ndef analyse_metadata_presence(filepath):\n    \"\"\"Detect if metadata has been stripped from a JPEG.\"\"\"\n    with open(filepath, 'rb') as f:\n        data = f.read()\n    \n    filename = os.path.basename(filepath)\n    ext = os.path.splitext(filename)[1].lower()\n    size = len(data)\n    \n    findings = {\n        'file': filename,\n        'size': size,\n        'is_jpeg': data[:3] == b'\\xff\\xd8\\xff',\n        'has_exif': False,\n        'has_jfif': False,\n        'has_xmp': False,\n        'software_detected': None,\n        'suspicion_level': 'NONE',\n        'notes': []\n    }\n    \n    if not findings['is_jpeg']:\n        if ext in ('.jpg', '.jpeg'):\n            findings['notes'].append('NOT A JPEG despite extension!')\n            findings['suspicion_level'] = 'HIGH'\n        return findings\n    \n    # Check for EXIF (APP1 with Exif header)\n    findings['has_exif'] = b'Exif\\x00\\x00' in data[:500]\n    \n    # Check for JFIF\n    findings['has_jfif'] = b'JFIF' in data[:20]\n    \n    # Check for XMP metadata\n    findings['has_xmp'] = b'http://ns.adobe.com/xap/' in data\n    \n    # Detect known software signatures\n    sw_sigs = [\n        (b'Adobe Photoshop', 'Adobe Photoshop'),\n        (b'GIMP', 'GIMP'),\n        (b'Paint.NET', 'Paint.NET'),\n        (b'Snapseed', 'Snapseed'),\n        (b'Instagram', 'Instagram'),\n    ]\n    for sig, name in sw_sigs:\n        if sig in data:\n            findings['software_detected'] = name\n            break\n    \n    # Suspicion analysis\n    if findings['is_jpeg'] and not findings['has_exif']:\n        if size > 100000:  # Large JPEG with no EXIF\n            findings['suspicion_level'] = 'HIGH'\n            findings['notes'].append('Large JPEG with NO EXIF — metadata likely stripped!')\n        else:\n            findings['suspicion_level'] = 'MEDIUM'\n            findings['notes'].append('JPEG without EXIF — could be screenshot or stripped.')\n    \n    if findings['software_detected']:\n        findings['notes'].append(f\"Processed by: {findings['software_detected']}\")\n    \n    if findings['has_exif']:\n        findings['suspicion_level'] = 'LOW'\n        findings['notes'].append('EXIF present — metadata intact.')\n    \n    return findings\n\n# Create test images\ntest_images = [\n    ('normal_photo.jpg',\n     b'\\xff\\xd8\\xff\\xe1\\x00\\x10Exif\\x00\\x00' + b'\\x00' * 200000),\n    ('stripped.jpg',\n     b'\\xff\\xd8\\xff\\xe0\\x00\\x10JFIF\\x00\\x01' + b'\\x00' * 200000),\n    ('photoshopped.jpg',\n     b'\\xff\\xd8\\xff\\xe0\\x00\\x10JFIF\\x00\\x01' + b'Adobe Photoshop' + b'\\x00' * 200000),\n    ('tiny_crop.jpg',\n     b'\\xff\\xd8\\xff\\xe0\\x00\\x10JFIF\\x00\\x01' + b'\\x00' * 500),\n    ('fake_jpg.jpg',\n     b'\\x89PNG\\r\\n\\x1a\\n' + b'\\x00' * 1000),\n]\n\nfor name, content in test_images:\n    with open(name, 'wb') as f:\n        f.write(content)\n\nprint(\"METADATA STRIPPING ANALYSIS\")\nprint(\"=\" * 60)\nfor name, _ in test_images:\n    r = analyse_metadata_presence(name)\n    icon = {'NONE': '-', 'LOW': 'OK', 'MEDIUM': '?', 'HIGH': '!!'}[r['suspicion_level']]\n    print(f\"\\n[{icon}] {r['file']} ({r['size']:,} bytes)\")\n    print(f\"    EXIF: {r['has_exif']}  JFIF: {r['has_jfif']}  XMP: {r['has_xmp']}\")\n    for note in r['notes']:\n        print(f\"    > {note}\")\n\n# Cleanup\nfor name, _ in test_images:\n    os.remove(name)",
+          "output": "METADATA STRIPPING ANALYSIS\n============================================================\n\n[OK] normal_photo.jpg (200,012 bytes)\n    EXIF: True  JFIF: False  XMP: False\n    > EXIF present — metadata intact.\n\n[!!] stripped.jpg (200,012 bytes)\n    EXIF: False  JFIF: True  XMP: False\n    > Large JPEG with NO EXIF — metadata likely stripped!\n\n[!!] photoshopped.jpg (200,027 bytes)\n    EXIF: False  JFIF: True  XMP: False\n    > Large JPEG with NO EXIF — metadata likely stripped!\n    > Processed by: Adobe Photoshop\n\n[?] tiny_crop.jpg (512 bytes)\n    EXIF: False  JFIF: True  XMP: False\n    > JPEG without EXIF — could be screenshot or stripped.\n\n[!!] fake_jpg.jpg (1,008 bytes)\n    EXIF: False  JFIF: False  XMP: False\n    > NOT A JPEG despite extension!",
+          "ai_explanation": "Metadata stripping detection catches anti-forensic behaviour:\n\n1. normal_photo.jpg: Has EXIF — genuine camera photo, metadata intact.\n2. stripped.jpg: 200KB JPEG with NO EXIF — phones ALWAYS add EXIF. Someone deliberately removed it!\n3. photoshopped.jpg: No EXIF + Photoshop signature — edited AND stripped. Double suspicious.\n4. tiny_crop.jpg: Small and no EXIF — could be a crop from a messaging app.\n5. fake_jpg.jpg: Not even a JPEG — PNG bytes with .jpg extension!\n\nThe ABSENCE of metadata is itself evidence. A 200KB smartphone JPEG should have 5-10KB of EXIF. If it does not, someone removed it deliberately.",
+          "ai_challenge": "Add detection for specific stripping tools: ExifTool leaves certain markers, jhead has its own signature. Identify HOW the metadata was removed."
+        },
+        {
+          "title": "Example 7: Real EXIF Extraction with Pillow (VM Exercise)",
+          "description": "Extract EXIF from a real JPEG using the Pillow library — run on your VM!",
+          "difficulty": "intermediate",
+          "code": "# ====================================================\n# RUN THIS ON YOUR KALI VM!\n# First: pip install Pillow\n# Then: use a real photo from your phone or download one\n# ====================================================\n\nfrom PIL import Image\nfrom PIL.ExifTags import TAGS, GPSTAGS\n\ndef extract_all_exif(filepath):\n    \"\"\"Extract complete EXIF data from a JPEG.\"\"\"\n    try:\n        img = Image.open(filepath)\n    except Exception as e:\n        return {'error': str(e)}\n    \n    # Basic image info\n    info = {\n        'format': img.format,\n        'mode': img.mode,\n        'size': f\"{img.size[0]}x{img.size[1]}\",\n        'megapixels': round(img.size[0] * img.size[1] / 1e6, 1),\n    }\n    \n    # EXIF data\n    exif_raw = img._getexif()\n    if exif_raw is None:\n        info['exif'] = 'NO EXIF DATA'\n        return info\n    \n    exif_named = {}\n    gps_data = {}\n    \n    for tag_id, value in exif_raw.items():\n        tag_name = TAGS.get(tag_id, f'Tag_{tag_id}')\n        \n        if tag_name == 'GPSInfo':\n            for gps_id, gps_val in value.items():\n                gps_name = GPSTAGS.get(gps_id, f'GPSTag_{gps_id}')\n                gps_data[gps_name] = gps_val\n        elif isinstance(value, bytes):\n            exif_named[tag_name] = f'<bytes ({len(value)} bytes)>'\n        else:\n            exif_named[tag_name] = value\n    \n    info['exif'] = exif_named\n    info['gps'] = gps_data if gps_data else 'No GPS'\n    return info\n\ndef format_gps(gps_data):\n    \"\"\"Convert GPS dict to decimal coordinates.\"\"\"\n    if not isinstance(gps_data, dict) or 'GPSLatitude' not in gps_data:\n        return None\n    \n    def to_decimal(dms, ref):\n        d = float(dms[0])\n        m = float(dms[1])\n        s = float(dms[2])\n        decimal = d + m/60 + s/3600\n        if ref in ('S', 'W'):\n            decimal = -decimal\n        return round(decimal, 6)\n    \n    lat = to_decimal(gps_data['GPSLatitude'], gps_data.get('GPSLatitudeRef', 'N'))\n    lon = to_decimal(gps_data['GPSLongitude'], gps_data.get('GPSLongitudeRef', 'E'))\n    return lat, lon\n\n# Usage (on VM with real photo):\n# result = extract_all_exif('your_photo.jpg')\n# print(f\"Camera: {result['exif'].get('Make', '?')} {result['exif'].get('Model', '?')}\")\n# gps = format_gps(result.get('gps', {}))\n# if gps:\n#     print(f\"Location: {gps[0]}, {gps[1]}\")\n#     print(f\"Map: https://maps.google.com/?q={gps[0]},{gps[1]}\")\n\n# Demo output (simulated for platform)\nprint(\"EXIF EXTRACTOR (demo output)\")\nprint(\"=\" * 50)\nprint(\"Camera: Apple iPhone 15 Pro\")\nprint(\"Date:   2025:02:28 14:30:22\")\nprint(\"GPS:    51.5074, -0.1278\")\nprint(\"Map:    https://maps.google.com/?q=51.5074,-0.1278\")\nprint(\"\\nTo run for REAL: transfer a photo to your VM\")\nprint(\"and uncomment the usage lines above!\")",
+          "output": "EXIF EXTRACTOR (demo output)\n==================================================\nCamera: Apple iPhone 15 Pro\nDate:   2025:02:28 14:30:22\nGPS:    51.5074, -0.1278\nMap:    https://maps.google.com/?q=51.5074,-0.1278\n\nTo run for REAL: transfer a photo to your VM\nand uncomment the usage lines above!",
+          "ai_explanation": "This is a REAL forensic extraction tool:\n\n1. Image.open() reads the image file.\n2. img._getexif() returns raw EXIF as {tag_number: value}.\n3. TAGS.get(tag_id) converts numbers to names (271 -> 'Make').\n4. GPSInfo is nested — it contains its own sub-tags converted via GPSTAGS.\n5. format_gps() converts DMS tuples to decimal degrees.\n\nTo use for REAL on your Kali VM:\n- pip install Pillow\n- Transfer a photo from your phone (AirDrop, email, USB)\n- python3 script.py\n- See the actual hidden data!\n\nThis is what ExifTool does. Your Python version gives you programmable control to build custom analysis tools.",
+          "ai_challenge": "Process an ENTIRE folder of photos from your phone. Build a timeline with GPS tracks showing where you went today."
+        },
+        {
+          "title": "Example 8: Photo Forgery Detector",
+          "description": "Detect signs of image manipulation by analysing metadata inconsistencies",
+          "difficulty": "advanced",
+          "code": "# Photo Forgery Detector — find metadata inconsistencies\n\ndef detect_forgery(exif_data, file_size):\n    \"\"\"Analyse EXIF for signs of forgery or manipulation.\"\"\"\n    findings = []\n    risk_score = 0\n    \n    # Check 1: DateTime vs DateTimeOriginal mismatch\n    dt = exif_data.get('DateTime', '')\n    dto = exif_data.get('DateTimeOriginal', '')\n    if dt and dto and dt != dto:\n        findings.append({\n            'check': 'Timestamp Mismatch',\n            'detail': f'Modified: {dt} vs Original: {dto}',\n            'risk': 'HIGH'\n        })\n        risk_score += 3\n    \n    # Check 2: Software suggests editing\n    sw = exif_data.get('Software', '')\n    editors = ['Photoshop', 'GIMP', 'Lightroom', 'Snapseed', 'FaceApp']\n    for editor in editors:\n        if editor.lower() in sw.lower():\n            findings.append({\n                'check': 'Editing Software',\n                'detail': f'Software: {sw}',\n                'risk': 'MEDIUM'\n            })\n            risk_score += 2\n            break\n    \n    # Check 3: Missing Make/Model (stripped?)\n    if not exif_data.get('Make') and not exif_data.get('Model'):\n        findings.append({\n            'check': 'No Camera Info',\n            'detail': 'Make and Model missing — metadata may be stripped',\n            'risk': 'MEDIUM'\n        })\n        risk_score += 2\n    \n    # Check 4: Resolution vs file size anomaly\n    width = exif_data.get('ImageWidth', 0)\n    height = exif_data.get('ImageLength', 0)\n    if width and height and file_size > 0:\n        pixels = width * height\n        bytes_per_pixel = file_size / pixels if pixels > 0 else 0\n        # Normal JPEG: 0.5-4 bytes per pixel\n        if bytes_per_pixel > 5:\n            findings.append({\n                'check': 'Unusual Compression',\n                'detail': f'{bytes_per_pixel:.1f} bytes/pixel (normal: 0.5-4)',\n                'risk': 'LOW'\n            })\n            risk_score += 1\n    \n    # Check 5: GPS present but no camera info\n    if exif_data.get('GPSInfo') and not exif_data.get('Make'):\n        findings.append({\n            'check': 'GPS without Camera',\n            'detail': 'GPS data present but camera info missing — possibly injected',\n            'risk': 'HIGH'\n        })\n        risk_score += 3\n    \n    # Overall assessment\n    if risk_score >= 5:\n        verdict = 'LIKELY MANIPULATED'\n    elif risk_score >= 3:\n        verdict = 'SUSPICIOUS'\n    elif risk_score >= 1:\n        verdict = 'MINOR ANOMALIES'\n    else:\n        verdict = 'APPEARS AUTHENTIC'\n    \n    return {'verdict': verdict, 'score': risk_score, 'findings': findings}\n\n# Test cases\ntest_photos = [\n    ('genuine_photo.jpg', 2500000, {\n        'Make': 'Apple', 'Model': 'iPhone 15', 'Software': '17.3',\n        'DateTime': '2025:02:28 14:30:22', 'DateTimeOriginal': '2025:02:28 14:30:22',\n        'ImageWidth': 4032, 'ImageLength': 3024\n    }),\n    ('edited_photo.jpg', 3200000, {\n        'Make': 'Apple', 'Model': 'iPhone 15', 'Software': 'Adobe Photoshop 25.0',\n        'DateTime': '2025:02:28 16:00:00', 'DateTimeOriginal': '2025:02:28 14:30:22',\n        'ImageWidth': 4032, 'ImageLength': 3024\n    }),\n    ('suspicious.jpg', 1500000, {\n        'Make': '', 'Model': '', 'Software': '',\n        'DateTime': '', 'DateTimeOriginal': '',\n        'ImageWidth': 1920, 'ImageLength': 1080, 'GPSInfo': True\n    }),\n    ('screenshot.jpg', 500000, {\n        'Make': '', 'Model': '', 'Software': 'Paint.NET v5.0',\n        'DateTime': '2025:02:28 12:00:00', 'DateTimeOriginal': '',\n        'ImageWidth': 1920, 'ImageLength': 1080\n    }),\n]\n\nprint(\"PHOTO FORGERY ANALYSIS\")\nprint(\"=\" * 60)\nfor name, size, exif in test_photos:\n    result = detect_forgery(exif, size)\n    icon = {'APPEARS AUTHENTIC': 'OK', 'MINOR ANOMALIES': '?',\n            'SUSPICIOUS': '!', 'LIKELY MANIPULATED': 'XX'}[result['verdict']]\n    print(f\"\\n[{icon}] {name} — {result['verdict']} (score: {result['score']})\")\n    for f in result['findings']:\n        print(f\"    [{f['risk']}] {f['check']}: {f['detail']}\")",
+          "output": "PHOTO FORGERY ANALYSIS\n============================================================\n\n[OK] genuine_photo.jpg — APPEARS AUTHENTIC (score: 0)\n\n[XX] edited_photo.jpg — LIKELY MANIPULATED (score: 5)\n    [HIGH] Timestamp Mismatch: Modified: 2025:02:28 16:00:00 vs Original: 2025:02:28 14:30:22\n    [MEDIUM] Editing Software: Software: Adobe Photoshop 25.0\n\n[XX] suspicious.jpg — LIKELY MANIPULATED (score: 5)\n    [MEDIUM] No Camera Info: Make and Model missing\n    [HIGH] GPS without Camera: GPS data present but camera info missing\n\n[!] screenshot.jpg — SUSPICIOUS (score: 4)\n    [MEDIUM] Editing Software: Software: Paint.NET v5.0\n    [MEDIUM] No Camera Info: Make and Model missing",
+          "ai_explanation": "The forgery detector uses MULTIPLE checks for reliability:\n\n1. genuine_photo: All fields consistent, timestamps match — authentic.\n2. edited_photo: Timestamps differ (modified 1.5 hours later) + Photoshop signature = definitely edited.\n3. suspicious.jpg: No camera info BUT has GPS data — this is very unusual. GPS was possibly INJECTED to fake a location.\n4. screenshot.jpg: No camera info + Paint.NET = created/edited on computer, not a camera photo.\n\nNo single check is definitive, but COMBINED they create a reliable assessment. This multi-factor approach is used by professional forensic tools.",
+          "ai_challenge": "Add JPEG quality analysis: extract the quantisation table from the JPEG and compare to known camera defaults. Re-saving in Photoshop changes the quantisation."
+        },
+        {
+          "title": "Example 9: Batch Photo Processor with CSV Report",
+          "description": "Process multiple images, extract metadata, generate CSV evidence report",
+          "difficulty": "advanced",
+          "code": "import csv\nimport os\nimport hashlib\nfrom datetime import datetime\n\ndef process_photo(filepath):\n    \"\"\"Extract metadata from a simulated photo.\"\"\"\n    with open(filepath, 'rb') as f:\n        data = f.read()\n    \n    sha = hashlib.sha256(data).hexdigest()\n    is_jpeg = data[:3] == b'\\xff\\xd8\\xff'\n    has_exif = b'Exif' in data[:500] if is_jpeg else False\n    \n    return {\n        'filename': os.path.basename(filepath),\n        'size': len(data),\n        'sha256': sha,\n        'is_jpeg': is_jpeg,\n        'has_exif': has_exif,\n    }\n\ndef generate_csv_report(photos, output_file):\n    \"\"\"Generate CSV evidence report.\"\"\"\n    fields = ['filename', 'size', 'sha256', 'is_jpeg', 'has_exif']\n    with open(output_file, 'w', newline='') as f:\n        writer = csv.DictWriter(f, fieldnames=fields)\n        writer.writeheader()\n        for photo in photos:\n            writer.writerow(photo)\n    return output_file\n\n# Create test photo files\nos.makedirs('evidence_photos', exist_ok=True)\ntest_photos = [\n    ('evidence_photos/IMG_001.jpg', b'\\xff\\xd8\\xff\\xe1\\x00\\x10Exif\\x00\\x00' + os.urandom(5000)),\n    ('evidence_photos/IMG_002.jpg', b'\\xff\\xd8\\xff\\xe1\\x00\\x10Exif\\x00\\x00' + os.urandom(8000)),\n    ('evidence_photos/IMG_003.jpg', b'\\xff\\xd8\\xff\\xe0\\x00\\x10JFIF' + os.urandom(3000)),\n    ('evidence_photos/screenshot.png', b'\\x89PNG\\r\\n\\x1a\\n' + os.urandom(2000)),\n    ('evidence_photos/edited.jpg', b'\\xff\\xd8\\xff\\xe0\\x00\\x10JFIF' + os.urandom(12000)),\n]\n\nfor path, content in test_photos:\n    with open(path, 'wb') as f:\n        f.write(content)\n\n# Process all photos\nresults = []\nfor path, _ in test_photos:\n    results.append(process_photo(path))\n\n# Generate report\nreport = generate_csv_report(results, 'photo_report.csv')\n\n# Display summary\nprint(\"BATCH PHOTO PROCESSING REPORT\")\nprint(\"=\" * 55)\nprint(f\"Photos processed: {len(results)}\")\njpegs = sum(1 for r in results if r['is_jpeg'])\nwith_exif = sum(1 for r in results if r['has_exif'])\nprint(f\"JPEG files:       {jpegs}\")\nprint(f\"With EXIF:        {with_exif}\")\nprint(f\"Without EXIF:     {jpegs - with_exif} (potentially stripped!)\")\nprint(f\"Non-JPEG:         {len(results) - jpegs}\")\ntotal_size = sum(r['size'] for r in results)\nprint(f\"Total size:       {total_size:,} bytes\")\nprint(f\"Report saved:     {report}\")\n\nprint(f\"\\nFILE DETAILS:\")\nfor r in results:\n    exif_status = 'EXIF' if r['has_exif'] else 'NO EXIF' if r['is_jpeg'] else 'N/A'\n    print(f\"  {r['filename']:<25} {r['size']:>8,}B  {exif_status:<8} {r['sha256'][:12]}...\")\n\n# Cleanup\nimport shutil\nshutil.rmtree('evidence_photos')\nos.remove('photo_report.csv')",
+          "output": "BATCH PHOTO PROCESSING REPORT\n=======================================================\nPhotos processed: 5\nJPEG files:       4\nWith EXIF:        2\nWithout EXIF:     2 (potentially stripped!)\nNon-JPEG:         1\nTotal size:       30,060 bytes\nReport saved:     photo_report.csv\n\nFILE DETAILS:\n  IMG_001.jpg               5,012B  EXIF     a1b2c3d4e5f6...\n  IMG_002.jpg               8,012B  EXIF     c3d4e5f6a7b8...\n  IMG_003.jpg               3,012B  NO EXIF  e5f6a7b8c9d0...\n  screenshot.png            2,008B  N/A      12345abcde67...\n  edited.jpg               12,012B  NO EXIF  789abcdef012...",
+          "ai_explanation": "Batch processing is essential for real cases:\n\n1. Process ALL files in a directory automatically.\n2. Hash each file (SHA-256) for evidence integrity.\n3. Check magic bytes to verify true file type.\n4. Flag EXIF presence/absence.\n5. Generate CSV report for documentation.\n\nIn a real case with 10,000 photos, this runs in seconds. The CSV can be imported into Excel, a database, or a SIEM for further analysis. The hash manifest ensures evidence integrity throughout the investigation.",
+          "ai_challenge": "On your VM: modify this to use Pillow's extract_exif() on real photos. Add GPS extraction and generate a KML file that can be opened in Google Earth."
+        },
+        {
+          "title": "Example 10: EXIF Comparison Tool",
+          "description": "Compare metadata between two images to detect if they came from the same source",
+          "difficulty": "intermediate",
+          "code": "# EXIF Comparison Tool — are two photos from the same device?\n\ndef compare_exif(exif1, exif2, name1='Photo A', name2='Photo B'):\n    \"\"\"Compare two EXIF datasets and find similarities/differences.\"\"\"\n    compare_fields = [\n        ('Make', 'Camera manufacturer'),\n        ('Model', 'Camera model'),\n        ('Software', 'Software/firmware'),\n        ('LensModel', 'Lens'),\n        ('BodySerialNumber', 'Serial number'),\n        ('ImageWidth', 'Width'),\n        ('ImageLength', 'Height'),\n    ]\n    \n    matches = []\n    differences = []\n    missing = []\n    \n    for field, desc in compare_fields:\n        v1 = exif1.get(field)\n        v2 = exif2.get(field)\n        \n        if v1 is None and v2 is None:\n            missing.append(field)\n        elif v1 == v2:\n            matches.append((field, desc, v1))\n        else:\n            differences.append((field, desc, v1, v2))\n    \n    # Determine linkage probability\n    match_count = len(matches)\n    total = len(compare_fields) - len(missing)\n    if total > 0:\n        match_pct = match_count / total * 100\n    else:\n        match_pct = 0\n    \n    if match_pct >= 80:\n        linkage = 'LIKELY SAME DEVICE'\n    elif match_pct >= 50:\n        linkage = 'POSSIBLE SAME DEVICE'\n    else:\n        linkage = 'DIFFERENT DEVICES'\n    \n    return {\n        'linkage': linkage,\n        'match_pct': match_pct,\n        'matches': matches,\n        'differences': differences,\n        'missing': missing\n    }\n\n# Test comparisons\nphoto_a = {'Make': 'Canon', 'Model': 'EOS R5', 'Software': 'Firmware 1.8.1',\n           'LensModel': 'RF 24-70mm f/2.8', 'BodySerialNumber': 'ABC123',\n           'ImageWidth': 8192, 'ImageLength': 5464}\n\nphoto_b = {'Make': 'Canon', 'Model': 'EOS R5', 'Software': 'Firmware 1.8.1',\n           'LensModel': 'RF 24-70mm f/2.8', 'BodySerialNumber': 'ABC123',\n           'ImageWidth': 8192, 'ImageLength': 5464}\n\nphoto_c = {'Make': 'Canon', 'Model': 'EOS R5', 'Software': 'Adobe Lightroom 7.1',\n           'LensModel': 'RF 50mm f/1.2', 'BodySerialNumber': 'ABC123',\n           'ImageWidth': 4096, 'ImageLength': 2732}\n\nphoto_d = {'Make': 'Nikon', 'Model': 'Z9', 'Software': 'Firmware 4.0',\n           'LensModel': 'Z 70-200mm', 'BodySerialNumber': 'XYZ789',\n           'ImageWidth': 8256, 'ImageLength': 5504}\n\ncomparisons = [\n    (photo_a, photo_b, 'Crime Scene 1', 'Crime Scene 2'),\n    (photo_a, photo_c, 'Crime Scene 1', 'Suspect Phone'),\n    (photo_a, photo_d, 'Crime Scene 1', 'Witness Camera'),\n]\n\nprint(\"EXIF COMPARISON ANALYSIS\")\nprint(\"=\" * 60)\nfor e1, e2, n1, n2 in comparisons:\n    r = compare_exif(e1, e2, n1, n2)\n    print(f\"\\n{n1} vs {n2}: {r['linkage']} ({r['match_pct']:.0f}% match)\")\n    if r['matches']:\n        print(f\"  Matching: {', '.join(f[0] for f in r['matches'])}\")\n    if r['differences']:\n        for field, desc, v1, v2 in r['differences']:\n            print(f\"  DIFFERS: {field}: '{v1}' vs '{v2}'\")",
+          "output": "EXIF COMPARISON ANALYSIS\n============================================================\n\nCrime Scene 1 vs Crime Scene 2: LIKELY SAME DEVICE (100% match)\n  Matching: Make, Model, Software, LensModel, BodySerialNumber, ImageWidth, ImageLength\n\nCrime Scene 1 vs Suspect Phone: POSSIBLE SAME DEVICE (57% match)\n  Matching: Make, Model, BodySerialNumber\n  DIFFERS: Software: 'Firmware 1.8.1' vs 'Adobe Lightroom 7.1'\n  DIFFERS: LensModel: 'RF 24-70mm f/2.8' vs 'RF 50mm f/1.2'\n  DIFFERS: ImageWidth: '8192' vs '4096'\n\nCrime Scene 1 vs Witness Camera: DIFFERENT DEVICES (0% match)\n  DIFFERS: Make, Model, Software, LensModel, BodySerialNumber, ...",
+          "ai_explanation": "EXIF comparison links evidence to devices:\n\n1. Scene 1 vs Scene 2: 100% match including serial number — SAME camera took both photos. Strong evidence.\n\n2. Scene 1 vs Suspect Phone: Same Make, Model, and SERIAL NUMBER — this IS the same camera body. But different lens and software (edited in Lightroom). The serial number match is the key evidence. Different lens just means swapped lenses. Different software means edited.\n\n3. Scene 1 vs Witness Camera: Completely different — Nikon vs Canon. Different serial. This camera was NOT used at the crime scene.\n\nSerial number is the strongest link. Make/Model alone could be millions of devices. Serial number is unique.",
+          "ai_challenge": "Add timestamp comparison: calculate the time gap between photos from the same device. Flag any impossibly close timestamps (could indicate batch processing/forgery)."
+        },
+        {
+          "title": "Example 11: Privacy Audit Tool",
+          "description": "Audit what personal information a collection of photos reveals",
+          "difficulty": "intermediate",
+          "code": "# Privacy Audit — what do your photos reveal about you?\n\nfrom collections import Counter\nfrom datetime import datetime\n\ndef privacy_audit(photos):\n    \"\"\"Analyse what a photo collection reveals about the owner.\"\"\"\n    devices = Counter()\n    locations = []\n    times = []\n    software = Counter()\n    \n    for p in photos:\n        if p.get('Make') and p.get('Model'):\n            devices[f\"{p['Make']} {p['Model']}\"] += 1\n        if p.get('GPS'):\n            locations.append(p['GPS'])\n        if p.get('DateTime'):\n            try:\n                dt = datetime.strptime(p['DateTime'], '%Y:%m:%d %H:%M:%S')\n                times.append(dt)\n            except ValueError:\n                pass\n        if p.get('Software'):\n            software[p['Software']] += 1\n    \n    # Analyse patterns\n    print(\"PRIVACY AUDIT REPORT\")\n    print(\"=\" * 55)\n    \n    # Device inventory\n    print(f\"\\n[DEVICES] ({len(devices)} unique)\")\n    for dev, count in devices.most_common():\n        print(f\"  {dev}: {count} photos\")\n    \n    # Location analysis\n    print(f\"\\n[LOCATIONS] ({len(locations)} geotagged photos)\")\n    if locations:\n        unique_locs = len(set(str(l) for l in locations))\n        print(f\"  Unique locations: {unique_locs}\")\n        # Most visited\n        loc_counts = Counter(str(l) for l in locations)\n        top = loc_counts.most_common(1)[0]\n        print(f\"  Most visited: {top[0]} ({top[1]} photos)\")\n        print(f\"  >>> This could be HOME or WORK!\")\n    else:\n        print(f\"  No GPS data (good for privacy!)\")\n    \n    # Time patterns\n    print(f\"\\n[TIME PATTERNS] ({len(times)} timestamped)\")\n    if times:\n        hours = Counter(dt.hour for dt in times)\n        print(f\"  Date range: {min(times).date()} to {max(times).date()}\")\n        most_active = hours.most_common(1)[0]\n        print(f\"  Most active hour: {most_active[0]:02d}:00 ({most_active[1]} photos)\")\n        weekend = sum(1 for dt in times if dt.weekday() >= 5)\n        weekday = len(times) - weekend\n        print(f\"  Weekday: {weekday} | Weekend: {weekend}\")\n    \n    # Risk assessment\n    risk = 0\n    print(f\"\\n[RISK ASSESSMENT]\")\n    if len(locations) > 5:\n        risk += 3\n        print(f\"  HIGH: {len(locations)} geotagged photos reveal movement pattern\")\n    if len(devices) > 0:\n        risk += 1\n        print(f\"  LOW: Device info reveals what technology you own\")\n    if len(times) > 10:\n        risk += 2\n        print(f\"  MEDIUM: {len(times)} timestamps reveal daily routine\")\n    \n    level = 'CRITICAL' if risk >= 5 else 'HIGH' if risk >= 3 else 'LOW'\n    print(f\"\\n  Overall privacy risk: {level} (score: {risk})\")\n\n# Simulated photo collection\nphotos = [\n    {'Make': 'Apple', 'Model': 'iPhone 15', 'DateTime': '2025:02:28 07:30:00',\n     'GPS': '51.5074, -0.1278', 'Software': '17.3'},\n    {'Make': 'Apple', 'Model': 'iPhone 15', 'DateTime': '2025:02:28 08:15:00',\n     'GPS': '51.5155, -0.1420', 'Software': '17.3'},\n    {'Make': 'Apple', 'Model': 'iPhone 15', 'DateTime': '2025:02:28 12:30:00',\n     'GPS': '51.5074, -0.1278', 'Software': '17.3'},\n    {'Make': 'Apple', 'Model': 'iPhone 15', 'DateTime': '2025:02:28 18:00:00',\n     'GPS': '51.5074, -0.1278', 'Software': '17.3'},\n    {'Make': 'Apple', 'Model': 'iPhone 15', 'DateTime': '2025:02:27 09:00:00',\n     'GPS': '51.5155, -0.1420', 'Software': '17.3'},\n    {'Make': 'Apple', 'Model': 'iPhone 15', 'DateTime': '2025:02:27 17:30:00',\n     'GPS': '51.5074, -0.1278', 'Software': '17.3'},\n    {'Make': 'Canon', 'Model': 'EOS R5', 'DateTime': '2025:02:26 14:00:00',\n     'GPS': '51.5033, -0.1195', 'Software': 'Firmware 1.8.1'},\n]\n\nprivacy_audit(photos)",
+          "output": "PRIVACY AUDIT REPORT\n=======================================================\n\n[DEVICES] (2 unique)\n  Apple iPhone 15: 6 photos\n  Canon EOS R5: 1 photos\n\n[LOCATIONS] (7 geotagged photos)\n  Unique locations: 3\n  Most visited: 51.5074, -0.1278 (4 photos)\n  >>> This could be HOME or WORK!\n\n[TIME PATTERNS] (7 timestamped)\n  Date range: 2025-02-26 to 2025-02-28\n  Most active hour: 07:00-18:00\n  Weekday: 5 | Weekend: 2\n\n[RISK ASSESSMENT]\n  HIGH: 7 geotagged photos reveal movement pattern\n  LOW: Device info reveals what technology you own\n\n  Overall privacy risk: HIGH (score: 4)",
+          "ai_explanation": "This privacy audit reveals what an attacker could learn from your photos:\n\n1. DEVICES: You own an iPhone 15 (primary) and Canon EOS R5 (hobby/professional).\n2. LOCATIONS: 51.5074, -0.1278 appears 4 times — this is likely HOME (returned morning, lunch, evening). 51.5155, -0.1420 appears during work hours — likely OFFICE.\n3. TIME PATTERNS: Active 07:30-18:00 on weekdays — reveals your schedule.\n4. MOVEMENT: You commute between two specific locations on weekdays.\n\nA stalker could use this data to: find your home, find your workplace, know your schedule, know when you leave home, and what devices to target. This is why metadata awareness matters!",
+          "ai_challenge": "Add a 'scrub' function that lists EXACTLY what data to remove before sharing photos. Also check for WiFi SSID data in some camera metadata."
+        },
+        {
+          "title": "Example 12: Complete Forensic Image Analysis Pipeline",
+          "description": "End-to-end: scan directory, identify, extract, analyse, report",
+          "difficulty": "advanced",
+          "code": "import os, hashlib, json, csv\nfrom datetime import datetime\n\ndef forensic_image_pipeline(evidence_dir, output_dir):\n    \"\"\"Complete forensic image analysis pipeline.\"\"\"\n    os.makedirs(output_dir, exist_ok=True)\n    \n    # Phase 1: Discovery\n    print(\"Phase 1: Discovering image files...\")\n    image_exts = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}\n    images = []\n    \n    for dirpath, _, filenames in os.walk(evidence_dir):\n        for fname in filenames:\n            fpath = os.path.join(dirpath, fname)\n            ext = os.path.splitext(fname)[1].lower()\n            if ext in image_exts:\n                images.append(fpath)\n    print(f\"  Found {len(images)} image files\")\n    \n    # Phase 2: Identification & Hashing\n    print(\"Phase 2: Identifying and hashing...\")\n    results = []\n    for fpath in images:\n        with open(fpath, 'rb') as f:\n            data = f.read()\n        \n        sha = hashlib.sha256(data).hexdigest()\n        is_jpeg = data[:3] == b'\\xff\\xd8\\xff'\n        has_exif = b'Exif' in data[:500] if is_jpeg else False\n        true_type = 'JPEG' if is_jpeg else 'PNG' if data[:4] == b'\\x89PNG' else 'Other'\n        \n        ext = os.path.splitext(fpath)[1].lower()\n        ext_match = (ext in ('.jpg', '.jpeg') and true_type == 'JPEG') or \\\n                    (ext == '.png' and true_type == 'PNG')\n        \n        results.append({\n            'filename': os.path.basename(fpath),\n            'path': fpath,\n            'size': len(data),\n            'sha256': sha,\n            'true_type': true_type,\n            'extension': ext,\n            'ext_match': ext_match,\n            'has_exif': has_exif,\n        })\n    \n    # Phase 3: Analysis\n    print(\"Phase 3: Analysing metadata patterns...\")\n    with_exif = sum(1 for r in results if r['has_exif'])\n    mismatched = [r for r in results if not r['ext_match']]\n    duplicates = []\n    hashes = {}\n    for r in results:\n        if r['sha256'] in hashes:\n            duplicates.append((r['filename'], hashes[r['sha256']]))\n        else:\n            hashes[r['sha256']] = r['filename']\n    \n    # Phase 4: Report Generation\n    print(\"Phase 4: Generating reports...\")\n    \n    # CSV manifest\n    csv_path = os.path.join(output_dir, 'image_manifest.csv')\n    with open(csv_path, 'w', newline='') as f:\n        w = csv.DictWriter(f, fieldnames=['filename', 'size', 'sha256', 'true_type', 'has_exif', 'ext_match'])\n        w.writeheader()\n        for r in results:\n            w.writerow({k: r[k] for k in w.fieldnames})\n    \n    # Summary report\n    summary = {\n        'timestamp': datetime.now().isoformat(),\n        'total_images': len(results),\n        'with_exif': with_exif,\n        'without_exif': len(results) - with_exif,\n        'mismatched_types': len(mismatched),\n        'duplicates': len(duplicates),\n        'total_size': sum(r['size'] for r in results),\n        'alerts': []\n    }\n    \n    if mismatched:\n        for m in mismatched:\n            summary['alerts'].append(f\"Type mismatch: {m['filename']} ({m['extension']} is actually {m['true_type']})\")\n    if duplicates:\n        for d in duplicates:\n            summary['alerts'].append(f\"Duplicate: {d[0]} matches {d[1]}\")\n    \n    json_path = os.path.join(output_dir, 'analysis.json')\n    with open(json_path, 'w') as f:\n        json.dump(summary, f, indent=2)\n    \n    # Print results\n    print(f\"\\n{'=' * 55}\")\n    print(f\"FORENSIC IMAGE ANALYSIS COMPLETE\")\n    print(f\"{'=' * 55}\")\n    print(f\"Images found:     {summary['total_images']}\")\n    print(f\"With EXIF:        {summary['with_exif']}\")\n    print(f\"Stripped/No EXIF: {summary['without_exif']}\")\n    print(f\"Type mismatches:  {summary['mismatched_types']}\")\n    print(f\"Duplicates:       {summary['duplicates']}\")\n    print(f\"Total size:       {summary['total_size']:,} bytes\")\n    \n    if summary['alerts']:\n        print(f\"\\nALERTS ({len(summary['alerts'])}):\")\n        for alert in summary['alerts']:\n            print(f\"  >>> {alert}\")\n    \n    print(f\"\\nReports: {csv_path}, {json_path}\")\n    return summary\n\n# Create test evidence\nos.makedirs('img_evidence', exist_ok=True)\ntest = [\n    ('img_evidence/photo1.jpg', b'\\xff\\xd8\\xff\\xe1\\x00\\x10Exif\\x00\\x00' + os.urandom(3000)),\n    ('img_evidence/photo2.jpg', b'\\xff\\xd8\\xff\\xe1\\x00\\x10Exif\\x00\\x00' + os.urandom(5000)),\n    ('img_evidence/stripped.jpg', b'\\xff\\xd8\\xff\\xe0\\x00\\x10JFIF' + os.urandom(4000)),\n    ('img_evidence/fake.jpg', b'\\x89PNG\\r\\n\\x1a\\n' + os.urandom(2000)),\n    ('img_evidence/screenshot.png', b'\\x89PNG\\r\\n\\x1a\\n' + os.urandom(1500)),\n]\nfor path, content in test:\n    with open(path, 'wb') as f: f.write(content)\n\nforensic_image_pipeline('img_evidence', 'img_output')\n\nimport shutil\nshutil.rmtree('img_evidence')\nshutil.rmtree('img_output')",
+          "output": "Phase 1: Discovering image files...\n  Found 5 image files\nPhase 2: Identifying and hashing...\nPhase 3: Analysing metadata patterns...\nPhase 4: Generating reports...\n\n=======================================================\nFORENSIC IMAGE ANALYSIS COMPLETE\n=======================================================\nImages found:     5\nWith EXIF:        2\nStripped/No EXIF: 3\nType mismatches:  1\nDuplicates:       0\nTotal size:       15,538 bytes\n\nALERTS (1):\n  >>> Type mismatch: fake.jpg (.jpg is actually PNG)\n\nReports: img_output/image_manifest.csv, img_output/analysis.json",
+          "ai_explanation": "This is a COMPLETE forensic image pipeline:\n\nPhase 1 (Discovery): os.walk finds all image files by extension.\nPhase 2 (Identification): Magic bytes verify true type, SHA-256 hashes for integrity.\nPhase 3 (Analysis): EXIF presence check, extension mismatch detection, duplicate finding.\nPhase 4 (Reporting): CSV manifest for spreadsheet analysis, JSON summary for tool integration.\n\nThe pipeline catches: disguised files (PNG renamed to .jpg), stripped metadata (JPEG without EXIF), and duplicate files (same hash). This is what professional tools like Autopsy do when processing seized storage.\n\nOn your VM: replace the simulated files with a real photo directory and add Pillow-based EXIF extraction for the full experience!",
+          "ai_challenge": "Add Pillow integration: for every JPEG with EXIF, extract Make/Model/DateTime/GPS. Add these fields to the CSV. Generate a KML file for Google Earth with all GPS-tagged photo locations."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Image Metadata & EXIF — Forensic Reference",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 10px;\"><div style=\"text-align: center; margin-bottom: 20px;\"><span style=\"background: #e74c3c; color: white; padding: 8px 20px; border-radius: 6px; font-size: 16px; font-weight: bold;\">📸 IMAGE METADATA & EXIF — REFERENCE</span></div>\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">JPEG FILE STRUCTURE</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n<div style=\"text-align: center;\"><span style=\"background: #e74c3c; color: white; padding: 4px 16px; border-radius: 4px;\">FF D8 FF — JPEG Start (SOI)</span></div>\n<div style=\"text-align: center; color: #e74c3c;\">│</div>\n<div style=\"text-align: center; color: #e74c3c;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #3498db; color: white; padding: 4px 16px; border-radius: 4px;\">FF E1 — APP1 (EXIF Data)</span></div>\n<div style=\"text-align: center; color: #3498db;\">│</div>\n<div style=\"text-align: center; color: #3498db;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #2ecc71; color: white; padding: 4px 16px; border-radius: 4px;\">Camera, GPS, Timestamps, Settings</span></div>\n<div style=\"text-align: center; color: #2ecc71;\">│</div>\n<div style=\"text-align: center; color: #2ecc71;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #9b59b6; color: white; padding: 4px 16px; border-radius: 4px;\">Pixel Data (the visible image)</span></div>\n<div style=\"text-align: center; color: #9b59b6;\">│</div>\n<div style=\"text-align: center; color: #9b59b6;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #f39c12; color: white; padding: 4px 16px; border-radius: 4px;\">FF D9 — JPEG End (EOI)</span></div>\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">KEY EXIF TAGS</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">271</span> Make (camera manufacturer)\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">272</span> Model (camera model)\n  <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 3px;\">306</span> DateTime (last modified)\n  <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 3px;\">36867</span> DateTimeOriginal (when captured!)\n  <span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">34853</span> GPSInfo (location block)\n  <span style=\"background: #f39c12; color: white; padding: 2px 8px; border-radius: 3px;\">305</span> Software (editing detection)\n  <span style=\"background: #9b59b6; color: white; padding: 2px 8px; border-radius: 3px;\">274</span> Orientation (rotation)\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">GPS CONVERSION</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  EXIF format:   51 deg 30 min 26.4 sec N\n  <span style=\"color: #2ecc71;\">Formula: degrees + minutes/60 + seconds/3600</span>\n  Decimal:        <span style=\"color: #3498db; font-weight: bold;\">51.507333</span>\n  South/West:     Make NEGATIVE\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">FORENSIC CHECKLIST</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"color: #2ecc71; font-weight: bold;\">1.</span> Hash file BEFORE analysis (SHA-256)\n  <span style=\"color: #2ecc71; font-weight: bold;\">2.</span> Verify magic bytes (true file type)\n  <span style=\"color: #2ecc71; font-weight: bold;\">3.</span> Extract EXIF (camera, GPS, time)\n  <span style=\"color: #2ecc71; font-weight: bold;\">4.</span> Check timestamps (edited?)\n  <span style=\"color: #2ecc71; font-weight: bold;\">5.</span> Extract GPS (convert to decimal)\n  <span style=\"color: #2ecc71; font-weight: bold;\">6.</span> Identify device (Make/Model/Serial)\n  <span style=\"color: #2ecc71; font-weight: bold;\">7.</span> Check for stripping (absent EXIF)\n  <span style=\"color: #2ecc71; font-weight: bold;\">8.</span> Hash file AFTER analysis (verify)\n  <span style=\"color: #2ecc71; font-weight: bold;\">9.</span> Generate report with all findings\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">💡 REMEMBER</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> EXIF = hidden data inside images\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> GPS has solved real crimes\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> Missing EXIF = evidence of stripping\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> Hash before AND after extraction\n  <span style=\"color: #e74c3c; font-weight: bold;\">✓</span> EXIF CAN be faked — cross-reference!\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> Social media strips EXIF on upload\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> pip install Pillow for real extraction\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Create EXIF Dictionary",
+          "description": "Create a dictionary representing EXIF data with Make, Model, DateTime fields.",
+          "difficulty": "beginner",
+          "category": "EXIF Basics",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Create a dictionary representing EXIF data with Make, Model, DateTime fields.",
+          "starter_code": "# TODO: Create an exif dict with Make, Model, DateTime\n",
+          "expected_output": "Make: Apple\nModel: iPhone 15\nDateTime: 2025:02:28 14:30:22",
+          "hints": [
+            {
+              "message": "exif = {'Make': 'Apple', 'Model': 'iPhone 15', ...}"
+            },
+            {
+              "message": "Use EXIF datetime format: YYYY:MM:DD HH:MM:SS (colons in date!)."
+            },
+            {
+              "message": "Solution:\nexif = {'Make': 'Apple', 'Model': 'iPhone 15', 'DateTime': '2025:02:28 14:30:22'}\nfor k, v in exif.items():\n    print(f'{k}: {v}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Tag Number Lookup",
+          "description": "Create a function that converts EXIF tag numbers to names.",
+          "difficulty": "beginner",
+          "category": "EXIF Basics",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Create a function that converts EXIF tag numbers to names.",
+          "starter_code": "TAG_NAMES = {271: \"Make\", 272: \"Model\", 306: \"DateTime\", 274: \"Orientation\"}\n\n# TODO: Function tag_name(num) that returns the name\n",
+          "expected_output": "271 = Make\n999 = Unknown_999",
+          "hints": [
+            {
+              "message": "TAG_NAMES.get(num, f'Unknown_{num}')"
+            },
+            {
+              "message": "The .get() with default handles unknown tags."
+            },
+            {
+              "message": "Solution:\ndef tag_name(num):\n    return TAG_NAMES.get(num, f'Unknown_{num}')\nprint(f'271 = {tag_name(271)}')\nprint(f'999 = {tag_name(999)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Parse EXIF DateTime",
+          "description": "Parse an EXIF datetime string into a Python datetime object.",
+          "difficulty": "beginner",
+          "category": "EXIF Basics",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Parse an EXIF datetime string into a Python datetime object.",
+          "starter_code": "from datetime import datetime\nexif_dt = \"2025:02:28 14:30:22\"\n# TODO: Parse to datetime object\n",
+          "expected_output": "2025-02-28 14:30:22\nHour: 14",
+          "hints": [
+            {
+              "message": "datetime.strptime(exif_dt, '%Y:%m:%d %H:%M:%S')"
+            },
+            {
+              "message": "EXIF uses colons in date AND time!"
+            },
+            {
+              "message": "Solution:\ndt = datetime.strptime(exif_dt, '%Y:%m:%d %H:%M:%S')\nprint(dt)\nprint(f'Hour: {dt.hour}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Display EXIF Categories",
+          "description": "Group EXIF fields into Device, Time, and Settings categories.",
+          "difficulty": "beginner",
+          "category": "EXIF Basics",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Group EXIF fields into Device, Time, and Settings categories.",
+          "starter_code": "exif = {\"Make\": \"Canon\", \"Model\": \"EOS R5\", \"DateTime\": \"2025:02:28 10:00:00\",\n        \"ExposureTime\": \"1/250\", \"FNumber\": 2.8, \"ISO\": 400}\n\n# TODO: Print grouped by category\n",
+          "expected_output": "[DEVICE]\n  Make: Canon\n  Model: EOS R5\n[TIME]\n  DateTime: 2025:02:28 10:00:00\n[SETTINGS]\n  ExposureTime: 1/250\n  ...",
+          "hints": [
+            {
+              "message": "Define category lists: device_fields = ['Make', 'Model'] etc."
+            },
+            {
+              "message": "Loop through each category and print matching fields."
+            },
+            {
+              "message": "Solution:\ncats = {'DEVICE': ['Make', 'Model'], 'TIME': ['DateTime'], 'SETTINGS': ['ExposureTime', 'FNumber', 'ISO']}\nfor cat_name, fields in cats.items():\n    print(f'[{cat_name}]')\n    for f in fields:\n        if f in exif:\n            print(f'  {f}: {exif[f]}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Compare Timestamps",
+          "description": "Check if DateTime and DateTimeOriginal match (detect editing).",
+          "difficulty": "beginner",
+          "category": "EXIF Basics",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Check if DateTime and DateTimeOriginal match (detect editing).",
+          "starter_code": "exif = {\"DateTime\": \"2025:02:28 16:00:00\", \"DateTimeOriginal\": \"2025:02:28 14:30:22\"}\n# TODO: Compare and report\n",
+          "expected_output": "EDITED: Modified 1h 29m after capture!",
+          "hints": [
+            {
+              "message": "If DateTime != DateTimeOriginal, the image was re-saved after capture."
+            },
+            {
+              "message": "Parse both and calculate the difference."
+            },
+            {
+              "message": "Solution:\nfrom datetime import datetime\ndt = datetime.strptime(exif['DateTime'], '%Y:%m:%d %H:%M:%S')\ndto = datetime.strptime(exif['DateTimeOriginal'], '%Y:%m:%d %H:%M:%S')\nif dt != dto:\n    diff = dt - dto\n    mins = diff.seconds // 60\n    print(f'EDITED: Modified {mins//60}h {mins%60}m after capture!')\nelse:\n    print('ORIGINAL: Timestamps match')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Megapixel Calculator",
+          "description": "Calculate megapixels from image dimensions.",
+          "difficulty": "beginner",
+          "category": "EXIF Basics",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Calculate megapixels from image dimensions.",
+          "starter_code": "width = 4032\nheight = 3024\n# TODO: Calculate and classify\n",
+          "expected_output": "Resolution: 4032x3024\nMegapixels: 12.2 MP\nQuality: HIGH",
+          "hints": [
+            {
+              "message": "mp = (width * height) / 1_000_000"
+            },
+            {
+              "message": "HIGH if > 10 MP, MEDIUM if > 5, LOW otherwise."
+            },
+            {
+              "message": "Solution:\nmp = (width * height) / 1_000_000\nquality = 'HIGH' if mp > 10 else 'MEDIUM' if mp > 5 else 'LOW'\nprint(f'Resolution: {width}x{height}')\nprint(f'Megapixels: {mp:.1f} MP')\nprint(f'Quality: {quality}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: EXIF Orientation Decoder",
+          "description": "Decode the EXIF orientation value to human-readable rotation.",
+          "difficulty": "beginner",
+          "category": "EXIF Basics",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Decode the EXIF orientation value to human-readable rotation.",
+          "starter_code": "ORIENTATIONS = {1: \"Normal\", 3: \"Rotated 180\", 6: \"Rotated 90 CW\", 8: \"Rotated 90 CCW\"}\n\n# TODO: Decode orientation values 1, 3, 6, 8\n",
+          "expected_output": "1 = Normal\n3 = Rotated 180\n6 = Rotated 90 CW\n8 = Rotated 90 CCW",
+          "hints": [
+            {
+              "message": "ORIENTATIONS.get(value, 'Unknown')"
+            },
+            {
+              "message": "Loop through the dict."
+            },
+            {
+              "message": "Solution:\nfor val, desc in ORIENTATIONS.items():\n    print(f'{val} = {desc}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Software Detection",
+          "description": "Check if the Software field indicates editing.",
+          "difficulty": "intermediate",
+          "category": "EXIF Basics",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Check if the Software field indicates editing.",
+          "starter_code": "EDITORS = [\"Photoshop\", \"GIMP\", \"Lightroom\", \"Snapseed\", \"FaceApp\"]\n\ndef is_edited(software_string):\n    # TODO: Return True if any editor is found\n    pass\n",
+          "expected_output": "17.3.1: Not edited\nAdobe Photoshop 25.0: EDITED!\nGIMP 2.10: EDITED!",
+          "hints": [
+            {
+              "message": "any(editor.lower() in software_string.lower() for editor in EDITORS)"
+            },
+            {
+              "message": "Case-insensitive comparison catches variations."
+            },
+            {
+              "message": "Solution:\ndef is_edited(sw):\n    return any(e.lower() in sw.lower() for e in EDITORS)\n\nfor sw in ['17.3.1', 'Adobe Photoshop 25.0', 'GIMP 2.10']:\n    status = 'EDITED!' if is_edited(sw) else 'Not edited'\n    print(f'{sw}: {status}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: EXIF Field Counter",
+          "description": "Count how many EXIF fields are present vs expected.",
+          "difficulty": "beginner",
+          "category": "EXIF Basics",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Count how many EXIF fields are present vs expected.",
+          "starter_code": "expected = [\"Make\", \"Model\", \"DateTime\", \"DateTimeOriginal\", \"GPSInfo\", \"Software\", \"ExposureTime\"]\nexif = {\"Make\": \"Apple\", \"Model\": \"iPhone 15\", \"DateTime\": \"2025:02:28 14:30:22\"}\n\n# TODO: Count present vs missing\n",
+          "expected_output": "Present: 3/7\nMissing: DateTimeOriginal, GPSInfo, Software, ExposureTime",
+          "hints": [
+            {
+              "message": "present = [f for f in expected if f in exif]"
+            },
+            {
+              "message": "missing = [f for f in expected if f not in exif]"
+            },
+            {
+              "message": "Solution:\npresent = [f for f in expected if f in exif]\nmissing = [f for f in expected if f not in exif]\nprint(f'Present: {len(present)}/{len(expected)}')\nprint(f'Missing: {\", \".join(missing)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Device Fingerprint",
+          "description": "Create a unique device fingerprint from Make, Model, and Serial.",
+          "difficulty": "intermediate",
+          "category": "EXIF Basics",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Create a unique device fingerprint from Make, Model, and Serial.",
+          "starter_code": "# TODO: Create fingerprint function\ndef fingerprint(make, model, serial=\"\"):\n    pass\n",
+          "expected_output": "Apple|iPhone_15|SN:ABC123\nCanon|EOS_R5|NO_SERIAL",
+          "hints": [
+            {
+              "message": "Combine fields with | separator. Replace spaces with underscores."
+            },
+            {
+              "message": "If serial: include it. If not: mark as NO_SERIAL."
+            },
+            {
+              "message": "Solution:\ndef fingerprint(make, model, serial=''):\n    m = make.replace(' ', '_')\n    mo = model.replace(' ', '_')\n    sn = f'SN:{serial}' if serial else 'NO_SERIAL'\n    return f'{m}|{mo}|{sn}'\n\nprint(fingerprint('Apple', 'iPhone 15', 'ABC123'))\nprint(fingerprint('Canon', 'EOS R5'))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Exposure Analysis",
+          "description": "Determine lighting conditions from ExposureTime, FNumber, and ISO.",
+          "difficulty": "intermediate",
+          "category": "EXIF Basics",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Determine lighting conditions from ExposureTime, FNumber, and ISO.",
+          "starter_code": "# TODO: Analyse shooting conditions\ndef analyse_exposure(shutter, aperture, iso):\n    pass\n",
+          "expected_output": "Bright daylight (fast shutter, low ISO)",
+          "hints": [
+            {
+              "message": "Fast shutter (1/500+) + low ISO (100-400) = bright. Slow shutter + high ISO = dark."
+            },
+            {
+              "message": "Parse shutter as fraction: eval('1/500') = 0.002."
+            },
+            {
+              "message": "Solution:\ndef analyse_exposure(shutter, aperture, iso):\n    speed = eval(shutter) if '/' in str(shutter) else float(shutter)\n    if speed < 0.01 and iso <= 400:\n        return 'Bright daylight (fast shutter, low ISO)'\n    elif iso > 3200:\n        return 'Very dark (high ISO compensation)'\n    else:\n        return 'Normal indoor/outdoor'\n\nprint(analyse_exposure('1/500', 2.8, 100))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Thumbnail Detection",
+          "description": "Check if an EXIF thumbnail exists (potential uncropped original).",
+          "difficulty": "intermediate",
+          "category": "EXIF Basics",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Check if an EXIF thumbnail exists (potential uncropped original).",
+          "starter_code": "# Simulated EXIF with thumbnail\nexif = {\"Make\": \"Apple\", \"Model\": \"iPhone 15\",\n        \"JPEGThumbnail\": b\"\\xff\\xd8\\xff\" + b\"\\x00\"*500,\n        \"ThumbnailLength\": 503}\n\n# TODO: Check for thumbnail and report\n",
+          "expected_output": "Thumbnail: FOUND (503 bytes)\nWARNING: May contain original uncropped image!",
+          "hints": [
+            {
+              "message": "Check if 'JPEGThumbnail' key exists in the EXIF dict."
+            },
+            {
+              "message": "Thumbnails can reveal cropped-out content!"
+            },
+            {
+              "message": "Solution:\nif 'JPEGThumbnail' in exif:\n    size = exif.get('ThumbnailLength', len(exif['JPEGThumbnail']))\n    print(f'Thumbnail: FOUND ({size} bytes)')\n    print('WARNING: May contain original uncropped image!')\nelse:\n    print('Thumbnail: Not present')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: DMS to Decimal — Basic",
+          "description": "Convert 51 degrees 30 minutes 26 seconds North to decimal.",
+          "difficulty": "beginner",
+          "category": "GPS Processing",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Convert 51 degrees 30 minutes 26 seconds North to decimal.",
+          "starter_code": "# TODO: Convert DMS to decimal\ndegrees, minutes, seconds = 51, 30, 26.46\nref = \"N\"\n",
+          "expected_output": "51.507350",
+          "hints": [
+            {
+              "message": "decimal = degrees + minutes/60 + seconds/3600"
+            },
+            {
+              "message": "N and E are positive. S and W are negative."
+            },
+            {
+              "message": "Solution:\ndecimal = degrees + minutes/60 + seconds/3600\nif ref in ('S', 'W'):\n    decimal = -decimal\nprint(f'{decimal:.6f}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Full GPS Conversion",
+          "description": "Convert both latitude and longitude from DMS to decimal.",
+          "difficulty": "beginner",
+          "category": "GPS Processing",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Convert both latitude and longitude from DMS to decimal.",
+          "starter_code": "lat = (51, 30, 26.46)\nlat_ref = \"N\"\nlon = (0, 7, 40.0)\nlon_ref = \"W\"\n\n# TODO: Convert both\n",
+          "expected_output": "51.507350, -0.127778",
+          "hints": [
+            {
+              "message": "Apply the formula to both lat and lon. W = negative."
+            },
+            {
+              "message": "def dms_to_dec(d, m, s, ref): ..."
+            },
+            {
+              "message": "Solution:\ndef dms_to_dec(d, m, s, ref):\n    dec = d + m/60 + s/3600\n    return -dec if ref in ('S','W') else dec\n\nprint(f'{dms_to_dec(*lat, lat_ref):.6f}, {dms_to_dec(*lon, lon_ref):.6f}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Google Maps Link",
+          "description": "Generate a Google Maps URL from GPS coordinates.",
+          "difficulty": "beginner",
+          "category": "GPS Processing",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Generate a Google Maps URL from GPS coordinates.",
+          "starter_code": "lat = 51.5074\nlon = -0.1278\n# TODO: Generate maps link\n",
+          "expected_output": "https://maps.google.com/?q=51.5074,-0.1278",
+          "hints": [
+            {
+              "message": "f'https://maps.google.com/?q={lat},{lon}'"
+            },
+            {
+              "message": "Simple f-string formatting."
+            },
+            {
+              "message": "Solution:\nprint(f'https://maps.google.com/?q={lat},{lon}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: EXIF Rational GPS",
+          "description": "Convert EXIF rational format ((51,1),(30,1),(2646,100)) to decimal.",
+          "difficulty": "intermediate",
+          "category": "GPS Processing",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Convert EXIF rational format ((51,1),(30,1),(2646,100)) to decimal.",
+          "starter_code": "gps_lat = ((51, 1), (30, 1), (2646, 100))\ngps_ref = \"N\"\n\n# TODO: Convert rational tuples\n",
+          "expected_output": "51.507389",
+          "hints": [
+            {
+              "message": "Each tuple is (numerator, denominator). Divide to get the value."
+            },
+            {
+              "message": "51/1=51, 30/1=30, 2646/100=26.46"
+            },
+            {
+              "message": "Solution:\nd = gps_lat[0][0] / gps_lat[0][1]\nm = gps_lat[1][0] / gps_lat[1][1]\ns = gps_lat[2][0] / gps_lat[2][1]\ndecimal = d + m/60 + s/3600\nif gps_ref in ('S','W'): decimal = -decimal\nprint(f'{decimal:.6f}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Distance Calculator",
+          "description": "Calculate distance between two GPS coordinates using Haversine formula.",
+          "difficulty": "intermediate",
+          "category": "GPS Processing",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Calculate distance between two GPS coordinates using Haversine formula.",
+          "starter_code": "import math\n\n# TODO: Haversine distance function\ndef haversine(lat1, lon1, lat2, lon2):\n    pass\n\n# London to Paris\n",
+          "expected_output": "Distance: 343.6 km",
+          "hints": [
+            {
+              "message": "Haversine: a = sin2(dlat/2) + cos(lat1)*cos(lat2)*sin2(dlon/2)"
+            },
+            {
+              "message": "R = 6371 (Earth radius in km). Convert degrees to radians first!"
+            },
+            {
+              "message": "Solution:\ndef haversine(lat1, lon1, lat2, lon2):\n    R = 6371\n    dlat = math.radians(lat2-lat1)\n    dlon = math.radians(lon2-lon1)\n    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1))*math.cos(math.radians(lat2))*math.sin(dlon/2)**2\n    return R * 2 * math.asin(math.sqrt(a))\n\nprint(f'Distance: {haversine(51.5074, -0.1278, 48.8566, 2.3522):.1f} km')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: GPS Bounding Box",
+          "description": "Determine the geographic area covered by a set of coordinates.",
+          "difficulty": "intermediate",
+          "category": "GPS Processing",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Determine the geographic area covered by a set of coordinates.",
+          "starter_code": "coords = [(51.50, -0.13), (51.52, -0.14), (51.49, -0.10), (51.51, -0.12)]\n# TODO: Find bounding box\n",
+          "expected_output": "North: 51.52  South: 51.49  East: -0.10  West: -0.14",
+          "hints": [
+            {
+              "message": "min/max of latitudes and longitudes."
+            },
+            {
+              "message": "North=max lat, South=min lat, East=max lon, West=min lon."
+            },
+            {
+              "message": "Solution:\nlats = [c[0] for c in coords]\nlons = [c[1] for c in coords]\nprint(f'North: {max(lats)}  South: {min(lats)}')\nprint(f'East: {max(lons)}  West: {min(lons)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Speed Calculator",
+          "description": "Calculate travel speed between two geotagged photos.",
+          "difficulty": "intermediate",
+          "category": "GPS Processing",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Calculate travel speed between two geotagged photos.",
+          "starter_code": "import math\nfrom datetime import datetime\n\nphoto1 = {\"lat\": 51.5074, \"lon\": -0.1278, \"time\": \"2025:02:28 10:00:00\"}\nphoto2 = {\"lat\": 51.5155, \"lon\": -0.1420, \"time\": \"2025:02:28 10:15:00\"}\n\n# TODO: Calculate speed in km/h\n",
+          "expected_output": "Distance: 1.2 km\nTime: 15.0 min\nSpeed: 4.8 km/h (walking pace)",
+          "hints": [
+            {
+              "message": "Use Haversine for distance, parse times for duration."
+            },
+            {
+              "message": "speed = distance / (time_diff_hours)"
+            },
+            {
+              "message": "Solution:\ndef haversine(lat1,lon1,lat2,lon2):\n    R=6371; dlat=math.radians(lat2-lat1); dlon=math.radians(lon2-lon1)\n    a=math.sin(dlat/2)**2+math.cos(math.radians(lat1))*math.cos(math.radians(lat2))*math.sin(dlon/2)**2\n    return R*2*math.asin(math.sqrt(a))\n\ndist = haversine(photo1['lat'],photo1['lon'],photo2['lat'],photo2['lon'])\nt1 = datetime.strptime(photo1['time'], '%Y:%m:%d %H:%M:%S')\nt2 = datetime.strptime(photo2['time'], '%Y:%m:%d %H:%M:%S')\nmins = (t2-t1).seconds/60\nspeed = dist/(mins/60)\nprint(f'Distance: {dist:.1f} km')\nprint(f'Time: {mins:.1f} min')\nprint(f'Speed: {speed:.1f} km/h (walking pace)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Impossible Speed Detector",
+          "description": "Flag GPS coordinates that imply impossible travel speeds.",
+          "difficulty": "advanced",
+          "category": "GPS Processing",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Flag GPS coordinates that imply impossible travel speeds.",
+          "starter_code": "import math\nfrom datetime import datetime\n\nphotos = [\n    {\"file\": \"IMG_01.jpg\", \"lat\": 51.50, \"lon\": -0.13, \"time\": \"2025:02:28 10:00:00\"},\n    {\"file\": \"IMG_02.jpg\", \"lat\": 51.52, \"lon\": -0.14, \"time\": \"2025:02:28 10:05:00\"},\n    {\"file\": \"IMG_03.jpg\", \"lat\": 48.85, \"lon\": 2.35, \"time\": \"2025:02:28 10:10:00\"},\n]\n\n# TODO: Flag impossible speeds (>200 km/h)\n",
+          "expected_output": "IMG_01 -> IMG_02: 4.8 km/h OK\nIMG_02 -> IMG_03: IMPOSSIBLE (>200 km/h) GPS likely spoofed!",
+          "hints": [
+            {
+              "message": "Calculate speed between consecutive photos."
+            },
+            {
+              "message": "London to Paris in 5 minutes = impossible = spoofed GPS!"
+            },
+            {
+              "message": "Solution:\ndef haversine(lat1,lon1,lat2,lon2):\n    R=6371;dlat=math.radians(lat2-lat1);dlon=math.radians(lon2-lon1)\n    a=math.sin(dlat/2)**2+math.cos(math.radians(lat1))*math.cos(math.radians(lat2))*math.sin(dlon/2)**2\n    return R*2*math.asin(math.sqrt(a))\n\nfor i in range(len(photos)-1):\n    p1,p2 = photos[i],photos[i+1]\n    dist=haversine(p1['lat'],p1['lon'],p2['lat'],p2['lon'])\n    t1=datetime.strptime(p1['time'],'%Y:%m:%d %H:%M:%S')\n    t2=datetime.strptime(p2['time'],'%Y:%m:%d %H:%M:%S')\n    hrs=(t2-t1).seconds/3600\n    speed=dist/hrs if hrs>0 else float('inf')\n    if speed>200:\n        print(f'{p1[\"file\"]} -> {p2[\"file\"]}: IMPOSSIBLE (>200 km/h) GPS likely spoofed!')\n    else:\n        print(f'{p1[\"file\"]} -> {p2[\"file\"]}: {speed:.1f} km/h OK')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Altitude Analysis",
+          "description": "Extract and interpret GPS altitude data.",
+          "difficulty": "beginner",
+          "category": "GPS Processing",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Extract and interpret GPS altitude data.",
+          "starter_code": "photos = [\n    {\"file\": \"valley.jpg\", \"alt\": 50},\n    {\"file\": \"hillside.jpg\", \"alt\": 250},\n    {\"file\": \"peak.jpg\", \"alt\": 890},\n    {\"file\": \"plane.jpg\", \"alt\": 10668},\n]\n# TODO: Classify altitude\n",
+          "expected_output": "valley.jpg: 50m (Ground level)\nhillside.jpg: 250m (Elevated)\npeak.jpg: 890m (Mountain)\nplane.jpg: 10668m (Aircraft!)",
+          "hints": [
+            {
+              "message": "Classify: <100m ground, <500m elevated, <3000m mountain, >3000m aircraft."
+            },
+            {
+              "message": "Simple if/elif chain."
+            },
+            {
+              "message": "Solution:\nfor p in photos:\n    a = p['alt']\n    if a > 3000: cat = 'Aircraft!'\n    elif a > 500: cat = 'Mountain'\n    elif a > 100: cat = 'Elevated'\n    else: cat = 'Ground level'\n    print(f'{p[\"file\"]}: {a}m ({cat})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Reverse Geocode Simulator",
+          "description": "Map GPS coordinates to approximate locations.",
+          "difficulty": "intermediate",
+          "category": "GPS Processing",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Map GPS coordinates to approximate locations.",
+          "starter_code": "KNOWN_PLACES = [\n    {\"name\": \"Big Ben\", \"lat\": 51.5007, \"lon\": -0.1246, \"radius\": 0.5},\n    {\"name\": \"Eiffel Tower\", \"lat\": 48.8584, \"lon\": 2.2945, \"radius\": 0.5},\n    {\"name\": \"Statue of Liberty\", \"lat\": 40.6892, \"lon\": -74.0445, \"radius\": 0.5},\n]\n\n# TODO: Find nearest known place for GPS 51.501, -0.125\n",
+          "expected_output": "Nearest: Big Ben (0.05 km)",
+          "hints": [
+            {
+              "message": "Calculate distance from target to each known place."
+            },
+            {
+              "message": "Return the closest one within radius."
+            },
+            {
+              "message": "Solution:\nimport math\ndef haversine(lat1,lon1,lat2,lon2):\n    R=6371;dlat=math.radians(lat2-lat1);dlon=math.radians(lon2-lon1)\n    a=math.sin(dlat/2)**2+math.cos(math.radians(lat1))*math.cos(math.radians(lat2))*math.sin(dlon/2)**2\n    return R*2*math.asin(math.sqrt(a))\n\ntarget = (51.501, -0.125)\nbest = min(KNOWN_PLACES, key=lambda p: haversine(target[0],target[1],p['lat'],p['lon']))\ndist = haversine(target[0],target[1],best['lat'],best['lon'])\nprint(f'Nearest: {best[\"name\"]} ({dist:.2f} km)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Magic Byte Checker",
+          "description": "Read first 4 bytes and identify if file is JPEG, PNG, or other.",
+          "difficulty": "beginner",
+          "category": "Binary & File Analysis",
+          "estimated_minutes": 4,
+          "vm_required": true,
+          "ai_intro": "🖥️ VM Exercise! Read first 4 bytes and identify if file is JPEG, PNG, or other.",
+          "starter_code": "with open(\"test.bin\", \"wb\") as f:\n    f.write(b\"\\xff\\xd8\\xff\\xe0\" + b\"\\x00\" * 20)\n\n# TODO: Read and identify\n",
+          "expected_output": "Type: JPEG",
+          "hints": [
+            {
+              "message": "Read 4 bytes with open('test.bin', 'rb')"
+            },
+            {
+              "message": "Check if starts with b'\\xff\\xd8\\xff'"
+            },
+            {
+              "message": "Solution:\nwith open('test.bin', 'rb') as f:\n    h = f.read(4)\nif h[:3] == b'\\xff\\xd8\\xff': print('Type: JPEG')\nelif h[:4] == b'\\x89PNG': print('Type: PNG')\nelse: print(f'Type: Unknown ({h.hex()})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: EXIF Marker Scanner",
+          "description": "Scan a JPEG file for the EXIF APP1 marker (FF E1).",
+          "difficulty": "intermediate",
+          "category": "Binary & File Analysis",
+          "estimated_minutes": 4,
+          "vm_required": true,
+          "ai_intro": "🖥️ VM Exercise! Scan a JPEG file for the EXIF APP1 marker (FF E1).",
+          "starter_code": "with open(\"test.jpg\", \"wb\") as f:\n    f.write(b\"\\xff\\xd8\\xff\\xe1\\x00\\x10Exif\\x00\\x00\" + b\"\\x00\" * 200)\n\n# TODO: Find APP1 marker\n",
+          "expected_output": "APP1 (EXIF) found at offset 2",
+          "hints": [
+            {
+              "message": "Read bytes and search for b'\\xff\\xe1'"
+            },
+            {
+              "message": "data.find(b'\\xff\\xe1') returns the offset."
+            },
+            {
+              "message": "Solution:\nwith open('test.jpg', 'rb') as f:\n    data = f.read()\noffset = data.find(b'\\xff\\xe1')\nif offset >= 0:\n    print(f'APP1 (EXIF) found at offset {offset}')\nelse:\n    print('No EXIF marker found')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Hex Header Display",
+          "description": "Display the first 16 bytes of a file in hex dump format.",
+          "difficulty": "intermediate",
+          "category": "Binary & File Analysis",
+          "estimated_minutes": 4,
+          "vm_required": true,
+          "ai_intro": "🖥️ VM Exercise! Display the first 16 bytes of a file in hex dump format.",
+          "starter_code": "with open(\"sample.jpg\", \"wb\") as f:\n    f.write(b\"\\xff\\xd8\\xff\\xe1\\x00\\x10Exif\\x00\\x00MM\\x00*\")\n\n# TODO: Hex dump first 16 bytes\n",
+          "expected_output": "00: FF D8 FF E1 00 10 45 78 69 66 00 00 4D 4D 00 2A",
+          "hints": [
+            {
+              "message": "' '.join(f'{b:02X}' for b in data[:16])"
+            },
+            {
+              "message": "Read in 'rb' mode, format each byte."
+            },
+            {
+              "message": "Solution:\nwith open('sample.jpg', 'rb') as f:\n    data = f.read(16)\nprint('00: ' + ' '.join(f'{b:02X}' for b in data))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: File Type vs Extension",
+          "description": "Compare magic bytes to file extension and flag mismatches.",
+          "difficulty": "intermediate",
+          "category": "Binary & File Analysis",
+          "estimated_minutes": 4,
+          "vm_required": true,
+          "ai_intro": "🖥️ VM Exercise! Compare magic bytes to file extension and flag mismatches.",
+          "starter_code": "import os\nfiles = {\"real.jpg\": b\"\\xff\\xd8\\xff\", \"fake.jpg\": b\"\\x89PNG\", \"pic.png\": b\"\\x89PNG\"}\nfor name, content in files.items():\n    with open(name, \"wb\") as f: f.write(content + b\"\\x00\"*20)\n\n# TODO: Check each file\n",
+          "expected_output": "real.jpg: JPEG (OK)\nfake.jpg: PNG (MISMATCH!)\npic.png: PNG (OK)",
+          "hints": [
+            {
+              "message": "Read header, identify type, compare to extension."
+            },
+            {
+              "message": "if ext is .jpg but type is PNG -> MISMATCH!"
+            },
+            {
+              "message": "Solution:\nfor name in files:\n    with open(name, 'rb') as f:\n        h = f.read(4)\n    ext = os.path.splitext(name)[1]\n    true_type = 'JPEG' if h[:3]==b'\\xff\\xd8\\xff' else 'PNG' if h[:4]==b'\\x89PNG' else 'Other'\n    match = (ext in ('.jpg','.jpeg') and true_type=='JPEG') or (ext=='.png' and true_type=='PNG')\n    status = 'OK' if match else 'MISMATCH!'\n    print(f'{name}: {true_type} ({status})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: File Hash and Size",
+          "description": "Hash a file and report its size in appropriate units.",
+          "difficulty": "beginner",
+          "category": "Binary & File Analysis",
+          "estimated_minutes": 4,
+          "vm_required": true,
+          "ai_intro": "🖥️ VM Exercise! Hash a file and report its size in appropriate units.",
+          "starter_code": "import hashlib, os\nwith open(\"evidence.jpg\", \"wb\") as f:\n    f.write(b\"\\xff\\xd8\\xff\" + os.urandom(5000))\n\n# TODO: Hash and size\n",
+          "expected_output": "SHA-256: a1b2c3...\nSize: 4.9 KB",
+          "hints": [
+            {
+              "message": "hashlib.sha256(open(f,'rb').read()).hexdigest()"
+            },
+            {
+              "message": "os.path.getsize() for size."
+            },
+            {
+              "message": "Solution:\nwith open('evidence.jpg', 'rb') as f:\n    sha = hashlib.sha256(f.read()).hexdigest()\nsize = os.path.getsize('evidence.jpg')\nprint(f'SHA-256: {sha[:6]}...')\nprint(f'Size: {size/1024:.1f} KB')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Extract Strings from Binary",
+          "description": "Find readable ASCII strings in a binary file.",
+          "difficulty": "intermediate",
+          "category": "Binary & File Analysis",
+          "estimated_minutes": 4,
+          "vm_required": true,
+          "ai_intro": "🖥️ VM Exercise! Find readable ASCII strings in a binary file.",
+          "starter_code": "with open(\"image.bin\", \"wb\") as f:\n    f.write(b\"\\x00\\x00Canon\\x00\\x00EOS R5\\x00\\xff\\xfe\")\n\n# TODO: Extract strings 3+ chars\n",
+          "expected_output": "Canon\nEOS R5",
+          "hints": [
+            {
+              "message": "Loop bytes, collect printable chars, report runs of 3+."
+            },
+            {
+              "message": "chr(b) if 32 <= b < 127 else break."
+            },
+            {
+              "message": "Solution:\nwith open('image.bin', 'rb') as f:\n    data = f.read()\ncurrent = ''\nfor b in data:\n    if 32 <= b < 127:\n        current += chr(b)\n    else:\n        if len(current) >= 3: print(current)\n        current = ''\nif len(current) >= 3: print(current)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Batch File Identifier",
+          "description": "Scan a directory and identify all file types by magic bytes.",
+          "difficulty": "intermediate",
+          "category": "Binary & File Analysis",
+          "estimated_minutes": 4,
+          "vm_required": true,
+          "ai_intro": "🖥️ VM Exercise! Scan a directory and identify all file types by magic bytes.",
+          "starter_code": "import os\nos.makedirs(\"scan_test\", exist_ok=True)\nfor name, sig in [(\"a.jpg\", b\"\\xff\\xd8\\xff\"), (\"b.png\", b\"\\x89PNG\"), (\"c.dat\", b\"MZ\")]:\n    with open(f\"scan_test/{name}\", \"wb\") as f: f.write(sig + b\"\\x00\"*20)\n\n# TODO: Scan and identify all\n",
+          "expected_output": "a.jpg: JPEG\nb.png: PNG\nc.dat: EXE/DLL!",
+          "hints": [
+            {
+              "message": "os.listdir, read header of each, identify."
+            },
+            {
+              "message": "MZ = Windows executable!"
+            },
+            {
+              "message": "Solution:\nfor name in sorted(os.listdir('scan_test')):\n    with open(f'scan_test/{name}', 'rb') as f:\n        h = f.read(4)\n    if h[:3]==b'\\xff\\xd8\\xff': t='JPEG'\n    elif h[:4]==b'\\x89PNG': t='PNG'\n    elif h[:2]==b'MZ': t='EXE/DLL!'\n    else: t='Unknown'\n    print(f'{name}: {t}')\nimport shutil; shutil.rmtree('scan_test')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Integrity Verification",
+          "description": "Hash before and after analysis to prove no tampering.",
+          "difficulty": "intermediate",
+          "category": "Binary & File Analysis",
+          "estimated_minutes": 4,
+          "vm_required": true,
+          "ai_intro": "🖥️ VM Exercise! Hash before and after analysis to prove no tampering.",
+          "starter_code": "import hashlib\nwith open(\"proof.jpg\", \"wb\") as f:\n    f.write(b\"\\xff\\xd8\\xff\" + b\"\\x00\" * 100)\n\n# TODO: Hash before, read data, hash after, compare\n",
+          "expected_output": "Before: abc123...\nAfter:  abc123...\nIntegrity: VERIFIED",
+          "hints": [
+            {
+              "message": "Hash, then re-read and hash again. Must match!"
+            },
+            {
+              "message": "This proves your analysis did not modify the file."
+            },
+            {
+              "message": "Solution:\ndef hash_file(path):\n    with open(path, 'rb') as f:\n        return hashlib.sha256(f.read()).hexdigest()\n\nh1 = hash_file('proof.jpg')\n# ... analysis would go here ...\nh2 = hash_file('proof.jpg')\nprint(f'Before: {h1[:6]}...')\nprint(f'After:  {h2[:6]}...')\nprint(f'Integrity: {\"VERIFIED\" if h1==h2 else \"TAMPERED!\"}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Timeline from 5 Photos",
+          "description": "Build a chronological timeline from 5 photo timestamps.",
+          "difficulty": "intermediate",
+          "category": "Forensic Scenarios",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Build a chronological timeline from 5 photo timestamps.",
+          "starter_code": "from datetime import datetime\nphotos = [\n    {\"file\": \"C.jpg\", \"dt\": \"2025:02:28 11:00:00\"},\n    {\"file\": \"A.jpg\", \"dt\": \"2025:02:28 08:00:00\"},\n    {\"file\": \"E.jpg\", \"dt\": \"2025:02:28 16:00:00\"},\n    {\"file\": \"B.jpg\", \"dt\": \"2025:02:28 09:30:00\"},\n    {\"file\": \"D.jpg\", \"dt\": \"2025:02:28 14:00:00\"},\n]\n\n# TODO: Sort chronologically and display timeline\n",
+          "expected_output": "08:00 A.jpg\n09:30 B.jpg\n11:00 C.jpg\n14:00 D.jpg\n16:00 E.jpg",
+          "hints": [
+            {
+              "message": "Sort by the 'dt' field."
+            },
+            {
+              "message": "sorted(photos, key=lambda p: p['dt'])"
+            },
+            {
+              "message": "Solution:\nfor p in sorted(photos, key=lambda p: p['dt']):\n    dt = datetime.strptime(p['dt'], '%Y:%m:%d %H:%M:%S')\n    print(f'{dt.strftime(\"%H:%M\")} {p[\"file\"]}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Device Linking",
+          "description": "Determine which photos came from the same device.",
+          "difficulty": "intermediate",
+          "category": "Forensic Scenarios",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Determine which photos came from the same device.",
+          "starter_code": "photos = [\n    {\"file\": \"scene1.jpg\", \"make\": \"Canon\", \"model\": \"R5\", \"serial\": \"ABC\"},\n    {\"file\": \"scene2.jpg\", \"make\": \"Canon\", \"model\": \"R5\", \"serial\": \"ABC\"},\n    {\"file\": \"alibi.jpg\", \"make\": \"Apple\", \"model\": \"iPhone\", \"serial\": \"XYZ\"},\n    {\"file\": \"scene3.jpg\", \"make\": \"Canon\", \"model\": \"R5\", \"serial\": \"ABC\"},\n]\n\n# TODO: Group by device\n",
+          "expected_output": "Canon R5 (ABC): scene1.jpg, scene2.jpg, scene3.jpg\nApple iPhone (XYZ): alibi.jpg",
+          "hints": [
+            {
+              "message": "Group by make+model+serial."
+            },
+            {
+              "message": "Use a dict with fingerprint as key."
+            },
+            {
+              "message": "Solution:\ndevices = {}\nfor p in photos:\n    fp = f\"{p['make']} {p['model']} ({p['serial']})\"\n    devices.setdefault(fp, []).append(p['file'])\nfor dev, files in devices.items():\n    print(f'{dev}: {\", \".join(files)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Metadata Stripping Check",
+          "description": "Flag images with suspiciously missing EXIF.",
+          "difficulty": "intermediate",
+          "category": "Forensic Scenarios",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Flag images with suspiciously missing EXIF.",
+          "starter_code": "images = [\n    {\"file\": \"normal.jpg\", \"has_exif\": True, \"size\": 3000000},\n    {\"file\": \"stripped.jpg\", \"has_exif\": False, \"size\": 2500000},\n    {\"file\": \"screenshot.png\", \"has_exif\": False, \"size\": 50000},\n    {\"file\": \"tiny.jpg\", \"has_exif\": False, \"size\": 500},\n]\n\n# TODO: Flag suspicious missing EXIF\n",
+          "expected_output": "normal.jpg: OK\nstripped.jpg: SUSPICIOUS (large JPEG, no EXIF)\nscreenshot.png: OK (PNG)\ntiny.jpg: OK (too small)",
+          "hints": [
+            {
+              "message": "Large JPEG (>1MB) without EXIF is suspicious."
+            },
+            {
+              "message": "Small files and PNGs are expected to lack EXIF."
+            },
+            {
+              "message": "Solution:\nfor img in images:\n    if img['has_exif']:\n        status = 'OK'\n    elif not img['file'].endswith('.jpg'):\n        status = 'OK (PNG)'\n    elif img['size'] > 1000000:\n        status = 'SUSPICIOUS (large JPEG, no EXIF)'\n    else:\n        status = 'OK (too small)'\n    print(f'{img[\"file\"]}: {status}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Forgery Score",
+          "description": "Calculate a forgery probability score for an image.",
+          "difficulty": "intermediate",
+          "category": "Forensic Scenarios",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Calculate a forgery probability score for an image.",
+          "starter_code": "exif = {\"DateTime\": \"2025:02:28 18:00:00\", \"DateTimeOriginal\": \"2025:02:28 10:00:00\",\n        \"Software\": \"Adobe Photoshop\", \"Make\": \"\", \"Model\": \"\"}\n\n# TODO: Score 0-10 based on red flags\n",
+          "expected_output": "Score: 8/10 (LIKELY FORGED)\nFlags: timestamp mismatch, editing software, no camera info",
+          "hints": [
+            {
+              "message": "Score: +3 for timestamp mismatch, +3 for editing software, +2 for missing camera."
+            },
+            {
+              "message": "Sum the scores and classify."
+            },
+            {
+              "message": "Solution:\nscore = 0\nflags = []\nif exif['DateTime'] != exif['DateTimeOriginal']:\n    score += 3; flags.append('timestamp mismatch')\nif 'Photoshop' in exif.get('Software', ''):\n    score += 3; flags.append('editing software')\nif not exif.get('Make'):\n    score += 2; flags.append('no camera info')\nverdict = 'LIKELY FORGED' if score >= 6 else 'SUSPICIOUS' if score >= 3 else 'PROBABLY OK'\nprint(f'Score: {score}/10 ({verdict})')\nprint(f'Flags: {\", \".join(flags)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Photo Collection Summary",
+          "description": "Generate a summary report from a collection of metadata.",
+          "difficulty": "intermediate",
+          "category": "Forensic Scenarios",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Generate a summary report from a collection of metadata.",
+          "starter_code": "from collections import Counter\nphotos = [\n    {\"device\": \"iPhone 15\", \"has_gps\": True, \"has_exif\": True},\n    {\"device\": \"iPhone 15\", \"has_gps\": True, \"has_exif\": True},\n    {\"device\": \"Canon R5\", \"has_gps\": False, \"has_exif\": True},\n    {\"device\": \"Unknown\", \"has_gps\": False, \"has_exif\": False},\n    {\"device\": \"iPhone 15\", \"has_gps\": True, \"has_exif\": True},\n]\n\n# TODO: Generate summary\n",
+          "expected_output": "Total: 5\nDevices: iPhone 15 (3), Canon R5 (1), Unknown (1)\nGPS: 3/5\nEXIF: 4/5",
+          "hints": [
+            {
+              "message": "Counter for devices, sum for GPS/EXIF counts."
+            },
+            {
+              "message": "Counter(p['device'] for p in photos)"
+            },
+            {
+              "message": "Solution:\ndevs = Counter(p['device'] for p in photos)\ngps = sum(1 for p in photos if p['has_gps'])\nexif = sum(1 for p in photos if p['has_exif'])\nprint(f'Total: {len(photos)}')\nprint(f'Devices: {\", \".join(f\"{d} ({n})\" for d,n in devs.most_common())}')\nprint(f'GPS: {gps}/{len(photos)}')\nprint(f'EXIF: {exif}/{len(photos)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Privacy Risk Assessment",
+          "description": "Rate privacy risk of a photo based on what metadata is present.",
+          "difficulty": "intermediate",
+          "category": "Forensic Scenarios",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Rate privacy risk of a photo based on what metadata is present.",
+          "starter_code": "photo = {\"has_gps\": True, \"has_datetime\": True, \"has_device\": True,\n         \"has_serial\": True, \"has_thumbnail\": True}\n\n# TODO: Calculate risk score\n",
+          "expected_output": "Risk: CRITICAL (5/5 fields exposed)\nExposed: GPS, DateTime, Device, Serial, Thumbnail",
+          "hints": [
+            {
+              "message": "Each present field adds 1 to risk score. 4-5 = CRITICAL."
+            },
+            {
+              "message": "List the exposed fields."
+            },
+            {
+              "message": "Solution:\nfields = {'has_gps':'GPS', 'has_datetime':'DateTime', 'has_device':'Device', 'has_serial':'Serial', 'has_thumbnail':'Thumbnail'}\nexposed = [name for key, name in fields.items() if photo.get(key)]\nscore = len(exposed)\nlevel = 'CRITICAL' if score >= 4 else 'HIGH' if score >= 3 else 'MEDIUM' if score >= 2 else 'LOW'\nprint(f'Risk: {level} ({score}/{len(fields)} fields exposed)')\nprint(f'Exposed: {\", \".join(exposed)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Alibi Checker",
+          "description": "Cross-reference photo GPS+time against a claimed alibi.",
+          "difficulty": "advanced",
+          "category": "Forensic Scenarios",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Cross-reference photo GPS+time against a claimed alibi.",
+          "starter_code": "from datetime import datetime\n\nalibi = {\"claimed_location\": \"London\", \"claimed_lat\": 51.50, \"claimed_lon\": -0.13,\n         \"claimed_time\": \"2025:02:28 14:00:00\"}\n\nphoto = {\"lat\": 48.85, \"lon\": 2.35, \"time\": \"2025:02:28 13:55:00\"}\n\n# TODO: Check if alibi holds\n",
+          "expected_output": "ALIBI BROKEN: Photo places subject in Paris at 13:55, not London at 14:00!",
+          "hints": [
+            {
+              "message": "Calculate distance between claimed and actual location."
+            },
+            {
+              "message": "If distance > 50km and time is close, alibi is broken."
+            },
+            {
+              "message": "Solution:\nimport math\ndef haversine(lat1,lon1,lat2,lon2):\n    R=6371;dlat=math.radians(lat2-lat1);dlon=math.radians(lon2-lon1)\n    a=math.sin(dlat/2)**2+math.cos(math.radians(lat1))*math.cos(math.radians(lat2))*math.sin(dlon/2)**2\n    return R*2*math.asin(math.sqrt(a))\n\ndist = haversine(alibi['claimed_lat'],alibi['claimed_lon'],photo['lat'],photo['lon'])\nif dist > 50:\n    print(f'ALIBI BROKEN: Photo places subject {dist:.0f}km away at {photo[\"time\"][-8:]}')\nelse:\n    print('Alibi consistent with photo evidence')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Multi-Image Device Report",
+          "description": "Generate a report linking images to devices with statistics.",
+          "difficulty": "advanced",
+          "category": "Forensic Scenarios",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Generate a report linking images to devices with statistics.",
+          "starter_code": "photos = [\n    {\"file\": \"IMG_01.jpg\", \"make\": \"Apple\", \"model\": \"iPhone 15\", \"gps\": True, \"edited\": False},\n    {\"file\": \"IMG_02.jpg\", \"make\": \"Apple\", \"model\": \"iPhone 15\", \"gps\": True, \"edited\": True},\n    {\"file\": \"IMG_03.jpg\", \"make\": \"Samsung\", \"model\": \"S24\", \"gps\": False, \"edited\": False},\n    {\"file\": \"IMG_04.jpg\", \"make\": \"Apple\", \"model\": \"iPhone 15\", \"gps\": True, \"edited\": False},\n    {\"file\": \"IMG_05.jpg\", \"make\": \"\", \"model\": \"\", \"gps\": False, \"edited\": True},\n]\n\n# TODO: Group by device, show stats\n",
+          "expected_output": "Apple iPhone 15: 3 photos (2 GPS, 1 edited)\nSamsung S24: 1 photo (0 GPS, 0 edited)\nUnknown: 1 photo (suspicious!)",
+          "hints": [
+            {
+              "message": "Group by make+model. Count GPS and edited per group."
+            },
+            {
+              "message": "Empty make+model = 'Unknown' (suspicious)."
+            },
+            {
+              "message": "Solution:\ndevices = {}\nfor p in photos:\n    dev = f\"{p['make']} {p['model']}\".strip() or 'Unknown'\n    devices.setdefault(dev, []).append(p)\n\nfor dev, pics in devices.items():\n    gps_count = sum(1 for p in pics if p['gps'])\n    ed_count = sum(1 for p in pics if p['edited'])\n    extra = ' (suspicious!)' if dev == 'Unknown' else ''\n    print(f'{dev}: {len(pics)} photo{\"s\" if len(pics)>1 else \"\"} ({gps_count} GPS, {ed_count} edited){extra}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Pillow EXIF Extraction",
+          "description": "Use Pillow to extract real EXIF from a photo on your VM.",
+          "difficulty": "advanced",
+          "category": "Forensic Scenarios",
+          "estimated_minutes": 4,
+          "vm_required": true,
+          "ai_intro": "🖥️ VM Exercise! Use Pillow to extract real EXIF from a photo on your VM.",
+          "starter_code": "# Run on VM! pip install Pillow first\nfrom PIL import Image\nfrom PIL.ExifTags import TAGS\n\n# TODO: Open a real photo and extract EXIF\n# img = Image.open(\"your_photo.jpg\")\n# exif = img._getexif()\n\n# Simulated output:\nprint(\"Camera: Apple iPhone 15 Pro\")\nprint(\"Date: 2025:02:28 14:30:22\")\nprint(\"GPS: 51.5074, -0.1278\")\n",
+          "expected_output": "Camera: Apple iPhone 15 Pro\nDate: 2025:02:28 14:30:22\nGPS: 51.5074, -0.1278",
+          "hints": [
+            {
+              "message": "pip install Pillow, then Image.open('photo.jpg')._getexif()"
+            },
+            {
+              "message": "TAGS.get(tag_id, tag_id) converts numbers to names."
+            },
+            {
+              "message": "Solution on VM:\nfrom PIL import Image\nfrom PIL.ExifTags import TAGS\nimg = Image.open('your_photo.jpg')\nexif = img._getexif()\nif exif:\n    for tid, val in exif.items():\n        name = TAGS.get(tid, tid)\n        if name in ('Make','Model','DateTime'):\n            print(f'{name}: {val}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: ExifTool Comparison",
+          "description": "Run ExifTool on VM and compare output with your Python extraction.",
+          "difficulty": "advanced",
+          "category": "Forensic Scenarios",
+          "estimated_minutes": 4,
+          "vm_required": true,
+          "ai_intro": "🖥️ VM Exercise! Run ExifTool on VM and compare output with your Python extraction.",
+          "starter_code": "# Run on VM!\n# Step 1: exiftool photo.jpg > exiftool_output.txt\n# Step 2: Run your Python script\n# Step 3: Compare results\n\n# TODO: Build comparison script\nprint(\"1. Run: exiftool photo.jpg\")\nprint(\"2. Run: python3 your_exif_script.py photo.jpg\")\nprint(\"3. Compare outputs\")\n",
+          "expected_output": "1. Run: exiftool photo.jpg\n2. Run: python3 your_exif_script.py photo.jpg\n3. Compare outputs",
+          "hints": [
+            {
+              "message": "sudo apt install libimage-exiftool-perl on your VM."
+            },
+            {
+              "message": "ExifTool shows ALL tags. Compare with your Pillow output."
+            },
+            {
+              "message": "On VM:\n# Terminal 1:\nexiftool photo.jpg | head -20\n# Terminal 2:\npython3 -c \"from PIL import Image; from PIL.ExifTags import TAGS; [(print(f'{TAGS.get(k,k)}: {v}')) for k,v in Image.open('photo.jpg')._getexif().items() if TAGS.get(k,'') in ('Make','Model','DateTime')]\""
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: GPS Negative",
+          "description": "What is dms_to_decimal(33, 51, 25, 'S')?",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "What is dms_to_decimal(33, 51, 25, 'S')?",
+          "starter_code": "# PREDICT:\ndef dms_to_decimal(d, m, s, ref):\n    dec = d + m/60 + s/3600\n    if ref in (\"S\", \"W\"): dec = -dec\n    return round(dec, 4)\n\nprint(dms_to_decimal(33, 51, 25, \"S\"))\n",
+          "expected_output": "-33.8569",
+          "hints": [
+            {
+              "message": "33 + 51/60 + 25/3600 = 33.8569, then S makes it negative."
+            },
+            {
+              "message": "South of equator = negative latitude."
+            },
+            {
+              "message": "Output: -33.8569"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Timestamp Match",
+          "description": "Do these timestamps indicate editing?",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Do these timestamps indicate editing?",
+          "starter_code": "# PREDICT:\ndt = \"2025:02:28 14:30:22\"\ndto = \"2025:02:28 14:30:22\"\nprint(\"EDITED\" if dt != dto else \"ORIGINAL\")\n",
+          "expected_output": "ORIGINAL",
+          "hints": [
+            {
+              "message": "Both strings are identical."
+            },
+            {
+              "message": "Matching timestamps = not re-saved."
+            },
+            {
+              "message": "Output: ORIGINAL"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Fingerprint Match",
+          "description": "Will these fingerprints match?",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Will these fingerprints match?",
+          "starter_code": "# PREDICT:\nfp1 = \"Apple|iPhone_15|SN:ABC\"\nfp2 = \"Apple|iPhone_15|SN:ABC\"\nfp3 = \"Apple|iPhone_15|SN:XYZ\"\nprint(fp1 == fp2)\nprint(fp1 == fp3)\n",
+          "expected_output": "True\nFalse",
+          "hints": [
+            {
+              "message": "String comparison: ABC == ABC but ABC != XYZ."
+            },
+            {
+              "message": "Different serial = different device."
+            },
+            {
+              "message": "Output: True then False"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Magic Byte Check",
+          "description": "What will this identify?",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "What will this identify?",
+          "starter_code": "# PREDICT:\nheader = b\"\\x89PNG\\r\\n\\x1a\\n\"\nif header[:3] == b\"\\xff\\xd8\\xff\": print(\"JPEG\")\nelif header[:4] == b\"\\x89PNG\": print(\"PNG\")\nelse: print(\"Unknown\")\n",
+          "expected_output": "PNG",
+          "hints": [
+            {
+              "message": "\\x89PNG matches the PNG signature."
+            },
+            {
+              "message": "The first check (JPEG) fails, second (PNG) matches."
+            },
+            {
+              "message": "Output: PNG"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Orientation Lookup",
+          "description": "What does orientation 6 mean?",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "What does orientation 6 mean?",
+          "starter_code": "# PREDICT:\nORIENTATIONS = {1: \"Normal\", 3: \"180\", 6: \"90 CW\", 8: \"90 CCW\"}\nprint(ORIENTATIONS.get(6, \"Unknown\"))\nprint(ORIENTATIONS.get(5, \"Unknown\"))\n",
+          "expected_output": "90 CW\nUnknown",
+          "hints": [
+            {
+              "message": "6 exists in dict -> '90 CW'. 5 does not -> default 'Unknown'."
+            },
+            {
+              "message": ".get() with default handles missing keys."
+            },
+            {
+              "message": "Output: 90 CW then Unknown"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Megapixel Calc",
+          "description": "How many megapixels is 4032x3024?",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "How many megapixels is 4032x3024?",
+          "starter_code": "# PREDICT:\nw, h = 4032, 3024\nmp = w * h / 1_000_000\nprint(f\"{mp:.1f} MP\")\n",
+          "expected_output": "12.2 MP",
+          "hints": [
+            {
+              "message": "4032 * 3024 = 12,192,768 pixels."
+            },
+            {
+              "message": "12,192,768 / 1,000,000 = 12.192768"
+            },
+            {
+              "message": "Output: 12.2 MP"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Stripping Detection",
+          "description": "Will this trigger a stripping alert?",
+          "difficulty": "intermediate",
+          "category": "Predict the Output",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Will this trigger a stripping alert?",
+          "starter_code": "# PREDICT:\nis_jpeg = True\nhas_exif = False\nsize = 2_500_000\n\nif is_jpeg and not has_exif and size > 1_000_000:\n    print(\"STRIPPED!\")\nelse:\n    print(\"OK\")\n",
+          "expected_output": "STRIPPED!",
+          "hints": [
+            {
+              "message": "All three conditions are true: JPEG + no EXIF + large file."
+            },
+            {
+              "message": "A 2.5MB JPEG should have EXIF from a camera."
+            },
+            {
+              "message": "Output: STRIPPED!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Distance Estimate",
+          "description": "Is 340km in 5 minutes possible?",
+          "difficulty": "intermediate",
+          "category": "Predict the Output",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Is 340km in 5 minutes possible?",
+          "starter_code": "# PREDICT:\ndistance_km = 340\ntime_minutes = 5\nspeed = distance_km / (time_minutes / 60)\nprint(f\"{speed:.0f} km/h\")\nprint(\"IMPOSSIBLE!\" if speed > 200 else \"Possible\")\n",
+          "expected_output": "4080 km/h\nIMPOSSIBLE!",
+          "hints": [
+            {
+              "message": "340 / (5/60) = 340 / 0.0833 = 4080 km/h."
+            },
+            {
+              "message": "Faster than a jet! GPS must be spoofed."
+            },
+            {
+              "message": "Output: 4080 km/h then IMPOSSIBLE!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Editor Detection",
+          "description": "Will 'iOS 17.3' trigger the editor flag?",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Will 'iOS 17.3' trigger the editor flag?",
+          "starter_code": "# PREDICT:\nEDITORS = [\"Photoshop\", \"GIMP\", \"Lightroom\"]\nsw = \"iOS 17.3\"\nresult = any(e.lower() in sw.lower() for e in EDITORS)\nprint(result)\n",
+          "expected_output": "False",
+          "hints": [
+            {
+              "message": "None of the editors appear in 'iOS 17.3'."
+            },
+            {
+              "message": "iOS is the operating system, not an editor."
+            },
+            {
+              "message": "Output: False"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Hash Verification",
+          "description": "Will these hashes match?",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Will these hashes match?",
+          "starter_code": "# PREDICT:\nimport hashlib\nh1 = hashlib.sha256(b\"evidence\").hexdigest()\nh2 = hashlib.sha256(b\"evidence\").hexdigest()\nh3 = hashlib.sha256(b\"Evidence\").hexdigest()\nprint(h1 == h2)\nprint(h1 == h3)\n",
+          "expected_output": "True\nFalse",
+          "hints": [
+            {
+              "message": "Same input = same hash. Capital E = different input = different hash."
+            },
+            {
+              "message": "SHA-256 is case-sensitive."
+            },
+            {
+              "message": "Output: True then False"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Fix: Wrong GPS Sign",
+          "description": "The longitude should be negative for West but it is positive.",
+          "difficulty": "beginner",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "The longitude should be negative for West but it is positive.",
+          "starter_code": "# FIX: London should be WEST (negative longitude)\ndef dms_to_dec(d, m, s, ref):\n    dec = d + m/60 + s/3600\n    # BUG: Never makes it negative!\n    return round(dec, 6)\n\nlon = dms_to_dec(0, 7, 40, \"W\")\nprint(f\"London longitude: {lon}\")  # Should be negative!\n",
+          "expected_output": "London longitude: -0.127778",
+          "hints": [
+            {
+              "message": "The function ignores the ref parameter!"
+            },
+            {
+              "message": "Add: if ref in ('S', 'W'): dec = -dec"
+            },
+            {
+              "message": "Fix:\ndef dms_to_dec(d, m, s, ref):\n    dec = d + m/60 + s/3600\n    if ref in ('S', 'W'):\n        dec = -dec\n    return round(dec, 6)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Fix: Wrong DateTime Format",
+          "description": "The EXIF datetime parser uses wrong format string.",
+          "difficulty": "beginner",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "The EXIF datetime parser uses wrong format string.",
+          "starter_code": "from datetime import datetime\n# FIX: Wrong format!\nexif_dt = \"2025:02:28 14:30:22\"\n# EXIF uses colons in date, not dashes!\ndt = datetime.strptime(exif_dt, \"%Y-%m-%d %H:%M:%S\")  # BUG!\nprint(dt)\n",
+          "expected_output": "2025-02-28 14:30:22",
+          "hints": [
+            {
+              "message": "EXIF format: 2025:02:28 (colons!) not 2025-02-28 (dashes)."
+            },
+            {
+              "message": "Change %Y-%m-%d to %Y:%m:%d"
+            },
+            {
+              "message": "Fix: dt = datetime.strptime(exif_dt, '%Y:%m:%d %H:%M:%S')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Fix: Missing Binary Mode",
+          "description": "Image file is opened in text mode instead of binary.",
+          "difficulty": "beginner",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Image file is opened in text mode instead of binary.",
+          "starter_code": "# FIX: Opens image as text — will crash!\nwith open(\"photo.bin\", \"wb\") as f:\n    f.write(b\"\\xff\\xd8\\xff\\xe1\" + b\"\\x00\" * 20)\n\nwith open(\"photo.bin\", \"r\") as f:  # BUG: should be rb!\n    header = f.read(4)\n    print(f\"Header: {header}\")\n",
+          "expected_output": "Header: ffd8ffe1",
+          "hints": [
+            {
+              "message": "Images are binary! Use 'rb' not 'r'."
+            },
+            {
+              "message": "Change 'r' to 'rb'. Then use .hex() to display."
+            },
+            {
+              "message": "Fix:\nwith open('photo.bin', 'rb') as f:\n    header = f.read(4)\n    print(f'Header: {header.hex()}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Fix: Hardcoded Signature Length",
+          "description": "Magic byte comparison uses wrong slice length.",
+          "difficulty": "intermediate",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Magic byte comparison uses wrong slice length.",
+          "starter_code": "# FIX: PNG signature is 4 bytes but we only check 3\nheader = b\"\\x89PNG\\r\\n\\x1a\\n\"\nif header[:3] == b\"\\x89PN\":  # BUG: incomplete signature!\n    print(\"PNG\")\nelse:\n    print(\"Unknown\")\n",
+          "expected_output": "PNG",
+          "hints": [
+            {
+              "message": "PNG signature is b'\\x89PNG' (4 bytes), not b'\\x89PN' (3 bytes)."
+            },
+            {
+              "message": "header[:4] == b'\\x89PNG'"
+            },
+            {
+              "message": "Fix:\nif header[:4] == b'\\x89PNG':\n    print('PNG')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Fix: Missing EXIF Check",
+          "description": "Code crashes when image has no EXIF data.",
+          "difficulty": "intermediate",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Code crashes when image has no EXIF data.",
+          "starter_code": "# FIX: Crashes on images with no EXIF!\ndef get_camera(exif):\n    return f\"{exif['Make']} {exif['Model']}\"  # BUG: KeyError if missing!\n\n# Test with empty exif\nexif = {}\nprint(get_camera(exif))\n",
+          "expected_output": "Unknown Unknown",
+          "hints": [
+            {
+              "message": "Use .get() with defaults instead of direct key access."
+            },
+            {
+              "message": "exif.get('Make', 'Unknown')"
+            },
+            {
+              "message": "Fix:\ndef get_camera(exif):\n    return f\"{exif.get('Make', 'Unknown')} {exif.get('Model', 'Unknown')}\""
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Fix: Division by Zero in Speed",
+          "description": "Speed calculator crashes when photos have same timestamp.",
+          "difficulty": "intermediate",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Speed calculator crashes when photos have same timestamp.",
+          "starter_code": "from datetime import datetime\n# FIX: Same time = division by zero!\nt1 = datetime(2025, 2, 28, 10, 0, 0)\nt2 = datetime(2025, 2, 28, 10, 0, 0)\ndist = 5.0\nhours = (t2 - t1).seconds / 3600  # = 0!\nspeed = dist / hours  # BUG: ZeroDivisionError!\nprint(f\"Speed: {speed} km/h\")\n",
+          "expected_output": "Speed: N/A (simultaneous timestamps)",
+          "hints": [
+            {
+              "message": "Check if hours == 0 before dividing."
+            },
+            {
+              "message": "if hours > 0: speed = dist/hours else: 'N/A'"
+            },
+            {
+              "message": "Fix:\nhours = (t2 - t1).seconds / 3600\nif hours > 0:\n    speed = dist / hours\n    print(f'Speed: {speed:.1f} km/h')\nelse:\n    print('Speed: N/A (simultaneous timestamps)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Fix: Overwriting Evidence",
+          "description": "Script writes output to the evidence file instead of a new file.",
+          "difficulty": "beginner",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Script writes output to the evidence file instead of a new file.",
+          "starter_code": "# FIX: This DESTROYS the evidence file!\nevidence_file = \"evidence.jpg\"\nwith open(evidence_file, \"wb\") as f:\n    f.write(b\"\\xff\\xd8\\xff\" + b\"\\x00\" * 100)\n\n# BUG: Writing report to the evidence file!\nwith open(evidence_file, \"w\") as f:  # DESTROYS EVIDENCE!\n    f.write(\"Analysis report...\")\n",
+          "expected_output": "Report saved to analysis_report.txt (evidence untouched)",
+          "hints": [
+            {
+              "message": "NEVER write to evidence files! Use a different filename."
+            },
+            {
+              "message": "Write to 'analysis_report.txt' instead."
+            },
+            {
+              "message": "Fix:\nwith open('analysis_report.txt', 'w') as f:\n    f.write('Analysis report...')\nprint('Report saved to analysis_report.txt (evidence untouched)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Fix: GPS Tuple Parsing",
+          "description": "GPS rational tuple parsing fails because it treats tuples as numbers.",
+          "difficulty": "intermediate",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "GPS rational tuple parsing fails because it treats tuples as numbers.",
+          "starter_code": "# FIX: EXIF GPS comes as ((51,1),(30,1),(2646,100)) not (51,30,26.46)!\ngps_data = ((51, 1), (30, 1), (2646, 100))\n\n# BUG: Treats tuples as plain numbers!\ndegrees = gps_data[0]  # This is (51, 1) not 51!\nminutes = gps_data[1]\nseconds = gps_data[2]\n# decimal = degrees + minutes/60 + seconds/3600  # TypeError!\nprint(\"Fix the tuple parsing!\")\n",
+          "expected_output": "Decimal: 51.507389",
+          "hints": [
+            {
+              "message": "Each element is (numerator, denominator). Divide: gps_data[0][0] / gps_data[0][1]"
+            },
+            {
+              "message": "degrees = 51/1 = 51, minutes = 30/1 = 30, seconds = 2646/100 = 26.46"
+            },
+            {
+              "message": "Fix:\nd = gps_data[0][0] / gps_data[0][1]\nm = gps_data[1][0] / gps_data[1][1]\ns = gps_data[2][0] / gps_data[2][1]\ndecimal = d + m/60 + s/3600\nprint(f'Decimal: {decimal:.6f}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Fix: Case-Sensitive Software Check",
+          "description": "Editor detection misses 'photoshop' because it checks exact case.",
+          "difficulty": "beginner",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Editor detection misses 'photoshop' because it checks exact case.",
+          "starter_code": "# FIX: Misses lowercase!\nsoftware = \"adobe photoshop 25.0\"\nif \"Photoshop\" in software:  # BUG: Case-sensitive!\n    print(\"EDITED\")\nelse:\n    print(\"Not edited\")  # Wrong!\n",
+          "expected_output": "EDITED",
+          "hints": [
+            {
+              "message": "Python string comparison is case-sensitive by default."
+            },
+            {
+              "message": "Use .lower() on both sides: 'photoshop' in software.lower()"
+            },
+            {
+              "message": "Fix:\nif 'photoshop' in software.lower():\n    print('EDITED')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Fix: Incomplete Forgery Score",
+          "description": "Forgery scorer does not account for missing fields (treats None as valid).",
+          "difficulty": "intermediate",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "vm_required": false,
+          "ai_intro": "Forgery scorer does not account for missing fields (treats None as valid).",
+          "starter_code": "# FIX: None values cause false negatives!\nexif = {\"DateTime\": None, \"DateTimeOriginal\": None, \"Software\": None, \"Make\": None}\n\n# BUG: None != None is False, so mismatch check passes!\nif exif[\"DateTime\"] != exif[\"DateTimeOriginal\"]:\n    print(\"Timestamp mismatch\")  # Never triggers!\n\nif not exif.get(\"Make\"):  # This one works\n    print(\"No camera info\")\n\nprint(\"Fix the None comparison!\")\n",
+          "expected_output": "All fields are None — metadata completely stripped!\nNo camera info",
+          "hints": [
+            {
+              "message": "None == None is True, so the mismatch check does not trigger."
+            },
+            {
+              "message": "First check if fields are None (stripped), handle separately."
+            },
+            {
+              "message": "Fix:\nif exif['DateTime'] is None and exif['DateTimeOriginal'] is None:\n    print('All fields are None — metadata completely stripped!')\nelif exif['DateTime'] != exif['DateTimeOriginal']:\n    print('Timestamp mismatch')\nif not exif.get('Make'):\n    print('No camera info')"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

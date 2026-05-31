@@ -1,0 +1,1610 @@
+{
+  "course_id": "static_analysis_fuzzing",
+  "title": "Static Analysis & Fuzz Testing",
+  "description": "Master automated security testing: static code analysis tools, dynamic fuzz testing, and how to integrate them into your development workflow",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "java_syntax_output",
+    "java_methods",
+    "exceptions_security"
+  ],
+  "learning_outcomes": [
+    "Explain what static analysis is and how it differs from dynamic analysis",
+    "Describe how static analysis tools parse code and build intermediate representations",
+    "Identify what static analysers can find: null pointers, buffer overflows, SQL injection, resource leaks, race conditions",
+    "Differentiate true positives, false positives, and false negatives in tool output",
+    "Use taint analysis to trace untrusted data from sources to sinks",
+    "Compare open-source static analysers: SonarQube, SpotBugs, PMD, CodeQL, Checkmarx",
+    "Explain what fuzz testing is and why it complements traditional testing",
+    "Differentiate mutation-based vs generation-based fuzzing",
+    "Differentiate black-box, grey-box, and white-box fuzzing",
+    "Describe how AFL uses coverage-guided mutation to discover crashes",
+    "Set up and run AFL with seed inputs, interpret crash and hang outputs",
+    "Integrate static analysis and fuzz testing into a CI/CD pipeline"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-7 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses spell-checker and quality-inspector analogies. Never judges. Celebrates every bug found.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Hey! Think of static analysis like a spell-checker for security — it scans your code without running it. Fuzz testing is like a monkey randomly pressing buttons to see what breaks! Want me to explain either one?",
+      "idle_90_seconds": "Still thinking? No pressure! Would you like me to: (A) Compare SAST vs DAST side by side, (B) Walk through how AFL finds crashes, or (C) Show a real SonarQube report?",
+      "idle_180_seconds": "Here is the big picture: Static analysis reads your CODE and flags suspicious patterns (like SQL concatenation). Fuzz testing runs your PROGRAM and throws random/mutated data at it to find crashes. Together they catch more bugs than either alone. Let me walk you through an example!",
+      "first_error": "Good try! Security tool output can be confusing at first. Remember: True Positive = real bug found. False Positive = false alarm. False Negative = missed bug. Which category does this fall into?",
+      "repeated_errors": "No worries! Let me break this down differently. Static analysis is like proofreading an essay before submitting it — you find grammar errors (bugs) without actually performing the essay (running the code). Does that help?",
+      "after_success": "Excellent! You just identified a real vulnerability using automated tools. Professional security engineers use exactly these techniques every day. You are building industry skills!"
+    },
+    "encouragement_phrases": [
+      "Static analysis catches bugs before they reach production — you are learning to shift security LEFT!",
+      "Every false positive you correctly identify saves your team hours of investigation!",
+      "Fuzz testing found the Heartbleed bug in OpenSSL — the technique you are learning is world-class!",
+      "Understanding taint analysis means you can trace attacks from input to exploit!",
+      "You are learning to automate security — this is how professionals scale!",
+      "Coverage-guided fuzzing is cutting-edge — Google uses it to find thousands of bugs!",
+      "Great job reading that tool output! This is exactly what security consultants do!",
+      "Every CI/CD pipeline should have these checks — you are learning DevSecOps!",
+      "Distinguishing true from false positives is a critical professional skill!",
+      "You are building the skills to secure code at scale!"
+    ],
+    "explanation_styles": {
+      "analogy": "Static analysis is like a SPELL CHECKER for your code. It reads every line without running the program, looking for patterns that usually mean bugs — like a spell checker flags 'teh' as probably being 'the'. Fuzz testing is like a CRASH TEST — you throw your program against random inputs to see what breaks, just like car manufacturers crash cars into walls to find weaknesses.",
+      "visual": "SOURCE CODE --> [Static Analyser] --> Warning List (true positives + false positives). RUNNING PROGRAM --> [Fuzzer sends random data] --> Crash? Hang? New path? --> Save interesting inputs --> Mutate and repeat.",
+      "step_by_step": "Static Analysis: Step 1: Tool parses source code. Step 2: Builds AST (Abstract Syntax Tree). Step 3: Checks rules (e.g., 'never concatenate user input into SQL'). Step 4: Reports warnings with severity. Step 5: Developer triages: true positive or false positive?",
+      "code_trace": "Taint trace: request.getParameter('name') [TAINTED] --> String query = 'SELECT * FROM users WHERE name=' + name [TAINTED reaches SQL sink] --> ALERT: SQL Injection!",
+      "comparison": "SAST: Analyses code, finds bugs early, many false positives, fast. DAST: Analyses running app, fewer false positives, finds runtime issues, needs deployed app. Fuzzing: Random input testing, finds crashes, great for unknown bugs, takes time."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "static_analysis_fuzzing_lesson_1",
+      "title": "Static Analysis & Fuzz Testing",
+      "theory": {
+        "introduction": "Imagine you are building a bridge. Before anyone drives across it, you would want two types of inspections.\n\nFirst, a BLUEPRINT REVIEW: an engineer examines the design drawings looking for structural weaknesses — beams that are too thin, connections that might fail under stress, materials that do not meet the specification. This is STATIC ANALYSIS. You examine the plan (source code) without actually building anything (running the program).\n\nSecond, a STRESS TEST: you put actual weight on the bridge, shake it with machines, expose it to wind and water, and see what breaks. This is FUZZ TESTING (and dynamic analysis). You run the actual program and throw unexpected inputs at it to find crashes, hangs, and security holes.\n\nNeither inspection alone is enough. The blueprint review might miss problems that only appear under real stress. The stress test might not cover every part of the bridge. Together, they catch far more problems than either alone.\n\nStatic Analysis Tools (also called SAST — Static Application Security Testing) have been used since 1979 when Steve Johnson created Lint for C. Modern tools like SonarQube, SpotBugs, CodeQL, and Checkmarx can find SQL injection, XSS, path traversal, null pointer dereferences, buffer overflows, race conditions, and resource leaks — all without running your code.\n\nFuzz Testing was pioneered in 1988 by Barton Miller at the University of Wisconsin. His students sent random data to Unix utilities and found that 25-33% of them crashed! Modern fuzzers like AFL (American Fuzzy Lop), libFuzzer, and HoneyFuzz use coverage-guided mutation to intelligently explore program paths and find bugs that humans would never think to test for. Google's OSS-Fuzz has found over 30,000 bugs in open-source software using these techniques.",
+        "why_important": "Manual code review cannot scale — a large application has millions of lines of code. Static analysis automates the review process, finding common vulnerability patterns in seconds. Fuzz testing finds bugs that even careful developers miss, because it tests inputs that no human would think to try. Together, they form the backbone of modern DevSecOps. Every major tech company (Google, Microsoft, Apple, Meta) uses both static analysis and fuzz testing in their development pipelines. The Heartbleed bug in OpenSSL (2014), which affected millions of websites, was later found to be detectable by both static analysis and fuzzing. These tools are not optional — they are essential for secure software development.",
+        "key_concepts": [
+          {
+            "concept": "What is Static Analysis (SAST)?",
+            "explanation": "Static Application Security Testing (SAST) analyses source code, bytecode, or binaries WITHOUT executing the program. The tool parses the code like a compiler does, builds an intermediate representation (like an Abstract Syntax Tree), and then applies rules to detect patterns that indicate vulnerabilities.\n\nWhat SAST can find:\n- SQL injection (string concatenation in queries)\n- Cross-site scripting (unescaped output)\n- Path traversal (user input in file paths)\n- Null pointer dereferences\n- Buffer overflows\n- Resource leaks (unclosed streams)\n- Race conditions\n- Hard-coded credentials\n- Weak cryptography\n- Type mismatches\n\nSAST works early in development — you can scan code before it even compiles successfully. This is called 'shifting security left' because you find problems earlier in the Software Development Life Cycle (SDLC) when they are cheapest to fix.",
+            "example": "// Static analyser finds SQL injection:\nString query = \"SELECT * FROM users WHERE name='\" + userInput + \"'\";\n// SAST ALERT: Potential SQL Injection (CWE-89)\n// Severity: HIGH\n// Source: userInput (from request parameter)\n// Sink: SQL query execution\n// Fix: Use PreparedStatement with ? placeholders\n\n// Static analyser finds resource leak:\nFileInputStream fis = new FileInputStream(\"data.txt\");\nString data = readAll(fis);\n// fis.close() is never called!\n// SAST ALERT: Resource Leak (CWE-404)\n// Fix: Use try-with-resources",
+            "ai_hint": "SAST = spell-checker for security. Reads code, finds patterns that usually mean bugs. Works without running the program."
+          },
+          {
+            "concept": "What is Dynamic Analysis (DAST)?",
+            "explanation": "Dynamic Application Security Testing (DAST) analyses the application while it is RUNNING. The tool sends requests to the application (like a real user or attacker would) and examines the responses for signs of vulnerability.\n\nDAST pros: fewer false positives (it tests real behaviour), finds runtime issues, tests the deployed configuration.\nDAST cons: needs a running application, slower, cannot find all code paths, only finds issues in the code that executes.\n\nCommon DAST tools: OWASP ZAP, Burp Suite, Nikto, Acunetix.\n\nDAST complements SAST — use BOTH for maximum coverage.",
+            "example": "// DAST tool sends:\n// GET /search?q=<script>alert(1)</script>\n//\n// DAST examines response:\n// <p>Results for: <script>alert(1)</script></p>\n// The script tag is reflected WITHOUT encoding!\n// DAST ALERT: Reflected XSS detected\n// URL: /search?q=<script>alert(1)</script>\n// Parameter: q\n// Evidence: Response contains unescaped <script> tag\n//\n// DAST is like a penetration tester:\n// It attacks the RUNNING application\n// Not the source code",
+            "ai_hint": "DAST = attacking your running app from outside. Sends real requests, checks real responses. Like a robot penetration tester."
+          },
+          {
+            "concept": "How Static Analysers Work: Parsing, AST, Rules",
+            "explanation": "Static analysers work like compilers with extra steps:\n\n1. LEXING: Convert source code into tokens (keywords, identifiers, operators)\n2. PARSING: Build an Abstract Syntax Tree (AST) — a tree structure representing the code\n3. SEMANTIC ANALYSIS: Understand types, scope, data flow\n4. RULE CHECKING: Apply security rules to the AST\n\nThe tool does NOT know what your program is SUPPOSED to do. It looks for violations of good programming practices and specific error patterns. Think of it as a very thorough proofreader who knows the grammar rules but has not read the book's plot.\n\nModern tools go beyond pattern matching. They use:\n- Data flow analysis: tracking where data moves through the program\n- Control flow analysis: understanding which code paths are possible\n- Taint analysis: tracking untrusted input from source to sink\n- Inter-procedural analysis: following data across method calls",
+            "example": "// How the tool analyses this code:\nString name = request.getParameter(\"name\"); // Line 1\nString query = \"SELECT * FROM users WHERE name='\" + name + \"'\"; // Line 2\nResultSet rs = stmt.executeQuery(query); // Line 3\n\n// Step 1: Parse into AST\n// Step 2: Data flow: 'name' assigned from getParameter (TAINTED)\n// Step 3: 'name' flows into string concatenation (still TAINTED)\n// Step 4: Concatenated string flows into executeQuery (SQL SINK)\n// Step 5: TAINTED data reaches SQL SINK without sanitisation\n// ALERT: SQL Injection detected!\n//\n// The tool traced the data from SOURCE to SINK:\n// Source: request.getParameter() -> Tainted\n// Propagation: string concatenation -> Still tainted\n// Sink: executeQuery() -> SQL execution\n// Result: VULNERABILITY",
+            "ai_hint": "The tool builds a tree of your code, then traces data flow from untrusted sources (user input) to dangerous sinks (SQL, file system, HTML output)."
+          },
+          {
+            "concept": "Taint Analysis: Tracing Untrusted Data",
+            "explanation": "Taint analysis is the most powerful technique in static analysis. It tracks data that comes from untrusted SOURCES (user input, files, network, database) through the program to dangerous SINKS (SQL queries, HTML output, file operations, command execution).\n\nSOURCES (where tainted data enters):\n- request.getParameter()\n- request.getInputStream()\n- System.getenv()\n- File reading\n- Database results\n\nSINKS (where tainted data is dangerous):\n- SQL: Statement.executeQuery()\n- XSS: response.getWriter().write()\n- Command: Runtime.exec()\n- File: new File()\n- Deserialisation: ObjectInputStream.readObject()\n\nSANITISERS (functions that clean tainted data):\n- PreparedStatement (for SQL)\n- HtmlUtils.htmlEscape() (for XSS)\n- Regex whitelist validation\n\nIf tainted data reaches a sink WITHOUT passing through a sanitiser, the tool reports a vulnerability.",
+            "example": "// Taint trace example:\n\n// SOURCE (tainted):\nString userInput = request.getParameter(\"search\"); // TAINTED\n\n// PROPAGATION (still tainted):\nString upper = userInput.toUpperCase(); // Still TAINTED (transform, not sanitise)\nString query = \"SELECT * FROM products WHERE name LIKE '%\" + upper + \"%'\"; // TAINTED in SQL\n\n// SINK:\nResultSet rs = stmt.executeQuery(query); // TAINTED reaches SQL sink!\n// ALERT: SQL Injection!\n\n// SAFE version:\nString userInput = request.getParameter(\"search\"); // TAINTED\nPreparedStatement ps = conn.prepareStatement(\n    \"SELECT * FROM products WHERE name LIKE ?\"); // Safe query\nps.setString(1, \"%\" + userInput + \"%\"); // SANITISED by PreparedStatement\nResultSet rs = ps.executeQuery(); // Clean data reaches sink\n// NO ALERT: Sanitiser (PreparedStatement) cleaned the taint",
+            "ai_hint": "Source -> Propagation -> Sink. If no sanitiser in between = vulnerability. PreparedStatement is a sanitiser for SQL."
+          },
+          {
+            "concept": "True Positives, False Positives, False Negatives",
+            "explanation": "Static analysis tools are not perfect. Their output contains:\n\nTRUE POSITIVE (TP): A real vulnerability that the tool correctly identified. This needs to be fixed.\n\nFALSE POSITIVE (FP): The tool flagged something as a vulnerability, but it is actually safe. This wastes developer time investigating non-issues.\n\nFALSE NEGATIVE (FN): A real vulnerability that the tool MISSED. This is the most dangerous because you think you are safe but are not.\n\nTRUE NEGATIVE (TN): Safe code that the tool correctly did not flag.\n\nThe challenge with static analysis is balancing false positives and false negatives. A tool that flags EVERYTHING has zero false negatives but massive false positives (noisy). A tool that only flags obvious issues has few false positives but may miss subtle bugs (dangerous).\n\nIndustry average: 30-60% false positive rate for SAST tools. Developers must TRIAGE the warnings — examine each one and decide if it is real.",
+            "example": "// TRUE POSITIVE (tool is right, bug is real):\nString q = \"SELECT * FROM users WHERE id=\" + req.getParameter(\"id\");\n// Tool says: SQL Injection -> YES, this IS vulnerable!\n\n// FALSE POSITIVE (tool is wrong, code is safe):\nint userId = Integer.parseInt(req.getParameter(\"id\"));\nString q = \"SELECT * FROM users WHERE id=\" + userId;\n// Tool says: SQL Injection -> NO! parseInt throws exception on non-numeric\n// Integer concatenation cannot inject SQL\n\n// FALSE NEGATIVE (tool missed a real bug):\nString field = req.getParameter(\"sort\");\nString q = \"SELECT * FROM users ORDER BY \" + field;\n// Tool says: nothing\n// But this IS vulnerable! Attacker controls the ORDER BY clause\n// The tool missed it because it didn't track ORDER BY as a SQL sink",
+            "ai_hint": "True positive = real bug found. False positive = false alarm. False negative = missed bug (the dangerous one!). Developers must triage every warning."
+          },
+          {
+            "concept": "Static Analysis Tools: SonarQube, SpotBugs, PMD, CodeQL",
+            "explanation": "Key open-source static analysis tools:\n\nSONARQUBE: The most popular. Supports 30+ languages. Web-based dashboard. Tracks code quality over time. Categories: Bugs, Vulnerabilities, Code Smells, Security Hotspots. Free Community Edition available.\n\nSPOTBUGS (successor to FindBugs): Java-specific. Analyses bytecode (.class files). Fast and accurate for Java. Finds null pointers, resource leaks, synchronisation issues, security bugs.\n\nPMD: Multi-language (Java, JS, XML, etc.). Rule-based. Finds dead code, empty catch blocks, unnecessary object creation, copy-paste code. Good for code quality.\n\nCODEQL: Created by GitHub/Semmle. Treats code as DATA you can query with a SQL-like language. Very powerful for finding complex vulnerability patterns. Free for open-source projects.\n\nCHECKMARX: Commercial enterprise SAST. Excellent taint analysis. Supports many languages. Expensive but comprehensive.\n\nFORTIFY: HP/Micro Focus. Enterprise-grade. Strong Java support.",
+            "example": "// SonarQube output example:\n// Bug: Potential SQL Injection\n// File: UserDAO.java:45\n// Rule: S3649 - Database queries should not be vulnerable to injection\n// Severity: BLOCKER\n// Effort: 30min\n// Code: stmt.executeQuery(\"SELECT * FROM users WHERE id=\" + userId);\n// Message: Change this code to use a parameterised query.\n\n// SpotBugs output:\n// Bug: SQL_INJECTION_JDBC\n// Category: SECURITY\n// Priority: High\n// Class: com.app.UserDAO\n// Method: findUser(String)\n// Message: Potential SQL injection via JDBC\n\n// CodeQL query to find SQL injection:\n// import java\n// from MethodAccess ma, Expr arg\n// where ma.getMethod().getName() = \"executeQuery\"\n//   and arg = ma.getArgument(0)\n//   and arg instanceof AddExpr\n// select ma, \"Potential SQL injection\"",
+            "ai_hint": "SonarQube = most popular, web dashboard. SpotBugs = Java-specific. CodeQL = query code like a database. All free for open source."
+          },
+          {
+            "concept": "What is Fuzz Testing?",
+            "explanation": "Fuzz testing (fuzzing) is an automated software testing technique that feeds RANDOM, UNEXPECTED, or MALFORMED data to a program to find crashes, hangs, memory errors, and security vulnerabilities.\n\nThe concept is simple: programs are designed to handle valid input. What happens when you send INVALID input? Many programs crash, leak memory, or behave unexpectedly — and these failures often indicate security vulnerabilities.\n\nHistory: Barton Miller, University of Wisconsin, 1988. His students found that 25-33% of standard Unix utilities crashed when fed random input. In 2020, a follow-up study showed the crash rate had improved but was still 5-12%.\n\nFuzzing found major bugs in: OpenSSL (Heartbleed), SQLite, PHP, Firefox, Chrome, Linux kernel, and thousands more. Google's OSS-Fuzz runs continuous fuzzing on 1000+ open-source projects and has found 30,000+ bugs.",
+            "example": "// Concept: What happens with unexpected input?\n\npublic int parseAge(String input) {\n    return Integer.parseInt(input); // What if input is null? \"abc\"? \"999999999999\"?\n}\n\n// Fuzzer would try:\n// null -> NullPointerException (crash!)\n// \"\" -> NumberFormatException (crash!)\n// \"abc\" -> NumberFormatException (crash!)\n// \"2147483648\" -> NumberFormatException (integer overflow!)\n// \"-1\" -> Negative age accepted?\n// \"0\" -> Zero age accepted?\n// \"999\" -> Unrealistic age accepted?\n// \"12 \" -> Trailing space — does parseInt handle it?\n// \"\\t42\" -> Leading tab\n//\n// Each crash reveals a missing input validation!\n// The fuzzer found all these without a human thinking of them.",
+            "ai_hint": "Fuzz testing = throw random data at your program and see what breaks. It finds bugs humans would never think to test for."
+          },
+          {
+            "concept": "Fuzzing Variations: Mutation vs Generation, Black/Grey/White Box",
+            "explanation": "Fuzzing varies along two dimensions:\n\nINPUT CREATION:\n- MUTATION-based: Start with valid inputs (seeds), randomly modify them. Change bytes, flip bits, insert data, delete chunks. Simple but effective.\n- GENERATION-based: Create inputs from scratch using a grammar or format specification. More targeted but requires knowledge of the input format.\n\nPROGRAM KNOWLEDGE:\n- BLACK BOX: No knowledge of program internals. Just send input, observe output. Simple but inefficient — may test the same paths repeatedly.\n- GREY BOX: Uses code coverage information to guide testing. If a mutated input reaches NEW code, it is saved as a new seed. This is the most popular approach (AFL, libFuzzer).\n- WHITE BOX: Full access to source code and symbolic execution. Most thorough but slowest and hardest to set up.\n\nMost effective combination: Mutation-based + Grey-box (coverage-guided). This is what AFL uses.",
+            "example": "// Mutation-based fuzzing example:\n// Seed input: \"GET /index.html HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n\"\n//\n// Mutation 1: Flip byte 4\n// \"GET /index.html HTTP/1.1...\" -> \"GET$!index.html HTTP/1.1...\"\n//\n// Mutation 2: Insert random bytes at position 15\n// \"GET /index.htmlXXXXXXXX HTTP/1.1...\"\n//\n// Mutation 3: Delete bytes 20-25\n// \"GET /index.html HT...\"\n//\n// Mutation 4: Replace number with boundary value\n// \"GET /index.html HTTP/99999.1...\"\n//\n// Each mutation tests a different edge case!\n// If mutation 2 causes a NEW code path to execute,\n// it becomes a new seed for future mutations.\n\n// Generation-based example:\n// Grammar: HTTP_REQUEST = METHOD SP URI SP VERSION CRLF HEADERS CRLF\n// Generate: \"DELETE /../../etc/passwd HTTP/2.0\\r\\n\\r\\n\"\n// This generates syntactically valid but semantically dangerous input",
+            "ai_hint": "Mutation = modify existing valid inputs. Generation = create new inputs from grammar. Grey-box = use coverage to guide mutations. AFL combines all three ideas."
+          },
+          {
+            "concept": "AFL (American Fuzzy Lop): Coverage-Guided Fuzzing",
+            "explanation": "AFL is the most influential fuzzer ever created. Written by Michal Zalewski at Google (2013), it revolutionised fuzz testing by using coverage-guided mutation.\n\nHow AFL works:\n1. COMPILE: Compile the target program with afl-clang or afl-gcc. This inserts instrumentation code that tracks which basic blocks execute.\n2. SEED: Provide initial seed inputs — valid examples that the program accepts.\n3. MUTATE: AFL randomly modifies a seed input (flip bits, insert bytes, use dictionary values).\n4. EXECUTE: Run the program with the mutated input.\n5. EVALUATE: Did the mutated input cause a new code path to execute? If YES, save it as a new seed.\n6. REPEAT: Continue mutating, executing, evaluating. Focus on seeds that found new paths.\n\nOutputs:\n- CRASHES: Inputs that caused the program to crash (segfault, abort). These often indicate memory corruption, buffer overflows, or assertion failures.\n- HANGS: Inputs that caused the program to take too long (infinite loops, algorithmic complexity attacks).\n- QUEUE: Interesting inputs that discovered new code paths.\n\nAFL has found thousands of vulnerabilities in real software including OpenSSL, PHP, SQLite, Firefox, and the Linux kernel.",
+            "example": "// Using AFL:\n//\n// Step 1: Compile with instrumentation\n// $ afl-clang -o my_parser my_parser.c\n//\n// Step 2: Create seed directory with valid inputs\n// $ mkdir seeds\n// $ echo '{\"name\": \"test\"}' > seeds/valid.json\n//\n// Step 3: Run AFL\n// $ afl-fuzz -i seeds -o findings ./my_parser @@\n// (@@ means: replace with the test input file)\n//\n// Step 4: AFL runs and shows:\n// ┌─ process timing ────────────────────────┐\n// │   run time: 0 days, 2 hrs, 14 min       │\n// │   last new path: 0 min                  │\n// ├─ stage progress ────────────────────────┤\n// │   total execs: 12.5M                    │\n// │   exec speed: 1543/sec                  │\n// ├─ findings in depth ─────────────────────┤\n// │   total crashes: 3 (2 unique)           │\n// │   total hangs: 1                        │\n// └─────────────────────────────────────────┘\n//\n// Step 5: Examine crashes\n// $ ls findings/crashes/\n// id:000000,sig:11,src:...\n// $ ./my_parser findings/crashes/id:000000\n// Segmentation fault! <- Buffer overflow found!",
+            "ai_hint": "AFL: compile with instrumentation, provide seeds, let it mutate and explore. Crashes = potential vulnerabilities. Coverage guidance makes it smart."
+          },
+          {
+            "concept": "Seeds, Mutations, and Coverage Feedback",
+            "explanation": "The SEED CORPUS is the starting point for fuzzing. Seeds should be:\n- VALID inputs that the program accepts normally\n- SMALL (smaller inputs = faster execution = more tests per second)\n- DIVERSE (cover different features and code paths)\n\nMUTATION STRATEGIES that fuzzers use:\n- Bit flipping: flip individual bits in the input\n- Byte flipping: change individual bytes\n- Arithmetic: add/subtract small values from integers\n- Interesting values: insert boundary values (0, -1, MAX_INT, powers of 2)\n- Block operations: insert, delete, or overwrite chunks of data\n- Dictionary: insert known keywords (SQL keywords, HTML tags)\n- Splicing: combine parts of two different seeds\n\nCOVERAGE FEEDBACK: After each test, the instrumented program reports which basic blocks executed. If a mutated input reached NEW blocks that no previous input reached, it is 'interesting' and saved as a new seed. This creates a feedback loop that drives the fuzzer towards unexplored code.",
+            "example": "// Seed: {\"age\": 25}\n//\n// Mutation 1 (bit flip): {\"age\": 25} -> {\"age\": 27}\n//   Coverage: same paths as seed -> not interesting\n//\n// Mutation 2 (interesting value): {\"age\": 25} -> {\"age\": -1}\n//   Coverage: NEW path! (negative number handling) -> SAVE AS SEED!\n//\n// Mutation 3 (from new seed): {\"age\": -1} -> {\"age\": -2147483648}\n//   Coverage: NEW path! (integer underflow) -> SAVE AS SEED!\n//\n// Mutation 4 (from new seed): {\"age\": -2147483648} -> crash!\n//   Integer overflow in allocation: malloc(age * sizeof(record))\n//   CRASH SAVED! Potential buffer overflow vulnerability!\n//\n// The fuzzer evolved from valid input to crash in 4 steps!\n// Each step was guided by coverage feedback.",
+            "ai_hint": "Seeds = starting inputs. Mutations = random changes. Coverage = did we reach new code? If yes, save as new seed. This feedback loop finds deep bugs."
+          },
+          {
+            "concept": "SAST vs DAST vs Fuzzing: When to Use Each",
+            "explanation": "Each testing technique has strengths and weaknesses:\n\nSAST (Static Analysis):\n- When: During development, in CI/CD pipeline, before code review\n- Finds: Code-level bugs, vulnerability patterns, code smells\n- Pros: Early detection, no running app needed, covers all code\n- Cons: High false positives, cannot find runtime/config issues\n\nDAST (Dynamic Analysis):\n- When: After deployment, staging environment\n- Finds: Runtime vulnerabilities, misconfigurations, auth issues\n- Pros: Few false positives, tests real behaviour\n- Cons: Needs running app, slow, limited coverage\n\nFUZZING:\n- When: Testing parsers, file handlers, network protocols, APIs\n- Finds: Crashes, memory corruption, unexpected behaviour\n- Pros: Finds unknown bugs, minimal setup, scales well\n- Cons: Takes time, may not find logic bugs, needs crash handling\n\nBest practice: Use ALL THREE in combination. SAST in development, DAST in staging, fuzzing continuously.",
+            "example": "// CI/CD Pipeline integration:\n//\n// Developer commits code\n//     |\n//     v\n// [SAST Scan] SonarQube analyses code\n//     |--- Blockers? -> Fail build, developer fixes\n//     |--- Clean? -> Continue\n//     v\n// [Build & Deploy to staging]\n//     |\n//     v\n// [DAST Scan] OWASP ZAP scans running app\n//     |--- High severity? -> Alert team\n//     |--- Clean? -> Continue\n//     v\n// [Fuzz Testing] AFL/libFuzzer runs overnight\n//     |--- Crashes? -> Create bug tickets\n//     |--- Clean? -> Deploy to production\n//     v\n// [Production] with monitoring\n\n// This is called DevSecOps:\n// Development + Security + Operations = Secure by default",
+            "ai_hint": "SAST = check code. DAST = check running app. Fuzzing = throw random data. Use ALL THREE for maximum security."
+          },
+          {
+            "concept": "Integrating Security Testing in CI/CD",
+            "explanation": "Modern development uses Continuous Integration / Continuous Deployment (CI/CD) pipelines. Security testing should be automated within these pipelines — not done manually at the end.\n\nA DevSecOps pipeline:\n1. Developer pushes code to Git\n2. CI server (Jenkins, GitHub Actions, GitLab CI) triggers automatically\n3. Build the code\n4. Run unit tests\n5. Run SAST scan (SonarQube, SpotBugs)\n6. If SAST finds BLOCKER/CRITICAL issues -> fail the build\n7. Deploy to staging\n8. Run DAST scan (OWASP ZAP)\n9. Run integration tests\n10. If all pass -> deploy to production\n11. Continuous fuzzing runs in background\n\nThe key principle: SHIFT LEFT. Find and fix security issues as early as possible in the development process. A bug found in development costs $100 to fix. The same bug found in production costs $10,000+.",
+            "example": "// GitHub Actions example:\n// .github/workflows/security.yml\n//\n// name: Security Pipeline\n// on: push\n// jobs:\n//   sast:\n//     runs-on: ubuntu-latest\n//     steps:\n//       - uses: actions/checkout@v3\n//       - name: Run SpotBugs\n//         run: mvn spotbugs:check\n//       - name: Run SonarQube\n//         run: mvn sonar:sonar\n//   dast:\n//     needs: sast\n//     runs-on: ubuntu-latest\n//     steps:\n//       - name: Deploy to staging\n//         run: docker-compose up -d\n//       - name: OWASP ZAP scan\n//         uses: zaproxy/action-full-scan@v0.4.0\n//         with:\n//           target: http://localhost:8080\n//   fuzz:\n//     runs-on: ubuntu-latest\n//     steps:\n//       - name: Run fuzzing\n//         run: timeout 3600 afl-fuzz -i seeds -o output ./target @@",
+            "ai_hint": "Shift LEFT = find bugs early when they are cheap to fix. Automate security in CI/CD so every code change is checked automatically."
+          },
+          {
+            "concept": "Handling Tool Output: Triage and Prioritisation",
+            "explanation": "When a static analyser produces hundreds of warnings, you need a systematic triage process:\n\n1. FILTER by severity: Focus on CRITICAL and HIGH first\n2. CATEGORISE: Group by vulnerability type (all SQL injection together)\n3. VERIFY: For each warning, determine if it is a true positive or false positive\n4. PRIORITISE: Fix true positives by risk (exploitability, impact)\n5. SUPPRESS: Mark false positives with annotations so they do not reappear\n6. TRACK: Log all decisions for audit purposes\n\nPrioritisation factors:\n- CVSS score of the vulnerability type\n- Is the vulnerable code reachable from user input?\n- Is the application internet-facing?\n- What data does the application handle (PII, financial, health)?\n\nSonarQube uses: BLOCKER > CRITICAL > MAJOR > MINOR > INFO\nSeverity mapping: BLOCKER = must fix before release, CRITICAL = fix soon, MAJOR = fix when possible",
+            "example": "// Triage example:\n//\n// SonarQube report: 47 issues\n// ├── 2 BLOCKER (SQL injection)      -> FIX IMMEDIATELY\n// ├── 5 CRITICAL (XSS, path traversal) -> FIX THIS SPRINT\n// ├── 15 MAJOR (resource leaks)      -> FIX NEXT SPRINT\n// ├── 20 MINOR (code smells)         -> BACKLOG\n// └── 5 INFO (style issues)          -> IGNORE\n//\n// Triage the 2 BLOCKERs:\n// Issue 1: SQL injection in UserDAO.findUser()\n//   Verify: Yes, parameter comes from HTTP request -> TRUE POSITIVE\n//   Action: Fix with PreparedStatement\n//\n// Issue 2: SQL injection in ReportDAO.generateReport()\n//   Verify: Parameter comes from hardcoded config -> FALSE POSITIVE\n//   Action: Suppress with @SuppressWarnings(\"squid:S3649\")\n//           Add comment explaining why it's safe",
+            "ai_hint": "Triage: filter by severity, verify each warning, fix true positives, suppress false positives, track decisions. Start with BLOCKER/CRITICAL."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: SonarQube SQL Injection Detection",
+          "description": "How SonarQube detects and reports SQL injection in Java code.",
+          "difficulty": "beginner",
+          "code": "// Code SonarQube scans:\npublic User findUser(String username) throws SQLException {\n    String query = \"SELECT * FROM users WHERE name='\" + username + \"'\";\n    Statement stmt = conn.createStatement();\n    ResultSet rs = stmt.executeQuery(query);\n    // ...\n}\n\n// SonarQube Report:\n// Rule: S3649 - Database queries should not be vulnerable to injection\n// Severity: BLOCKER\n// Type: VULNERABILITY\n// File: UserDAO.java, Line 2\n// Message: \"Change this code to not construct SQL queries directly from\n//          user-controlled data.\"\n// Taint flow:\n//   Source: parameter 'username' (method parameter)\n//   Sink: executeQuery() call on line 3\n//\n// FIX:\npublic User findUserSecure(String username) throws SQLException {\n    PreparedStatement ps = conn.prepareStatement(\n        \"SELECT * FROM users WHERE name = ?\");\n    ps.setString(1, username);\n    ResultSet rs = ps.executeQuery();\n    // ...\n}",
+          "output": "SonarQube: BLOCKER - SQL Injection detected\nSource: username parameter -> Sink: executeQuery()\nFix: Use PreparedStatement with ? placeholders",
+          "ai_explanation": "SonarQube traces the data flow from the method parameter (source) through string concatenation to executeQuery (sink). Since no sanitiser (PreparedStatement) is found in between, it reports SQL injection. The BLOCKER severity means this must be fixed before release.",
+          "ai_challenge": "What if username came from a configuration file instead of a user? Would SonarQube still flag it? (Answer: depends on whether config files are considered untrusted sources in the tool configuration)"
+        },
+        {
+          "title": "Example 2: SpotBugs Null Pointer Detection",
+          "description": "SpotBugs finding a potential null pointer dereference.",
+          "difficulty": "beginner",
+          "code": "// Code SpotBugs analyses:\npublic String getUserEmail(int userId) {\n    User user = database.findById(userId); // Could return null!\n    return user.getEmail(); // NullPointerException if user is null!\n}\n\n// SpotBugs output:\n// Bug: NP_NULL_ON_SOME_PATH\n// Category: CORRECTNESS\n// Priority: High\n// Method: getUserEmail(int)\n// Message: Possible null pointer dereference of 'user'\n//          in getUserEmail(int)\n// Evidence: database.findById() may return null\n//           user.getEmail() dereferences without null check\n\n// FIX:\npublic String getUserEmail(int userId) {\n    User user = database.findById(userId);\n    if (user == null) {\n        return null; // or throw appropriate exception\n    }\n    return user.getEmail();\n}\n\n// Or with Optional (Java 8+):\npublic Optional<String> getUserEmail(int userId) {\n    return Optional.ofNullable(database.findById(userId))\n                   .map(User::getEmail);\n}",
+          "output": "SpotBugs: NP_NULL_ON_SOME_PATH - Possible null dereference\nfindById() may return null, getEmail() called without check\nFix: Add null check or use Optional",
+          "ai_explanation": "SpotBugs analyses the bytecode and determines that findById() could return null based on its return type and the database pattern. If user is null, calling getEmail() throws NullPointerException, which could crash the application or reveal error information.",
+          "ai_challenge": "In a security context, how could a null pointer lead to a vulnerability? (Hint: crash = denial of service, error message = information disclosure)"
+        },
+        {
+          "title": "Example 3: Resource Leak Detection",
+          "description": "Static analysis finding an unclosed FileInputStream.",
+          "difficulty": "beginner",
+          "code": "// VULNERABLE to resource leak:\npublic String readConfig(String path) throws IOException {\n    FileInputStream fis = new FileInputStream(path);\n    byte[] data = new byte[1024];\n    int read = fis.read(data);\n    return new String(data, 0, read);\n    // fis is NEVER closed!\n    // If this method is called 10,000 times,\n    // 10,000 file handles are leaked!\n}\n\n// SonarQube: S2095 - Resources should be closed\n// SpotBugs: OBL_UNSATISFIED_OBLIGATION - Stream not closed\n\n// FIX with try-with-resources:\npublic String readConfigSecure(String path) throws IOException {\n    try (FileInputStream fis = new FileInputStream(path)) {\n        byte[] data = new byte[1024];\n        int read = fis.read(data);\n        return new String(data, 0, read);\n    } // fis.close() called automatically!\n}",
+          "output": "SAST Alert: Resource leak - FileInputStream not closed\nImpact: File handle exhaustion -> Denial of Service\nFix: try-with-resources closes stream automatically",
+          "ai_explanation": "Opening files without closing them leaks OS file handles. Each process has a limited number of file handles (typically 1024 on Linux). If the application leaks handles, eventually new files cannot be opened, causing denial of service. try-with-resources guarantees cleanup.",
+          "ai_challenge": "What other resources can be leaked? (Answer: database connections, network sockets, threads, locks)"
+        },
+        {
+          "title": "Example 4: False Positive Identification",
+          "description": "Learning to identify when a tool is wrong.",
+          "difficulty": "intermediate",
+          "code": "// Code the tool flags:\npublic void processRequest(HttpServletRequest req) {\n    String id = req.getParameter(\"id\");\n    \n    // Tool flags this as SQL Injection:\n    int userId = Integer.parseInt(id); // Throws NumberFormatException if not numeric!\n    String query = \"SELECT * FROM users WHERE id = \" + userId;\n    //                                                ^^^^^^^\n    // SonarQube: BLOCKER - SQL Injection\n    // But wait... userId is an INTEGER!\n    // You cannot inject SQL through integer concatenation\n    // parseInt() already validated the input is numeric\n    // This is a FALSE POSITIVE\n    \n    // However, there IS a different vulnerability:\n    // What if parseInt() throws NumberFormatException?\n    // The exception might reveal the invalid input in error message\n    // -> Information disclosure!\n    \n    // CORRECT triage:\n    // SQL Injection warning: FALSE POSITIVE (integer type prevents injection)\n    // Missing input validation: TRUE (should catch NumberFormatException)\n}\n\n// Proper code:\npublic void processRequestSecure(HttpServletRequest req) {\n    try {\n        int userId = Integer.parseInt(req.getParameter(\"id\"));\n        PreparedStatement ps = conn.prepareStatement(\n            \"SELECT * FROM users WHERE id = ?\");\n        ps.setInt(1, userId);\n        // Both safe AND no false positive!\n    } catch (NumberFormatException e) {\n        resp.sendError(400, \"Invalid user ID format\");\n    }\n}",
+          "output": "Tool says: SQL Injection (BLOCKER)\nReality: FALSE POSITIVE - integer concatenation cannot inject SQL\nBut: missing error handling IS a real issue (not what the tool flagged)\nBest fix: PreparedStatement eliminates both the real and false positive",
+          "ai_explanation": "This is a classic false positive. parseInt() converts the string to an integer, and you cannot inject SQL through integer concatenation. However, a skilled developer would notice the missing error handling and fix both issues. Using PreparedStatement makes the code safe AND silences the false positive.",
+          "ai_challenge": "Why is it still better to use PreparedStatement even though integer concatenation is safe? (Answer: defence in depth, consistency, prevents future bugs if someone changes the type)"
+        },
+        {
+          "title": "Example 5: CodeQL Query for Finding SQL Injection",
+          "description": "Writing a CodeQL query to find SQL injection patterns.",
+          "difficulty": "intermediate",
+          "code": "// CodeQL treats code as DATA you can query!\n// This query finds SQL injection in Java:\n\n/**\n * @name SQL injection from HTTP request\n * @description Building SQL queries from user input\n *              allows SQL injection attacks.\n * @kind path-problem\n * @problem.severity error\n * @precision high\n * @id java/sql-injection-http\n */\n\n// import java\n// import semmle.code.java.dataflow.TaintTracking\n// import semmle.code.java.security.QueryInjection\n//\n// class SqlInjectionConfig extends TaintTracking::Configuration {\n//   SqlInjectionConfig() { this = \"SqlInjectionConfig\" }\n//\n//   override predicate isSource(DataFlow::Node source) {\n//     source instanceof RemoteFlowSource  // HTTP parameters, headers, etc.\n//   }\n//\n//   override predicate isSink(DataFlow::Node sink) {\n//     sink instanceof QueryInjectionSink  // SQL execution methods\n//   }\n// }\n//\n// from SqlInjectionConfig cfg, DataFlow::PathNode source, DataFlow::PathNode sink\n// where cfg.hasFlowPath(source, sink)\n// select sink, source, sink, \"SQL injection from $@.\", source, \"user input\"\n\n// This query:\n// 1. Defines SOURCES (HTTP request parameters)\n// 2. Defines SINKS (SQL execution methods)\n// 3. Uses taint tracking to find paths from source to sink\n// 4. Reports each path found as a vulnerability",
+          "output": "CodeQL finds all paths from HTTP input to SQL execution\nResults show source file/line, sink file/line, and data flow path\nDevelopers can see exactly how tainted data reaches the SQL query",
+          "ai_explanation": "CodeQL is unique because it lets you write custom queries. Instead of relying on predefined rules, you define what sources and sinks matter to YOUR application. The taint tracking engine then finds all possible data flow paths between them.",
+          "ai_challenge": "How would you modify this query to find XSS instead of SQL injection? (Hint: change the sink from QueryInjectionSink to XssSink)"
+        },
+        {
+          "title": "Example 6: AFL Fuzzing a JSON Parser",
+          "description": "Setting up AFL to fuzz a simple JSON parser and finding a crash.",
+          "difficulty": "intermediate",
+          "code": "// target: json_parser.c\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\nvoid parse_json(const char* input) {\n    char key[64];   // Fixed-size buffer!\n    char value[64];\n    \n    // Find key between quotes\n    const char* start = strchr(input, '\"');\n    if (!start) return;\n    start++;\n    const char* end = strchr(start, '\"');\n    if (!end) return;\n    \n    // VULNERABLE: no length check!\n    strncpy(key, start, end - start);  // Could overflow if key > 64 chars!\n    key[end - start] = '\\0';\n    \n    printf(\"Key: %s\\n\", key);\n}\n\nint main(int argc, char* argv[]) {\n    // Read input file (AFL provides via @@)\n    FILE* f = fopen(argv[1], \"r\");\n    char buf[4096];\n    size_t len = fread(buf, 1, sizeof(buf)-1, f);\n    buf[len] = '\\0';\n    fclose(f);\n    parse_json(buf);\n    return 0;\n}\n\n// Compile: afl-clang -o json_parser json_parser.c\n// Seed: echo '{\"name\": \"test\"}' > seeds/valid.json\n// Run:  afl-fuzz -i seeds -o findings ./json_parser @@\n//\n// AFL will find: key longer than 64 chars -> buffer overflow!\n// Crash input: {\"AAAAAA...200 A's...\": \"x\"}",
+          "output": "AFL finds crash with key > 64 characters -> buffer overflow\nCrash saved in findings/crashes/\nFix: check length before strncpy, or use dynamic allocation",
+          "ai_explanation": "AFL mutates the valid JSON seed, trying longer strings, special characters, and boundary values. When it creates a JSON key longer than 64 characters, the strncpy copies too much data into the fixed-size buffer, causing a stack buffer overflow and crash. AFL saves this crashing input for developers to investigate.",
+          "ai_challenge": "How would you fix this code? (Answer: check end-start < sizeof(key) before copying, or use malloc(end-start+1))"
+        },
+        {
+          "title": "Example 7: Mutation Strategies Visualised",
+          "description": "Showing how AFL mutates inputs step by step.",
+          "difficulty": "intermediate",
+          "code": "public class MutationDemo {\n    public static void main(String[] args) {\n        String seed = \"{\\\"age\\\": 25, \\\"name\\\": \\\"Alice\\\"}\";\n        System.out.println(\"Original seed: \" + seed);\n        System.out.println();\n        \n        // Mutation 1: Bit flip at position 8\n        // Byte: '2' (0x32) -> flip bit 0 -> '3' (0x33)\n        System.out.println(\"Mutation 1 (bit flip): {\\\"age\\\": 35, ...}\");\n        \n        // Mutation 2: Replace with interesting value\n        // 25 -> -1 (boundary value)\n        System.out.println(\"Mutation 2 (interesting value): {\\\"age\\\": -1, ...}\");\n        \n        // Mutation 3: Insert bytes\n        // Insert 100 'A's into the name field\n        System.out.println(\"Mutation 3 (insert): {\\\"age\\\": 25, \\\"name\\\": \\\"AAAA...100...\\\"}\");\n        \n        // Mutation 4: Delete bytes\n        // Remove the closing brace\n        System.out.println(\"Mutation 4 (delete): {\\\"age\\\": 25, \\\"name\\\": \\\"Alice\\\"\");\n        \n        // Mutation 5: Arithmetic on integer\n        // 25 + MAX_INT\n        System.out.println(\"Mutation 5 (arithmetic): {\\\"age\\\": 2147483672, ...}\");\n        \n        // Mutation 6: Dictionary keyword\n        // Insert SQL keyword\n        System.out.println(\"Mutation 6 (dictionary): {\\\"age\\\": 25, \\\"name\\\": \\\"' OR 1=1--\\\"}\");\n        \n        System.out.println();\n        System.out.println(\"Each mutation explores different error handling!\");\n    }\n}",
+          "output": "6 mutation types: bit flip, interesting value, insert, delete, arithmetic, dictionary\nEach tests different edge cases automatically\nCoverage feedback keeps mutations that reach new code paths",
+          "ai_explanation": "AFL applies many mutation strategies to each seed input. Bit flips test character handling, interesting values test boundary conditions, insertions test buffer sizes, deletions test incomplete input handling, arithmetic tests numeric overflows, and dictionary mutations test security-relevant strings.",
+          "ai_challenge": "Which mutation strategy is most likely to find SQL injection? (Answer: dictionary mutation with SQL keywords like ' OR 1=1--)"
+        },
+        {
+          "title": "Example 8: OWASP ZAP DAST Scan",
+          "description": "Running a DAST scan with OWASP ZAP against a web application.",
+          "difficulty": "intermediate",
+          "code": "// OWASP ZAP scan results:\n//\n// Target: http://localhost:8080/webapp\n// Scan duration: 45 minutes\n// URLs tested: 127\n//\n// HIGH RISK:\n// 1. SQL Injection - http://localhost:8080/search?q=test\n//    Evidence: Response changes with q=test' OR '1'='1\n//    CWE-89\n//\n// 2. XSS (Reflected) - http://localhost:8080/search?q=<script>alert(1)</script>\n//    Evidence: Script tag reflected in response\n//    CWE-79\n//\n// MEDIUM RISK:\n// 3. Missing CSP Header - All pages\n//    Missing Content-Security-Policy header\n//    CWE-693\n//\n// 4. Cookie without HttpOnly - JSESSIONID\n//    Session cookie accessible to JavaScript\n//    CWE-1004\n//\n// LOW RISK:\n// 5. X-Content-Type-Options missing\n// 6. Server header reveals Apache/2.4.49\n//\n// ZAP vs SonarQube:\n// ZAP tests the RUNNING app (found XSS because it tried it)\n// SonarQube tests the CODE (found SQL injection from taint analysis)\n// Both found SQL injection through different methods!\n// Use BOTH for maximum coverage",
+          "output": "ZAP found: 2 HIGH (SQLi, XSS), 2 MEDIUM (headers, cookies), 2 LOW\nDAST confirms real vulnerabilities by exploiting them\nComplement SAST for full coverage",
+          "ai_explanation": "OWASP ZAP actively attacks the running application. Unlike SAST which reads code, ZAP sends real attack payloads and checks if the application is vulnerable. This means fewer false positives — if ZAP says it found XSS, it actually injected a script and it executed.",
+          "ai_challenge": "ZAP found the server is running Apache 2.4.49. Why is this a security issue? (Hint: CVE-2021-41773 — the path traversal vulnerability we learned about!)"
+        },
+        {
+          "title": "Example 9: Taint Analysis Deep Dive",
+          "description": "Complete taint trace through a multi-method Java application.",
+          "difficulty": "advanced",
+          "code": "// Taint analysis across methods:\n\npublic class UserController {\n    // Method 1: Entry point (SOURCE)\n    public void handleRequest(HttpServletRequest req) {\n        String input = req.getParameter(\"search\"); // TAINTED\n        String processed = processInput(input);     // Still TAINTED?\n        displayResults(processed);                  // SINK reached?\n    }\n    \n    // Method 2: Processing\n    private String processInput(String raw) {\n        String trimmed = raw.trim();        // TAINTED (trim doesn't sanitise)\n        String upper = trimmed.toUpperCase(); // TAINTED (transform, not sanitise)\n        return upper;\n    }\n    \n    // Method 3: Output (SINK)\n    private void displayResults(String data) {\n        resp.getWriter().write(\"<p>Results: \" + data + \"</p>\");\n        // TAINTED data in HTML output = XSS!\n    }\n}\n\n// Taint trace:\n// 1. req.getParameter(\"search\") -> TAINTED [SOURCE]\n// 2. processInput(input) -> parameter receives taint\n// 3. raw.trim() -> TAINTED (trim is not a sanitiser)\n// 4. trimmed.toUpperCase() -> TAINTED (transform, not sanitiser)\n// 5. return upper -> taint flows back to caller\n// 6. displayResults(processed) -> parameter receives taint\n// 7. resp.getWriter().write(data) -> TAINTED reaches HTML SINK!\n// ALERT: Cross-Site Scripting (CWE-79)\n//\n// FIX: Add sanitiser before sink\n// private void displayResults(String data) {\n//     String safe = HtmlUtils.htmlEscape(data); // SANITISER\n//     resp.getWriter().write(\"<p>Results: \" + safe + \"</p>\");\n// }",
+          "output": "Taint traced across 3 methods: getParameter -> processInput -> displayResults\ntrim() and toUpperCase() do NOT remove taint\nTainted data reaches HTML output = XSS\nFix: HtmlUtils.htmlEscape() before output",
+          "ai_explanation": "Modern SAST tools perform inter-procedural taint analysis — they follow tainted data across method calls and even across classes. trim() and toUpperCase() transform data but do not sanitise it for security purposes. Only security-specific functions like htmlEscape() remove taint.",
+          "ai_challenge": "If processInput() contained: String safe = raw.replaceAll(\"<\", \"&lt;\"); — would the taint be removed? (Answer: depends on tool configuration, but proper HTML escaping should be recognised as a sanitiser)"
+        },
+        {
+          "title": "Example 10: False Negative - What Tools Miss",
+          "description": "Examples of vulnerabilities that static analysis typically does not catch.",
+          "difficulty": "advanced",
+          "code": "// FALSE NEGATIVE EXAMPLES:\n// Vulnerabilities that SAST tools typically MISS:\n\n// 1. Second-order SQL injection:\npublic void registerUser(String name) {\n    // Name is safely stored with PreparedStatement\n    ps.setString(1, name); // Tool sees sanitiser -> NO ALERT\n}\npublic void showUsers() {\n    ResultSet rs = stmt.executeQuery(\"SELECT name FROM users\");\n    String name = rs.getString(\"name\"); // Tainted from DB!\n    String q = \"SELECT * FROM profiles WHERE name='\" + name + \"'\";\n    // Tool may not track taint through database storage!\n    // MISSED: Second-order SQL injection\n}\n\n// 2. Business logic flaw:\npublic void transfer(int fromAcct, int toAcct, double amount) {\n    withdraw(fromAcct, amount);\n    deposit(toAcct, amount);\n    // No check: does user own fromAcct?\n    // No check: is amount positive?\n    // No check: is there sufficient balance?\n    // Tools cannot understand business rules!\n}\n\n// 3. Race condition:\npublic void checkAndWithdraw(int acct, double amount) {\n    if (getBalance(acct) >= amount) { // Check\n        // Another thread could withdraw between check and withdraw!\n        withdraw(acct, amount); // Use (TOCTOU vulnerability)\n    }\n}",
+          "output": "SAST misses: second-order injection, business logic, race conditions\nThese require manual review, DAST, or specialised tools\nNo single tool catches everything - use defence in depth",
+          "ai_explanation": "Static analysis has fundamental limitations. It cannot track data through external systems (databases), it cannot understand business requirements, and it struggles with concurrency issues. This is why you need SAST + DAST + fuzzing + manual code review together.",
+          "ai_challenge": "How would you find the race condition in example 3? (Answer: concurrency testing tools like ThreadSafe, or stress testing with multiple threads)"
+        },
+        {
+          "title": "Example 11: CI/CD Pipeline with Security Gates",
+          "description": "Complete GitHub Actions pipeline with SAST, DAST, and quality gates.",
+          "difficulty": "advanced",
+          "code": "// .github/workflows/devsecops.yml\n//\n// name: DevSecOps Pipeline\n// on: [push, pull_request]\n//\n// jobs:\n//   sast:\n//     name: Static Analysis\n//     runs-on: ubuntu-latest\n//     steps:\n//       - uses: actions/checkout@v3\n//       - name: Setup Java\n//         uses: actions/setup-java@v3\n//         with: { java-version: 17 }\n//       - name: Build\n//         run: mvn compile\n//       - name: SpotBugs\n//         run: mvn spotbugs:check\n//       - name: PMD\n//         run: mvn pmd:check\n//       - name: SonarQube\n//         run: mvn sonar:sonar\n//           -Dsonar.qualitygate.wait=true  # FAIL if gate fails!\n//\n//   dast:\n//     name: Dynamic Analysis\n//     needs: sast  # Only run if SAST passes\n//     runs-on: ubuntu-latest\n//     steps:\n//       - name: Deploy staging\n//         run: docker-compose up -d\n//       - name: Wait for app\n//         run: sleep 30\n//       - name: OWASP ZAP Scan\n//         uses: zaproxy/action-full-scan@v0.4.0\n//         with:\n//           target: http://localhost:8080\n//           rules_file_name: zap-rules.tsv\n//\n//   fuzz:\n//     name: Fuzz Testing\n//     runs-on: ubuntu-latest\n//     steps:\n//       - name: Build with instrumentation\n//         run: CC=afl-clang make\n//       - name: Run AFL (1 hour)\n//         run: timeout 3600 afl-fuzz -i seeds -o output ./target @@\n//       - name: Check for crashes\n//         run: |\n//           if [ -n \"$(ls output/crashes/)\" ]; then\n//             echo \"CRASHES FOUND!\"\n//             exit 1\n//           fi",
+          "output": "Pipeline: SAST (SpotBugs+SonarQube) -> DAST (ZAP) -> Fuzz (AFL)\nQuality gates fail the build if critical issues found\nShift left: security checked on every code push",
+          "ai_explanation": "This pipeline automates all three types of security testing. SAST runs first (fast, catches code-level issues). DAST runs second (needs deployed app). Fuzzing runs in parallel (takes longer). If any stage finds critical issues, the pipeline fails and developers must fix before merging.",
+          "ai_challenge": "What happens if SonarQube has 30% false positives? (Answer: Use @SuppressWarnings annotations and configure the quality profile to reduce noise)"
+        },
+        {
+          "title": "Example 12: Interpreting AFL Output",
+          "description": "Reading and understanding AFL's status screen.",
+          "difficulty": "intermediate",
+          "code": "// AFL Status Screen:\n//\n// american fuzzy lop 2.57b (target_parser)\n//\n// ┌─ process timing ────────────────────────────┐\n// │        run time : 0 days, 3 hrs, 42 min     │\n// │   last new path : 2 min, 15 sec              │\n// │ last uniq crash : 0 days, 1 hr, 5 min        │\n// │  last uniq hang : none seen yet               │\n// ├─ overall results ──────────────────────────── ┤\n// │  cycles done : 12                             │\n// │  total paths : 847                            │\n// │ uniq crashes : 3 (1 in last 24h)              │\n// │   uniq hangs : 0                              │\n// ├─ cycle progress ──────────────────────────── ┤\n// │  now processing : 421 (49.7%)                 │\n// │ paths timed out : 0 (0.00%)                   │\n// ├─ stage progress ──────────────────────────── ┤\n// │  now trying : havoc                           │\n// │ stage execs : 12.5k/65.5k (19.08%)            │\n// │ total execs : 18.4M                           │\n// │  exec speed : 1,432/sec                       │\n// ├─ findings in depth ─────────────────────────┤\n// │ favored paths : 142 (16.76%)                  │\n// │  new edges on : 263 (31.05%)                  │\n// │ total crashes : 47 (3 unique)                 │\n// │  total tmouts : 2 (0 unique)                  │\n// └─────────────────────────────────────────────┘\n\n// Reading the output:\n// 847 total paths = 847 unique code paths discovered\n// 3 unique crashes = 3 DIFFERENT bugs found!\n// 18.4M executions at 1,432/sec = very fast\n// Last new path 2 min ago = still finding new things\n// Cycles: 12 = gone through all seeds 12 times",
+          "output": "847 unique paths explored, 3 unique crashes found, 18.4M executions\nStill discovering new paths (last: 2 min ago)\n3 unique crashes = 3 potential vulnerabilities to investigate",
+          "ai_explanation": "AFL's status screen is your dashboard. Key metrics: unique crashes (each is a potential vulnerability), total paths (exploration progress), exec speed (performance), last new path (if stale, fuzzing may be exhausted). The 3 unique crashes need manual investigation to determine if they are exploitable.",
+          "ai_challenge": "If 'last new path' was '2 days ago', what would that mean? (Answer: AFL has likely explored all reachable paths and additional fuzzing may not find more. Consider new seeds or different mutation strategies.)"
+        },
+        {
+          "title": "Example 13: Java Security Scanning with SpotBugs",
+          "description": "Running SpotBugs on a Java project and interpreting the security results.",
+          "difficulty": "intermediate",
+          "code": "// Running SpotBugs:\n// mvn spotbugs:check\n// or: spotbugs -textui -effort:max -high target/classes/\n//\n// Results for SecurityApp.class:\n//\n// H S SQL_INJECTION_JDBC: Method executeQuery uses non-constant Strings\n//   At SecurityApp.java:[line 45]\n//\n// H S COMMAND_INJECTION: Runtime.exec() called with user input\n//   At SecurityApp.java:[line 78]\n//\n// H S PATH_TRAVERSAL_IN: User input in File constructor\n//   At SecurityApp.java:[line 92]\n//\n// M S HARD_CODE_PASSWORD: Hard-coded password in source\n//   At SecurityApp.java:[line 12]\n//\n// M B NP_NULL_ON_SOME_PATH: Possible null pointer dereference\n//   At SecurityApp.java:[line 55]\n//\n// L S COOKIE_WITHOUT_HTTPONLY: Cookie created without HttpOnly\n//   At SecurityApp.java:[line 120]\n//\n// Legend: H=High M=Medium L=Low, S=Security B=Bug\n//\n// Priority: Fix H first, then M, then L\n// Categories: SQL injection, command injection, path traversal,\n//             hard-coded credentials, null pointer, insecure cookies",
+          "output": "SpotBugs found: 3 HIGH (SQLi, cmd injection, path traversal), 2 MEDIUM, 1 LOW\nAll are SECURITY category findings\nPriority: fix HIGH severity first",
+          "ai_explanation": "SpotBugs analyses compiled Java bytecode. The -effort:max flag enables the most thorough analysis. Security findings are marked with 'S' category. High priority findings (H) should be fixed immediately. The three HIGH findings represent the most dangerous vulnerability types.",
+          "ai_challenge": "SpotBugs works on bytecode, not source. What advantage does this have? (Answer: can analyse third-party JARs without source code, catches issues introduced by the compiler)"
+        },
+        {
+          "title": "Example 14: Building a Custom Security Rule",
+          "description": "Creating a custom static analysis rule for your organisation.",
+          "difficulty": "advanced",
+          "code": "// Custom PMD rule to detect hardcoded API keys:\n//\n// Rule: No hardcoded API keys in source code\n// Pattern: String variables named *key*, *secret*, *token*, *password*\n//          assigned literal string values\n\n// PMD XML rule definition:\n// <rule name=\"HardcodedCredentials\"\n//       message=\"Hardcoded credential detected: {0}\"\n//       class=\"net.sourceforge.pmd.lang.java.rule.security.HardcodedCredentialsRule\">\n//   <description>Detect hardcoded API keys, passwords, and tokens</description>\n//   <priority>2</priority>\n//   <properties>\n//     <property name=\"sensitiveNames\">\n//       <value>password|secret|apiKey|token|credential|auth</value>\n//     </property>\n//   </properties>\n// </rule>\n\n// Code this rule would flag:\nString apiKey = \"sk-abc123xyz789\";         // FLAGGED!\nString dbPassword = \"admin123\";             // FLAGGED!\nprivate static final String SECRET = \"myS3cret\"; // FLAGGED!\n\n// Code this rule would NOT flag:\nString apiKey = System.getenv(\"API_KEY\");  // Safe (from environment)\nString dbPassword = config.getProperty(\"db.password\"); // Safe (from config)\n\n// Custom rules let you enforce YOUR organisation's security standards",
+          "output": "Custom rule detects hardcoded credentials by variable name + literal assignment\nFlags: apiKey='literal', dbPassword='literal', SECRET='literal'\nPasses: values from environment or config files",
+          "ai_explanation": "Custom rules extend static analysis tools with organisation-specific checks. This rule combines variable name pattern matching with assignment analysis. Any string variable whose name matches sensitive patterns and is assigned a literal string value is flagged. This catches a common mistake that generic tools might miss.",
+          "ai_challenge": "What other custom rules might an organisation need? (Hint: logging PII, using deprecated crypto, accessing production URLs in test code)"
+        }
+      ],
+      "visual_diagram": {
+        "title": "Static Analysis & Fuzz Testing: Tools, Workflows & Decision Flow",
+        "content": "<div style=\"font-family: monospace; line-height: 1.6; padding: 10px;\">\n<div style=\"text-align: center; margin-bottom: 20px;\">\n<span style=\"background: #3498db; color: white; padding: 8px 20px; border-radius: 6px; font-size: 18px; font-weight: bold;\">STATIC ANALYSIS & FUZZ TESTING</span>\n</div>\n\n<div style=\"margin-bottom: 25px;\">\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">SAST vs DAST vs FUZZING</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"color: #3498db;\">SAST (Static)</span>          <span style=\"color: #2ecc71;\">DAST (Dynamic)</span>         <span style=\"color: #9b59b6;\">FUZZING</span>\n  Analyses CODE           Analyses RUNNING APP    Throws RANDOM INPUT\n  No execution needed     Needs deployed app      Needs compiled program\n  Finds: SQLi, XSS,      Finds: XSS, auth,       Finds: crashes, memory\n   path traversal,         misconfig, runtime       corruption, hangs,\n   null ptrs, leaks        issues, CORS             buffer overflows\n  <span style=\"color: #f39c12;\">Many false positives</span>    <span style=\"color: #2ecc71;\">Few false positives</span>     <span style=\"color: #2ecc71;\">Zero false positives</span>\n  <span style=\"color: #2ecc71;\">All code covered</span>       <span style=\"color: #f39c12;\">Only executed code</span>     <span style=\"color: #f39c12;\">Coverage-guided</span>\n  <span style=\"color: #2ecc71;\">Fast (minutes)</span>         <span style=\"color: #f39c12;\">Medium (hours)</span>         <span style=\"color: #f39c12;\">Slow (hours/days)</span>\n  <span style=\"color: #2ecc71;\">Early in SDLC</span>         <span style=\"color: #f39c12;\">After deployment</span>      <span style=\"color: #3498db;\">Continuous</span>\n</pre>\n</div>\n\n<div style=\"border-top: 3px dashed #95a5a6; margin: 20px 0;\"></div>\n\n<div style=\"margin-bottom: 25px;\">\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">TAINT ANALYSIS FLOW</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"background: #e74c3c; color: white; padding: 2px 6px;\">SOURCE</span>  request.getParameter()  <span style=\"color: #e74c3c;\">── TAINTED ──></span>\n       |\n       v\n  <span style=\"background: #f39c12; color: white; padding: 2px 6px;\">PROPAGATION</span>  String query = \"SELECT...\" + input  <span style=\"color: #e74c3c;\">── STILL TAINTED ──></span>\n       |\n       v\n  <span style=\"color: #95a5a6;\">No sanitiser found...</span>\n       |\n       v\n  <span style=\"background: #e74c3c; color: white; padding: 2px 6px;\">SINK</span>  stmt.executeQuery(query)  <span style=\"color: #e74c3c; font-weight: bold;\">🚨 ALERT: SQL INJECTION!</span>\n\n  <span style=\"color: #2ecc71;\">If sanitiser (PreparedStatement) is between source and sink:</span>\n  <span style=\"color: #2ecc71;\">SOURCE -> SANITISER -> SINK = NO ALERT (taint removed) ✅</span>\n</pre>\n</div>\n\n<div style=\"border-top: 3px dashed #95a5a6; margin: 20px 0;\"></div>\n\n<div style=\"margin-bottom: 25px;\">\n<span style=\"background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;\">AFL FUZZING CYCLE</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"background: #3498db; color: white; padding: 2px 6px;\">1. COMPILE</span>  afl-clang -o target source.c  (add instrumentation)\n       |\n       v\n  <span style=\"background: #3498db; color: white; padding: 2px 6px;\">2. SEED</span>     Provide valid input files in seeds/ directory\n       |\n       v\n  <span style=\"background: #9b59b6; color: white; padding: 2px 6px;\">3. MUTATE</span>   Flip bits, change bytes, insert data, splice\n       |\n       v\n  <span style=\"background: #9b59b6; color: white; padding: 2px 6px;\">4. EXECUTE</span>  Run program with mutated input\n       |\n       v\n  <span style=\"background: #f39c12; color: white; padding: 2px 6px;\">5. EVALUATE</span>\n       |--- <span style=\"color: #e74c3c;\">CRASH?</span>  -> Save in crashes/ directory  <span style=\"color: #e74c3c;\">🚨 BUG FOUND!</span>\n       |--- <span style=\"color: #f39c12;\">HANG?</span>   -> Save in hangs/ directory\n       |--- <span style=\"color: #2ecc71;\">NEW PATH?</span> -> Save as new seed -> back to MUTATE\n       |--- <span style=\"color: #95a5a6;\">Same paths</span> -> Discard, try next mutation\n       |\n       v\n  <span style=\"background: #2ecc71; color: white; padding: 2px 6px;\">REPEAT</span>  Thousands of iterations per second!\n</pre>\n</div>\n\n<div style=\"border-top: 3px dashed #95a5a6; margin: 20px 0;\"></div>\n\n<div style=\"margin-bottom: 25px;\">\n<span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">TOOL COMPARISON</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"color: #3498db;\">SonarQube</span>    30+ languages, web dashboard, most popular\n  <span style=\"color: #3498db;\">SpotBugs</span>     Java bytecode, fast, accurate for Java\n  <span style=\"color: #3498db;\">PMD</span>          Multi-language, rules-based, code quality\n  <span style=\"color: #3498db;\">CodeQL</span>       Query-based, GitHub, powerful for complex patterns\n  <span style=\"color: #3498db;\">Checkmarx</span>    Commercial, enterprise, excellent taint analysis\n  <span style=\"color: #9b59b6;\">AFL</span>          Coverage-guided fuzzer, C/C++ focus\n  <span style=\"color: #9b59b6;\">libFuzzer</span>    In-process fuzzer, LLVM, very fast\n  <span style=\"color: #9b59b6;\">HoneyFuzz</span>    Multi-platform, easy setup\n  <span style=\"color: #2ecc71;\">OWASP ZAP</span>    DAST, web app scanner, free\n  <span style=\"color: #2ecc71;\">Burp Suite</span>   DAST, professional pen testing, commercial\n</pre>\n</div>\n\n<div style=\"background: #eafaf1; padding: 15px; border-radius: 8px; border-left: 5px solid #2ecc71;\">\n<span style=\"color: #2ecc71; font-weight: bold; font-size: 16px;\">DevSecOps PIPELINE</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"color: #3498db;\">Code Push</span> -> <span style=\"color: #3498db;\">SAST</span> -> <span style=\"color: #2ecc71;\">Build</span> -> <span style=\"color: #2ecc71;\">DAST</span> -> <span style=\"color: #9b59b6;\">Fuzz</span> -> <span style=\"color: #2ecc71;\">Deploy</span>\n  Find bugs <span style=\"color: #2ecc71;\">EARLY</span> = cheap to fix\n  Find bugs <span style=\"color: #e74c3c;\">LATE</span> = expensive to fix\n  <span style=\"color: #2ecc71; font-weight: bold;\">SHIFT LEFT = Test security from the start!</span>\n</pre>\n</div>\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: SAST vs DAST",
+          "description": "Compare static and dynamic analysis.",
+          "difficulty": "beginner",
+          "category": "Static Analysis Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Static analysis is your first line of automated defence!",
+          "starter_code": "// Fill in the comparison:\n//              SAST              DAST\n// Analyses:    _____             _____\n// Needs running app: _____      _____\n// False positives:   _____      _____\n// When used:         _____      _____\n// Example tool:      _____      _____\n// Finds:             _____      _____",
+          "expected_output": "SAST: source code, no, many, development, SonarQube, SQLi/XSS patterns\nDAST: running app, yes, fewer, staging, OWASP ZAP, runtime issues",
+          "hints": [
+            {
+              "message": "SAST reads code. DAST attacks the running app."
+            },
+            {
+              "message": "SAST has more false positives because it cannot confirm exploitability."
+            },
+            {
+              "message": "SAST: code/no/many/development/SonarQube. DAST: running app/yes/fewer/staging/ZAP."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: What Can Static Analysers Find?",
+          "description": "List vulnerability types that SAST detects.",
+          "difficulty": "beginner",
+          "category": "Static Analysis Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Static analysis is your first line of automated defence!",
+          "starter_code": "// List 8 things static analysers can detect:\n// 1. _____\n// 2. _____\n// 3. _____\n// 4. _____\n// 5. _____\n// 6. _____\n// 7. _____\n// 8. _____",
+          "expected_output": "1. SQL injection\n2. XSS\n3. Null pointer dereferences\n4. Buffer overflows\n5. Resource leaks\n6. Race conditions\n7. Hard-coded credentials\n8. Path traversal",
+          "hints": [
+            {
+              "message": "Think: injection, memory, resources, concurrency, secrets."
+            },
+            {
+              "message": "SQL injection, XSS, null pointers, buffer overflows..."
+            },
+            {
+              "message": "All 8: SQLi, XSS, null ptrs, buffer overflow, resource leaks, race conditions, hardcoded creds, path traversal."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Classify Tool Output",
+          "description": "Determine if findings are true positive or false positive.",
+          "difficulty": "beginner",
+          "category": "Static Analysis Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Static analysis is your first line of automated defence!",
+          "starter_code": "// Classify each finding:\n//\n// 1. Tool: 'SQL injection in query'\n//    Code: String q = \"SELECT * FROM t WHERE id=\" + req.getParameter(\"id\");\n//    Classification: _____\n//\n// 2. Tool: 'SQL injection in query'\n//    Code: String q = \"SELECT * FROM t WHERE id=\" + Integer.parseInt(id);\n//    Classification: _____\n//\n// 3. Tool: 'Null dereference'\n//    Code: Object o = map.get(key); o.toString();\n//    Classification: _____\n//\n// 4. Tool: 'Resource leak'\n//    Code: try(var fis = new FileInputStream(f)) { read(fis); }\n//    Classification: _____",
+          "expected_output": "1. TRUE POSITIVE (string param directly in SQL)\n2. FALSE POSITIVE (integer cannot inject SQL)\n3. TRUE POSITIVE (map.get can return null)\n4. FALSE POSITIVE (try-with-resources closes it)",
+          "hints": [
+            {
+              "message": "True positive = the tool is right, there IS a bug."
+            },
+            {
+              "message": "Integer.parseInt ensures only numbers. try-with-resources auto-closes."
+            },
+            {
+              "message": "1: TP, 2: FP, 3: TP, 4: FP."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Taint Source Identification",
+          "description": "Identify taint sources in Java code.",
+          "difficulty": "beginner",
+          "category": "Static Analysis Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Static analysis is your first line of automated defence!",
+          "starter_code": "// Mark each as TAINTED or SAFE:\n//\n// 1. String a = req.getParameter(\"name\");    _____\n// 2. String b = \"Hello World\";               _____\n// 3. String c = System.getenv(\"PATH\");       _____\n// 4. int d = 42;                             _____\n// 5. String e = file.readLine();             _____\n// 6. String f = rs.getString(\"name\");        _____\n// 7. String g = req.getHeader(\"User-Agent\"); _____\n// 8. String h = UUID.randomUUID().toString(); _____",
+          "expected_output": "1. TAINTED (user input)\n2. SAFE (hardcoded literal)\n3. TAINTED (environment, attacker-controlled on some systems)\n4. SAFE (literal integer)\n5. TAINTED (file content could be modified)\n6. TAINTED (database content could contain injected data)\n7. TAINTED (HTTP header from client)\n8. SAFE (generated by system, not user-controlled)",
+          "hints": [
+            {
+              "message": "Anything from the user, network, file, or database is potentially tainted."
+            },
+            {
+              "message": "Literals and system-generated values are safe."
+            },
+            {
+              "message": "1:T, 2:S, 3:T, 4:S, 5:T, 6:T, 7:T, 8:S."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Taint Sink Identification",
+          "description": "Identify dangerous sinks in Java code.",
+          "difficulty": "beginner",
+          "category": "Static Analysis Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Static analysis is your first line of automated defence!",
+          "starter_code": "// Mark each as DANGEROUS SINK or SAFE OPERATION:\n//\n// 1. stmt.executeQuery(query);           _____\n// 2. System.out.println(data);           _____\n// 3. Runtime.getRuntime().exec(cmd);     _____\n// 4. resp.getWriter().write(html);       _____\n// 5. new File(base, filename);           _____\n// 6. list.add(item);                     _____\n// 7. ois.readObject();                   _____\n// 8. log.info(message);                  _____",
+          "expected_output": "1. DANGEROUS (SQL execution)\n2. SAFE (console output, not user-facing)\n3. DANGEROUS (OS command execution)\n4. DANGEROUS (HTML output = XSS)\n5. DANGEROUS (file system access = path traversal)\n6. SAFE (adding to list)\n7. DANGEROUS (deserialization = RCE)\n8. DEPENDS (could be log injection if unvalidated)",
+          "hints": [
+            {
+              "message": "Sinks where tainted data becomes dangerous: SQL, command, HTML, file, deserialization."
+            },
+            {
+              "message": "Console output and internal data structures are generally safe."
+            },
+            {
+              "message": "1:D, 2:S, 3:D, 4:D, 5:D, 6:S, 7:D, 8:Depends."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Complete a Taint Trace",
+          "description": "Trace tainted data through a code snippet.",
+          "difficulty": "beginner",
+          "category": "Static Analysis Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Static analysis is your first line of automated defence!",
+          "starter_code": "String input = req.getParameter(\"q\");       // Line 1: _____\nString cleaned = input.trim();                // Line 2: _____\nString upper = cleaned.toUpperCase();         // Line 3: _____\nString query = \"SELECT * FROM items WHERE name LIKE '%\" + upper + \"%'\"; // Line 4: _____\nResultSet rs = stmt.executeQuery(query);      // Line 5: _____\n\n// For each line, is the data TAINTED or CLEAN?\n// Is there a vulnerability? If so, what type and CWE?",
+          "expected_output": "Line 1: TAINTED (source)\nLine 2: TAINTED (trim doesn't sanitise)\nLine 3: TAINTED (toUpperCase doesn't sanitise)\nLine 4: TAINTED (concatenated into SQL)\nLine 5: TAINTED reaches SQL sink = SQL Injection (CWE-89)",
+          "hints": [
+            {
+              "message": "trim() and toUpperCase() transform but don't sanitise."
+            },
+            {
+              "message": "The taint flows all the way from getParameter to executeQuery."
+            },
+            {
+              "message": "All tainted. SQLi at line 5. Fix: PreparedStatement."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Match Tools to Use Cases",
+          "description": "Select the right tool for each scenario.",
+          "difficulty": "intermediate",
+          "category": "Static Analysis Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Static analysis is your first line of automated defence!",
+          "starter_code": "// Which tool for each scenario?\n// Options: SonarQube, SpotBugs, OWASP ZAP, AFL, CodeQL, Burp Suite\n//\n// 1. Java project, find null pointers in bytecode: _____\n// 2. Web app in staging, find XSS and SQLi: _____\n// 3. C file parser, find crashes: _____\n// 4. Custom query to find complex vulnerability patterns: _____\n// 5. Multi-language project, track code quality over time: _____\n// 6. Professional penetration test of web app: _____",
+          "expected_output": "1. SpotBugs (Java bytecode analysis)\n2. OWASP ZAP (DAST, free)\n3. AFL (fuzz testing C programs)\n4. CodeQL (custom queries)\n5. SonarQube (multi-language, dashboard)\n6. Burp Suite (professional pen testing)",
+          "hints": [
+            {
+              "message": "SpotBugs = Java bytecode. ZAP = web DAST. AFL = fuzzing."
+            },
+            {
+              "message": "CodeQL = custom queries. SonarQube = dashboard. Burp = professional pen test."
+            },
+            {
+              "message": "1:SpotBugs, 2:ZAP, 3:AFL, 4:CodeQL, 5:SonarQube, 6:Burp."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Tool Limitations Quiz",
+          "description": "Identify what each tool CANNOT do.",
+          "difficulty": "intermediate",
+          "category": "Static Analysis Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Static analysis is your first line of automated defence!",
+          "starter_code": "// What can each tool NOT find?\n//\n// 1. SAST cannot find: _____ (name 3 things)\n// 2. DAST cannot find: _____ (name 3 things)\n// 3. Fuzzing cannot find: _____ (name 3 things)\n// 4. Why do we need ALL three? _____",
+          "expected_output": "1. SAST: runtime misconfigs, auth issues, business logic flaws\n2. DAST: dead code vulns, internal logic, full code coverage\n3. Fuzzing: logic bugs, auth bypass, design flaws\n4. Each finds what others miss — combined coverage is maximum",
+          "hints": [
+            {
+              "message": "Each tool has blind spots. SAST can't test running configs."
+            },
+            {
+              "message": "DAST only tests code that executes. Fuzzing finds crashes, not logic."
+            },
+            {
+              "message": "No single tool finds everything. Defence in depth applies to testing too!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: SonarQube Severity Levels",
+          "description": "Map SonarQube severities to actions.",
+          "difficulty": "intermediate",
+          "category": "Static Analysis Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Static analysis is your first line of automated defence!",
+          "starter_code": "// SonarQube reports these severities. What action for each?\n//\n// BLOCKER: _____\n// CRITICAL: _____\n// MAJOR: _____\n// MINOR: _____\n// INFO: _____\n//\n// Your project has:\n// 1 BLOCKER, 3 CRITICAL, 12 MAJOR, 25 MINOR, 8 INFO\n// What is the release decision? _____",
+          "expected_output": "BLOCKER: Fix before release (SQL injection, RCE)\nCRITICAL: Fix this sprint (XSS, path traversal)\nMAJOR: Fix soon (resource leaks)\nMINOR: Backlog (naming conventions)\nINFO: Optional (style suggestions)\nDecision: CANNOT release — must fix BLOCKER first",
+          "hints": [
+            {
+              "message": "BLOCKER means the build should fail. Cannot release."
+            },
+            {
+              "message": "CRITICAL should be fixed quickly but doesn't block release."
+            },
+            {
+              "message": "Release blocked by BLOCKER. Fix it, then address CRITICALs."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Write Suppression Comments",
+          "description": "Suppress false positives with proper documentation.",
+          "difficulty": "intermediate",
+          "category": "Static Analysis Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Static analysis is your first line of automated defence!",
+          "starter_code": "// This code is flagged as SQL injection but is safe.\n// Write the proper suppression:\n\nint userId = Integer.parseInt(req.getParameter(\"id\"));\nString q = \"SELECT * FROM users WHERE id = \" + userId;\n// ^^^ SonarQube: S3649 SQL Injection (FALSE POSITIVE)\n\n// SpotBugs suppression: _____\n// SonarQube suppression: _____\n// IMPORTANT: Always include a comment explaining WHY: _____",
+          "expected_output": "SpotBugs: @SuppressFBWarnings(value=\"SQL_INJECTION\", justification=\"userId is parsed integer, cannot inject SQL\")\nSonarQube: @SuppressWarnings(\"squid:S3649\") // userId is int, not injectable\nAlways explain WHY it's a false positive so future reviewers understand.",
+          "hints": [
+            {
+              "message": "Suppression annotations tell the tool to skip this finding."
+            },
+            {
+              "message": "Always include justification — future developers need to know WHY."
+            },
+            {
+              "message": "@SuppressWarnings with justification comment. Never suppress without explanation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: What is Fuzz Testing?",
+          "description": "Define fuzzing and its purpose.",
+          "difficulty": "beginner",
+          "category": "Fuzz Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "Fuzz testing finds the bugs nobody thought to test for!",
+          "starter_code": "// Answer these questions:\n//\n// 1. What is fuzz testing? _____\n// 2. What does a fuzzer send to the program? _____\n// 3. What does a fuzzer look for? _____\n// 4. Who invented fuzz testing? _____\n// 5. What percentage of Unix tools crashed in the original study? _____\n// 6. Name 3 famous bugs found by fuzzing: _____",
+          "expected_output": "1. Automated testing that sends random/malformed input to find bugs\n2. Random, mutated, unexpected, boundary-value data\n3. Crashes, hangs, memory errors, unexpected behaviour\n4. Barton Miller, University of Wisconsin, 1988\n5. 25-33% crashed\n6. Heartbleed (OpenSSL), bugs in SQLite, PHP, Chrome, Linux kernel",
+          "hints": [
+            {
+              "message": "Fuzzing = throw random data at programs and see what breaks."
+            },
+            {
+              "message": "The original study crashed 25-33% of Unix utilities."
+            },
+            {
+              "message": "Automated random input testing. Found Heartbleed, thousands of bugs in major software."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Mutation vs Generation",
+          "description": "Compare the two main input creation strategies.",
+          "difficulty": "beginner",
+          "category": "Fuzz Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "Fuzz testing finds the bugs nobody thought to test for!",
+          "starter_code": "// Fill in:\n//\n// MUTATION-based fuzzing:\n// Starts with: _____\n// Creates new inputs by: _____\n// Advantage: _____\n// Disadvantage: _____\n//\n// GENERATION-based fuzzing:\n// Starts with: _____\n// Creates new inputs by: _____\n// Advantage: _____\n// Disadvantage: _____",
+          "expected_output": "Mutation: starts with valid seeds, modifies them randomly, easy to set up, may not reach complex code paths\nGeneration: starts from grammar/spec, creates from scratch, more targeted, requires format knowledge",
+          "hints": [
+            {
+              "message": "Mutation modifies existing inputs. Generation creates from scratch."
+            },
+            {
+              "message": "Mutation is simpler. Generation is more targeted."
+            },
+            {
+              "message": "Mutation: seeds->modify. Generation: grammar->create. Mutation is easier, generation is smarter."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Black, Grey, White Box Fuzzing",
+          "description": "Differentiate the three fuzzing approaches.",
+          "difficulty": "beginner",
+          "category": "Fuzz Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "Fuzz testing finds the bugs nobody thought to test for!",
+          "starter_code": "// For each, answer: what does the fuzzer know about the program?\n//\n// BLACK BOX: _____\n//   Pros: _____\n//   Cons: _____\n//\n// GREY BOX: _____\n//   Pros: _____\n//   Cons: _____\n//\n// WHITE BOX: _____\n//   Pros: _____\n//   Cons: _____\n//\n// Which does AFL use? _____",
+          "expected_output": "Black: nothing (input/output only). Simple but inefficient.\nGrey: code coverage (which paths executed). Efficient and effective.\nWhite: full source, symbolic execution. Most thorough but slowest.\nAFL: Grey box (coverage-guided)",
+          "hints": [
+            {
+              "message": "Black = blind. Grey = coverage feedback. White = full source analysis."
+            },
+            {
+              "message": "Grey box is the sweet spot: enough information to be smart, not too slow."
+            },
+            {
+              "message": "Black: nothing/simple/inefficient. Grey: coverage/efficient/effective. White: everything/thorough/slow. AFL: grey."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Design Seed Inputs",
+          "description": "Create effective seed inputs for a fuzzer.",
+          "difficulty": "intermediate",
+          "category": "Fuzz Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "Fuzz testing finds the bugs nobody thought to test for!",
+          "starter_code": "// Create 5 seed inputs for fuzzing a JSON API that accepts:\n// {\"name\": \"string\", \"age\": number, \"email\": \"string\"}\n//\n// Seed 1 (minimal valid): _____\n// Seed 2 (all fields): _____\n// Seed 3 (edge case numbers): _____\n// Seed 4 (special characters): _____\n// Seed 5 (long strings): _____",
+          "expected_output": "Seed 1: {\"name\":\"a\",\"age\":1,\"email\":\"a@b.c\"}\nSeed 2: {\"name\":\"Alice Smith\",\"age\":30,\"email\":\"alice@example.com\"}\nSeed 3: {\"name\":\"x\",\"age\":0,\"email\":\"x@x.x\"}\nSeed 4: {\"name\":\"O'Brien\",\"age\":25,\"email\":\"test+tag@example.com\"}\nSeed 5: {\"name\":\"AAAAAA...100 chars\",\"age\":99,\"email\":\"long@domain.com\"}",
+          "hints": [
+            {
+              "message": "Seeds should be valid, diverse, and small."
+            },
+            {
+              "message": "Cover: minimal, typical, edge case, special chars, long strings."
+            },
+            {
+              "message": "5 diverse seeds covering different code paths."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: AFL Setup Steps",
+          "description": "Write the commands to set up and run AFL.",
+          "difficulty": "intermediate",
+          "category": "Fuzz Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "Fuzz testing finds the bugs nobody thought to test for!",
+          "starter_code": "// Write the AFL commands:\n//\n// 1. Compile with instrumentation:\n// $ _____\n//\n// 2. Create seed directory:\n// $ _____\n// $ _____\n//\n// 3. Run AFL:\n// $ _____\n//\n// 4. Check for crashes:\n// $ _____\n//\n// 5. Reproduce a crash:\n// $ _____",
+          "expected_output": "1. afl-clang -o target source.c\n2. mkdir seeds && echo 'valid input' > seeds/seed1.txt\n3. afl-fuzz -i seeds -o findings ./target @@\n4. ls findings/crashes/\n5. ./target findings/crashes/id:000000,...",
+          "hints": [
+            {
+              "message": "afl-clang adds instrumentation. -i seeds -o output."
+            },
+            {
+              "message": "@@ means AFL replaces with the test file path."
+            },
+            {
+              "message": "Compile, create seeds, run afl-fuzz, check crashes dir, reproduce."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Interpret AFL Status Screen",
+          "description": "Read and understand AFL metrics.",
+          "difficulty": "intermediate",
+          "category": "Fuzz Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "Fuzz testing finds the bugs nobody thought to test for!",
+          "starter_code": "// Given this AFL output:\n// total execs: 5.2M\n// exec speed: 2,100/sec\n// total paths: 423\n// uniq crashes: 7\n// last new path: 0 days, 0 hrs, 12 min\n// cycles done: 3\n//\n// Answer:\n// 1. How many unique bugs found? _____\n// 2. Is AFL still finding new paths? _____\n// 3. How fast is it testing? _____\n// 4. Should you stop or continue? _____",
+          "expected_output": "1. 7 unique crashes = 7 potential bugs\n2. Yes, last new path 12 min ago = still active\n3. 2100 executions/second = good speed\n4. Continue — still finding new paths. Stop when last new path is hours/days ago.",
+          "hints": [
+            {
+              "message": "7 unique crashes = 7 different bugs to investigate."
+            },
+            {
+              "message": "'Last new path: 12 min' means it's still exploring."
+            },
+            {
+              "message": "7 bugs, still active, good speed, keep running."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Mutation Strategies Exercise",
+          "description": "Apply mutations to a seed input.",
+          "difficulty": "intermediate",
+          "category": "Fuzz Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "Fuzz testing finds the bugs nobody thought to test for!",
+          "starter_code": "// Seed: \"GET /api/users/42 HTTP/1.1\"\n//\n// Apply each mutation strategy:\n// 1. Bit flip (byte 18, change '4' to '5'): _____\n// 2. Interesting value (replace 42 with -1): _____\n// 3. Insert (add 100 bytes at position 15): _____\n// 4. Delete (remove bytes 10-15): _____\n// 5. Dictionary (insert SQL keyword): _____\n// 6. Arithmetic (42 + MAX_INT): _____",
+          "expected_output": "1. GET /api/users/52 HTTP/1.1\n2. GET /api/users/-1 HTTP/1.1\n3. GET /api/users/42AAAA...100... HTTP/1.1\n4. GET /api/u2 HTTP/1.1\n5. GET /api/users/' OR 1=1-- HTTP/1.1\n6. GET /api/users/2147483689 HTTP/1.1",
+          "hints": [
+            {
+              "message": "Each strategy targets different code handling: numbers, buffers, parsing, injection."
+            },
+            {
+              "message": "Dictionary mutation is especially good for finding injection vulnerabilities."
+            },
+            {
+              "message": "6 mutations, each testing different error handling code."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Fuzzing vs Unit Testing",
+          "description": "Compare fuzzing with traditional unit tests.",
+          "difficulty": "intermediate",
+          "category": "Fuzz Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "Fuzz testing finds the bugs nobody thought to test for!",
+          "starter_code": "// Compare for a function: int divide(int a, int b)\n//\n// Unit tests you would write (5 cases):\n// 1. _____\n// 2. _____\n// 3. _____\n// 4. _____\n// 5. _____\n//\n// Inputs a fuzzer might try that you didn't:\n// 1. _____\n// 2. _____\n// 3. _____\n//\n// Which approach is better? _____",
+          "expected_output": "Unit tests: divide(10,2)=5, divide(0,5)=0, divide(-10,2)=-5, divide(10,-2)=-5, divide(10,0)=exception\nFuzzer extras: MAX_INT/1, MIN_INT/-1 (overflow!), very large values\nBoth are better — unit tests for known cases, fuzzer for unknown",
+          "hints": [
+            {
+              "message": "Unit tests check EXPECTED behaviour. Fuzzing checks UNEXPECTED inputs."
+            },
+            {
+              "message": "MIN_INT / -1 causes integer overflow in many languages!"
+            },
+            {
+              "message": "Both complement each other. Unit tests: known cases. Fuzzing: unknown edge cases."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Coverage-Guided Feedback Loop",
+          "description": "Explain how coverage feedback makes fuzzing smarter.",
+          "difficulty": "intermediate",
+          "category": "Fuzz Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "Fuzz testing finds the bugs nobody thought to test for!",
+          "starter_code": "// Trace the feedback loop:\n//\n// Seed: {\"count\": 5}\n// Mutation 1: {\"count\": 50}  -> same code paths -> _____\n// Mutation 2: {\"count\": -1}  -> NEW code path (error handler) -> _____\n// Mutation 3: {\"count\": -99} -> same as mutation 2 paths -> _____\n// Mutation 4 (from seed 2): {\"count\": -2147483648} -> NEW path (overflow handler) -> _____\n//\n// Why is mutation 2 saved but not 1 or 3? _____\n// Why is mutation 4 based on the -1 seed? _____",
+          "expected_output": "M1: same paths -> DISCARD\nM2: new path -> SAVE AS SEED\nM3: same paths as M2 -> DISCARD\nM4: new path from -1 seed -> SAVE AS SEED\nM2 saved because new coverage. M4 based on -1 because it already reached error handling code, so mutating it is more likely to find deeper errors.",
+          "hints": [
+            {
+              "message": "Only inputs that reach NEW code are saved."
+            },
+            {
+              "message": "M2 found the error handler. Mutating M2 can find deeper error handling."
+            },
+            {
+              "message": "Save only new coverage. Build on interesting seeds to go deeper."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Fuzz Targets for Java",
+          "description": "Identify the best targets for fuzzing in a Java application.",
+          "difficulty": "advanced",
+          "category": "Fuzz Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "Fuzz testing finds the bugs nobody thought to test for!",
+          "starter_code": "// Which parts of a Java app are best for fuzzing? Rate 1-5 (5=best):\n//\n// 1. JSON parser: _____\n// 2. Login form handler: _____\n// 3. XML parser: _____\n// 4. Static HTML page: _____\n// 5. Image processing library: _____\n// 6. File upload handler: _____\n// 7. Simple getter method: _____\n// 8. PDF generator: _____\n//\n// Explain your top 3: _____",
+          "expected_output": "1:5, 2:3, 3:5, 4:1, 5:5, 6:4, 7:1, 8:5\nTop 3: JSON parser (complex input parsing), XML parser (XXE + parsing), Image lib (memory corruption in native code). Parsers and file handlers are prime fuzz targets.",
+          "hints": [
+            {
+              "message": "Best fuzz targets: parsers, file handlers, anything that processes complex input."
+            },
+            {
+              "message": "Static pages and simple getters have nothing to fuzz."
+            },
+            {
+              "message": "Parsers (JSON, XML, PDF) and file handlers (image, upload) are prime targets."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Trace XSS Taint",
+          "description": "Trace taint flow for a cross-site scripting vulnerability.",
+          "difficulty": "beginner",
+          "category": "Taint Analysis & Code Review",
+          "estimated_minutes": 6,
+          "ai_intro": "Taint analysis is how tools think like attackers!",
+          "starter_code": "// Trace the taint:\nString name = req.getParameter(\"name\");  // Tainted? _____\nString greeting = \"Hello, \" + name;      // Tainted? _____\nresp.getWriter().write(greeting);        // Sink type: _____\n// Vulnerability: _____\n// CWE: _____\n// Fix: _____",
+          "expected_output": "name: TAINTED (source: getParameter)\ngreeting: TAINTED (concatenation propagates)\nSink: HTML output\nVulnerability: Reflected XSS\nCWE: CWE-79\nFix: HtmlUtils.htmlEscape(name) before concatenation",
+          "hints": [
+            {
+              "message": "getParameter = tainted source."
+            },
+            {
+              "message": "String concatenation propagates taint."
+            },
+            {
+              "message": "Tainted -> tainted -> HTML sink = XSS. Fix with htmlEscape."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Trace Command Injection Taint",
+          "description": "Trace taint for an OS command injection.",
+          "difficulty": "beginner",
+          "category": "Taint Analysis & Code Review",
+          "estimated_minutes": 6,
+          "ai_intro": "Taint analysis is how tools think like attackers!",
+          "starter_code": "String host = req.getParameter(\"host\");  // _____\nString cmd = \"ping -c 4 \" + host;          // _____\nRuntime.getRuntime().exec(cmd);            // Sink: _____\n// Vulnerability: _____\n// Attack payload: _____\n// Fix: _____",
+          "expected_output": "host: TAINTED\ncmd: TAINTED\nSink: OS command execution\nVulnerability: Command Injection (CWE-78)\nAttack: host = \"; rm -rf /\"\nFix: Whitelist validation (IP regex), use ProcessBuilder with args array",
+          "hints": [
+            {
+              "message": "getParameter is the source. exec() is the command sink."
+            },
+            {
+              "message": "Attacker sends: 8.8.8.8; rm -rf / to chain commands."
+            },
+            {
+              "message": "Taint reaches exec() = command injection. Fix: validate input, use ProcessBuilder."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Trace Path Traversal Taint",
+          "description": "Trace taint for a path traversal vulnerability.",
+          "difficulty": "beginner",
+          "category": "Taint Analysis & Code Review",
+          "estimated_minutes": 6,
+          "ai_intro": "Taint analysis is how tools think like attackers!",
+          "starter_code": "String file = req.getParameter(\"file\");   // _____\nFile f = new File(\"/uploads/\", file);       // _____\nFileInputStream fis = new FileInputStream(f); // Sink: _____\n// Vulnerability: _____\n// Attack: _____\n// Fix: _____",
+          "expected_output": "file: TAINTED\nf: TAINTED path\nSink: file system read\nVulnerability: Path Traversal (CWE-22)\nAttack: file=../../../etc/passwd\nFix: whitelist regex + canonical path check",
+          "hints": [
+            {
+              "message": "User input goes directly into new File()."
+            },
+            {
+              "message": "../../../etc/passwd escapes the uploads directory."
+            },
+            {
+              "message": "Tainted -> File constructor -> read sink = path traversal. Fix: validate + canonical."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Find the Sanitiser",
+          "description": "Identify which code adds a sanitiser that removes taint.",
+          "difficulty": "intermediate",
+          "category": "Taint Analysis & Code Review",
+          "estimated_minutes": 6,
+          "ai_intro": "Taint analysis is how tools think like attackers!",
+          "starter_code": "// Which version has a proper sanitiser?\n//\n// Version A:\nString input = req.getParameter(\"q\");\nString safe = input.trim().toLowerCase();\nString q = \"SELECT * FROM t WHERE name='\" + safe + \"'\";\n// Sanitised? _____\n\n// Version B:\nString input = req.getParameter(\"q\");\nPreparedStatement ps = conn.prepareStatement(\"SELECT * FROM t WHERE name=?\");\nps.setString(1, input);\n// Sanitised? _____\n\n// Version C:\nString input = req.getParameter(\"q\");\nif (input.matches(\"[a-zA-Z]+\")) {\n    String q = \"SELECT * FROM t WHERE name='\" + input + \"'\";\n}\n// Sanitised? _____",
+          "expected_output": "A: NOT sanitised (trim and toLowerCase don't prevent SQL injection)\nB: SANITISED (PreparedStatement is a proper SQL sanitiser)\nC: PARTIALLY sanitised (whitelist blocks injection chars, but concatenation is still bad practice)",
+          "hints": [
+            {
+              "message": "trim() and toLowerCase() are transforms, not sanitisers."
+            },
+            {
+              "message": "PreparedStatement is the definitive SQL sanitiser."
+            },
+            {
+              "message": "A: no, B: yes (PreparedStatement), C: partial (whitelist helps but use PreparedStatement)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Multi-Method Taint Trace",
+          "description": "Trace taint across method boundaries.",
+          "difficulty": "intermediate",
+          "category": "Taint Analysis & Code Review",
+          "estimated_minutes": 6,
+          "ai_intro": "Taint analysis is how tools think like attackers!",
+          "starter_code": "class Controller {\n    void handle(HttpServletRequest req) {\n        String data = req.getParameter(\"data\"); // _____\n        String processed = service.process(data); // _____\n        view.render(processed);                   // _____\n    }\n}\nclass Service {\n    String process(String input) {\n        return input.toUpperCase(); // _____\n    }\n}\nclass View {\n    void render(String content) {\n        resp.getWriter().write(\"<div>\" + content + \"</div>\"); // Sink: _____\n    }\n}\n// Vulnerability: _____ CWE: _____",
+          "expected_output": "data: TAINTED, processed: TAINTED (toUpperCase doesn't sanitise), render reaches HTML sink: TAINTED\nVulnerability: Stored/Reflected XSS (CWE-79)\nTaint flows across 3 classes!",
+          "hints": [
+            {
+              "message": "Taint flows from Controller to Service to View."
+            },
+            {
+              "message": "toUpperCase() does not remove taint."
+            },
+            {
+              "message": "Cross-class taint: getParameter -> process (still tainted) -> render HTML sink = XSS."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Identify All Sinks in a Class",
+          "description": "Find every dangerous sink in a code sample.",
+          "difficulty": "intermediate",
+          "category": "Taint Analysis & Code Review",
+          "estimated_minutes": 6,
+          "ai_intro": "Taint analysis is how tools think like attackers!",
+          "starter_code": "public class DataHandler {\n    void processRequest(HttpServletRequest req) throws Exception {\n        String name = req.getParameter(\"name\");           // Line 1\n        String cmd = req.getParameter(\"action\");          // Line 2\n        String file = req.getParameter(\"file\");           // Line 3\n        \n        String q = \"SELECT * FROM users WHERE name='\" + name + \"'\"; // Line 4\n        stmt.executeQuery(q);                              // Line 5\n        \n        Runtime.getRuntime().exec(cmd);                    // Line 6\n        \n        File f = new File(\"/uploads/\" + file);            // Line 7\n        FileInputStream fis = new FileInputStream(f);      // Line 8\n        \n        resp.getWriter().write(\"Hello \" + name);          // Line 9\n    }\n}\n// List ALL vulnerabilities with line numbers and CWE:",
+          "expected_output": "Line 5: SQL Injection (CWE-89) - name in query\nLine 6: Command Injection (CWE-78) - cmd in exec\nLine 8: Path Traversal (CWE-22) - file in FileInputStream\nLine 9: Reflected XSS (CWE-79) - name in HTML output\n4 vulnerabilities, 3 tainted sources, 4 dangerous sinks",
+          "hints": [
+            {
+              "message": "3 parameters, 4 sinks. Each parameter reaches at least one sink."
+            },
+            {
+              "message": "name reaches TWO sinks: SQL and HTML."
+            },
+            {
+              "message": "4 vulns: SQLi(L5), cmd injection(L6), path traversal(L8), XSS(L9)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Write a Taint Analysis Rule",
+          "description": "Define source, sink, and sanitiser for a custom rule.",
+          "difficulty": "intermediate",
+          "category": "Taint Analysis & Code Review",
+          "estimated_minutes": 6,
+          "ai_intro": "Taint analysis is how tools think like attackers!",
+          "starter_code": "// You want to detect Log Injection.\n// Attackers inject newlines into log entries to forge log records.\n//\n// Define:\n// Sources (where tainted data enters): _____\n// Sinks (where tainted data is dangerous): _____\n// Sanitisers (what cleans the taint): _____\n// Example vulnerable code: _____\n// Example attack: _____",
+          "expected_output": "Sources: request.getParameter(), request.getHeader(), any user input\nSinks: logger.info(), logger.warn(), log.error(), System.out.println() if used for logging\nSanitisers: input.replaceAll(\"[\\\\r\\\\n]\", \"\") or OWASP ESAPI encoder\nVuln: logger.info(\"Login: \" + username)\nAttack: username = \"admin\\nLogin successful for: hacker\"",
+          "hints": [
+            {
+              "message": "Log injection uses \\n to create fake log entries."
+            },
+            {
+              "message": "Sinks are logging methods. Sanitiser removes newlines."
+            },
+            {
+              "message": "Sources: user input. Sinks: logger methods. Sanitiser: remove \\r\\n."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Taint Through Database",
+          "description": "Trace second-order taint through database storage.",
+          "difficulty": "advanced",
+          "category": "Taint Analysis & Code Review",
+          "estimated_minutes": 6,
+          "ai_intro": "Taint analysis is how tools think like attackers!",
+          "starter_code": "// FIRST REQUEST (store):\nString name = req.getParameter(\"name\");      // TAINTED\nps.setString(1, name);                       // SANITISED for SQL\nps.executeUpdate();                          // Safe insert\n// Taint status after storage: _____\n\n// SECOND REQUEST (retrieve and use):\nResultSet rs = stmt.executeQuery(\"SELECT name FROM users\");\nString storedName = rs.getString(\"name\");   // Tainted? _____\nresp.getWriter().write(\"Hello \" + storedName); // Safe? _____\n\n// What type of vulnerability is this? _____\n// Why do most SAST tools miss it? _____",
+          "expected_output": "After storage: data in DB is still attacker-controlled content\nretrieved: SHOULD BE TAINTED (came from user, stored in DB)\nHTML output: VULNERABLE — Stored XSS!\nMost SAST tools lose track of taint when data goes through database.\nThis is 'second-order' or 'stored' vulnerability.",
+          "hints": [
+            {
+              "message": "PreparedStatement sanitises for SQL but the DATA is still attacker-controlled."
+            },
+            {
+              "message": "When retrieved from DB, the data should still be considered tainted."
+            },
+            {
+              "message": "Second-order: safe storage, dangerous retrieval. SAST tools typically lose taint across DB boundaries."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Complex Taint: Conditional Sanitisation",
+          "description": "Analyse taint when sanitisation depends on conditions.",
+          "difficulty": "advanced",
+          "category": "Taint Analysis & Code Review",
+          "estimated_minutes": 6,
+          "ai_intro": "Taint analysis is how tools think like attackers!",
+          "starter_code": "String input = req.getParameter(\"data\");    // TAINTED\nString output;\n\nif (inputType.equals(\"html\")) {\n    output = HtmlUtils.htmlEscape(input);      // SANITISED for HTML\n} else if (inputType.equals(\"sql\")) {\n    output = input.replace(\"'\", \"''\");         // Partially sanitised?\n} else {\n    output = input;                            // NOT sanitised!\n}\n\nresp.getWriter().write(output);               // Sink: HTML\n\n// Is this safe? _____\n// Which paths are vulnerable? _____\n// What does SAST report? _____",
+          "expected_output": "NOT safe overall. HTML path: safe (htmlEscape). SQL path: NOT safe for HTML output (only escaped SQL quotes). Else path: completely unsafe. SAST should report: potential XSS on sql and else paths.",
+          "hints": [
+            {
+              "message": "htmlEscape only helps if outputting to HTML, SQL escaping doesn't prevent XSS."
+            },
+            {
+              "message": "The else branch has zero sanitisation."
+            },
+            {
+              "message": "Only html path is safe. sql and else paths are vulnerable to XSS."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Full Codebase Taint Map",
+          "description": "Map all taint flows in a multi-class application.",
+          "difficulty": "advanced",
+          "category": "Taint Analysis & Code Review",
+          "estimated_minutes": 6,
+          "ai_intro": "Taint analysis is how tools think like attackers!",
+          "starter_code": "// Map ALL taint flows:\n//\n// Controller.java:\n//   Line 10: String q = req.getParameter(\"q\");\n//   Line 11: List<Item> items = dao.search(q);\n//   Line 12: model.addAttribute(\"items\", items);\n//   Line 13: model.addAttribute(\"query\", q);\n//\n// ItemDAO.java:\n//   Line 20: public List<Item> search(String term) {\n//   Line 21:   String sql = \"SELECT * FROM items WHERE name LIKE '%\" + term + \"%'\";\n//   Line 22:   return jdbcTemplate.query(sql, mapper);\n//\n// search.html (Thymeleaf):\n//   Line 30: <p>You searched for: <span th:utext=\"${query}\"></span></p>\n//\n// Taint flows: _____\n// Vulnerabilities: _____",
+          "expected_output": "Flow 1: req.getParameter -> dao.search(q) -> SQL concatenation -> SQL Injection (CWE-89)\nFlow 2: req.getParameter -> model('query') -> th:utext -> XSS (CWE-79) (th:utext doesn't escape!)\n2 vulnerabilities from 1 tainted source reaching 2 different sinks",
+          "hints": [
+            {
+              "message": "The parameter 'q' flows to two different sinks."
+            },
+            {
+              "message": "th:utext renders unescaped HTML (use th:text for safe output)."
+            },
+            {
+              "message": "2 flows: SQLi via DAO, XSS via th:utext. Both from same getParameter."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: SonarQube Quality Gate Setup",
+          "description": "Configure a quality gate that blocks insecure code.",
+          "difficulty": "beginner",
+          "category": "Tool Configuration",
+          "estimated_minutes": 6,
+          "ai_intro": "Configuring tools correctly is half the battle!",
+          "starter_code": "// Define a quality gate with these rules:\n//\n// Condition 1 (block release): _____\n// Condition 2 (block release): _____\n// Condition 3 (warning): _____\n// Condition 4 (warning): _____\n//\n// Use metrics: new_vulnerabilities, new_bugs, new_code_smells, coverage",
+          "expected_output": "Block: new_vulnerabilities > 0 (any new vuln blocks release)\nBlock: new_bugs > 0 (any new bug blocks)\nWarn: coverage < 80% (code coverage target)\nWarn: new_code_smells > 10 (too many code smells)",
+          "hints": [
+            {
+              "message": "Blockers stop the release. Warnings alert but allow."
+            },
+            {
+              "message": "Zero new vulnerabilities is the strictest but safest gate."
+            },
+            {
+              "message": "Block on vulns/bugs, warn on coverage/smells."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: SpotBugs Maven Configuration",
+          "description": "Write Maven config to run SpotBugs automatically.",
+          "difficulty": "beginner",
+          "category": "Tool Configuration",
+          "estimated_minutes": 6,
+          "ai_intro": "Configuring tools correctly is half the battle!",
+          "starter_code": "// Complete the pom.xml plugin configuration:\n// <plugin>\n//   <groupId>com.github.spotbugs</groupId>\n//   <artifactId>_____</artifactId>\n//   <configuration>\n//     <effort>_____</effort>\n//     <threshold>_____</threshold>\n//     <failOnError>_____</failOnError>\n//     <plugins>\n//       <plugin>\n//         <groupId>_____</groupId>\n//         <artifactId>findsecbugs-plugin</artifactId>\n//       </plugin>\n//     </plugins>\n//   </configuration>\n// </plugin>",
+          "expected_output": "artifactId: spotbugs-maven-plugin\neffort: Max (most thorough analysis)\nthreshold: Medium (report medium+ issues)\nfailOnError: true (break build on bugs)\nplugins groupId: com.h3xstream.findsecbugs (security-focused rules)",
+          "hints": [
+            {
+              "message": "spotbugs-maven-plugin runs SpotBugs during Maven build."
+            },
+            {
+              "message": "effort:Max for thorough analysis, threshold:Medium for security."
+            },
+            {
+              "message": "Max effort, Medium threshold, failOnError true, findsecbugs plugin for security rules."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: OWASP ZAP Configuration",
+          "description": "Set up OWASP ZAP for a DAST scan.",
+          "difficulty": "intermediate",
+          "category": "Tool Configuration",
+          "estimated_minutes": 6,
+          "ai_intro": "Configuring tools correctly is half the battle!",
+          "starter_code": "// Configure ZAP scan:\n//\n// Target URL: http://localhost:8080\n// Scan type: _____ (passive/active/full)\n// Authentication: _____\n// Alerts threshold: _____\n// What to do with results: _____",
+          "expected_output": "Scan: Full (passive first to map the app, then active to attack)\nAuth: Configure login script/credentials to test authenticated areas\nThreshold: Medium (balance between noise and coverage)\nResults: Generate HTML report, fail CI if HIGH alerts found",
+          "hints": [
+            {
+              "message": "Full scan = passive mapping + active testing."
+            },
+            {
+              "message": "Authentication is critical — otherwise you only test the login page."
+            },
+            {
+              "message": "Full scan with auth, medium threshold, fail on HIGH alerts."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: AFL Dictionary File",
+          "description": "Create a dictionary file for fuzzing a web server.",
+          "difficulty": "intermediate",
+          "category": "Tool Configuration",
+          "estimated_minutes": 6,
+          "ai_intro": "Configuring tools correctly is half the battle!",
+          "starter_code": "// AFL dictionaries contain tokens the fuzzer should try inserting.\n// Create a dictionary for fuzzing an HTTP server:\n//\n// afl_http.dict:\n// _____\n// _____\n// _____\n// _____\n// (list at least 10 useful tokens)",
+          "expected_output": "\"GET \"\n\"POST \"\n\"HTTP/1.1\"\n\"Content-Length: \"\n\"Transfer-Encoding: chunked\"\n\"../../../\"\n\"<script>\"\n\"' OR 1=1--\"\n\"%00\"\n\"\\r\\n\\r\\n\"\n\"/etc/passwd\"\n\"127.0.0.1\"",
+          "hints": [
+            {
+              "message": "Include HTTP methods, headers, attack payloads."
+            },
+            {
+              "message": "../ for path traversal, SQL keywords, XSS tags."
+            },
+            {
+              "message": "Mix valid HTTP tokens with attack payloads for maximum coverage."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Interpret SonarQube Dashboard",
+          "description": "Read a SonarQube project dashboard.",
+          "difficulty": "intermediate",
+          "category": "Tool Configuration",
+          "estimated_minutes": 6,
+          "ai_intro": "Configuring tools correctly is half the battle!",
+          "starter_code": "// SonarQube shows:\n// Bugs: 12 (3 new), Vulnerabilities: 8 (2 new)\n// Code Smells: 145, Coverage: 62%, Duplication: 8.3%\n// Quality Gate: FAILED\n//\n// Questions:\n// 1. Why did the quality gate fail? _____\n// 2. What should be fixed first? _____\n// 3. Is the test coverage acceptable? _____\n// 4. What does 8.3% duplication mean? _____\n// 5. What is the total technical debt? _____",
+          "expected_output": "1. Failed because of 2 new vulnerabilities (gate blocks on new vulns)\n2. The 2 new vulnerabilities (highest security risk)\n3. 62% is below industry standard (80%+ recommended)\n4. 8.3% of code is copy-pasted (refactoring opportunity)\n5. Sum of estimated fix time for all issues",
+          "hints": [
+            {
+              "message": "New vulnerabilities usually trigger quality gate failures."
+            },
+            {
+              "message": "Fix vulnerabilities before bugs, bugs before smells."
+            },
+            {
+              "message": "Failed on new vulns. Fix vulns first. Coverage needs improvement."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Write CodeQL Query",
+          "description": "Write a CodeQL query to find hardcoded passwords.",
+          "difficulty": "advanced",
+          "category": "Tool Configuration",
+          "estimated_minutes": 10,
+          "ai_intro": "Configuring tools correctly is half the battle!",
+          "starter_code": "// Write a CodeQL query that finds:\n// String variables named 'password', 'secret', 'apiKey'\n// assigned literal string values\n//\n// import java\n// from _____ v, _____ literal\n// where v.getName().regexpMatch(\"_____\")\n//   and literal = v._____\n//   and literal instanceof _____\n// select v, \"Hardcoded credential: \" + v.getName()",
+          "expected_output": "from Variable v, Expr literal\nwhere v.getName().regexpMatch(\"(?i).*(password|secret|apiKey|token).*\")\n  and literal = v.getInitializer()\n  and literal instanceof StringLiteral\nselect v, \"Hardcoded credential\"",
+          "hints": [
+            {
+              "message": "Query Variables where name matches sensitive patterns."
+            },
+            {
+              "message": "Check that the initializer is a StringLiteral (hardcoded)."
+            },
+            {
+              "message": "Variable with sensitive name + StringLiteral initializer = hardcoded credential."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Configure CI Security Gates",
+          "description": "Design quality gates for different environments.",
+          "difficulty": "advanced",
+          "category": "Tool Configuration",
+          "estimated_minutes": 10,
+          "ai_intro": "Configuring tools correctly is half the battle!",
+          "starter_code": "// Define gates for each environment:\n//\n// Development (PR checks):\n// Block on: _____\n// Warn on: _____\n//\n// Staging:\n// Block on: _____\n// Warn on: _____\n//\n// Production release:\n// Block on: _____\n// Require: _____",
+          "expected_output": "Dev: Block on CRITICAL vulns, warn on HIGH vulns\nStaging: Block on HIGH+ vulns, warn on MEDIUM + DAST findings\nProduction: Block on ANY new vuln, require: all DAST clear, fuzz test complete, security review signed off",
+          "hints": [
+            {
+              "message": "Stricter gates as code approaches production."
+            },
+            {
+              "message": "Development = catch early. Staging = confirm. Production = zero tolerance."
+            },
+            {
+              "message": "Progressive gates: dev=critical, staging=high, prod=any vulnerability."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Fuzzing with libFuzzer",
+          "description": "Set up libFuzzer for a C++ target.",
+          "difficulty": "advanced",
+          "category": "Tool Configuration",
+          "estimated_minutes": 10,
+          "ai_intro": "Configuring tools correctly is half the battle!",
+          "starter_code": "// Write a libFuzzer harness for a JSON parser:\n//\n// #include <stdint.h>\n// #include <stddef.h>\n//\n// // The function we want to fuzz:\n// extern int parse_json(const char* data, size_t len);\n//\n// // libFuzzer entry point:\n// int LLVMFuzzerTestOneInput(_____, _____) {\n//     _____\n//     return 0;\n// }\n//\n// Compile: clang -fsanitize=fuzzer,address -o fuzz_json fuzz_json.c parser.c\n// Run: _____",
+          "expected_output": "LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {\n    parse_json((const char*)data, size);\n    return 0;\n}\nRun: ./fuzz_json corpus/ (corpus is seed directory)",
+          "hints": [
+            {
+              "message": "libFuzzer uses LLVMFuzzerTestOneInput as the entry point."
+            },
+            {
+              "message": "Parameters: const uint8_t *data, size_t size."
+            },
+            {
+              "message": "Cast data to char*, pass with size. Compile with -fsanitize=fuzzer,address."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Handling False Positives at Scale",
+          "description": "Design a process for managing false positives across a team.",
+          "difficulty": "advanced",
+          "category": "Tool Configuration",
+          "estimated_minutes": 10,
+          "ai_intro": "Configuring tools correctly is half the battle!",
+          "starter_code": "// Your team has 500 SAST findings. ~40% are false positives.\n// Design a triage process:\n//\n// Step 1: _____\n// Step 2: _____\n// Step 3: _____\n// Step 4: _____\n// Step 5: _____\n//\n// How to prevent false positives from recurring: _____\n// How to track triage decisions: _____",
+          "expected_output": "1. Auto-filter: suppress known FP patterns\n2. Prioritise: sort by severity, focus on CRITICAL first\n3. Assign: security champion triages their team's findings\n4. Verify: check each finding, label TP or FP\n5. Action: fix TPs, suppress FPs with justification\nPrevent: tune tool rules, add @Suppress annotations, update profiles\nTrack: JIRA tickets, SonarQube issue tracker, security review log",
+          "hints": [
+            {
+              "message": "40% FP rate is typical. Need systematic triage."
+            },
+            {
+              "message": "Auto-filter known FPs first to reduce manual work."
+            },
+            {
+              "message": "5 steps: auto-filter, prioritise, assign, verify, action. Track in issue tracker."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Complete DevSecOps Pipeline Design",
+          "description": "Design a full security testing pipeline for an enterprise.",
+          "difficulty": "advanced",
+          "category": "Tool Configuration",
+          "estimated_minutes": 10,
+          "ai_intro": "Configuring tools correctly is half the battle!",
+          "starter_code": "// Design a pipeline for a Java web application:\n//\n// Pre-commit: _____\n// Build stage: _____\n// Test stage: _____\n// Staging: _____\n// Pre-production: _____\n// Production: _____\n// Ongoing: _____",
+          "expected_output": "Pre-commit: IDE plugins (SpotBugs, SonarLint), pre-commit hooks\nBuild: SAST (SonarQube), dependency check (OWASP Dependency-Check)\nTest: unit + integration tests, SAST gate\nStaging: DAST (ZAP), pen testing, security review\nPre-prod: Final DAST, compliance checks\nProduction: WAF, RASP, monitoring\nOngoing: Continuous fuzzing, periodic pen tests, dependency updates",
+          "hints": [
+            {
+              "message": "Security at every stage from IDE to production."
+            },
+            {
+              "message": "Shift left: IDE -> commit -> build -> test -> stage -> prod."
+            },
+            {
+              "message": "7 stages of security: pre-commit, build, test, staging, pre-prod, prod, ongoing."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Heartbleed Discovery",
+          "description": "Explain how fuzzing could have found Heartbleed.",
+          "difficulty": "intermediate",
+          "category": "Applied Scenarios",
+          "estimated_minutes": 7,
+          "ai_intro": "These scenarios prepare you for real security engineering!",
+          "starter_code": "// Heartbleed (CVE-2014-0160):\n// The bug: OpenSSL heartbeat extension reads MORE memory than provided\n//\n// Normal: Client sends 3 bytes of data, says 'length: 3'\n//         Server echoes back 3 bytes\n//\n// Attack: Client sends 1 byte of data, says 'length: 65535'\n//         Server echoes back 65535 bytes (including 65534 bytes of server memory!)\n//\n// How would SAST have found it? _____\n// How would fuzzing have found it? _____\n// Why was it missed for 2 years? _____",
+          "expected_output": "SAST: Buffer read without length validation (taint: length field controls read size)\nFuzzing: Mutate length field to be larger than data -> server reads past buffer -> crash (with AddressSanitizer)\nMissed: No fuzzing on heartbeat code, manual review missed the off-by-one trust",
+          "hints": [
+            {
+              "message": "The bug is a mismatch between claimed length and actual data length."
+            },
+            {
+              "message": "AFL + AddressSanitizer would catch the out-of-bounds read instantly."
+            },
+            {
+              "message": "Fuzzing the length field would mutate it to be larger than data -> ASAN catches the overread."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Audit Report Writing",
+          "description": "Write a security findings report from tool output.",
+          "difficulty": "intermediate",
+          "category": "Applied Scenarios",
+          "estimated_minutes": 7,
+          "ai_intro": "These scenarios prepare you for real security engineering!",
+          "starter_code": "// Write a professional findings report:\n// Tool: SonarQube + OWASP ZAP\n// Project: E-commerce web app\n//\n// SonarQube: 3 SQL injections, 2 XSS, 1 path traversal\n// ZAP: confirmed 2 SQL injections, 1 XSS, found 1 CSRF\n//\n// Report format:\n// Executive Summary: _____\n// Critical Findings: _____\n// Recommendations: _____\n// Timeline: _____",
+          "expected_output": "Executive: 7 vulnerabilities found (4 HIGH, 2 MEDIUM, 1 LOW). 2 confirmed exploitable.\nCritical: 2 confirmed SQL injections (immediate risk of data breach)\nRecommendations: 1. Fix SQLi with PreparedStatements 2. Add CSRF tokens 3. Encode all output\nTimeline: Critical fixes in 48hrs, all fixes in 2 weeks",
+          "hints": [
+            {
+              "message": "Start with executive summary showing total findings and risk level."
+            },
+            {
+              "message": "Confirmed exploitable findings are highest priority."
+            },
+            {
+              "message": "Executive summary, critical findings, recommendations, timeline."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Choose the Right Tool",
+          "description": "Select tools for different project types.",
+          "difficulty": "intermediate",
+          "category": "Applied Scenarios",
+          "estimated_minutes": 7,
+          "ai_intro": "These scenarios prepare you for real security engineering!",
+          "starter_code": "// Which tools for each project?\n//\n// 1. Java REST API (Spring Boot): _____\n// 2. C network daemon: _____\n// 3. React frontend: _____\n// 4. Python Django web app: _____\n// 5. Mobile Android app: _____",
+          "expected_output": "1. SpotBugs + SonarQube (SAST) + ZAP (DAST)\n2. AFL + AddressSanitizer (fuzzing) + Coverity (SAST)\n3. ESLint security plugin + SonarQube + ZAP\n4. Bandit (Python SAST) + SonarQube + ZAP\n5. MobSF + SpotBugs + OWASP ZAP",
+          "hints": [
+            {
+              "message": "Match tools to language and deployment type."
+            },
+            {
+              "message": "C programs need fuzzing most (memory bugs). Web apps need DAST."
+            },
+            {
+              "message": "Java: SpotBugs+ZAP. C: AFL+ASAN. JS: ESLint. Python: Bandit. Android: MobSF."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Cost-Benefit of Security Testing",
+          "description": "Calculate ROI for automated security testing.",
+          "difficulty": "advanced",
+          "category": "Applied Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios prepare you for real security engineering!",
+          "starter_code": "// Current cost of finding bugs manually:\n// Average time to find 1 vulnerability: 4 hours\n// Developer hourly rate: $75\n// Cost per manually found bug: _____\n//\n// With automated tools:\n// SonarQube license: $0 (community)\n// ZAP license: $0 (open source)\n// Setup time: 40 hours\n// Weekly maintenance: 2 hours\n// Bugs found per month: ~15 (vs 5 manually)\n//\n// 6-month ROI: _____",
+          "expected_output": "Manual: $300 per bug, 5/month = $1,500/month = $9,000/6mo\nAutomated: Setup $3,000 + maintenance $3,600 = $6,600/6mo\nFinds 3x more bugs. ROI: saved $2,400 + 10 extra bugs found per month",
+          "hints": [
+            {
+              "message": "Manual: 4hrs x $75 = $300 per bug."
+            },
+            {
+              "message": "Automated: one-time setup + low maintenance, finds more bugs."
+            },
+            {
+              "message": "Automated is cheaper AND finds more bugs. Clear positive ROI."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Fuzz a REST API",
+          "description": "Design a fuzzing strategy for a REST API.",
+          "difficulty": "advanced",
+          "category": "Applied Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios prepare you for real security engineering!",
+          "starter_code": "// Target: POST /api/users\n// Body: {\"name\": \"str\", \"email\": \"str\", \"age\": int, \"role\": \"str\"}\n//\n// Fuzz strategy:\n// Seeds (3): _____\n// Mutation targets: _____\n// What to monitor: _____\n// Expected crash types: _____",
+          "expected_output": "Seeds: valid JSON, minimal JSON, JSON with optional fields\nTargets: field values (long strings, SQL, XSS), field types (string->int), structure (missing fields, extra fields, nested objects)\nMonitor: HTTP 500 errors, response time spikes, error message content\nCrashes: JSON parsing errors, SQL injection, buffer overflow in name field, type confusion",
+          "hints": [
+            {
+              "message": "Seeds should be valid requests that the API accepts."
+            },
+            {
+              "message": "Mutate both values (content) and structure (add/remove fields)."
+            },
+            {
+              "message": "Monitor for 500s, timeouts, and error messages leaking info."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Security Testing Maturity Model",
+          "description": "Assess an organisation's security testing maturity.",
+          "difficulty": "advanced",
+          "category": "Applied Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios prepare you for real security engineering!",
+          "starter_code": "// Rate your organisation (1-5) on each:\n//\n// Level 1 (Ad-hoc): Manual testing only, no tools\n// Level 2 (Basic): Some SAST, occasional scans\n// Level 3 (Defined): SAST in CI, DAST in staging\n// Level 4 (Managed): Full DevSecOps, metrics tracked\n// Level 5 (Optimised): Continuous improvement, custom rules\n//\n// Org A: Uses SonarQube but nobody reads reports: Level _____\n// Org B: Full CI/CD with SAST+DAST+fuzz, tracked dashboards: Level _____\n// Org C: Annual pen test only: Level _____\n// Org D: Custom CodeQL rules, automated triage, ML-based FP reduction: Level _____",
+          "expected_output": "A: Level 2 (tools exist but not used effectively)\nB: Level 4 (full pipeline, tracked metrics)\nC: Level 1 (annual only, no automation)\nD: Level 5 (custom rules, ML optimisation)",
+          "hints": [
+            {
+              "message": "Having tools without using them is still Level 2."
+            },
+            {
+              "message": "Full pipeline + tracking = Level 4. Custom + ML = Level 5."
+            },
+            {
+              "message": "A:2, B:4, C:1, D:5."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Fix Based on SAST Report",
+          "description": "Fix all vulnerabilities from a tool report.",
+          "difficulty": "advanced",
+          "category": "Applied Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios prepare you for real security engineering!",
+          "starter_code": "// SonarQube found these. Fix each:\n//\n// 1. S3649: SQL injection at UserDAO.java:45\n//    String q = \"SELECT * FROM users WHERE id=\" + id;\n//    Fix: _____\n//\n// 2. S5131: XSS at SearchController.java:22\n//    resp.getWriter().write(\"Results: \" + query);\n//    Fix: _____\n//\n// 3. S2095: Resource leak at FileService.java:18\n//    FileInputStream fis = new FileInputStream(path);\n//    Fix: _____\n//\n// 4. S2068: Hard-coded password at Config.java:5\n//    String dbPass = \"admin123\";\n//    Fix: _____",
+          "expected_output": "1. PreparedStatement: ps.setString(1, id)\n2. HtmlUtils.htmlEscape(query) before writing\n3. try (FileInputStream fis = new FileInputStream(path)) { ... }\n4. String dbPass = System.getenv(\"DB_PASSWORD\")",
+          "hints": [
+            {
+              "message": "Each SonarQube rule ID (S####) tells you the exact fix."
+            },
+            {
+              "message": "S3649=PreparedStatement, S5131=output encoding, S2095=try-with-resources, S2068=externalize."
+            },
+            {
+              "message": "PreparedStatement, htmlEscape, try-with-resources, environment variable."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Fuzz Testing Results Analysis",
+          "description": "Analyse fuzzing crash reports and determine root cause.",
+          "difficulty": "advanced",
+          "category": "Applied Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios prepare you for real security engineering!",
+          "starter_code": "// AFL found 3 unique crashes. Analyse each:\n//\n// Crash 1: SIGSEGV (signal 11) at parse_header()\n//   Input: HTTP request with 10,000-char header value\n//   Root cause: _____\n//   Severity: _____\n//\n// Crash 2: SIGABRT (signal 6) at process_body()\n//   Input: Content-Length: -1\n//   Root cause: _____\n//   Severity: _____\n//\n// Crash 3: TIMEOUT at decode_base64()\n//   Input: base64 with repeated = padding\n//   Root cause: _____\n//   Severity: _____",
+          "expected_output": "Crash 1: Buffer overflow - header buffer too small for 10K chars. CRITICAL (memory corruption -> RCE)\nCrash 2: Integer underflow - negative Content-Length causes incorrect allocation. HIGH (DoS or memory corruption)\nCrash 3: Algorithmic complexity - repeated padding causes exponential processing. MEDIUM (DoS)",
+          "hints": [
+            {
+              "message": "SIGSEGV = memory access violation (usually buffer overflow)."
+            },
+            {
+              "message": "SIGABRT = assertion failed or abort() called (bad input handling)."
+            },
+            {
+              "message": "Crash 1: buffer overflow (CRITICAL), Crash 2: integer issue (HIGH), Crash 3: algorithmic DoS (MEDIUM)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Build a Fuzzing Harness",
+          "description": "Write a complete fuzzing harness for a Java method.",
+          "difficulty": "advanced",
+          "category": "Applied Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios prepare you for real security engineering!",
+          "starter_code": "// Target method:\n// public static Config parseConfig(String configText) {\n//     // Parses INI-style config: key=value, one per line\n//     // Returns Config object\n// }\n//\n// Write a JQF/Jazzer fuzzing harness:\n// _____",
+          "expected_output": "public class ConfigFuzzer {\n    @FuzzTest\n    public void fuzzParseConfig(byte[] data) {\n        String input = new String(data, StandardCharsets.UTF_8);\n        try {\n            Config result = ConfigParser.parseConfig(input);\n        } catch (Exception e) { /* expected for invalid input */ }\n    }\n}\n// Run: mvn jqf:fuzz -Dclass=ConfigFuzzer -Dmethod=fuzzParseConfig",
+          "hints": [
+            {
+              "message": "JQF/Jazzer is the AFL equivalent for Java."
+            },
+            {
+              "message": "Convert byte[] to String, call target method, catch expected exceptions."
+            },
+            {
+              "message": "@FuzzTest annotation, byte[] input, try-catch for expected errors, let unexpected errors crash."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Security Testing Strategy Document",
+          "description": "Write a security testing strategy for a new project.",
+          "difficulty": "advanced",
+          "category": "Applied Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios prepare you for real security engineering!",
+          "starter_code": "// Write a strategy covering:\n//\n// 1. Tools selected: _____\n// 2. Testing schedule: _____\n// 3. Quality gates: _____\n// 4. Roles: _____\n// 5. Metrics: _____\n// 6. Escalation: _____",
+          "expected_output": "1. SAST: SonarQube + SpotBugs. DAST: ZAP. Fuzz: Jazzer\n2. SAST on every commit. DAST weekly on staging. Fuzz continuously\n3. Block on CRITICAL/HIGH vulns. Warn on MEDIUM\n4. Developers: fix findings. Security champion: triage. Security team: review\n5. Track: findings/month, MTTR, FP rate, coverage\n6. CRITICAL: fix in 24hrs. HIGH: fix in 1 week. MEDIUM: fix in 1 month",
+          "hints": [
+            {
+              "message": "Cover tools, schedule, gates, roles, metrics, escalation."
+            },
+            {
+              "message": "Different cadence for different test types: SAST=every commit, DAST=weekly."
+            },
+            {
+              "message": "Complete strategy: tools, schedule, gates, roles, metrics, escalation timelines."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Compare SAST Tools",
+          "description": "Evaluate 3 SAST tools for a Java project.",
+          "difficulty": "intermediate",
+          "category": "Advanced Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "You are building enterprise-level security skills!",
+          "starter_code": "// Compare for a Java 17 Spring Boot project:\n//\n//           SonarQube    SpotBugs     CodeQL\n// Setup:    _____        _____        _____\n// Speed:    _____        _____        _____\n// FP rate:  _____        _____        _____\n// Custom:   _____        _____        _____\n// Best for: _____        _____        _____",
+          "expected_output": "SonarQube: easy(Maven plugin)/fast/medium FP/custom rules via UI/code quality + security\nSpotBugs: easy(Maven)/very fast/low FP/XML rules/Java-specific bugs\nCodeQL: moderate(GitHub)/slow/low FP/powerful SQL-like queries/complex patterns",
+          "hints": [
+            {
+              "message": "SonarQube is easiest. SpotBugs is fastest. CodeQL is most powerful."
+            },
+            {
+              "message": "Use SpotBugs + SonarQube together for best Java coverage."
+            },
+            {
+              "message": "Best combo: SpotBugs for speed + SonarQube for dashboard + CodeQL for custom queries."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Dependency Scanning",
+          "description": "Explain and configure dependency vulnerability scanning.",
+          "difficulty": "intermediate",
+          "category": "Advanced Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "You are building enterprise-level security skills!",
+          "starter_code": "// Your project uses: log4j 2.14.1, Spring 5.3.0, Jackson 2.12.0\n//\n// 1. What tool checks for known vulnerabilities in dependencies? _____\n// 2. Which of these libraries has a CRITICAL CVE? _____\n// 3. What is the CVE? _____\n// 4. Maven plugin to add: _____\n// 5. What database does it check against? _____",
+          "expected_output": "1. OWASP Dependency-Check (or Snyk, Dependabot)\n2. log4j 2.14.1 has CRITICAL vulnerability\n3. CVE-2021-44228 (Log4Shell) - Remote Code Execution\n4. dependency-check-maven plugin\n5. NVD (National Vulnerability Database) - NIST",
+          "hints": [
+            {
+              "message": "Log4j 2.14.1 contains Log4Shell — one of the worst vulns ever."
+            },
+            {
+              "message": "OWASP Dependency-Check scans your pom.xml against NVD."
+            },
+            {
+              "message": "Log4Shell (CVE-2021-44228) in log4j. OWASP Dependency-Check + NVD."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Security Regression Testing",
+          "description": "Design tests that prevent fixed vulnerabilities from returning.",
+          "difficulty": "intermediate",
+          "category": "Advanced Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "You are building enterprise-level security skills!",
+          "starter_code": "// You fixed a SQL injection. Write a regression test:\n//\n// Vulnerable endpoint: /api/users?id=1\n// Attack: /api/users?id=1' OR '1'='1\n//\n// Test 1 (normal): _____\n// Test 2 (injection attempt): _____\n// Test 3 (encoded attempt): _____\n// Add to CI: _____",
+          "expected_output": "Test 1: GET /api/users?id=1 -> 200 OK, returns 1 user\nTest 2: GET /api/users?id=1' OR '1'='1 -> 400 Bad Request (not 200 with all users!)\nTest 3: GET /api/users?id=1%27%20OR%20%271%27=%271 -> 400 Bad Request\nCI: Add to integration test suite, run on every commit",
+          "hints": [
+            {
+              "message": "Regression test = ensure the fix stays fixed."
+            },
+            {
+              "message": "Test both the attack and encoded variants."
+            },
+            {
+              "message": "Normal returns 1 user. Attack returns 400, NOT all users. Add to CI."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Measure Security Testing Effectiveness",
+          "description": "Define KPIs for security testing.",
+          "difficulty": "advanced",
+          "category": "Advanced Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "You are building enterprise-level security skills!",
+          "starter_code": "// Define 6 KPIs for your security testing program:\n//\n// 1. _____ (how fast you fix)\n// 2. _____ (how many you find)\n// 3. _____ (how noisy tools are)\n// 4. _____ (how much code is tested)\n// 5. _____ (how dangerous open issues are)\n// 6. _____ (trend over time)",
+          "expected_output": "1. MTTR (Mean Time to Remediate) by severity\n2. Vulnerability detection rate (found by tools vs found in production)\n3. False positive rate (FPs / total findings)\n4. Code coverage percentage\n5. Risk score (sum of CVSS for open vulnerabilities)\n6. Vulnerability density trend (vulns per 1000 lines over time)",
+          "hints": [
+            {
+              "message": "Good KPIs measure speed, coverage, accuracy, and trend."
+            },
+            {
+              "message": "MTTR = how fast you fix. Detection rate = what tools catch vs what they miss."
+            },
+            {
+              "message": "6 KPIs: MTTR, detection rate, FP rate, coverage, risk score, density trend."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Capstone: Full Security Testing Plan",
+          "description": "Design a complete security testing programme.",
+          "difficulty": "advanced",
+          "category": "Advanced Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "You are building enterprise-level security skills!",
+          "starter_code": "// For a new fintech application handling payments:\n//\n// Pre-development: _____\n// Development: _____\n// Testing: _____\n// Staging: _____\n// Production: _____\n// Incident response: _____\n// Compliance: _____",
+          "expected_output": "Pre-dev: Threat modelling, security requirements, design review\nDev: IDE plugins, SAST on commit, secure coding training\nTest: SAST gate, DAST scan, fuzz testing, penetration test\nStaging: Full DAST, compliance scan, security review\nProd: WAF, RASP, monitoring, log analysis\nIR: Playbooks, escalation, post-mortem\nCompliance: PCI DSS scan, SOC 2 audit, GDPR assessment",
+          "hints": [
+            {
+              "message": "Fintech needs PCI DSS compliance — extra requirements."
+            },
+            {
+              "message": "Security at every stage from threat model to incident response."
+            },
+            {
+              "message": "Complete lifecycle: threat model, dev tools, test gates, staging validation, prod monitoring, IR, compliance."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: OWASP Dependency Check",
+          "description": "Run dependency vulnerability scanning on a Java project.",
+          "difficulty": "intermediate",
+          "category": "Tool Configuration",
+          "estimated_minutes": 6,
+          "ai_intro": "Known vulnerabilities in libraries are the easiest attack vector!",
+          "starter_code": "// Your pom.xml has these dependencies:\n// log4j-core 2.14.1\n// spring-web 5.3.8\n// commons-collections 3.2.1\n// jackson-databind 2.9.8\n//\n// Which have known CVEs? _____\n// Severity of each? _____\n// What tool finds these? _____\n// Maven command to run it: _____",
+          "expected_output": "log4j 2.14.1: CVE-2021-44228 (Log4Shell) CRITICAL\ncommons-collections 3.2.1: deserialization RCE HIGH\njackson-databind 2.9.8: multiple deserialization CVEs HIGH\nTool: OWASP Dependency-Check\nCommand: mvn dependency-check:check",
+          "hints": [
+            {
+              "message": "Log4Shell is the most famous — CVE-2021-44228."
+            },
+            {
+              "message": "commons-collections has gadget chains for deserialization attacks."
+            },
+            {
+              "message": "log4j: CRITICAL, commons-collections: HIGH, jackson: HIGH. Run: mvn dependency-check:check"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: AddressSanitizer with Fuzzing",
+          "description": "Explain how AddressSanitizer enhances fuzz testing.",
+          "difficulty": "intermediate",
+          "category": "Fuzz Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "ASAN turns silent memory bugs into loud crashes!",
+          "starter_code": "// AddressSanitizer (ASAN):\n// 1. What does ASAN detect? _____\n// 2. How to enable with AFL: _____\n// 3. Without ASAN, a buffer overread might: _____\n// 4. With ASAN, a buffer overread will: _____\n// 5. Performance impact: _____\n// 6. Why is ASAN + fuzzing powerful? _____",
+          "expected_output": "1. Buffer overflows, use-after-free, double-free, memory leaks\n2. AFL_USE_ASAN=1 afl-clang -fsanitize=address\n3. Silently read wrong data (no crash = fuzzer misses it!)\n4. Immediately crash with detailed report (fuzzer catches it!)\n5. ~2x slowdown (acceptable for testing)\n6. ASAN makes silent bugs loud, fuzzer finds inputs that trigger them",
+          "hints": [
+            {
+              "message": "ASAN instruments memory accesses to detect errors."
+            },
+            {
+              "message": "Without ASAN, a 1-byte overread may not crash — the fuzzer would miss it."
+            },
+            {
+              "message": "ASAN + fuzzing: ASAN makes bugs crash, fuzzer finds inputs that trigger them."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Security Code Review Checklist",
+          "description": "Create a checklist for manual security code review.",
+          "difficulty": "intermediate",
+          "category": "Taint Analysis & Code Review",
+          "estimated_minutes": 7,
+          "ai_intro": "Manual review catches what tools miss!",
+          "starter_code": "// Write a security review checklist (10 items):\n// For each, explain what to look for:\n//\n// 1. Input validation: _____\n// 2. SQL queries: _____\n// 3. HTML output: _____\n// 4. File operations: _____\n// 5. Command execution: _____\n// 6. Authentication: _____\n// 7. Error handling: _____\n// 8. Cryptography: _____\n// 9. Session management: _____\n// 10. Logging: _____",
+          "expected_output": "1. All user input validated (whitelist preferred)\n2. All queries use PreparedStatement\n3. All output HTML-encoded\n4. All file paths canonically validated\n5. No user input in exec() calls\n6. Strong password hashing (bcrypt), MFA\n7. No sensitive data in error messages, fail-safe\n8. No custom crypto, use standard algorithms\n9. Secure cookies (HttpOnly, Secure, SameSite)\n10. No sensitive data logged, log injection prevented",
+          "hints": [
+            {
+              "message": "Think about each vulnerability type: injection, XSS, path traversal, etc."
+            },
+            {
+              "message": "For each item, the reviewer looks for the ABSENCE of protection."
+            },
+            {
+              "message": "10 items covering input, output, files, commands, auth, errors, crypto, sessions, logging."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Interpret a CodeQL Alert",
+          "description": "Read and understand a CodeQL vulnerability alert.",
+          "difficulty": "advanced",
+          "category": "Advanced Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "CodeQL alerts show the complete data flow path!",
+          "starter_code": "// CodeQL Alert:\n// Rule: java/sql-injection\n// Severity: error\n// Message: This query depends on a user-provided value\n//\n// Path:\n// Step 1: UserController.java:23 - req.getParameter(\"search\")\n// Step 2: UserController.java:24 - searchService.find(input)\n// Step 3: SearchService.java:45 - buildQuery(term)\n// Step 4: SearchService.java:48 - \"SELECT * FROM items WHERE name LIKE '%\" + term + \"%'\"\n// Step 5: SearchService.java:49 - stmt.executeQuery(query)\n//\n// Questions:\n// 1. Source: _____\n// 2. Sink: _____\n// 3. How many methods does taint cross? _____\n// 4. True positive or false positive? _____\n// 5. Fix: _____",
+          "expected_output": "1. Source: getParameter(\"search\") at UserController:23\n2. Sink: executeQuery(query) at SearchService:49\n3. Crosses 2 methods in 2 classes\n4. TRUE POSITIVE — string concatenation in SQL query\n5. Use PreparedStatement with LIKE ? in SearchService.buildQuery()",
+          "hints": [
+            {
+              "message": "Follow the path from Step 1 (source) to Step 5 (sink)."
+            },
+            {
+              "message": "String concatenation in SQL = true positive."
+            },
+            {
+              "message": "Source: getParameter. Sink: executeQuery. True positive. Fix: PreparedStatement with LIKE ?."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Capstone: Security Testing Report",
+          "description": "Write a complete security testing report from multiple tool outputs.",
+          "difficulty": "advanced",
+          "category": "Advanced Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "This is what professional security engineers deliver!",
+          "starter_code": "// Combine these tool results into one report:\n//\n// SonarQube: 2 BLOCKER (SQLi), 3 CRITICAL (XSS, path traversal), 8 MAJOR\n// SpotBugs: 4 HIGH (2 overlap with SonarQube), 6 MEDIUM\n// ZAP: 1 HIGH (confirmed SQLi), 2 MEDIUM (CSRF, missing headers)\n// AFL: 1 crash (buffer overflow in image parser)\n//\n// Write:\n// 1. Executive summary: _____\n// 2. Deduplicated findings count: _____\n// 3. Top 3 critical findings: _____\n// 4. Recommendations: _____\n// 5. Risk rating: _____",
+          "expected_output": "1. Multiple tools found 15+ unique security issues including confirmed SQL injection and buffer overflow\n2. Deduplicated: ~13 unique (2 SAST overlaps removed)\n3. Top 3: Confirmed SQL injection (exploitable), buffer overflow in image parser (memory corruption), path traversal (file access)\n4. Immediate: fix SQLi and buffer overflow. Short-term: fix XSS and path traversal. Medium-term: headers, CSRF tokens\n5. Risk: HIGH — confirmed exploitable SQL injection in production",
+          "hints": [
+            {
+              "message": "Deduplicate: SonarQube and SpotBugs found 2 of the same issues."
+            },
+            {
+              "message": "ZAP confirmed 1 SQLi = highest priority (proven exploitable)."
+            },
+            {
+              "message": "Combine, deduplicate, prioritise by confirmed exploitability, recommend timeline."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

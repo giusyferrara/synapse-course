@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synapse Research Dashboard - Experimental Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            color: #1e293b;
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .methodology-note {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 8px;
+        }
+
+        .methodology-note strong {
+            color: #92400e;
+        }
+
+        /* TABS */
+        .tabs {
+            background: white;
+            border-radius: 20px;
+            padding: 0;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .tab-buttons {
+            display: flex;
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            padding: 20px 30px;
+            background: transparent;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            background: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* STATS CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card .label {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            color: #1e293b;
+            font-size: 32px;
+            font-weight: 800;
+        }
+
+        /* TABLES */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .data-table caption {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            text-align: left;
+            padding: 15px;
+            background: #f8fafc;
+        }
+
+        .data-table thead {
+            background: #667eea;
+            color: white;
+        }
+
+        .data-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            color: #1e293b;
+        }
+
+        .data-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tfoot {
+            background: #f0f4ff;
+            font-weight: 600;
+        }
+
+        .data-table tfoot td {
+            border-top: 2px solid #667eea;
+            border-bottom: none;
+        }
+
+        /* SIGNIFICANCE BADGES */
+        .significant {
+            background: #dcfce7;
+            color: #166534;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .not-significant {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* CHARTS */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-card h3 {
+            color: #1e293b;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+        }
+
+        /* SECTION HEADERS */
+        .section-header {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .section-header h2 {
+            color: #1e293b;
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+
+        .section-header p {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        /* LOADING */
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: white;
+            font-size: 20px;
+        }
+
+        .error-message {
+            background: #fee;
+            border: 2px solid #f88;
+            color: #c33;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* PARTICIPANT CARDS */
+        .participants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 15px;
+        }
+
+        .participant-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-left: 6px solid #667eea;
+        }
+
+        .participant-code {
+            font-family: 'Courier New', monospace;
+            font-weight: 800;
+            color: #667eea;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .participant-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .info-item {
+            font-size: 13px;
+        }
+
+        .info-label {
+            color: #94a3b8;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .info-value {
+            color: #1e293b;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 Synapse Research Dashboard</h1>
+            <p>Multi-LLM Orchestration for Executive Function Support in ADHD Python Learners</p>
+            <div class="methodology-note">
+                <strong>📊 Methodology:</strong> Following Jing et al. (2024) quasi-experimental design - Measuring AI Literacy (4 dimensions), Python Knowledge, ChatGPT Cognitive Level, and Usage Intention impact on task effectiveness
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            <div>⏳ Loading research data...</div>
+        </div>
+
+        <div id="error" style="display: none;"></div>
+
+        <div id="dashboard" style="display: none;">
+            <!-- TABS -->
+            <div class="tabs">
+                <div class="tab-buttons">
+                    <button class="tab-button active" onclick="showTab('overview')">📊 Overview</button>
+                    <button class="tab-button" onclick="showTab('demographics')">👥 Demographics (Table 1)</button>
+                    <button class="tab-button" onclick="showTab('ai-literacy')">🧠 AI Literacy (Tables 2-3)</button>
+                    <button class="tab-button" onclick="showTab('python-knowledge')">💻 Python Knowledge (Tables 4-5)</button>
+                    <button class="tab-button" onclick="showTab('llm-analysis')">🤖 Cognitive & Intention (Tables 6-7-8)</button>
+                    <button class="tab-button" onclick="showTab('comparisons')">📈 Group Comparisons</button>
+                    <button class="tab-button" onclick="showTab('sessions')">📚 Sessions</button>
+                </div>
+
+                <!-- TAB 1: OVERVIEW -->
+                <div id="overview" class="tab-content active">
+                    <div class="section-header">
+                        <h2>Quick Statistics</h2>
+                        <p>Overall research progress and participant engagement</p>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="label">Total Participants</div>
+                            <div class="value" id="totalParticipants">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">ADHD Group</div>
+                            <div class="value" id="adhdCount">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Non-ADHD Group</div>
+                            <div class="value" id="neurotypicalCount">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Other Group</div>
+                            <div class="value" id="otherCount">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Total Sessions</div>
+                            <div class="value" id="totalSessions">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Study Time</div>
+                            <div class="value" id="totalTime">0h</div>
+                        </div>
+                    </div>
+
+                    <div class="section-header">
+                        <h2>Participants</h2>
+                        <p>Individual participant details and group assignment</p>
+                    </div>
+                    <div class="participants-grid" id="participantsGrid"></div>
+                </div>
+
+                <!-- TAB 2: DEMOGRAPHICS (TABLE 1) -->
+                <div id="demographics" class="tab-content">
+                    <div class="section-header">
+                        <h2>Table 1: Participant Demographics</h2>
+                        <p>Distribution by gender, age, study program, and Python experience</p>
+                    </div>
+
+                    <table class="data-table">
+                        <caption>Gender Distribution by Group</caption>
+                        <thead>
+                            <tr>
+                                <th>Group</th>
+                                <th>Male</th>
+                                <th>Female</th>
+                                <th>Other/Not Specified</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="genderTable"></tbody>
+                    </table>
+
+                    <table class="data-table">
+                        <caption>Age Distribution by Group</caption>
+                        <thead>
+                            <tr>
+                                <th>Group</th>
+                                <th>N</th>
+                                <th>Mean Age</th>
+                                <th>Min</th>
+                                <th>Max</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ageTable"></tbody>
+                    </table>
+
+                    <table class="data-table">
+                        <caption>Study Program Distribution by Group</caption>
+                        <thead>
+                            <tr>
+                                <th>Study Program</th>
+                                <th>ADHD</th>
+                                <th>Non-ADHD</th>
+                                <th>Other</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studyProgramTable"></tbody>
+                        <tfoot>
+                            <tr>
+                                <td><strong>Total</strong></td>
+                                <td id="studyProgramADHD">0</td>
+                                <td id="studyProgramNon-ADHD">0</td>
+                                <td id="studyProgramOther">0</td>
+                                <td id="studyProgramTotal">0</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <table class="data-table">
+                        <caption>Python Experience Distribution</caption>
+                        <thead>
+                            <tr>
+                                <th>Group</th>
+                                <th>None</th>
+                                <th>Beginner</th>
+                                <th>Intermediate</th>
+                                <th>Advanced</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pythonExpTable"></tbody>
+                    </table>
+
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>Gender Distribution</h3>
+                            <div class="chart-container">
+                                <canvas id="genderChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Python Experience by Group</h3>
+                            <div class="chart-container">
+                                <canvas id="pythonExpChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: AI LITERACY (TABLES 2-3) -->
+                <div id="ai-literacy" class="tab-content">
+                    <div class="section-header">
+                        <h2>Tables 2-3: AI Literacy Analysis (Jing et al., 2024)</h2>
+                        <p>Impact of AI literacy on task effectiveness following Jing et al. (2024) methodology</p>
+                    </div>
+
+                    <table class="data-table">
+                        <caption>Table 2: Analysis of the impact of AI literacy on the effectiveness of using ChatGPT to solve programming problems</caption>
+                        <thead>
+                            <tr>
+                                <th>Group</th>
+                                <th>N</th>
+                                <th>Score (S)</th>
+                                <th>SD</th>
+                                <th>t-value</th>
+                                <th>df</th>
+                                <th>p</th>
+                            </tr>
+                        </thead>
+                        <tbody id="aiLiteracyImpactTable"></tbody>
+                    </table>
+
+                    <table class="data-table">
+                        <caption>Table 3: Analysis of the impact of AI literacy's different dimensions on the effectiveness of using ChatGPT to solve programming problems</caption>
+                        <thead>
+                            <tr>
+                                <th>Specific Literacy</th>
+                                <th>Group</th>
+                                <th>N</th>
+                                <th>Score (S)</th>
+                                <th>SD</th>
+                                <th>t-value</th>
+                                <th>df</th>
+                                <th>p</th>
+                            </tr>
+                        </thead>
+                        <tbody id="aiLiteracyDimensionsTable"></tbody>
+                    </table>
+
+                    <div class="methodology-note">
+                        <strong>📊 Note:</strong> Following Jing et al. (2024), participants are divided into Low/High AI Literacy groups based on median split. Task Score (S) represents the matplotlib stacked bar chart task (0-100 points).
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>AI Literacy Dimensions - All Participants</h3>
+                            <div class="chart-container">
+                                <canvas id="aiLiteracyRadar"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>AI Literacy Total: ADHD vs Non-ADHD</h3>
+                            <div class="chart-container">
+                                <canvas id="aiLiteracyComparison"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: PYTHON KNOWLEDGE (TABLES 4-5) -->
+                <div id="python-knowledge" class="tab-content">
+                    <div class="section-header">
+                        <h2>Tables 4-5: Python Knowledge Base Analysis (Jing et al., 2024)</h2>
+                        <p>Impact of Python and Matplotlib knowledge on task effectiveness</p>
+                    </div>
+
+                    <table class="data-table">
+                        <caption>Table 4: Analysis of the impact of Python knowledge base on the effectiveness of learners in applying ChatGPT to solve programming problems</caption>
+                        <thead>
+                            <tr>
+                                <th>Group</th>
+                                <th>Python knowledge base</th>
+                                <th>N</th>
+                                <th>Score (S)</th>
+                                <th>SD</th>
+                                <th>F</th>
+                                <th>p</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pythonKnowledgeImpactTable"></tbody>
+                    </table>
+
+                    <table class="data-table">
+                        <caption>Table 5: Analysis of the impact of Matplotlib base on the effectiveness of learners in using ChatGPT to solve programming problems</caption>
+                        <thead>
+                            <tr>
+                                <th>Matplotlib knowledge base</th>
+                                <th>N</th>
+                                <th>Score (S)</th>
+                                <th>SD</th>
+                                <th>F</th>
+                                <th>p</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matplotlibKnowledgeImpactTable"></tbody>
+                    </table>
+
+                    <div class="methodology-note">
+                        <strong>📊 Note:</strong> Following Jing et al. (2024), participants are classified into groups based on Python experience. Group C (No Python Base), Group A (Beginner), Group B (Intermediate/Advanced). Matplotlib knowledge assessed via 5-question quiz.
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>Python Knowledge Distribution</h3>
+                            <div class="chart-container">
+                                <canvas id="pythonKnowledgeChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Python Experience by Neurodivergence</h3>
+                            <div class="chart-container">
+                                <canvas id="pythonByGroupChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: MULTI-LLM ANALYSIS (TABLES 6-7-8) -->
+                <div id="llm-analysis" class="tab-content">
+                    <div class="section-header">
+                        <h2>Tables 6-7-8: Cognitive Level & Usage Intention (Jing et al., 2024)</h2>
+                        <p>Impact of ChatGPT cognitive level and usage intention on task effectiveness</p>
+                    </div>
+
+                    <table class="data-table">
+                        <caption>Table 6: Analysis of the impact of learners' cognitive level of ChatGPT on the effectiveness of using it to solve programming problems</caption>
+                        <thead>
+                            <tr>
+                                <th>Group</th>
+                                <th>N</th>
+                                <th>Score (S)</th>
+                                <th>SD</th>
+                                <th>t</th>
+                                <th>df</th>
+                                <th>p</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cognitiveLevelImpactTable"></tbody>
+                    </table>
+
+                    <table class="data-table">
+                        <caption>Table 7: Analysis of the impact of learners' intention towards ChatGPT on the effectiveness of using it to solve programming problems</caption>
+                        <thead>
+                            <tr>
+                                <th>Group</th>
+                                <th>N</th>
+                                <th>Score (S)</th>
+                                <th>SD</th>
+                                <th>t-value</th>
+                                <th>df</th>
+                                <th>p</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usageIntentionImpactTable"></tbody>
+                    </table>
+
+                    <table class="data-table">
+                        <caption>Table 8: Analysis of learners' usage intention before and after project implementation</caption>
+                        <thead>
+                            <tr>
+                                <th>Group</th>
+                                <th>N</th>
+                                <th>Intention score (I)</th>
+                                <th>SD</th>
+                                <th>t-value</th>
+                                <th>df</th>
+                                <th>p</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usageIntentionPrePostTable"></tbody>
+                    </table>
+
+                    <div class="methodology-note">
+                        <strong>📊 Note:</strong> Following Jing et al. (2024), participants are divided into Low/High groups based on median split of ChatGPT cognitive level (questions 13-15) and Usage Intention (questions 16-18). Table 8 uses paired t-test for pre/post comparison.
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>Multi-LLM Cognitive Level Distribution</h3>
+                            <div class="chart-container">
+                                <canvas id="llmCognitiveChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Usage Intention: Pre vs Post</h3>
+                            <div class="chart-container">
+                                <canvas id="usageIntentionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 6: GROUP COMPARISONS -->
+                <div id="comparisons" class="tab-content">
+                    <div class="section-header">
+                        <h2>ADHD vs Non-ADHD Comparisons</h2>
+                        <p>Statistical comparisons between groups (t-tests, effect sizes)</p>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>AI Literacy: ADHD vs Non-ADHD</h3>
+                            <div class="chart-container">
+                                <canvas id="comparisonAILiteracy"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Python Experience: ADHD vs Non-ADHD</h3>
+                            <div class="chart-container">
+                                <canvas id="comparisonPython"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Multi-LLM Cognitive Level: ADHD vs Non-ADHD</h3>
+                            <div class="chart-container">
+                                <canvas id="comparisonCognitive"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Usage Intention: ADHD vs Non-ADHD</h3>
+                            <div class="chart-container">
+                                <canvas id="comparisonIntention"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 7: SESSIONS -->
+                <div id="sessions" class="tab-content">
+                    <div class="section-header">
+                        <h2>Session Activity Log</h2>
+                        <p>Detailed tracking of learning sessions and interactions</p>
+                    </div>
+
+                    <table class="data-table">
+                        <caption>Recent Learning Sessions</caption>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Participant</th>
+                                <th>Group</th>
+                                <th>Date</th>
+                                <th>Duration</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sessionsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- EXPORT BUTTONS -->
+            <div style="margin-top: 20px;">
+                <button onclick="exportCSV()" class="btn btn-primary">📊 Export CSV for SPSS/R</button>
+                <button onclick="refreshData()" class="btn btn-primary" style="margin-left: 10px;">🔄 Refresh Data</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let researchData = null;
+        let charts = {};
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function loadDashboard() {
+            try {
+                console.log('📊 Loading research data...');
+                const response = await fetch('/api/research/dashboard_data');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                researchData = await response.json();
+                console.log('✅ Data loaded:', researchData);
+
+                populateOverview();
+                populateDemographics();
+                populateAILiteracy();
+                populatePythonKnowledge();
+                populateLLMAnalysis();
+                populateComparisons();
+                populateSessions();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').innerHTML = `
+                    <div class="error-message">
+                        <h3>❌ Error Loading Data</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>Make sure the server is running and research_data_parser.py is working correctly.</p>
+                        <button onclick="location.reload()" class="btn btn-primary">🔄 Try Again</button>
+                    </div>
+                `;
+            }
+        }
+
+        function populateOverview() {
+            const participants = researchData.participants || [];
+            const sessions = researchData.sessions || [];
+            const demographics = researchData.demographics || {};
+
+            document.getElementById('totalParticipants').textContent = participants.length;
+            document.getElementById('adhdCount').textContent = demographics.adhd_count || 0;
+            document.getElementById('neurotypicalCount').textContent = demographics.neurotypical_count || 0;
+            document.getElementById('otherCount').textContent = demographics.other_count || 0;
+            document.getElementById('totalSessions').textContent = sessions.length;
+
+            const totalMinutes = sessions.reduce((sum, s) => sum + (s.duration || 0), 0);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = Math.floor(totalMinutes % 60);
+            document.getElementById('totalTime').textContent = `${hours}h ${minutes}m`;
+
+            const grid = document.getElementById('participantsGrid');
+            grid.innerHTML = participants.map(p => `
+                <div class="participant-card">
+                    <div class="participant-code">${p.code}</div>
+                    <div class="participant-badge">${p.group || 'Unknown'}</div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Age</div>
+                            <div class="info-value">${p.age || 'N/A'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Gender</div>
+                            <div class="info-value">${p.gender || 'N/A'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Python Exp</div>
+                            <div class="info-value">${p.python_experience || 'N/A'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Study Program</div>
+                            <div class="info-value">${p.study_program || 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function populateDemographics() {
+            const participants = researchData.participants || [];
+            const demographics = researchData.demographics || {};
+
+            // Gender table
+            const genderTable = document.getElementById('genderTable');
+            const genderDist = demographics.gender_distribution || {};
+            genderTable.innerHTML = `
+                <tr>
+                    <td><strong>All Participants</strong></td>
+                    <td>${genderDist.all?.male || 0}</td>
+                    <td>${genderDist.all?.female || 0}</td>
+                    <td>${genderDist.all?.other || 0}</td>
+                    <td>${demographics.total_participants || 0}</td>
+                </tr>
+                <tr>
+                    <td>ADHD</td>
+                    <td>${genderDist.adhd?.male || 0}</td>
+                    <td>${genderDist.adhd?.female || 0}</td>
+                    <td>${genderDist.adhd?.other || 0}</td>
+                    <td>${demographics.adhd_count || 0}</td>
+                </tr>
+                <tr>
+                    <td>Non-ADHD</td>
+                    <td>${genderDist.neurotypical?.male || 0}</td>
+                    <td>${genderDist.neurotypical?.female || 0}</td>
+                    <td>${genderDist.neurotypical?.other || 0}</td>
+                    <td>${demographics.neurotypical_count || 0}</td>
+                </tr>
+                <tr>
+                    <td>Other</td>
+                    <td>${genderDist.other_group_group?.male || 0}</td>
+                    <td>${genderDist.other_group_group?.female || 0}</td>
+                    <td>${genderDist.other_group_group?.other || 0}</td>
+                    <td>${demographics.other_count || 0}</td>
+                </tr>
+            `;
+
+            // Age table
+            const ageTable = document.getElementById('ageTable');
+            const ageDist = demographics.age_distribution || {};
+            ageTable.innerHTML = `
+                <tr>
+                    <td><strong>All Participants</strong></td>
+                    <td>${ageDist.all?.count || 0}</td>
+                    <td>${ageDist.all?.mean || 0}</td>
+                    <td>${ageDist.all?.min || 0}</td>
+                    <td>${ageDist.all?.max || 0}</td>
+                </tr>
+                <tr>
+                    <td>ADHD</td>
+                    <td>${ageDist.adhd?.count || 0}</td>
+                    <td>${ageDist.adhd?.mean || 0}</td>
+                    <td>${ageDist.adhd?.min || 0}</td>
+                    <td>${ageDist.adhd?.max || 0}</td>
+                </tr>
+                <tr>
+                    <td>Non-ADHD</td>
+                    <td>${ageDist.neurotypical?.count || 0}</td>
+                    <td>${ageDist.neurotypical?.mean || 0}</td>
+                    <td>${ageDist.neurotypical?.min || 0}</td>
+                    <td>${ageDist.neurotypical?.max || 0}</td>
+                </tr>
+            `;
+
+            // Study Program table
+            const studyPrograms = {};
+            participants.forEach(p => {
+                const program = p.study_program || 'Not Specified';
+                if (!studyPrograms[program]) {
+                    studyPrograms[program] = { adhd: 0, neurotypical: 0, other: 0, total: 0 };
+                }
+                if (p.group === 'ADHD') {
+                    studyPrograms[program].adhd++;
+                } else if (p.group === 'Non-ADHD') {
+                    studyPrograms[program].neurotypical++;
+                } else {
+                    studyPrograms[program].other++;
+                }
+                studyPrograms[program].total++;
+            });
+
+            const studyProgramTable = document.getElementById('studyProgramTable');
+            let totalADHD = 0, totalNeuro = 0, totalOther = 0, grandTotal = 0;
+            
+            const programRows = Object.entries(studyPrograms)
+                .sort((a, b) => b[1].total - a[1].total)
+                .map(([program, counts]) => {
+                    totalADHD += counts.adhd;
+                    totalNeuro += counts.neurotypical;
+                    totalOther += counts.other;
+                    grandTotal += counts.total;
+                    return `
+                        <tr>
+                            <td><strong>${program}</strong></td>
+                            <td>${counts.adhd}</td>
+                            <td>${counts.neurotypical}</td>
+                            <td>${counts.other}</td>
+                            <td><strong>${counts.total}</strong></td>
+                        </tr>
+                    `;
+                }).join('');
+            
+            studyProgramTable.innerHTML = programRows || '<tr><td colspan="5" style="text-align: center; color: #64748b;">No data</td></tr>';
+            
+            document.getElementById('studyProgramADHD').textContent = totalADHD;
+            document.getElementById('studyProgramNon-ADHD').textContent = totalNeuro;
+            document.getElementById('studyProgramOther').textContent = totalOther;
+            document.getElementById('studyProgramTotal').textContent = grandTotal;
+
+            // Python experience table
+            const pythonExpTable = document.getElementById('pythonExpTable');
+            const pythonExp = demographics.python_experience || {};
+            pythonExpTable.innerHTML = `
+                <tr>
+                    <td><strong>All Participants</strong></td>
+                    <td>${pythonExp.all?.none || 0}</td>
+                    <td>${pythonExp.all?.beginner || 0}</td>
+                    <td>${pythonExp.all?.intermediate || 0}</td>
+                    <td>${pythonExp.all?.advanced || 0}</td>
+                </tr>
+                <tr>
+                    <td>ADHD</td>
+                    <td>${pythonExp.adhd?.none || 0}</td>
+                    <td>${pythonExp.adhd?.beginner || 0}</td>
+                    <td>${pythonExp.adhd?.intermediate || 0}</td>
+                    <td>${pythonExp.adhd?.advanced || 0}</td>
+                </tr>
+                <tr>
+                    <td>Non-ADHD</td>
+                    <td>${pythonExp.neurotypical?.none || 0}</td>
+                    <td>${pythonExp.neurotypical?.beginner || 0}</td>
+                    <td>${pythonExp.neurotypical?.intermediate || 0}</td>
+                    <td>${pythonExp.neurotypical?.advanced || 0}</td>
+                </tr>
+            `;
+
+            // Gender chart
+            const genderCtx = document.getElementById('genderChart');
+            if (charts.gender) charts.gender.destroy();
+            charts.gender = new Chart(genderCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['ADHD', 'Non-ADHD', 'Other'],
+                    datasets: [{
+                        label: 'Male',
+                        data: [
+                            genderDist.adhd?.male || 0,
+                            genderDist.neurotypical?.male || 0,
+                            genderDist.other_group?.male || 0
+                        ],
+                        backgroundColor: '#4A90E2'
+                    }, {
+                        label: 'Female',
+                        data: [
+                            genderDist.adhd?.female || 0,
+                            genderDist.neurotypical?.female || 0,
+                            genderDist.other_group_group?.female || 0
+                        ],
+                        backgroundColor: '#f472b6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Python experience chart
+            const pythonExpCtx = document.getElementById('pythonExpChart');
+            if (charts.pythonExp) charts.pythonExp.destroy();
+            charts.pythonExp = new Chart(pythonExpCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['None', 'Beginner', 'Intermediate', 'Advanced'],
+                    datasets: [{
+                        label: 'ADHD',
+                        data: [
+                            pythonExp.adhd?.none || 0,
+                            pythonExp.adhd?.beginner || 0,
+                            pythonExp.adhd?.intermediate || 0,
+                            pythonExp.adhd?.advanced || 0
+                        ],
+                        backgroundColor: '#FF6B6B'
+                    }, {
+                        label: 'Non-ADHD',
+                        data: [
+                            pythonExp.neurotypical?.none || 0,
+                            pythonExp.neurotypical?.beginner || 0,
+                            pythonExp.neurotypical?.intermediate || 0,
+                            pythonExp.neurotypical?.advanced || 0
+                        ],
+                        backgroundColor: '#10b981'
+                    }, {
+                        label: 'Other',
+                        data: [
+                            pythonExp.other_group?.none || 0,
+                            pythonExp.other_group?.beginner || 0,
+                            pythonExp.other_group?.intermediate || 0,
+                            pythonExp.other_group?.advanced || 0
+                        ],
+                        backgroundColor: '#FFA94D'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function populateAILiteracy() {
+            const participants = researchData.participants || [];
+            const aiLiteracy = researchData.ai_literacy_analysis || {};
+            const allStats = aiLiteracy.all || {};
+            const adhdStats = aiLiteracy.adhd || {};
+            const neuroStats = aiLiteracy.neurotypical || {};
+
+            // Calculate stats function
+            const calcStats = (arr) => {
+                if (arr.length === 0) return { n: 0, mean: 0, sd: 0 };
+                const scores = arr.map(p => p.score_total);
+                const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+                const variance = scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / scores.length;
+                const sd = Math.sqrt(variance);
+                return { n: arr.length, mean: mean.toFixed(3), sd: sd.toFixed(3) };
+            };
+
+            // T-test function
+            const calculateTTest = (low, high) => {
+                if (low.n === 0 || high.n === 0) return { t: 0, df: 0, p: 'N/A' };
+                const pooledVariance = ((low.n - 1) * Math.pow(low.sd, 2) + (high.n - 1) * Math.pow(high.sd, 2)) / (low.n + high.n - 2);
+                const standardError = Math.sqrt(pooledVariance * (1/low.n + 1/high.n));
+                const t = (parseFloat(low.mean) - parseFloat(high.mean)) / standardError;
+                const df = low.n + high.n - 2;
+                const p = Math.abs(t) > 2.0 ? '< 0.05' : '> 0.05';
+                return { t: t.toFixed(3), df: df, p: p };
+            };
+
+            // TABLE 2: AI Literacy Impact
+            const participantsWithLiteracy = participants.map(p => {
+                const aiLit = ((p.ai_literacy.ai_awareness || 0) + (p.ai_literacy.ai_usage || 0) + (p.ai_literacy.ai_evaluation || 0) + (p.ai_literacy.ai_ethics || 0)) / 4;
+                return { ...p, total_ai_literacy: aiLit, task_score: p.score_total || 0 };
+            }).filter(p => p.score_total > 0);
+
+            const sortedByLiteracy = [...participantsWithLiteracy].sort((a, b) => a.total_ai_literacy - b.total_ai_literacy);
+            const medianIndex = Math.floor(sortedByLiteracy.length / 2);
+            const lowAILiteracy = sortedByLiteracy.slice(0, medianIndex);
+            const highAILiteracy = sortedByLiteracy.slice(medianIndex);
+
+            const lowStats = calcStats(lowAILiteracy);
+            const highStats = calcStats(highAILiteracy);
+            const ttest = calculateTTest(lowStats, highStats);
+
+            const aiLiteracyImpactTable = document.getElementById('aiLiteracyImpactTable');
+            if (participantsWithLiteracy.length > 0) {
+                aiLiteracyImpactTable.innerHTML = `
+                    <tr>
+                        <td>Low AI Literacy Group</td>
+                        <td>${lowStats.n}</td>
+                        <td>${lowStats.mean}</td>
+                        <td>${lowStats.sd}</td>
+                        <td rowspan="2">${ttest.t}</td>
+                        <td rowspan="2">${ttest.df}</td>
+                        <td rowspan="2"><span class="${ttest.p.includes('<') ? 'significant' : 'not-significant'}">${ttest.p}</span></td>
+                    </tr>
+                    <tr>
+                        <td>High AI Literacy Group</td>
+                        <td>${highStats.n}</td>
+                        <td>${highStats.mean}</td>
+                        <td>${highStats.sd}</td>
+                    </tr>
+                `;
+            } else {
+                aiLiteracyImpactTable.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b;">No task data available yet</td></tr>';
+            }
+
+            // TABLE 3: Dimensions
+            const dimensions = ['ai_awareness', 'ai_usage', 'ai_evaluation', 'ai_ethics'];
+            const dimLabels = ['AI Awareness', 'AI Usage', 'AI Evaluation', 'AI Ethics'];
+            let dimensionsHTML = '';
+
+            dimensions.forEach((dim, idx) => {
+                const sortedByDim = [...participantsWithLiteracy].sort((a, b) => (a[dim] || 0) - (b[dim] || 0));
+                const medianIdx = Math.floor(sortedByDim.length / 2);
+                const lowDim = sortedByDim.slice(0, medianIdx);
+                const highDim = sortedByDim.slice(medianIdx);
+                
+                const lowDimStats = calcStats(lowDim);
+                const highDimStats = calcStats(highDim);
+                const dimTTest = calculateTTest(lowDimStats, highDimStats);
+                
+                dimensionsHTML += `
+                    <tr>
+                        <td rowspan="2"><strong>${dimLabels[idx]}</strong></td>
+                        <td>Low</td>
+                        <td>${lowDimStats.n}</td>
+                        <td>${lowDimStats.mean}</td>
+                        <td>${lowDimStats.sd}</td>
+                        <td rowspan="2">${dimTTest.t}</td>
+                        <td rowspan="2">${dimTTest.df}</td>
+                        <td rowspan="2"><span class="${dimTTest.p.includes('<') ? 'significant' : 'not-significant'}">${dimTTest.p}</span></td>
+                    </tr>
+                    <tr>
+                        <td>High</td>
+                        <td>${highDimStats.n}</td>
+                        <td>${highDimStats.mean}</td>
+                        <td>${highDimStats.sd}</td>
+                    </tr>
+                `;
+            });
+
+            const aiLiteracyDimensionsTable = document.getElementById('aiLiteracyDimensionsTable');
+            if (participantsWithLiteracy.length > 0) {
+                aiLiteracyDimensionsTable.innerHTML = dimensionsHTML;
+            } else {
+                aiLiteracyDimensionsTable.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #64748b;">No task data available yet</td></tr>';
+            }
+
+            // Charts
+            const radarCtx = document.getElementById('aiLiteracyRadar');
+            if (charts.aiLiteracyRadar) charts.aiLiteracyRadar.destroy();
+            charts.aiLiteracyRadar = new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['AI Awareness', 'AI Usage', 'AI Evaluation', 'AI Ethics'],
+                    datasets: [{
+                        label: 'All Participants',
+                        data: [
+                            allStats.ai_awareness?.mean || 0,
+                            allStats.ai_usage?.mean || 0,
+                            allStats.ai_evaluation?.mean || 0,
+                            allStats.ai_ethics?.mean || 0
+                        ],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { r: { beginAtZero: true, max: 15 } }
+                }
+            });
+
+            const compCtx = document.getElementById('aiLiteracyComparison');
+            if (charts.aiLiteracyComparison) charts.aiLiteracyComparison.destroy();
+            charts.aiLiteracyComparison = new Chart(compCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['AI Awareness', 'AI Usage', 'AI Evaluation', 'AI Ethics', 'Total'],
+                    datasets: [{
+                        label: 'ADHD',
+                        data: [
+                            adhdStats.ai_awareness?.mean || 0,
+                            adhdStats.ai_usage?.mean || 0,
+                            adhdStats.ai_evaluation?.mean || 0,
+                            adhdStats.ai_ethics?.mean || 0,
+                            adhdStats.total?.mean || 0
+                        ],
+                        backgroundColor: '#FF6B6B'
+                    }, {
+                        label: 'Non-ADHD',
+                        data: [
+                            neuroStats.ai_awareness?.mean || 0,
+                            neuroStats.ai_usage?.mean || 0,
+                            neuroStats.ai_evaluation?.mean || 0,
+                            neuroStats.ai_ethics?.mean || 0,
+                            neuroStats.total?.mean || 0
+                        ],
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function populatePythonKnowledge() {
+            const participants = researchData.participants || [];
+            const demographics = researchData.demographics || {};
+            const pythonExp = demographics.python_experience || {};
+
+            // Helper functions
+            const calcGroupStats = (arr, groupName, description) => {
+                if (arr.length === 0) return { group: groupName, desc: description, n: 0, mean: 0, sd: 0, scores: [] };
+                const scores = arr.map(p => p.score_total);
+                const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+                const variance = scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / scores.length;
+                const sd = Math.sqrt(variance);
+                return { group: groupName, desc: description, n: arr.length, mean: mean.toFixed(3), sd: sd.toFixed(3), scores: scores };
+            };
+
+            const calculateANOVA = (groups) => {
+                const allScores = groups.flatMap(g => g.scores);
+                const validGroups = groups.filter(g => g.n > 0);
+                if (allScores.length === 0 || validGroups.length < 2) return { F: 'N/A', p: 'N/A' };
+                const grandMean = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+                const ssBetween = groups.reduce((sum, g) => {
+                    if (g.n === 0) return sum;
+                    return sum + g.n * Math.pow(parseFloat(g.mean) - grandMean, 2);
+                }, 0);
+                const dfBetween = validGroups.length - 1;
+                if (dfBetween <= 0) return { F: 'N/A', p: 'N/A' };
+                const msBetween = ssBetween / dfBetween;
+                const ssWithin = groups.reduce((sum, g) => {
+                    return sum + g.scores.reduce((s, score) => s + Math.pow(score - parseFloat(g.mean), 2), 0);
+                }, 0);
+                const dfWithin = allScores.length - validGroups.length;
+                if (dfWithin <= 0) return { F: 'N/A', p: 'N/A' };
+                const msWithin = ssWithin / dfWithin;
+                if (msWithin === 0) return { F: 'N/A', p: 'N/A' };
+                const F = msBetween / msWithin;
+                if (!isFinite(F) || isNaN(F)) return { F: 'N/A', p: 'N/A' };
+                const p = F > 3.0 ? '< 0.05' : '> 0.05';
+                return { F: F.toFixed(3), p: p };
+            };
+
+            // TABLE 4: Python Knowledge
+            const participantsWithTask = participants.filter(p => p.score_total && p.score_total > 0);
+            const groupC = participantsWithTask.filter(p => p.python_experience === 'none');
+            const groupA = participantsWithTask.filter(p => p.python_experience === 'beginner');
+            const groupB = participantsWithTask.filter(p => p.python_experience === 'intermediate' || p.python_experience === 'advanced');
+
+            const statsC = calcGroupStats(groupC, 'Group C', 'No System Python Base');
+            const statsA = calcGroupStats(groupA, 'Group A', '3 Credits Python Fundamentals');
+            const statsB = calcGroupStats(groupB, 'Group B', '4 Credits Python Fundamentals');
+            const anova = calculateANOVA([statsA, statsB, statsC]);
+
+            const pythonKnowledgeImpactTable = document.getElementById('pythonKnowledgeImpactTable');
+            if (participantsWithTask.length > 0) {
+                pythonKnowledgeImpactTable.innerHTML = `
+                    <tr>
+                        <td>Group A</td>
+                        <td>${statsA.desc}</td>
+                        <td>${statsA.n}</td>
+                        <td>${statsA.mean}</td>
+                        <td>${statsA.sd}</td>
+                        <td rowspan="3">${anova.F}</td>
+                        <td rowspan="3"><span class="${anova.p.includes('<') ? 'significant' : 'not-significant'}">${anova.p}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Group B</td>
+                        <td>${statsB.desc}</td>
+                        <td>${statsB.n}</td>
+                        <td>${statsB.mean}</td>
+                        <td>${statsB.sd}</td>
+                    </tr>
+                    <tr>
+                        <td>Group C</td>
+                        <td>${statsC.desc}</td>
+                        <td>${statsC.n}</td>
+                        <td>${statsC.mean}</td>
+                        <td>${statsC.sd}</td>
+                    </tr>
+                `;
+            } else {
+                pythonKnowledgeImpactTable.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b;">No task data available yet</td></tr>';
+            }
+
+            // TABLE 5: Matplotlib Knowledge
+            const participantsWithMatplotlib = participantsWithTask.map(p => {
+                let matplotlibScore = 0;
+                if (p.matplotlib_q1 === 'matplotlib.pyplot' || p.matplotlib_q1 === 'pyplot') matplotlibScore++;
+                if (p.matplotlib_q2 === 'plot') matplotlibScore++;
+                if (p.matplotlib_q3 === 'title') matplotlibScore++;
+                if (p.matplotlib_q4 === 'show') matplotlibScore++;
+                if (p.matplotlib_q5 === 'true') matplotlibScore++;
+                return { ...p, matplotlib_score: matplotlibScore };
+            });
+
+            const noMatplotlib = participantsWithMatplotlib.filter(p => p.matplotlib_score <= 2);
+            const weakMatplotlib = participantsWithMatplotlib.filter(p => p.matplotlib_score >= 3 && p.matplotlib_score <= 4);
+            const goodMatplotlib = participantsWithMatplotlib.filter(p => p.matplotlib_score === 5);
+
+            const matStatsNone = calcGroupStats(noMatplotlib, 'None', 'Not in contact with Matplotlib');
+            const matStatsWeak = calcGroupStats(weakMatplotlib, 'Weak', 'Weak Matplotlib knowledge base');
+            const matStatsGood = calcGroupStats(goodMatplotlib, 'Good', 'Good Matplotlib knowledge base');
+            const matplotlibANOVA = calculateANOVA([matStatsNone, matStatsWeak, matStatsGood]);
+
+            const matplotlibKnowledgeImpactTable = document.getElementById('matplotlibKnowledgeImpactTable');
+            if (participantsWithMatplotlib.length > 0) {
+                matplotlibKnowledgeImpactTable.innerHTML = `
+                    <tr>
+                        <td>${matStatsNone.desc}</td>
+                        <td>${matStatsNone.n}</td>
+                        <td>${matStatsNone.mean}</td>
+                        <td>${matStatsNone.sd}</td>
+                        <td rowspan="3">${matplotlibANOVA.F}</td>
+                        <td rowspan="3"><span class="${matplotlibANOVA.p.includes('<') ? 'significant' : 'not-significant'}">${matplotlibANOVA.p}</span></td>
+                    </tr>
+                    <tr>
+                        <td>${matStatsWeak.desc}</td>
+                        <td>${matStatsWeak.n}</td>
+                        <td>${matStatsWeak.mean}</td>
+                        <td>${matStatsWeak.sd}</td>
+                    </tr>
+                    <tr>
+                        <td>${matStatsGood.desc}</td>
+                        <td>${matStatsGood.n}</td>
+                        <td>${matStatsGood.mean}</td>
+                        <td>${matStatsGood.sd}</td>
+                    </tr>
+                `;
+            } else {
+                matplotlibKnowledgeImpactTable.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b;">No task data available yet</td></tr>';
+            }
+
+            // Charts
+            const pythonKnowCtx = document.getElementById('pythonKnowledgeChart');
+            if (charts.pythonKnowledge) charts.pythonKnowledge.destroy();
+            charts.pythonKnowledge = new Chart(pythonKnowCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['None (Group C)', 'Beginner (Group A)', 'Intermediate/Advanced (Group B)'],
+                    datasets: [{
+                        data: [
+                            pythonExp.all?.none || 0,
+                            pythonExp.all?.beginner || 0,
+                            (pythonExp.all?.intermediate || 0) + (pythonExp.all?.advanced || 0)
+                        ],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#10b981']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const pythonByGroupCtx = document.getElementById('pythonByGroupChart');
+            if (charts.pythonByGroup) charts.pythonByGroup.destroy();
+            charts.pythonByGroup = new Chart(pythonByGroupCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['None', 'Beginner', 'Intermediate', 'Advanced'],
+                    datasets: [{
+                        label: 'ADHD',
+                        data: [
+                            pythonExp.adhd?.none || 0,
+                            pythonExp.adhd?.beginner || 0,
+                            pythonExp.adhd?.intermediate || 0,
+                            pythonExp.adhd?.advanced || 0
+                        ],
+                        backgroundColor: '#FF6B6B'
+                    }, {
+                        label: 'Non-ADHD',
+                        data: [
+                            pythonExp.neurotypical?.none || 0,
+                            pythonExp.neurotypical?.beginner || 0,
+                            pythonExp.neurotypical?.intermediate || 0,
+                            pythonExp.neurotypical?.advanced || 0
+                        ],
+                        backgroundColor: '#10b981'
+                    }, {
+                        label: 'Other',
+                        data: [
+                            pythonExp.other_group?.none || 0,
+                            pythonExp.other_group?.beginner || 0,
+                            pythonExp.other_group?.intermediate || 0,
+                            pythonExp.other_group?.advanced || 0
+                        ],
+                        backgroundColor: '#FFA94D'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function populateLLMAnalysis() {
+            const participants = researchData.participants || [];
+            const aiLiteracy = researchData.ai_literacy_analysis || {};
+            const allStats = aiLiteracy.all || {};
+            const adhdStats = aiLiteracy.adhd || {};
+            const neuroStats = aiLiteracy.neurotypical || {};
+
+            // Helper functions
+            const calcStats = (arr) => {
+                if (arr.length === 0) return { n: 0, mean: 0, sd: 0 };
+                const scores = arr.map(p => p.score_total);
+                const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+                const variance = scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / scores.length;
+                const sd = Math.sqrt(variance);
+                return { n: arr.length, mean: mean.toFixed(3), sd: sd.toFixed(3) };
+            };
+
+            const calculateTTest = (low, high) => {
+                if (low.n === 0 || high.n === 0) return { t: 0, df: 0, p: 'N/A' };
+                const pooledVariance = ((low.n - 1) * Math.pow(low.sd, 2) + (high.n - 1) * Math.pow(high.sd, 2)) / (low.n + high.n - 2);
+                const standardError = Math.sqrt(pooledVariance * (1/low.n + 1/high.n));
+                const t = (parseFloat(low.mean) - parseFloat(high.mean)) / standardError;
+                const df = low.n + high.n - 2;
+                const p = Math.abs(t) > 2.0 ? '< 0.05' : '> 0.05';
+                return { t: t.toFixed(3), df: df, p: p };
+            };
+
+            const participantsWithTask = participants.filter(p => p.score_total && p.score_total > 0);
+
+            // TABLE 6: Cognitive Level
+            const participantsWithCognitive = participantsWithTask.map(p => {
+                const cogLevel = ((p.chatgpt_cog_1 || 0) + (p.chatgpt_cog_2 || 0) + (p.chatgpt_cog_3 || 0)) / 3;
+                return { ...p, cognitive_level: cogLevel };
+            });
+
+            const sortedByCognitive = [...participantsWithCognitive].sort((a, b) => a.cognitive_level - b.cognitive_level);
+            const cogMedianIndex = Math.floor(sortedByCognitive.length / 2);
+            const lowCognitive = sortedByCognitive.slice(0, cogMedianIndex);
+            const highCognitive = sortedByCognitive.slice(cogMedianIndex);
+
+            const lowCogStats = calcStats(lowCognitive);
+            const highCogStats = calcStats(highCognitive);
+            const cogTTest = calculateTTest(lowCogStats, highCogStats);
+
+            const cognitiveLevelImpactTable = document.getElementById('cognitiveLevelImpactTable');
+            if (participantsWithCognitive.length > 0) {
+                cognitiveLevelImpactTable.innerHTML = `
+                    <tr>
+                        <td>Low cognitive level group</td>
+                        <td>${lowCogStats.n}</td>
+                        <td>${lowCogStats.mean}</td>
+                        <td>${lowCogStats.sd}</td>
+                        <td rowspan="2">${cogTTest.t}</td>
+                        <td rowspan="2">${cogTTest.df}</td>
+                        <td rowspan="2"><span class="${cogTTest.p.includes('<') ? 'significant' : 'not-significant'}">${cogTTest.p}</span></td>
+                    </tr>
+                    <tr>
+                        <td>High cognitive level group</td>
+                        <td>${highCogStats.n}</td>
+                        <td>${highCogStats.mean}</td>
+                        <td>${highCogStats.sd}</td>
+                    </tr>
+                `;
+            } else {
+                cognitiveLevelImpactTable.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b;">No task data available yet</td></tr>';
+            }
+
+            // TABLE 7: Usage Intention Impact
+            const participantsWithIntention = participantsWithTask.map(p => {
+                const intention = ((p.usage_intent_1 || 0) + (p.usage_intent_2 || 0) + (p.usage_intent_3 || 0)) / 3;
+                return { ...p, usage_intention: intention };
+            });
+
+            const sortedByIntention = [...participantsWithIntention].sort((a, b) => a.usage_intention - b.usage_intention);
+            const intentMedianIndex = Math.floor(sortedByIntention.length / 2);
+            const lowIntention = sortedByIntention.slice(0, intentMedianIndex);
+            const highIntention = sortedByIntention.slice(intentMedianIndex);
+
+            const lowIntentStats = calcStats(lowIntention);
+            const highIntentStats = calcStats(highIntention);
+            const intentTTest = calculateTTest(lowIntentStats, highIntentStats);
+
+            const usageIntentionImpactTable = document.getElementById('usageIntentionImpactTable');
+            if (participantsWithIntention.length > 0) {
+                usageIntentionImpactTable.innerHTML = `
+                    <tr>
+                        <td>Low Intention Group</td>
+                        <td>${lowIntentStats.n}</td>
+                        <td>${lowIntentStats.mean}</td>
+                        <td>${lowIntentStats.sd}</td>
+                        <td rowspan="2">${intentTTest.t}</td>
+                        <td rowspan="2">${intentTTest.df}</td>
+                        <td rowspan="2"><span class="${intentTTest.p.includes('<') ? 'significant' : 'not-significant'}">${intentTTest.p}</span></td>
+                    </tr>
+                    <tr>
+                        <td>High Intention Group</td>
+                        <td>${highIntentStats.n}</td>
+                        <td>${highIntentStats.mean}</td>
+                        <td>${highIntentStats.sd}</td>
+                    </tr>
+                `;
+            } else {
+                usageIntentionImpactTable.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b;">No task data available yet</td></tr>';
+            }
+
+            // TABLE 8: Pre/Post Usage Intention
+            const participantsWithPrePost = participants.filter(p => 
+                p.usage_intent_1 && p.usage_intent_2 && p.usage_intent_3 &&
+                p.usage_intent_post_1 && p.usage_intent_post_2 && p.usage_intent_post_3
+            );
+
+            const usageIntentionPrePostTable = document.getElementById('usageIntentionPrePostTable');
+            
+            if (participantsWithPrePost.length > 0) {
+                const preScores = participantsWithPrePost.map(p => ((p.usage_intent_1 || 0) + (p.usage_intent_2 || 0) + (p.usage_intent_3 || 0)) / 3);
+                const postScores = participantsWithPrePost.map(p => ((p.usage_intent_post_1 || 0) + (p.usage_intent_post_2 || 0) + (p.usage_intent_post_3 || 0)) / 3);
+                
+                const preMean = preScores.reduce((a, b) => a + b, 0) / preScores.length;
+                const postMean = postScores.reduce((a, b) => a + b, 0) / postScores.length;
+                
+                const preVariance = preScores.reduce((sum, score) => sum + Math.pow(score - preMean, 2), 0) / preScores.length;
+                const preSd = Math.sqrt(preVariance);
+                const postVariance = postScores.reduce((sum, score) => sum + Math.pow(score - postMean, 2), 0) / postScores.length;
+                const postSd = Math.sqrt(postVariance);
+                
+                const differences = preScores.map((pre, i) => postScores[i] - pre);
+                const meanDiff = differences.reduce((a, b) => a + b, 0) / differences.length;
+                const diffVariance = differences.reduce((sum, diff) => sum + Math.pow(diff - meanDiff, 2), 0) / differences.length;
+                const diffSd = Math.sqrt(diffVariance);
+                const standardError = diffSd / Math.sqrt(differences.length);
+                const tValue = meanDiff / standardError;
+                const df = differences.length - 1;
+                const pValue = Math.abs(tValue) > 2.0 ? '< 0.05' : '> 0.05';
+                
+                usageIntentionPrePostTable.innerHTML = `
+                    <tr>
+                        <td>Pre-test of intention to use</td>
+                        <td>${participantsWithPrePost.length}</td>
+                        <td>${preMean.toFixed(3)}</td>
+                        <td>${preSd.toFixed(3)}</td>
+                        <td rowspan="2">${tValue.toFixed(3)}</td>
+                        <td rowspan="2">${df}</td>
+                        <td rowspan="2"><span class="${pValue.includes('<') ? 'significant' : 'not-significant'}">${pValue}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Post-test of intention to use</td>
+                        <td>${participantsWithPrePost.length}</td>
+                        <td>${postMean.toFixed(3)}</td>
+                        <td>${postSd.toFixed(3)}</td>
+                    </tr>
+                `;
+            } else {
+                const participantsWithPre = participants.filter(p => p.usage_intent_1 && p.usage_intent_2 && p.usage_intent_3);
+                
+                if (participantsWithPre.length > 0) {
+                    const preScores = participantsWithPre.map(p => ((p.usage_intent_1 || 0) + (p.usage_intent_2 || 0) + (p.usage_intent_3 || 0)) / 3);
+                    const preMean = preScores.reduce((a, b) => a + b, 0) / preScores.length;
+                    const preVariance = preScores.reduce((sum, score) => sum + Math.pow(score - preMean, 2), 0) / preScores.length;
+                    const preSd = Math.sqrt(preVariance);
+                    
+                    usageIntentionPrePostTable.innerHTML = `
+                        <tr>
+                            <td>Pre-test of intention to use</td>
+                            <td>${participantsWithPre.length}</td>
+                            <td>${preMean.toFixed(3)}</td>
+                            <td>${preSd.toFixed(3)}</td>
+                            <td colspan="3" style="text-align: center; color: #64748b;">Post-test pending</td>
+                        </tr>
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: #f59e0b; background: #fef3c7; padding: 15px;">
+                                ⏳ <strong>Post-test data collection in progress.</strong> Participants must complete the 50-minute matplotlib task before post-test survey.
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    usageIntentionPrePostTable.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b;">No data available yet</td></tr>';
+                }
+            }
+
+            // Charts
+            const llmCognitiveCtx = document.getElementById('llmCognitiveChart');
+            if (charts.llmCognitive) charts.llmCognitive.destroy();
+            charts.llmCognitive = new Chart(llmCognitiveCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['All', 'ADHD', 'Non-ADHD'],
+                    datasets: [{
+                        label: 'Multi-LLM Cognitive Level',
+                        data: [
+                            allStats.chatgpt_cognitive?.mean || 0,
+                            adhdStats.chatgpt_cognitive?.mean || 0,
+                            neuroStats.chatgpt_cognitive?.mean || 0
+                        ],
+                        backgroundColor: '#FF6B6B'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const usageIntentionCtx = document.getElementById('usageIntentionChart');
+            if (charts.usageIntention) charts.usageIntention.destroy();
+            charts.usageIntention = new Chart(usageIntentionCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['All', 'ADHD', 'Non-ADHD'],
+                    datasets: [{
+                        label: 'Pre-test',
+                        data: [
+                            allStats.usage_intention_pre?.mean || 0,
+                            adhdStats.usage_intention_pre?.mean || 0,
+                            neuroStats.usage_intention_pre?.mean || 0
+                        ],
+                        backgroundColor: '#94a3b8'
+                    }, {
+                        label: 'Post-test',
+                        data: [0, 0, 0],
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 5 } }
+                }
+            });
+        }
+
+        function populateComparisons() {
+            const aiLiteracy = researchData.ai_literacy_analysis || {};
+            const adhdStats = aiLiteracy.adhd || {};
+            const neuroStats = aiLiteracy.neurotypical || {};
+            const demographics = researchData.demographics || {};
+            const pythonExp = demographics.python_experience || {};
+
+            const compAICtx = document.getElementById('comparisonAILiteracy');
+            if (charts.comparisonAI) charts.comparisonAI.destroy();
+            charts.comparisonAI = new Chart(compAICtx, {
+                type: 'bar',
+                data: {
+                    labels: ['AI Awareness', 'AI Usage', 'AI Evaluation', 'AI Ethics', 'Total'],
+                    datasets: [{
+                        label: 'ADHD',
+                        data: [
+                            adhdStats.ai_awareness?.mean || 0,
+                            adhdStats.ai_usage?.mean || 0,
+                            adhdStats.ai_evaluation?.mean || 0,
+                            adhdStats.ai_ethics?.mean || 0,
+                            adhdStats.total?.mean || 0
+                        ],
+                        backgroundColor: '#FF6B6B'
+                    }, {
+                        label: 'Non-ADHD',
+                        data: [
+                            neuroStats.ai_awareness?.mean || 0,
+                            neuroStats.ai_usage?.mean || 0,
+                            neuroStats.ai_evaluation?.mean || 0,
+                            neuroStats.ai_ethics?.mean || 0,
+                            neuroStats.total?.mean || 0
+                        ],
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const compPythonCtx = document.getElementById('comparisonPython');
+            if (charts.comparisonPython) charts.comparisonPython.destroy();
+            charts.comparisonPython = new Chart(compPythonCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['None', 'Beginner', 'Intermediate', 'Advanced'],
+                    datasets: [{
+                        label: 'ADHD',
+                        data: [
+                            pythonExp.adhd?.none || 0,
+                            pythonExp.adhd?.beginner || 0,
+                            pythonExp.adhd?.intermediate || 0,
+                            pythonExp.adhd?.advanced || 0
+                        ],
+                        backgroundColor: '#FF6B6B'
+                    }, {
+                        label: 'Non-ADHD',
+                        data: [
+                            pythonExp.neurotypical?.none || 0,
+                            pythonExp.neurotypical?.beginner || 0,
+                            pythonExp.neurotypical?.intermediate || 0,
+                            pythonExp.neurotypical?.advanced || 0
+                        ],
+                        backgroundColor: '#10b981'
+                    }, {
+                        label: 'Other',
+                        data: [
+                            pythonExp.other_group?.none || 0,
+                            pythonExp.other_group?.beginner || 0,
+                            pythonExp.other_group?.intermediate || 0,
+                            pythonExp.other_group?.advanced || 0
+                        ],
+                        backgroundColor: '#FFA94D'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const compCognitiveCtx = document.getElementById('comparisonCognitive');
+            if (charts.comparisonCognitive) charts.comparisonCognitive.destroy();
+            charts.comparisonCognitive = new Chart(compCognitiveCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Multi-LLM Cognitive Level'],
+                    datasets: [{
+                        label: 'ADHD',
+                        data: [adhdStats.chatgpt_cognitive?.mean || 0],
+                        backgroundColor: '#FF6B6B'
+                    }, {
+                        label: 'Non-ADHD',
+                        data: [neuroStats.chatgpt_cognitive?.mean || 0],
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const compIntentionCtx = document.getElementById('comparisonIntention');
+            if (charts.comparisonIntention) charts.comparisonIntention.destroy();
+            charts.comparisonIntention = new Chart(compIntentionCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Usage Intention (Pre)'],
+                    datasets: [{
+                        label: 'ADHD',
+                        data: [adhdStats.usage_intention_pre?.mean || 0],
+                        backgroundColor: '#FF6B6B'
+                    }, {
+                        label: 'Non-ADHD',
+                        data: [neuroStats.usage_intention_pre?.mean || 0],
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function populateSessions() {
+            const participants = researchData.participants || [];
+            const sessionsTable = document.getElementById('sessionsTable');
+            
+            if (participants.length === 0) {
+                sessionsTable.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b;">No research sessions yet</td></tr>';
+                return;
+            }
+            
+            sessionsTable.innerHTML = participants
+                .filter(p => p.task_completed)
+                .slice(0, 20)
+                .map((p, index) => {
+                    const duration = p.task_elapsed_time ? `${Math.floor(p.task_elapsed_time / 60)}m ${p.task_elapsed_time % 60}s` : 'N/A';
+                    const date = p.signup_date ? new Date(p.signup_date).toLocaleDateString() : 'N/A';
+                    const group = p.group || 'Unknown';
+                    const score = p.score_total || 'N/A';
+                    
+                    return `
+                        <tr>
+                            <td style="font-family: monospace;">${index + 1}</td>
+                            <td><strong>${p.code || 'Anonymous'}</strong></td>
+                            <td><span class="participant-badge">${group}</span></td>
+                            <td>${date}</td>
+                            <td>${duration}</td>
+                            <td><strong>${score}</strong></td>
+                        </tr>
+                    `;
+                }).join('');
+        }
+        function exportCSV() {
+            window.location.href = '/api/research/export/csv';
+        }
+
+        function refreshData() {
+            location.reload();
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>

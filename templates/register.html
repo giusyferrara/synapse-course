@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — Synapse</title>
+    <meta name="description" content="Create your free Synapse learning account">
+    <link rel="icon" href="/icons/butterfly_logo_bright.svg">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --purple: #667eea;
+            --purple-dark: #764ba2;
+            --green: #10b981;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --error: #ef4444;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--white);
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        /* LEFT PANEL */
+        .left-panel {
+            background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .left-panel::before {
+            content: '';
+            position: absolute;
+            top: -100px; right: -100px;
+            width: 400px; height: 400px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 50px;
+            z-index: 1;
+        }
+
+        .brand img, .brand svg { width: 140px !important; height: 140px !important; filter: drop-shadow(0 4px 12px rgba(255,255,255,0.2)); }
+        .brand-name { font-size: 60px; font-weight: 800; color: white; letter-spacing: -2px; }
+
+        .left-content { z-index: 1; }
+
+        .left-content h1 {
+            font-size: 38px;
+            font-weight: 700;
+            color: white;
+            line-height: 1.2;
+            letter-spacing: -1px;
+            margin-bottom: 20px;
+        }
+
+        .left-content p {
+            font-size: 16px;
+            color: rgba(255,255,255,0.8);
+            line-height: 1.6;
+            margin-bottom: 36px;
+        }
+
+        .plan-card {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .plan-card h3 {
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .plan-feature {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255,255,255,0.85);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .plan-feature::before { content: '✓'; color: #86efac; font-weight: 700; }
+
+        /* RIGHT PANEL */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 50px 40px;
+            overflow-y: auto;
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .form-header {
+            margin-bottom: 30px;
+        }
+
+        .form-header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        .form-header p {
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        .form-header a { color: var(--purple); text-decoration: none; font-weight: 500; }
+
+        .form-group { margin-bottom: 18px; }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 7px;
+        }
+
+        .label-optional {
+            font-weight: 400;
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-left: 4px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 13px 16px;
+            font-size: 15px;
+            font-family: 'DM Sans', sans-serif;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            color: var(--text);
+        }
+
+        input:focus {
+            border-color: var(--purple);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        input.error { border-color: var(--error); }
+
+        .error-msg {
+            display: none;
+            color: var(--error);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .error-msg.visible { display: block; }
+
+        /* ND Section */
+        .nd-section {
+            background: linear-gradient(135deg, rgba(102,126,234,0.06) 0%, rgba(118,75,162,0.06) 100%);
+            border: 1px solid rgba(102,126,234,0.2);
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 18px;
+        }
+
+        .nd-section h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--purple-dark);
+            margin-bottom: 6px;
+        }
+
+        .nd-section p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .nd-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .nd-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text);
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .nd-option input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            accent-color: var(--purple);
+            padding: 0;
+            border: none;
+        }
+
+        .nd-option:has(input:checked) {
+            border-color: var(--purple);
+            background: rgba(102,126,234,0.05);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--green) 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+            margin-top: 6px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+        .spinner {
+            display: none;
+            width: 20px; height: 20px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .alert {
+            padding: 13px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 18px;
+            display: none;
+        }
+
+        .alert.error {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #dc2626;
+            display: block;
+        }
+
+        .alert.success {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #059669;
+            display: block;
+        }
+
+        .terms {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 14px;
+            line-height: 1.5;
+        }
+
+        .pw-wrap { position: relative; }
+        .pw-wrap input { padding-right: 44px !important; }
+        .toggle-eye {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; font-size: 18px;
+            padding: 4px; color: #888; width: auto; margin: 0;
+        }
+        .toggle-eye:hover { color: #7a5af8; }
+        .gen-btn {
+            margin-top: 8px; padding: 8px 12px; background: #f0ecff;
+            color: #7a5af8; border: 1px solid #d4c9fa; border-radius: 8px;
+            font-size: 13px; cursor: pointer; width: auto; font-weight: 500;
+        }
+        .gen-btn:hover { background: #e5dbff; }
+        .pw-requirements {
+            margin-top: 10px; padding: 10px 12px; background: #f8f9fd;
+            border-radius: 8px; font-size: 12px;
+        }
+        .pw-req { display: flex; align-items: center; gap: 6px; margin: 3px 0; color: #888; transition: color .2s; }
+        .pw-req.ok { color: #2e7d32; }
+        .pw-req-icon { font-size: 13px; width: 14px; }
+        .match-hint { font-size: 12px; margin-top: 6px; font-weight: 500; }
+        .match-hint.ok { color: #2e7d32; }
+        .match-hint.no { color: #c62828; }
+        .strength-bar {
+            height: 4px;
+            border-radius: 2px;
+            background: var(--border);
+            margin-top: 6px;
+            overflow: hidden;
+        }
+
+        .strength-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s, background 0.3s;
+            width: 0%;
+        }
+
+        @media (max-width: 768px) {
+            body { grid-template-columns: 1fr; }
+            .left-panel { display: none; }
+            .right-panel { padding: 36px 24px; }
+            .nd-options { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- LEFT PANEL -->
+<div class="left-panel">
+    <div class="brand">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="140" height="140">
+  <defs>
+    <linearGradient id="wingLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#764ba2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f093fb;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="wingRight" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#00f2fe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#43e97b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <g transform="rotate(8 100 100)">
+    <ellipse cx="55" cy="65" rx="48" ry="60" fill="url(#wingLeft)" transform="rotate(-28 55 65)"/>
+    <ellipse cx="60" cy="70" rx="28" ry="38" fill="#ffffff" opacity="0.4" transform="rotate(-28 60 70)"/>
+    <ellipse cx="145" cy="65" rx="48" ry="60" fill="url(#wingRight)" transform="rotate(28 145 65)"/>
+    <ellipse cx="140" cy="70" rx="28" ry="38" fill="#ffffff" opacity="0.4" transform="rotate(28 140 70)"/>
+    <ellipse cx="62" cy="138" rx="42" ry="52" fill="url(#wingRight)" transform="rotate(-45 62 138)"/>
+    <ellipse cx="67" cy="135" rx="24" ry="32" fill="#ffffff" opacity="0.35" transform="rotate(-45 67 135)"/>
+    <ellipse cx="138" cy="138" rx="42" ry="52" fill="url(#wingLeft)" transform="rotate(45 138 138)"/>
+    <ellipse cx="133" cy="135" rx="24" ry="32" fill="#ffffff" opacity="0.35" transform="rotate(45 133 135)"/>
+    <ellipse cx="100" cy="100" rx="14" ry="70" fill="#2d3748"/>
+    <ellipse cx="100" cy="100" rx="12" ry="68" fill="url(#wingLeft)"/>
+    <ellipse cx="97" cy="95" rx="6" ry="60" fill="#ffffff" opacity="0.3"/>
+    <circle cx="100" cy="32" r="16" fill="#2d3748"/>
+    <circle cx="100" cy="32" r="14" fill="#667eea"/>
+    <circle cx="95" cy="30" r="3" fill="#ffffff" opacity="0.9"/>
+    <circle cx="105" cy="30" r="3" fill="#ffffff" opacity="0.9"/>
+    <circle cx="96" cy="29" r="1.5" fill="#2d3748"/>
+    <circle cx="106" cy="29" r="1.5" fill="#2d3748"/>
+    <path d="M 100 18 Q 88 8 82 0" stroke="#667eea" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="82" cy="0" r="5" fill="#667eea"/>
+    <path d="M 100 18 Q 112 8 118 0" stroke="#4facfe" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="118" cy="0" r="5" fill="#4facfe"/>
+  </g>
+</svg>
+        <span class="brand-name">Synapse</span>
+    </div>
+    <div class="left-content">
+        <h1>Start learning smarter today 🚀</h1>
+        <p>Join hundreds of learners building real skills in Java, security, and secure coding — at their own pace.</p>
+
+        <div class="plan-card">
+            <h3>🆓 Free — Start learning today</h3>
+            <div class="plan-feature">Python: from basics to forensics &amp; OSINT</div>
+            <div class="plan-feature">Java Secure Development: comprehensive curriculum</div>
+            <div class="plan-feature">MCP-orchestrated AI tutor (Claude, GPT-4, Gemini)</div>
+            <div class="plan-feature">Colour-coded flowcharts &amp; visual slides</div>
+            <div class="plan-feature">Personal progress tracking</div>
+            <div class="plan-feature">Inclusive learning experience</div>
+        </div>
+    </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="right-panel">
+    <div class="form-container">
+
+        <div class="form-header">
+            <h2>Create your account</h2>
+            <p>Already have one? <a href="/login">Sign in →</a></p>
+        </div>
+
+        <div id="alertBox" class="alert"></div>
+
+        <form id="registerForm" onsubmit="handleRegister(event)">
+
+            <div class="form-group">
+                <label for="display_name">Display name</label>
+                <input type="text" id="display_name" placeholder="How should we call you?" required autocomplete="name">
+                <span class="error-msg" id="nameError"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email address</label>
+                <input type="email" id="email" placeholder="you@example.com" required autocomplete="email">
+                <span class="error-msg" id="emailError"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="pw-wrap">
+                    <input type="password" id="password" placeholder="At least 8 characters" required autocomplete="new-password" oninput="updatePwUI()">
+                    <button type="button" class="toggle-eye" data-target="password" aria-label="Show password">👁</button>
+                </div>
+                <button type="button" class="gen-btn" id="genPwBtn">🎲 Generate secure password</button>
+                <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+                <div class="pw-requirements" id="pwReqs">
+                    <div class="pw-req" data-check="length"><span class="pw-req-icon">○</span> At least 8 characters</div>
+                    <div class="pw-req" data-check="upper"><span class="pw-req-icon">○</span> One uppercase (A-Z)</div>
+                    <div class="pw-req" data-check="lower"><span class="pw-req-icon">○</span> One lowercase (a-z)</div>
+                    <div class="pw-req" data-check="digit"><span class="pw-req-icon">○</span> One digit (0-9)</div>
+                    <div class="pw-req" data-check="special"><span class="pw-req-icon">○</span> One special character (!@#$%...)</div>
+                </div>
+                <span class="error-msg" id="passwordError"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="password2">Confirm password</label>
+                <div class="pw-wrap">
+                    <input type="password" id="password2" placeholder="Repeat your password" required autocomplete="new-password" oninput="updatePwUI()">
+                    <button type="button" class="toggle-eye" data-target="password2" aria-label="Show password">👁</button>
+                </div>
+                <div class="match-hint" id="matchHint"></div>
+                <span class="error-msg" id="password2Error"></span>
+            </div>
+
+            <!-- NEURODIVERGENT SECTION -->
+            <div class="nd-section">
+                <h4>💜 Accessibility Profile <span class="label-optional">(optional, private)</span></h4>
+                <p>Help us personalise your experience. This is completely optional and never shared.</p>
+                <div class="nd-options">
+                    <label class="nd-option">
+                        <input type="checkbox" name="nd_type" value="adhd"> ADHD
+                    </label>
+                    <label class="nd-option">
+                        <input type="checkbox" name="nd_type" value="dyslexia"> Dyslexia
+                    </label>
+                    <label class="nd-option">
+                        <input type="checkbox" name="nd_type" value="autism"> Autism
+                    </label>
+                    <label class="nd-option">
+                        <input type="checkbox" name="nd_type" value="prefer_not"> Prefer not to say
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn">
+                <span id="btnText">🚀 Create free account</span>
+                <div class="spinner" id="spinner"></div>
+            </button>
+
+        </form>
+
+        <p class="terms">
+            By creating an account you agree to our Terms of Service.<br>
+            Your data is stored securely and never sold.
+        </p>
+
+        <div style="margin-top: 20px; text-align: center;">
+            <p style="font-size: 13px; color: var(--text-muted);">
+                <a href="/research/signup" style="display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#10b981,#059669);color:white;border-radius:14px;font-size:18px;font-weight:700;text-decoration:none;box-shadow:0 4px 15px rgba(16,185,129,0.4);margin-top:10px;">🧪 Join Research Study</a>
+            </p>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function updatePwUI() {
+    const pw = document.getElementById("password").value;
+    const pw2 = document.getElementById("password2").value;
+
+    const reqs = {
+        length: pw.length >= 8,
+        upper: /[A-Z]/.test(pw),
+        lower: /[a-z]/.test(pw),
+        digit: /\d/.test(pw),
+        special: /[!@#$%^&*()_+\-=\[\]{}|;:'",.<>\/?`~]/.test(pw)
+    };
+    Object.keys(reqs).forEach(k => {
+        const el = document.querySelector(`.pw-req[data-check="${k}"]`);
+        if (el) {
+            el.classList.toggle("ok", reqs[k]);
+            el.querySelector(".pw-req-icon").textContent = reqs[k] ? "✅" : "○";
+        }
+    });
+
+    const fill = document.getElementById("strengthFill");
+    if (fill) {
+        let s = 0;
+        s += Math.min(pw.length * 4, 40);
+        if (reqs.upper) s += 10;
+        if (reqs.lower) s += 10;
+        if (reqs.digit) s += 10;
+        if (reqs.special) s += 15;
+        if (pw.length >= 12) s += 10;
+        if (/(.)\1{2,}/.test(pw)) s -= 15;
+        s = Math.max(0, Math.min(100, s));
+        fill.style.width = s + "%";
+        let color = "#e74c3c";
+        if (s >= 40) color = "#f39c12";
+        if (s >= 70) color = "#2ecc71";
+        if (s >= 90) color = "#27ae60";
+        fill.style.background = color;
+    }
+
+    const mh = document.getElementById("matchHint");
+    if (mh) {
+        if (!pw2) { mh.textContent = ""; mh.className = "match-hint"; }
+        else if (pw === pw2) { mh.textContent = "✓ Passwords match"; mh.className = "match-hint ok"; }
+        else { mh.textContent = "✗ Passwords do not match"; mh.className = "match-hint no"; }
+    }
+}
+
+function checkStrength(val) {
+    const fill = document.getElementById('strengthFill');
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const pct = (score / 4) * 100;
+    const colors = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'];
+    fill.style.width = pct + '%';
+    fill.style.background = colors[score - 1] || '#e2e8f0';
+}
+
+async function handleRegister(e) {
+    e.preventDefault();
+
+    const display_name = document.getElementById('display_name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const password2 = document.getElementById('password2').value;
+    const alertBox = document.getElementById('alertBox');
+    const btn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const spinner = document.getElementById('spinner');
+
+    // Reset errors
+    alertBox.className = 'alert';
+    alertBox.textContent = '';
+    document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('visible'));
+
+    // Validate
+    if (password !== password2) {
+        document.getElementById('password2Error').textContent = 'Passwords do not match';
+        document.getElementById('password2Error').classList.add('visible');
+        return;
+    }
+
+    if (password.length < 8) {
+        document.getElementById('passwordError').textContent = 'Password must be at least 8 characters';
+        document.getElementById('passwordError').classList.add('visible');
+        return;
+    }
+
+    // Collect ND types
+    const ndChecked = [...document.querySelectorAll('input[name="nd_type"]:checked')].map(c => c.value);
+    const nd_type = ndChecked.join(',') || null;
+    const is_neurodivergent = ndChecked.length > 0 && !ndChecked.includes('prefer_not');
+
+    // Loading
+    btn.disabled = true;
+    btnText.style.display = 'none';
+    spinner.style.display = 'block';
+
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ display_name, email, password, nd_type, is_neurodivergent })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            alertBox.className = 'alert success';
+            alertBox.textContent = '✅ Account created! Redirecting to your dashboard...';
+            localStorage.setItem('synapse_user', JSON.stringify(data.user));
+            setTimeout(() => window.location.href = '/dashboard', 1200);
+        } else {
+            alertBox.className = 'alert error';
+            alertBox.textContent = data.message || 'Registration failed. Please try again.';
+            btn.disabled = false;
+            btnText.style.display = 'block';
+            spinner.style.display = 'none';
+        }
+    } catch (err) {
+        alertBox.className = 'alert error';
+        alertBox.textContent = 'Connection error. Please try again.';
+        btn.disabled = false;
+        btnText.style.display = 'block';
+        spinner.style.display = 'none';
+    }
+}
+
+document.querySelectorAll(".toggle-eye").forEach(function(b){
+    b.addEventListener("click", function(){
+        const t = document.getElementById(b.dataset.target);
+        t.type = t.type === "password" ? "text" : "password";
+        b.textContent = t.type === "password" ? "👁" : "🙈";
+    });
+});
+
+const genBtn = document.getElementById("genPwBtn");
+if (genBtn) {
+    genBtn.addEventListener("click", function(){
+        const up = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const lo = "abcdefghjkmnpqrstuvwxyz";
+        const dg = "23456789";
+        const sp = "!@#$%^&*_-+=";
+        const all = up + lo + dg + sp;
+        const rand = s => s[Math.floor(Math.random() * s.length)];
+        let pw = [rand(up), rand(lo), rand(dg), rand(sp)];
+        for (let i = 0; i < 12; i++) pw.push(rand(all));
+        for (let i = pw.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pw[i], pw[j]] = [pw[j], pw[i]];
+        }
+        const generated = pw.join("");
+        const p1 = document.getElementById("password");
+        const p2 = document.getElementById("password2");
+        p1.value = generated;
+        p2.value = generated;
+        p1.type = "text"; p2.type = "text";
+        document.querySelectorAll(".toggle-eye").forEach(b => b.textContent = "🙈");
+        updatePwUI();
+    });
+}
+
+document.addEventListener("DOMContentLoaded", updatePwUI);
+</script>
+
+</body>
+</html>

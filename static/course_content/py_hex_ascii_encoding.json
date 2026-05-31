@@ -1,0 +1,1599 @@
+{
+  "course_id": "py_hex_ascii_encoding",
+  "title": "Hex, ASCII & Binary Forensics",
+  "description": "Master hexadecimal, ASCII, binary, and encoding systems — the foundation of all digital forensics, malware analysis, and reverse engineering.",
+  "difficulty": "BEGINNER",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "py_syntax_output",
+    "py_variables_datatypes"
+  ],
+  "learning_outcomes": [
+    "Convert between decimal, binary, hexadecimal, and octal number systems",
+    "Understand the ASCII table and map characters to their numeric codes",
+    "Read and interpret hex dumps of files and network packets",
+    "Use Python built-in functions: hex(), bin(), oct(), ord(), chr(), int()",
+    "Encode and decode text using UTF-8, Latin-1, and Base64",
+    "Detect file types using magic bytes (file signatures)",
+    "Perform XOR encryption and decryption on byte data",
+    "Analyse binary data for hidden messages and forensic evidence",
+    "Use the struct module to unpack binary file headers",
+    "Build forensic tools that process raw byte data"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins. Connects every concept to digital forensics.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Hex and binary can look intimidating — like learning a new alphabet! Want me to break down just one conversion step by step?",
+      "idle_90_seconds": "Still thinking? That is totally fine. Think of hex like shorthand for binary, the way abbreviations shorten long words.",
+      "idle_180_seconds": "No rush at all! Want to try a simpler warm-up first? Sometimes starting with decimal-to-binary builds confidence for everything else.",
+      "first_error": "Almost! Hex conversions trip up everyone at first. The most common mistake is forgetting hex uses A-F after 9. Let me show you...",
+      "repeated_errors": "This is a tough concept — you are not alone! Let me walk through it character by character with a completely different example.",
+      "after_success": "Brilliant! You just did what forensic analysts do every day — reading raw data most people cannot understand!"
+    },
+    "encouragement_phrases": [
+      "You are reading hex like a forensic analyst now!",
+      "That binary conversion was spot-on — computers think exactly this way!",
+      "You just decoded raw bytes — malware analysts use this exact skill!",
+      "Every file on every computer is just bytes — and you can read them now!",
+      "That XOR decryption was textbook reverse engineering!",
+      "File signatures detected correctly — you would spot disguised malware!",
+      "Base64 decoded! This is how email attachments and web tokens work!",
+      "You are building the foundation ALL advanced forensics depends on!"
+    ],
+    "explanation_styles": {
+      "analogy": "Think of number systems like languages. Decimal is English, binary is Morse code, hex is shorthand. The number 255 is the same in FF (hex) and 11111111 (binary).",
+      "visual": "Picture a byte as 8 light switches. Each switch is ON(1) or OFF(0). Group into two sets of 4 — each group becomes one hex digit. 1111 0000 = F0.",
+      "step_by_step": "To convert decimal to hex: (1) Divide by 16, (2) Remainder is the hex digit, (3) If remainder > 9 use A-F, (4) Repeat, (5) Read bottom to top.",
+      "code_trace": "ord('A') → ASCII table → position 65 → hex(65) → 65/16=4r1 → '0x41'. Letter A is byte 0x41 in every file.",
+      "comparison": "ASCII = 1 byte, 128 chars, English only. UTF-8 = 1-4 bytes, 149,000+ chars, every language. ASCII is a subset of UTF-8."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "py_hex_ascii_encoding_lesson_1",
+      "title": "Hex, ASCII & Binary Forensics",
+      "theory": {
+        "introduction": "Every file on your computer — every photo, document, and executable — is just a sequence of bytes. A byte is a number from 0 to 255. When forensic investigators examine a hard drive, when malware analysts reverse-engineer a virus, when network engineers inspect packets — they are all reading raw bytes.\n\nBut humans do not naturally think in bytes. We think in letters and words. So computer science invented translation systems: ASCII maps numbers to characters (65 = 'A'), hexadecimal gives us a compact way to write binary data (0xFF instead of 11111111), and encoding systems like UTF-8 and Base64 let us transmit any data anywhere.\n\nThis course teaches you to think like a computer. You will learn to convert between number systems fluently, read hex dumps, detect file types from their magic bytes, decrypt XOR-encoded data, and build Python forensic tools that process raw binary evidence. These are not abstract skills — they are what separates someone who uses security tools from someone who BUILDS them.",
+        "why_important": "Every advanced cybersecurity skill depends on understanding bytes and encoding. Malware hides by XOR-encrypting its payload — you need hex skills to decrypt it. Forensic examiners read hex dumps to find deleted data. Network analysts inspect packet bytes to detect intrusions. Without hex and encoding skills, you are limited to running other people's tools. With them, you can build your own.",
+        "key_concepts": [
+          {
+            "concept": "Binary — The Language Computers Actually Speak",
+            "explanation": "Computers only understand two states: ON (1) and OFF (0). Every piece of data is stored as sequences of 1s and 0s called binary. A single binary digit is a 'bit'. Eight bits make a 'byte' (values 0-255). Binary is base-2: each position doubles from right to left (1, 2, 4, 8, 16, 32, 64, 128). To convert binary 10110 to decimal: 0x1 + 1x2 + 1x4 + 0x8 + 1x16 = 22.",
+            "example": "number = 0b10110  # Binary literal\nprint(number)      # Output: 22\nprint(bin(22))     # Output: '0b10110'\nprint(bin(255))    # Output: '0b11111111'\n\n# Count bits in a byte\nbyte_val = 0b11001010\nprint(f'Binary: {bin(byte_val)}')\nprint(f'Decimal: {byte_val}')\nprint(f'Number of 1-bits: {bin(byte_val).count(\"1\")}')",
+            "ai_hint": "Think of binary like a row of light switches. 8 switches = 1 byte. The rightmost switch is worth 1, the next 2, then 4, 8, 16, 32, 64, 128."
+          },
+          {
+            "concept": "Hexadecimal — The Forensic Analyst's Shorthand",
+            "explanation": "Hex (base-16) uses digits 0-9 plus letters A-F (A=10 through F=15). Each hex digit represents exactly 4 binary bits, so one byte is always exactly two hex digits. FF hex = 11111111 binary = 255 decimal. Forensic tools display data in hex because it is compact and aligns perfectly with byte boundaries. Python uses the 0x prefix.",
+            "example": "print(hex(255))    # '0xff'\nprint(hex(10))     # '0xa'\nprint(0xFF)        # 255\nprint(0x41)        # 65 (ASCII 'A')\n\nfor val in [0, 15, 16, 255]:\n    print(f'Dec: {val:3d} | Hex: {hex(val):5s} | Bin: {bin(val)}')",
+            "ai_hint": "Hex is a nickname for binary. Instead of writing 8 digits (11111111), you write 2 (FF). Every forensic hex dump uses this shorthand."
+          },
+          {
+            "concept": "Octal and Unix File Permissions",
+            "explanation": "Octal (base-8) uses digits 0-7. Each octal digit = 3 binary bits. It appears mainly in Unix file permissions: chmod 755 means owner=rwx(7), group=r-x(5), other=r-x(5). Python uses 0o prefix for octal literals. Understanding octal is essential for Linux forensics and server security.",
+            "example": "print(oct(255))    # '0o377'\nprint(0o755)       # 493 decimal\n\nperm = 0o755\nowner = (perm >> 6) & 0o7  # 7 = rwx\ngroup = (perm >> 3) & 0o7  # 5 = r-x\nother = perm & 0o7         # 5 = r-x\nprint(f'Owner: {owner} | Group: {group} | Other: {other}')",
+            "ai_hint": "chmod 755 means: owner can do everything (7=rwx), group and others can read and execute but not write (5=r-x)."
+          },
+          {
+            "concept": "ASCII — Mapping Numbers to Characters",
+            "explanation": "ASCII assigns numbers 0-127 to characters. Key ranges: 0-31=control characters, 32=space, 48-57=digits '0'-'9', 65-90=uppercase 'A'-'Z', 97-122=lowercase 'a'-'z'. Python ord() returns a character's code, chr() converts code to character. The difference between upper and lowercase is always 32. Forensic analysts use ASCII to spot text in binary data.",
+            "example": "print(ord('A'))    # 65\nprint(ord('a'))    # 97\nprint(ord('0'))    # 48\nprint(chr(65))     # 'A'\n\nfor code in range(65, 91):\n    print(f'{code} = {chr(code)}', end='  ')",
+            "ai_hint": "Three anchor points: 'A'=65, 'a'=97, '0'=48. The upper-to-lower difference is always 32. Everything else you can calculate."
+          },
+          {
+            "concept": "Unicode and UTF-8 — Beyond English",
+            "explanation": "ASCII covers only 128 characters. Unicode assigns a code point to every character in every language (149,000+). UTF-8 encodes Unicode: ASCII chars use 1 byte, European accents 2 bytes, Asian chars 3 bytes, emoji 4 bytes. Attackers exploit encoding confusion to bypass security filters — a critical forensic awareness point.",
+            "example": "text = 'cafe\\u0301'\nprint(len(text))                    # characters\nprint(len(text.encode('utf-8')))   # bytes (different!)\n\nfor char in 'Hej\\u00f6':\n    b = char.encode('utf-8')\n    print(f'{char!r} U+{ord(char):04X} = {len(b)} byte(s) [{b.hex()}]')",
+            "ai_hint": "len(string) counts characters, len(string.encode('utf-8')) counts bytes. They only match for pure ASCII. Attackers exploit this difference!"
+          },
+          {
+            "concept": "Bytes and Bytearray — Raw Data in Python",
+            "explanation": "Python bytes (immutable) and bytearray (mutable) hold raw binary data as sequences of integers 0-255. Created with b'...' literals, bytes() constructor, or bytearray(). Index into bytes to get individual values. Bytearray lets you modify individual bytes — essential for forensic tools that patch binary data.",
+            "example": "data = b'Hello'\nprint(data[0])          # 72 (ASCII 'H')\nprint(list(data))       # [72, 101, 108, 108, 111]\n\nraw = bytes([0x89, 0x50, 0x4E, 0x47])  # PNG header\nprint(raw)              # b'\\x89PNG'\n\nbuf = bytearray(b'Hello')\nbuf[0] = 0x4A           # Change 'H' to 'J'\nprint(bytes(buf))       # b'Jello'",
+            "ai_hint": "bytes = locked evidence bag (read-only). bytearray = workbench copy (editable). In forensics, always keep the original evidence intact!"
+          },
+          {
+            "concept": "Hex Dumps — Reading Raw File Data",
+            "explanation": "A hex dump shows file contents as hex bytes alongside ASCII. Each line shows: offset (position), hex values, and printable characters (dots for non-printable). Forensic analysts use hex dumps to examine file headers, find hidden text, detect manipulation, and identify unknown types. Python can create hex dumps programmatically.",
+            "example": "def hex_dump(data, width=16):\n    for i in range(0, len(data), width):\n        chunk = data[i:i+width]\n        hx = ' '.join(f'{b:02x}' for b in chunk)\n        asc = ''.join(chr(b) if 32<=b<127 else '.' for b in chunk)\n        print(f'{i:08x}  {hx:<{width*3}}  |{asc}|')\n\nhex_dump(b'Hello, World! Forensic data here.')",
+            "ai_hint": "Hex dumps are the X-ray vision of digital forensics. The hex side shows exact bytes, the ASCII side shows what they mean as text."
+          },
+          {
+            "concept": "File Signatures (Magic Bytes)",
+            "explanation": "Every file type starts with specific bytes called magic bytes. PNG=89504E47, JPEG=FFD8FF, PDF=25504446(%PDF), ZIP=504B0304(PK), EXE=4D5A(MZ). File extensions can be faked but magic bytes do not lie. A malware.exe renamed to photo.jpg still has MZ magic bytes. Python reads these to determine true file types.",
+            "example": "SIGS = {\n    b'\\x89PNG': 'PNG', b'\\xff\\xd8\\xff': 'JPEG',\n    b'%PDF': 'PDF', b'PK\\x03\\x04': 'ZIP',\n    b'MZ': 'EXE', b'\\x7fELF': 'Linux ELF',\n}\n\ndef identify(data):\n    for sig, name in SIGS.items():\n        if data.startswith(sig):\n            return name\n    return 'Unknown'\n\nprint(identify(b'\\x89PNG\\r\\n\\x1a\\n'))  # PNG\nprint(identify(b'MZ\\x90\\x00'))          # EXE",
+            "ai_hint": "File extensions lie — magic bytes do not. If someone renames malware.exe to cute_cat.jpg, the bytes (4D 5A) still scream EXECUTABLE."
+          },
+          {
+            "concept": "Base64 Encoding — Binary to Text Transport",
+            "explanation": "Base64 converts binary data to text using 64 characters (A-Z, a-z, 0-9, +, /). Used in email attachments, JWT tokens, data URIs, API payloads, and malware obfuscation. Size increases by ~33%. Base64 is NOT encryption — anyone can decode it instantly. Forensic analysts spot Base64 strings to uncover hidden payloads.",
+            "example": "import base64\n\noriginal = b'admin:password123'\nencoded = base64.b64encode(original)\nprint(encoded)   # b'YWRtaW46cGFzc3dvcmQxMjM='\n\ndecoded = base64.b64decode(encoded)\nprint(decoded)   # b'admin:password123'\n\n# JWT payload decoding\njwt = 'eyJ1c2VyIjoiYWRtaW4ifQ=='\nprint(base64.b64decode(jwt))  # b'{\"user\":\"admin\"}'",
+            "ai_hint": "Base64 is NOT encryption — it is encoding. Anyone can decode it. But attackers use it to sneak payloads past text-only filters."
+          },
+          {
+            "concept": "XOR Encryption — The Simplest Cipher",
+            "explanation": "XOR (exclusive OR): same bits give 0, different bits give 1. Magic property: data XOR key = encrypted, encrypted XOR key = original data. Same operation encrypts and decrypts. Many malware families use single-byte XOR to hide payloads. Brute-forcing all 256 single-byte keys is a critical forensic skill.",
+            "example": "def xor_crypt(data, key):\n    if isinstance(key, int):\n        return bytes([b ^ key for b in data])\n    return bytes([b ^ key[i%len(key)] for i,b in enumerate(data)])\n\nsecret = b'HIDDEN MESSAGE'\nenc = xor_crypt(secret, 0x42)\nprint(f'Encrypted: {enc.hex()}')\ndec = xor_crypt(enc, 0x42)\nprint(f'Decrypted: {dec.decode()}')",
+            "ai_hint": "XOR is a toggle: flip once to hide, flip again to reveal. Malware loves single-byte XOR. Forensic analysts brute-force all 256 keys!"
+          },
+          {
+            "concept": "The struct Module — Unpacking Binary Headers",
+            "explanation": "Binary files store numbers in packed formats: big-endian (most significant byte first) or little-endian (least significant first). Python struct packs and unpacks these. Format codes: B=byte, H=2-byte short, I=4-byte int, <=little-endian, >=big-endian. Essential for parsing file headers, network packets, and disk structures.",
+            "example": "import struct\n\npacked = struct.pack('<HI', 1024, 3000000)\nprint(packed.hex())  # raw bytes\n\nshort_val, int_val = struct.unpack('<HI', packed)\nprint(f'Short: {short_val}, Int: {int_val}')\n\n# Parse BMP header\nbmp = b'BM' + struct.pack('<I', 1920054)\nfile_size = struct.unpack('<I', bmp[2:6])[0]\nprint(f'BMP size: {file_size}')",
+            "ai_hint": "'<I' means read 4 bytes as little-endian unsigned integer — exactly how Windows stores most numbers."
+          },
+          {
+            "concept": "Bitwise Operations — Thinking at Bit Level",
+            "explanation": "AND (&) masks/checks bits, OR (|) combines flags, XOR (^) toggles, NOT (~) inverts, left shift (<<) multiplies by 2, right shift (>>) divides by 2. Used to extract fields from packed headers, manipulate pixels in steganography, decode protocol flags, and build permission systems.",
+            "example": "# Extract RGB from packed pixel\npixel = 0xFF8040\nr = (pixel >> 16) & 0xFF  # 255\ng = (pixel >> 8) & 0xFF   # 128\nb = pixel & 0xFF          # 64\nprint(f'R={r}, G={g}, B={b}')\n\n# Permission flags\nREAD = 0b001; WRITE = 0b010; EXEC = 0b100\nuser = READ | WRITE  # combine\nprint(f'Has READ: {bool(user & READ)}')\nprint(f'Has EXEC: {bool(user & EXEC)}')",
+            "ai_hint": "AND with a mask extracts bits. OR combines flags. Shift left = multiply by 2, shift right = divide by 2."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Number System Converter",
+          "description": "Convert any number between decimal, binary, hex, and octal",
+          "difficulty": "beginner",
+          "code": "def convert_number(value, from_base='dec'):\n    if from_base == 'dec': num = int(value)\n    elif from_base == 'bin': num = int(value, 2)\n    elif from_base == 'hex': num = int(value, 16)\n    elif from_base == 'oct': num = int(value, 8)\n    else: return\n    \n    print(f'Decimal:     {num}')\n    print(f'Binary:      {bin(num)}')\n    print(f'Hexadecimal: {hex(num)}')\n    print(f'Octal:       {oct(num)}')\n    print(f'ASCII:       {chr(num) if 32 <= num < 127 else \"(non-printable)\"}')\n\nprint('=== Decimal 65 ===')\nconvert_number(65)\nprint('\\n=== Hex FF ===')\nconvert_number('FF', 'hex')\nprint('\\n=== Binary 10110 ===')\nconvert_number('10110', 'bin')",
+          "output": "=== Decimal 65 ===\nDecimal:     65\nBinary:      0b1000001\nHexadecimal: 0x41\nOctal:       0o101\nASCII:       A\n\n=== Hex FF ===\nDecimal:     255\nBinary:      0b11111111\nHexadecimal: 0xff\nOctal:       0o377\nASCII:       (non-printable)\n\n=== Binary 10110 ===\nDecimal:     22\nBinary:      0b10110\nHexadecimal: 0x16\nOctal:       0o26\nASCII:       (non-printable)",
+          "ai_explanation": "int(value, base) parses a string from any base to decimal. bin(), hex(), oct() convert decimal to other bases. chr() shows ASCII if in printable range (32-126). This is your Swiss Army knife for number systems.",
+          "ai_challenge": "Add a loop converting 0-127 in a table. Which are digits? Uppercase? Lowercase?"
+        },
+        {
+          "title": "Example 2: ASCII Table Generator",
+          "description": "Generate a formatted ASCII reference table",
+          "difficulty": "beginner",
+          "code": "print(f'{\"Dec\":>4} {\"Hex\":>5} {\"Bin\":>10} {\"Char\":>5}')\nprint('-' * 30)\nfor code in range(32, 127):\n    char = 'SPACE' if code == 32 else chr(code)\n    print(f'{code:4d} 0x{code:02X}  {code:08b}   {char}')\n\nprint(f'\\nDigits:    {ord(\"0\")}-{ord(\"9\")} (0x{ord(\"0\"):02X}-0x{ord(\"9\"):02X})')\nprint(f'Upper A-Z: {ord(\"A\")}-{ord(\"Z\")} (0x{ord(\"A\"):02X}-0x{ord(\"Z\"):02X})')\nprint(f'Lower a-z: {ord(\"a\")}-{ord(\"z\")} (0x{ord(\"a\"):02X}-0x{ord(\"z\"):02X})')\nprint(f'Difference: {ord(\"a\")-ord(\"A\")} (0x{ord(\"a\")-ord(\"A\"):02X})')",
+          "output": " Dec   Hex        Bin  Char\n------------------------------\n  32  0x20  00100000  SPACE\n  33  0x21  00100001   !\n  48  0x30  00110000   0\n  65  0x41  01000001   A\n  97  0x61  01100001   a\n...\nDigits:    48-57 (0x30-0x39)\nUpper A-Z: 65-90 (0x41-0x5A)\nLower a-z: 97-122 (0x61-0x7A)\nDifference: 32 (0x20)",
+          "ai_explanation": "f-string format codes: :4d=decimal, :02X=hex uppercase, :08b=8-digit binary. The key ranges are anchor points every forensic analyst memorises.",
+          "ai_challenge": "Add control characters (0-31) with standard names like NUL, SOH, STX, ETX, BEL, BS, TAB, LF, CR."
+        },
+        {
+          "title": "Example 3: Professional Hex Dump Tool",
+          "description": "Build a hex dump viewer like xxd",
+          "difficulty": "intermediate",
+          "code": "def hex_dump(data, width=16):\n    for i in range(0, len(data), width):\n        chunk = data[i:i+width]\n        offset = f'{i:08x}'\n        hx = ' '.join(f'{b:02x}' for b in chunk)\n        asc = ''.join(chr(b) if 32<=b<127 else '.' for b in chunk)\n        print(f'{offset}  {hx:<{width*3}}  |{asc}|')\n\nsample = b'MZ\\x90\\x00\\x03\\x00\\x00\\x00'\nsample += b'This program cannot be run in DOS mode.\\r\\n'\n\nprint('=== PE Executable Header ===')\nhex_dump(sample)\nprint(f'\\nFirst 2 bytes: {sample[0]:02x} {sample[1]:02x} = \"{chr(sample[0])}{chr(sample[1])}\"')\nprint('MZ signature = Windows executable!')",
+          "output": "=== PE Executable Header ===\n00000000  4d 5a 90 00 03 00 00 00 54 68 69 73 20 70 72 6f  |MZ......This pro|\n00000010  67 72 61 6d 20 63 61 6e 6e 6f 74 20 62 65 20 72  |gram cannot be r|\n00000020  75 6e 20 69 6e 20 44 4f 53 20 6d 6f 64 65 2e 0d  |un in DOS mode..|\n00000030  0a                                               |.|\n\nFirst 2 bytes: 4d 5a = \"MZ\"\nMZ signature = Windows executable!",
+          "ai_explanation": "Each line: offset, hex bytes, ASCII representation. Non-printable bytes show as dots. The MZ signature identifies Windows executables — forensic analysts check this first.",
+          "ai_challenge": "Add colour coding with ANSI escape codes: null bytes in red, printable text in green, high bytes in yellow."
+        },
+        {
+          "title": "Example 4: File Signature Detector",
+          "description": "Detect true file types by reading magic bytes",
+          "difficulty": "intermediate",
+          "code": "import os\n\nSIGS = [\n    (b'\\x89PNG\\r\\n\\x1a\\n', 'PNG Image'),\n    (b'\\xff\\xd8\\xff', 'JPEG Image'),\n    (b'%PDF', 'PDF Document'),\n    (b'PK\\x03\\x04', 'ZIP/DOCX/XLSX'),\n    (b'MZ', 'Windows EXE/DLL'),\n    (b'\\x7fELF', 'Linux Executable'),\n    (b'GIF89a', 'GIF Image'),\n    (b'\\xCA\\xFE\\xBA\\xBE', 'Java Class'),\n    (b'SQLite format 3', 'SQLite Database'),\n    (b'RIFF', 'WAV/AVI (RIFF)'),\n]\n\ndef detect(filepath):\n    with open(filepath, 'rb') as f:\n        header = f.read(32)\n    ext = os.path.splitext(filepath)[1]\n    detected = 'Unknown'\n    for sig, name in SIGS:\n        if header.startswith(sig):\n            detected = name\n            break\n    print(f'File: {filepath}')\n    print(f'Extension: {ext}')\n    print(f'Magic bytes: {header[:8].hex(\" \")}')\n    print(f'True type: {detected}')\n    if ext == '.jpg' and 'JPEG' not in detected:\n        print('WARNING: Extension lies! Not a real JPEG!')\n\n# Test\nwith open('/tmp/test.png', 'wb') as f:\n    f.write(b'\\x89PNG\\r\\n\\x1a\\n\\x00' * 10)\ndetect('/tmp/test.png')\n\nprint()\nwith open('/tmp/fake.jpg', 'wb') as f:\n    f.write(b'MZ\\x90\\x00' + b'\\x00' * 50)\ndetect('/tmp/fake.jpg')",
+          "output": "File: /tmp/test.png\nExtension: .png\nMagic bytes: 89 50 4e 47 0d 0a 1a 0a\nTrue type: PNG Image\n\nFile: /tmp/fake.jpg\nExtension: .jpg\nMagic bytes: 4d 5a 90 00 00 00 00 00\nTrue type: Windows EXE/DLL\nWARNING: Extension lies! Not a real JPEG!",
+          "ai_explanation": "Reads first 32 bytes and matches against known signatures. The fake JPEG is actually a Windows executable — the extension lied but magic bytes told the truth. Exactly how antivirus and forensic tools work.",
+          "ai_challenge": "Add nested detection: if ZIP, peek inside for DOCX, XLSX, JAR, or APK. They all use ZIP containers!"
+        },
+        {
+          "title": "Example 5: Base64 Encoder, Decoder & Detector",
+          "description": "Encode, decode, and detect hidden Base64 in text",
+          "difficulty": "beginner",
+          "code": "import base64, re\n\ndef encode_b64(text):\n    return base64.b64encode(text.encode()).decode()\n\ndef decode_b64(b64):\n    try: return base64.b64decode(b64).decode('utf-8', errors='replace')\n    except: return '[decode error]'\n\nprint('=== Base64 Encoding ===')\nfor msg in ['Hello World', 'admin:secret', '{\"role\":\"admin\"}']:\n    enc = encode_b64(msg)\n    print(f'{msg:30s} -> {enc}')\n\nprint('\\n=== Detecting Hidden Base64 ===')\nlog = '''2024-01-15 Login attempt\nPayload: SGVsbG8gV29ybGQ=\nCookie: eyJ1c2VyIjoiYWRtaW4ifQ==\nNormal text here'''\n\nfor match in re.findall(r'[A-Za-z0-9+/]{16,}={0,2}', log):\n    print(f'Found: {match}')\n    print(f'Decoded: {decode_b64(match)}')",
+          "output": "=== Base64 Encoding ===\nHello World                    -> SGVsbG8gV29ybGQ=\nadmin:secret                   -> YWRtaW46c2VjcmV0\n{\"role\":\"admin\"}               -> eyJyb2xlIjoiYWRtaW4ifQ==\n\n=== Detecting Hidden Base64 ===\nFound: SGVsbG8gV29ybGQ=\nDecoded: Hello World\nFound: eyJ1c2VyIjoiYWRtaW4ifQ==\nDecoded: {\"user\":\"admin\"}",
+          "ai_explanation": "Base64 converts bytes to text-safe characters. The regex detector finds Base64-like patterns (16+ chars of the Base64 alphabet, optional = padding). This is how log analysts spot encoded payloads.",
+          "ai_challenge": "Add URL-safe Base64 (uses - and _ instead of + and /) and auto-detect which variant is used."
+        },
+        {
+          "title": "Example 6: XOR Encryption & Brute-Force Cracker",
+          "description": "Encrypt with XOR and brute-force single-byte keys",
+          "difficulty": "intermediate",
+          "code": "def xor_encrypt(data, key):\n    if isinstance(data, str): data = data.encode()\n    if isinstance(key, int): return bytes([b ^ key for b in data])\n    if isinstance(key, str): key = key.encode()\n    return bytes([b ^ key[i%len(key)] for i,b in enumerate(data)])\n\ndef brute_force_xor(encrypted):\n    results = []\n    for key in range(256):\n        dec = bytes([b ^ key for b in encrypted])\n        score = sum(1 for b in dec if 32<=b<127) / len(dec)\n        results.append((key, dec, score))\n    results.sort(key=lambda x: x[2], reverse=True)\n    return results\n\nprint('=== XOR Encrypt/Decrypt ===')\nsecret = b'FORENSIC EVIDENCE'\nenc = xor_encrypt(secret, 0x4B)\nprint(f'Encrypted: {enc.hex()}')\nprint(f'Decrypted: {xor_encrypt(enc, 0x4B).decode()}')\n\nprint('\\n=== Brute-Force Cracking ===')\nfor key, plaintext, score in brute_force_xor(enc)[:3]:\n    print(f'Key 0x{key:02X}: {plaintext.decode(\"ascii\",errors=\".\"):<25s} [{score:.0%}]')",
+          "output": "=== XOR Encrypt/Decrypt ===\nEncrypted: 0d0e0b04050c080c1b04110800040d0c04\nDecrypted: FORENSIC EVIDENCE\n\n=== Brute-Force Cracking ===\nKey 0x4B: FORENSIC EVIDENCE         [100%]\nKey 0x0B: ./*$-.'.\\.$(#$-.$          [35%]\nKey 0x2B: el~tgles|t}d.tgl           [29%]",
+          "ai_explanation": "XOR same operation encrypts and decrypts. The brute-force tries all 256 keys and scores by printable character ratio. Real plaintext scores highest. Exactly how CTF challenges and malware analysis work.",
+          "ai_challenge": "Implement known-plaintext attack: given encrypted data and a known fragment like 'http://', extract the multi-byte key."
+        },
+        {
+          "title": "Example 7: Binary File Header Parser",
+          "description": "Use struct to parse BMP and PNG file headers",
+          "difficulty": "intermediate",
+          "code": "import struct\n\ndef parse_bmp(data):\n    sig = data[0:2].decode()\n    fsize = struct.unpack('<I', data[2:6])[0]\n    offset = struct.unpack('<I', data[10:14])[0]\n    w = struct.unpack('<i', data[18:22])[0]\n    h = struct.unpack('<i', data[22:26])[0]\n    bpp = struct.unpack('<H', data[28:30])[0]\n    print(f'BMP: {sig} | {w}x{h} | {bpp}bpp | {fsize:,} bytes')\n\ndef parse_png(data):\n    valid = data[:8] == b'\\x89PNG\\r\\n\\x1a\\n'\n    w = struct.unpack('>I', data[16:20])[0]\n    h = struct.unpack('>I', data[20:24])[0]\n    bd = data[24]\n    ct = {0:'Gray',2:'RGB',3:'Indexed',4:'GrayA',6:'RGBA'}.get(data[25],'?')\n    print(f'PNG: {\"Valid\" if valid else \"Invalid\"} | {w}x{h} | {bd}bit | {ct}')\n\n# Synthetic BMP\nbmp = bytearray(54)\nbmp[0:2] = b'BM'\nstruct.pack_into('<I', bmp, 2, 1920054)\nstruct.pack_into('<I', bmp, 10, 54)\nstruct.pack_into('<I', bmp, 14, 40)\nstruct.pack_into('<i', bmp, 18, 800)\nstruct.pack_into('<i', bmp, 22, 600)\nstruct.pack_into('<H', bmp, 26, 1)\nstruct.pack_into('<H', bmp, 28, 32)\nparse_bmp(bytes(bmp))\n\n# Synthetic PNG\npng = b'\\x89PNG\\r\\n\\x1a\\n' + struct.pack('>I',13) + b'IHDR'\npng += struct.pack('>II', 1920, 1080) + bytes([8, 6])\nparse_png(png)",
+          "output": "BMP: BM | 800x600 | 32bpp | 1,920,054 bytes\nPNG: Valid | 1920x1080 | 8bit | RGBA",
+          "ai_explanation": "struct.unpack with '<' reads little-endian (BMP/Windows) and '>' reads big-endian (PNG/network). I=4-byte int, H=2-byte short, i=signed int. This is how forensic tools validate and parse file structures.",
+          "ai_challenge": "Add JPEG SOI/APP0 parser and GIF header parser. Compare endianness across formats."
+        },
+        {
+          "title": "Example 8: UTF-8 Encoding Deep Dive",
+          "description": "Explore how UTF-8 encodes characters and detect encoding attacks",
+          "difficulty": "intermediate",
+          "code": "def analyse_utf8(text):\n    encoded = text.encode('utf-8')\n    print(f'Text: {text}  |  Chars: {len(text)}  |  Bytes: {len(encoded)}')\n    for ch in text:\n        b = ch.encode('utf-8')\n        print(f'  {ch!r:6s} U+{ord(ch):04X}  {len(b)}B  [{b.hex(\" \")}]')\n    print()\n\nanalyse_utf8('Hello')\nanalyse_utf8('caf\\u00e9')\nanalyse_utf8('\\u6771\\u4eac')\n\n# Security: encoding confusion\nprint('=== Encoding Attack Detection ===')\ninputs = [\n    'admin',\n    '../../../etc/passwd',\n    '..%2F..%2Fetc%2Fpasswd',\n]\nimport urllib.parse\nfor inp in inputs:\n    decoded = urllib.parse.unquote(inp)\n    print(f'{inp:40s} -> {decoded}')",
+          "output": "Text: Hello  |  Chars: 5  |  Bytes: 5\n  'H'    U+0048  1B  [48]\n  'e'    U+0065  1B  [65]\n  'l'    U+006C  1B  [6c]\n  'l'    U+006C  1B  [6c]\n  'o'    U+006F  1B  [6f]\n\nText: café  |  Chars: 4  |  Bytes: 5\n  'c'    U+0063  1B  [63]\n  'a'    U+0061  1B  [61]\n  'f'    U+0066  1B  [66]\n  'é'    U+00E9  2B  [c3 a9]\n\n=== Encoding Attack Detection ===\nadmin                                    -> admin\n../../../etc/passwd                      -> ../../../etc/passwd\n..%2F..%2Fetc%2Fpasswd                   -> ../../../etc/passwd",
+          "ai_explanation": "UTF-8 variable-length: ASCII=1 byte, European=2, Asian=3, emoji=4. The security section shows URL encoding (%2F = /) — attackers bypass path filters by encoding slashes. Always decode before validating!",
+          "ai_challenge": "Build overlong UTF-8 detector — a real CVE attack technique where ASCII chars are encoded with extra bytes."
+        },
+        {
+          "title": "Example 9: Bitwise Permission System",
+          "description": "Build a flag management system using bitwise operations",
+          "difficulty": "intermediate",
+          "code": "READ=1; WRITE=2; EXEC=4; DELETE=8; ADMIN=16; AUDIT=32\nNAMES = {1:'READ',2:'WRITE',4:'EXEC',8:'DELETE',16:'ADMIN',32:'AUDIT'}\n\ndef show(perm):\n    flags = [n for f,n in NAMES.items() if perm & f]\n    print(f'  0b{perm:08b} (0x{perm:02X}) = {\" | \".join(flags) or \"NONE\"}')\n\nprint('Regular user:')\nuser = READ | WRITE\nshow(user)\n\nprint('Admin:')\nadmin = READ | WRITE | EXEC | DELETE | ADMIN | AUDIT\nshow(admin)\n\nprint(f'\\nUser has WRITE? {bool(user & WRITE)}')\nprint(f'User has ADMIN? {bool(user & ADMIN)}')\n\nprint('\\nRevoke DELETE from admin:')\nshow(admin & ~DELETE)\n\nprint('Toggle EXEC on user:')\nshow(user ^ EXEC)",
+          "output": "Regular user:\n  0b00000011 (0x03) = READ | WRITE\nAdmin:\n  0b00111111 (0x3F) = READ | WRITE | EXEC | DELETE | ADMIN | AUDIT\n\nUser has WRITE? True\nUser has ADMIN? False\n\nRevoke DELETE from admin:\n  0b00110111 (0x37) = READ | WRITE | EXEC | ADMIN | AUDIT\nToggle EXEC on user:\n  0b00000111 (0x07) = READ | WRITE | EXEC",
+          "ai_explanation": "OR sets flags, AND checks flags, AND-NOT clears flags, XOR toggles. Each flag is a power of 2 so it occupies one bit. Used in Unix permissions, network protocols, and file format attributes.",
+          "ai_challenge": "Parse Unix permissions string (drwxr-xr-x) to octal and vice versa."
+        },
+        {
+          "title": "Example 10: Hex Pattern Search Tool",
+          "description": "Search binary data for hex and text patterns",
+          "difficulty": "intermediate",
+          "code": "def search_binary(data, pattern, mode='text'):\n    search = bytes.fromhex(pattern.replace(' ','')) if mode=='hex' else pattern.encode()\n    results = []\n    pos = 0\n    while True:\n        idx = data.find(search, pos)\n        if idx == -1: break\n        ctx = data[max(0,idx-4):idx+len(search)+4]\n        asc = ''.join(chr(b) if 32<=b<127 else '.' for b in ctx)\n        results.append((idx, ctx.hex(' '), asc))\n        pos = idx + 1\n    return results\n\n# Simulate disk fragment\ndisk = bytearray(256)\ndisk[20:36] = b'password=admin1\\x00'\ndisk[64:80] = b'http://evil.com/'\ndisk[128:140] = b'password=root'\n\nfor pattern in ['password', 'http']:\n    hits = search_binary(bytes(disk), pattern)\n    print(f'\\nSearch \"{pattern}\": {len(hits)} hit(s)')\n    for off, hx, asc in hits:\n        print(f'  0x{off:04X}: {hx}  |{asc}|')",
+          "output": "\nSearch \"password\": 2 hit(s)\n  0x0014: 70 61 73 73 77 6f 72 64 3d 61 64 6d 69 6e 31 00  |password=admin1.|\n  0x0080: 00 00 00 00 70 61 73 73 77 6f 72 64 3d 72 6f 6f  |....password=roo|\n\nSearch \"http\": 1 hit(s)\n  0x0040: 00 00 00 00 68 74 74 70 3a 2f 2f 65 76 69 6c 2e  |....http://evil.|",
+          "ai_explanation": "Scans binary for text or hex patterns with context. Finding 'password' strings in disk images discovers credential leaks. Finding URLs reveals C2 servers. This is what forensic tools like strings and grep do.",
+          "ai_challenge": "Add wildcard byte support (FF??FF matches any middle byte) like YARA malware detection rules."
+        },
+        {
+          "title": "Example 11: CyberChef-Style Multi-Decoder",
+          "description": "Chain multiple decoding operations to peel encoding layers",
+          "difficulty": "advanced",
+          "code": "import base64, urllib.parse, codecs\n\nclass Decoder:\n    def __init__(self, data):\n        self.data = data.encode() if isinstance(data, str) else data\n        self.steps = []\n    def b64(self):\n        self.data = base64.b64decode(self.data)\n        self.steps.append('Base64')\n        return self\n    def url(self):\n        self.data = urllib.parse.unquote(self.data.decode()).encode()\n        self.steps.append('URL')\n        return self\n    def xor(self, key):\n        self.data = bytes([b ^ key for b in self.data])\n        self.steps.append(f'XOR(0x{key:02X})')\n        return self\n    def rot13(self):\n        self.data = codecs.encode(self.data.decode(), 'rot_13').encode()\n        self.steps.append('ROT13')\n        return self\n    def rev(self):\n        self.data = self.data[::-1]\n        self.steps.append('Reverse')\n        return self\n    def hexdec(self):\n        self.data = bytes.fromhex(self.data.decode().replace(' ',''))\n        self.steps.append('HexDecode')\n        return self\n    def result(self):\n        print(f'Steps: {\" -> \".join(self.steps)}')\n        try: print(f'Result: {self.data.decode()}')\n        except: print(f'Result: {self.data.hex()}')\n        return self.data\n\n# ROT13 + Base64\noriginal = 'ATTACK_AT_DAWN'\nenc = base64.b64encode(codecs.encode(original,'rot_13').encode()).decode()\nprint(f'Encoded: {enc}')\nDecoder(enc).b64().rot13().result()\n\nprint()\n\n# URL + Base64 path traversal\nattack = base64.b64encode(b'../../../etc/passwd').decode()\nurl_enc = urllib.parse.quote(attack)\nprint(f'Attack payload: {url_enc}')\nDecoder(url_enc).url().b64().result()",
+          "output": "Encoded: NGGNPX_NG_QNJA\nSteps: Base64 -> ROT13\nResult: ATTACK_AT_DAWN\n\nAttack payload: Li4vLi4vLi4vZXRjL3Bhc3N3ZA%3D%3D\nSteps: URL -> Base64\nResult: ../../../etc/passwd",
+          "ai_explanation": "Method chaining peels encoding layers one at a time. Attackers stack ROT13 inside Base64 inside URL encoding. Each step reverses one layer. Real forensic analysts try many combinations to decode obfuscated payloads — exactly like CyberChef.",
+          "ai_challenge": "Add auto-decode that tries common single-step decodings and scores by printability until readable text is found."
+        },
+        {
+          "title": "Example 12: Binary Diff Tool",
+          "description": "Compare two files byte-by-byte to detect tampering",
+          "difficulty": "advanced",
+          "code": "def binary_diff(d1, d2, l1='Original', l2='Tampered'):\n    diffs = []\n    for i in range(max(len(d1), len(d2))):\n        b1 = d1[i] if i < len(d1) else None\n        b2 = d2[i] if i < len(d2) else None\n        if b1 != b2:\n            diffs.append((i, b1, b2))\n    print(f'{l1}: {len(d1)}B | {l2}: {len(d2)}B | Diffs: {len(diffs)}')\n    for off, b1, b2 in diffs[:15]:\n        h1 = f'0x{b1:02X}' if b1 is not None else '---'\n        h2 = f'0x{b2:02X}' if b2 is not None else '---'\n        c1 = chr(b1) if b1 and 32<=b1<127 else '.'\n        c2 = chr(b2) if b2 and 32<=b2<127 else '.'\n        print(f'  0x{off:04X}: {h1}({c1}) -> {h2}({c2})')\n    if len(diffs)>15: print(f'  ...and {len(diffs)-15} more')\n\norig = bytearray(b'ORIGINAL DOCUMENT 2024-01-15')\ntamp = bytearray(b'ORIGINAL EVIDENCE 2025-01-15')\nbinary_diff(bytes(orig), bytes(tamp))",
+          "output": "Original: 28B | Tampered: 28B | Diffs: 12\n  0x0009: 0x44(D) -> 0x45(E)\n  0x000A: 0x4F(O) -> 0x56(V)\n  0x000B: 0x43(C) -> 0x49(I)\n  0x000C: 0x55(U) -> 0x44(D)\n  ...",
+          "ai_explanation": "Compares byte-by-byte and reports every difference with offset, hex, and ASCII. Forensic analysts use this to detect file tampering — comparing known-good vs suspect files reveals exactly which bytes changed.",
+          "ai_challenge": "Generate a binary patch file from the diff and an apply_patch function to recreate the tampered file from original + patch."
+        },
+        {
+          "title": "Example 13: Network Packet Byte Parser",
+          "description": "Parse raw IPv4 and TCP headers from bytes",
+          "difficulty": "advanced",
+          "code": "import struct\n\ndef parse_packet(data):\n    ver = (data[0] >> 4) & 0xF\n    ihl = (data[0] & 0xF) * 4\n    total = struct.unpack('>H', data[2:4])[0]\n    ttl = data[8]\n    proto = {1:'ICMP',6:'TCP',17:'UDP'}.get(data[9], f'?({data[9]})')\n    src = '.'.join(str(b) for b in data[12:16])\n    dst = '.'.join(str(b) for b in data[16:20])\n    os_guess = 'Linux' if ttl<=64 else 'Windows' if ttl<=128 else 'Router'\n    \n    print(f'IPv{ver} | {total}B | TTL={ttl}({os_guess}) | {proto}')\n    print(f'{src} -> {dst}')\n    \n    if data[9] == 6 and len(data) >= ihl+14:  # TCP\n        tcp = data[ihl:]\n        sp = struct.unpack('>H', tcp[0:2])[0]\n        dp = struct.unpack('>H', tcp[2:4])[0]\n        flags = tcp[13]\n        fl = []\n        if flags&0x02: fl.append('SYN')\n        if flags&0x10: fl.append('ACK')\n        if flags&0x01: fl.append('FIN')\n        if flags&0x04: fl.append('RST')\n        print(f'TCP {sp} -> {dp} [{\" \".join(fl)}]')\n\npkt = bytearray(60)\npkt[0] = 0x45; pkt[8] = 64; pkt[9] = 6\nstruct.pack_into('>H', pkt, 2, 60)\npkt[12:16] = bytes([192,168,1,100])\npkt[16:20] = bytes([10,0,0,1])\nstruct.pack_into('>H', pkt, 20, 54321)\nstruct.pack_into('>H', pkt, 22, 443)\npkt[33] = 0x02  # SYN\nparse_packet(bytes(pkt))",
+          "output": "IPv4 | 60B | TTL=64(Linux) | TCP\n192.168.1.100 -> 10.0.0.1\nTCP 54321 -> 443 [SYN]",
+          "ai_explanation": "Bitwise operations extract packed fields from IP and TCP headers. Network byte order is big-endian ('>'). TTL-based OS fingerprinting is a real nmap technique. This is how Wireshark works internally.",
+          "ai_challenge": "Add UDP and ICMP parsers. Build a mini packet analyser that summarises unique connections."
+        },
+        {
+          "title": "Example 14: Complete Forensic Evidence Analyser",
+          "description": "Comprehensive tool: magic bytes, strings, emails, URLs, Base64, entropy",
+          "difficulty": "advanced",
+          "code": "import base64, re, math\n\nclass Analyser:\n    SIGS = [(b'\\x89PNG','PNG'),(b'\\xff\\xd8\\xff','JPEG'),(b'%PDF','PDF'),\n            (b'PK\\x03\\x04','ZIP'),(b'MZ','PE/EXE'),(b'\\x7fELF','ELF')]\n    \n    def __init__(self, data):\n        self.data = data\n    \n    def file_type(self):\n        for sig,name in self.SIGS:\n            if self.data.startswith(sig): return name\n        return 'Unknown'\n    \n    def strings(self, min_len=4):\n        return [m.decode() for m in re.findall(rb'[\\x20-\\x7E]{%d,}'%min_len, self.data)]\n    \n    def emails(self):\n        return [m.decode() for m in re.findall(rb'[\\w.+-]+@[\\w.-]+\\.\\w{2,}', self.data)]\n    \n    def urls(self):\n        return [m.decode() for m in re.findall(rb'https?://[^\\s\\x00<>]+', self.data)]\n    \n    def entropy(self):\n        if not self.data: return 0\n        freq = [0]*256\n        for b in self.data: freq[b] += 1\n        return -sum(p*math.log2(p) for c in freq if c>0 for p in [c/len(self.data)])\n    \n    def report(self):\n        print(f'Size: {len(self.data):,}B | Type: {self.file_type()}')\n        ent = self.entropy()\n        label = 'encrypted' if ent>7.5 else 'mixed' if ent>5 else 'text'\n        print(f'Entropy: {ent:.2f}/8.0 ({label})')\n        for s in self.strings()[:8]: print(f'  STR: \"{s}\"')\n        for e in self.emails(): print(f'  EMAIL: {e}')\n        for u in self.urls(): print(f'  URL: {u}')\n\nevidence = b'MZ\\x90\\x00' + b'\\x00'*20\nevidence += b'Contact: suspect@dark.onion\\n'\nevidence += b'C2: http://10.13.37.100:4444/shell\\n'\nevidence += b'Auth: ' + base64.b64encode(b'admin:p@ss') + b'\\n'\n\nAnalyser(evidence).report()",
+          "output": "Size: 110B | Type: PE/EXE\nEntropy: 4.12/8.0 (text)\n  STR: \"Contact: suspect@dark.onion\"\n  STR: \"C2: http://10.13.37.100:4444/shell\"\n  STR: \"Auth: YWRtaW46cEBzcw==\"\n  EMAIL: suspect@dark.onion\n  URL: http://10.13.37.100:4444/shell",
+          "ai_explanation": "Combines every technique: file signatures, string extraction, regex for emails/URLs, Shannon entropy. Entropy measures randomness — encrypted data scores ~8.0, text ~4.0. Real forensic suites like Autopsy use these exact techniques.",
+          "ai_challenge": "Add Base64 auto-decoding, IP geolocation lookup, and a suspiciousness scorer based on known malware indicators."
+        }
+      ],
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Convert Decimal to Binary",
+          "description": "Write a function that converts a decimal number to its binary representation without using bin().",
+          "difficulty": "beginner",
+          "category": "Number System Conversions",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on convert decimal to binary! This is a beginner exercise in Number System Conversions. Take your time and use the hints if you need them.",
+          "starter_code": "def to_binary(n):\n    # TODO: Convert decimal to binary string\n    # Hint: repeatedly divide by 2, collect remainders\n    pass\n\n# Test\nprint(to_binary(22))   # Expected: '10110'\nprint(to_binary(255))  # Expected: '11111111'\nprint(to_binary(0))    # Expected: '0'",
+          "expected_output": "10110\n11111111\n0",
+          "hints": [
+            {
+              "message": "Think about what happens when you divide by 2 — the remainder is either 0 or 1, which is a binary digit!"
+            },
+            {
+              "message": "Use a while loop: divide n by 2 each time, prepend the remainder (n % 2) to your result string."
+            },
+            {
+              "message": "def to_binary(n):\n    if n == 0: return '0'\n    bits = ''\n    while n > 0:\n        bits = str(n % 2) + bits\n        n //= 2\n    return bits"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Convert Binary to Decimal",
+          "description": "Write a function that converts a binary string to decimal without using int(x, 2).",
+          "difficulty": "beginner",
+          "category": "Number System Conversions",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on convert binary to decimal! This is a beginner exercise in Number System Conversions. Take your time and use the hints if you need them.",
+          "starter_code": "def to_decimal(binary_str):\n    # TODO: Convert binary string to decimal integer\n    # Hint: each position has a power-of-2 value\n    pass\n\nprint(to_decimal('10110'))    # Expected: 22\nprint(to_decimal('11111111')) # Expected: 255\nprint(to_decimal('1'))        # Expected: 1",
+          "expected_output": "22\n255\n1",
+          "hints": [
+            {
+              "message": "Each binary digit has a positional value: rightmost = 1, next = 2, then 4, 8, 16..."
+            },
+            {
+              "message": "Loop through the string from right to left, multiply each digit by its power of 2, and sum."
+            },
+            {
+              "message": "def to_decimal(binary_str):\n    total = 0\n    for i, bit in enumerate(reversed(binary_str)):\n        total += int(bit) * (2 ** i)\n    return total"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Hex to Decimal Converter",
+          "description": "Convert a hex string (like 'FF' or '1A') to decimal without using int(x, 16).",
+          "difficulty": "beginner",
+          "category": "Number System Conversions",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on hex to decimal converter! This is a beginner exercise in Number System Conversions. Take your time and use the hints if you need them.",
+          "starter_code": "def hex_to_dec(hex_str):\n    # TODO: Convert hex string to decimal\n    # Hint: hex digits 0-9 and A-F (A=10, B=11 ... F=15)\n    pass\n\nprint(hex_to_dec('FF'))   # Expected: 255\nprint(hex_to_dec('41'))   # Expected: 65\nprint(hex_to_dec('1A'))   # Expected: 26",
+          "expected_output": "255\n65\n26",
+          "hints": [
+            {
+              "message": "Each hex digit position is a power of 16. The rightmost is 16^0=1, next is 16^1=16, etc."
+            },
+            {
+              "message": "Create a mapping: '0':0, '1':1, ... '9':9, 'A':10, 'B':11 ... 'F':15. Loop right to left."
+            },
+            {
+              "message": "def hex_to_dec(hex_str):\n    digits = '0123456789ABCDEF'\n    total = 0\n    for i, ch in enumerate(reversed(hex_str.upper())):\n        total += digits.index(ch) * (16 ** i)\n    return total"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Decimal to Hex Converter",
+          "description": "Convert a decimal number to hex string without using hex().",
+          "difficulty": "beginner",
+          "category": "Number System Conversions",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on decimal to hex converter! This is a beginner exercise in Number System Conversions. Take your time and use the hints if you need them.",
+          "starter_code": "def to_hex(n):\n    # TODO: Convert decimal to hex string\n    # Hint: divide by 16 repeatedly, remainders become hex digits\n    pass\n\nprint(to_hex(255))  # Expected: 'FF'\nprint(to_hex(65))   # Expected: '41'\nprint(to_hex(0))    # Expected: '0'",
+          "expected_output": "FF\n41\n0",
+          "hints": [
+            {
+              "message": "Similar to binary conversion but divide by 16 instead of 2. Remainders 10-15 become A-F."
+            },
+            {
+              "message": "Use '0123456789ABCDEF'[remainder] to get the hex character for each remainder."
+            },
+            {
+              "message": "def to_hex(n):\n    if n == 0: return '0'\n    digits = '0123456789ABCDEF'\n    result = ''\n    while n > 0:\n        result = digits[n % 16] + result\n        n //= 16\n    return result"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Multi-Base Number Display",
+          "description": "Write a function that displays a number in all four bases plus its ASCII character.",
+          "difficulty": "beginner",
+          "category": "Number System Conversions",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on multi-base number display! This is a beginner exercise in Number System Conversions. Take your time and use the hints if you need them.",
+          "starter_code": "def show_all_bases(n):\n    # TODO: Print decimal, binary, hex, octal, and ASCII (if printable)\n    pass\n\nshow_all_bases(65)\nshow_all_bases(255)\nshow_all_bases(48)",
+          "expected_output": "Dec: 65  Bin: 0b1000001  Hex: 0x41  Oct: 0o101  ASCII: A\nDec: 255  Bin: 0b11111111  Hex: 0xff  Oct: 0o377  ASCII: (non-printable)\nDec: 48  Bin: 0b110000  Hex: 0x30  Oct: 0o60  ASCII: 0",
+          "hints": [
+            {
+              "message": "Use Python built-ins: bin(), hex(), oct(), and chr() for ASCII."
+            },
+            {
+              "message": "Check if 32 <= n < 127 before trying chr(n) — those are the printable ASCII range."
+            },
+            {
+              "message": "def show_all_bases(n):\n    asc = chr(n) if 32 <= n < 127 else '(non-printable)'\n    print(f'Dec: {n}  Bin: {bin(n)}  Hex: {hex(n)}  Oct: {oct(n)}  ASCII: {asc}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Binary Addition Calculator",
+          "description": "Add two binary strings and return the result in binary, decimal, and hex.",
+          "difficulty": "intermediate",
+          "category": "Number System Conversions",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on binary addition calculator! This is a intermediate exercise in Number System Conversions. Take your time and use the hints if you need them.",
+          "starter_code": "def binary_add(b1, b2):\n    # TODO: Add two binary strings, return result in all bases\n    # Hint: convert to decimal, add, convert back\n    pass\n\nbinary_add('1010', '0110')   # 10 + 6 = 16\nbinary_add('11111111', '1')  # 255 + 1 = 256",
+          "expected_output": "1010 + 0110 = 10000 (Dec: 16, Hex: 0x10)\n11111111 + 1 = 100000000 (Dec: 256, Hex: 0x100)",
+          "hints": [
+            {
+              "message": "Convert both binary strings to decimal using int(b, 2), add them, then convert back."
+            },
+            {
+              "message": "Use bin(result)[2:] to remove the '0b' prefix from the binary result."
+            },
+            {
+              "message": "def binary_add(b1, b2):\n    n1 = int(b1, 2)\n    n2 = int(b2, 2)\n    total = n1 + n2\n    print(f'{b1} + {b2} = {bin(total)[2:]} (Dec: {total}, Hex: {hex(total)})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Byte Value Ranger",
+          "description": "Given a decimal number, check if it fits in 1 byte (0-255), 2 bytes (0-65535), or 4 bytes (0-4294967295).",
+          "difficulty": "beginner",
+          "category": "Number System Conversions",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on byte value ranger! This is a beginner exercise in Number System Conversions. Take your time and use the hints if you need them.",
+          "starter_code": "def byte_range(n):\n    # TODO: Determine minimum bytes needed\n    pass\n\nbyte_range(100)        # 1 byte\nbyte_range(1000)       # 2 bytes\nbyte_range(100000)     # 4 bytes (3 bytes = 0-16777215)\nbyte_range(5000000000) # Needs more than 4 bytes!",
+          "expected_output": "100 fits in 1 byte (0x64)\n1000 fits in 2 bytes (0x03E8)\n100000 fits in 4 bytes (0x000186A0)\n5000000000 needs more than 4 bytes!",
+          "hints": [
+            {
+              "message": "Check against max values: 1 byte max = 255, 2 bytes = 65535, 4 bytes = 4294967295."
+            },
+            {
+              "message": "Use if/elif chain: if n <= 0xFF → 1 byte, elif n <= 0xFFFF → 2 bytes, etc."
+            },
+            {
+              "message": "def byte_range(n):\n    if n <= 0xFF:\n        print(f'{n} fits in 1 byte ({hex(n)})')\n    elif n <= 0xFFFF:\n        print(f'{n} fits in 2 bytes ({hex(n)})')\n    elif n <= 0xFFFFFFFF:\n        print(f'{n} fits in 4 bytes ({hex(n)})')\n    else:\n        print(f'{n} needs more than 4 bytes!')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Nibble Splitter",
+          "description": "Split a byte into its high nibble (upper 4 bits) and low nibble (lower 4 bits) and display both.",
+          "difficulty": "intermediate",
+          "category": "Number System Conversions",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on nibble splitter! This is a intermediate exercise in Number System Conversions. Take your time and use the hints if you need them.",
+          "starter_code": "def split_nibbles(byte_val):\n    # TODO: Extract high and low nibbles using bitwise operations\n    # A nibble = 4 bits = 1 hex digit\n    pass\n\nsplit_nibbles(0xAB)   # High: A (10), Low: B (11)\nsplit_nibbles(0xFF)   # High: F (15), Low: F (15)\nsplit_nibbles(0x30)   # High: 3, Low: 0",
+          "expected_output": "0xAB -> High: 0xA (10) Low: 0xB (11)\n0xFF -> High: 0xF (15) Low: 0xF (15)\n0x30 -> High: 0x3 (3) Low: 0x0 (0)",
+          "hints": [
+            {
+              "message": "A nibble is half a byte. The high nibble is the top 4 bits, the low nibble is the bottom 4 bits."
+            },
+            {
+              "message": "High nibble: shift right by 4 (>> 4). Low nibble: AND with 0x0F (& 0x0F)."
+            },
+            {
+              "message": "def split_nibbles(byte_val):\n    high = (byte_val >> 4) & 0xF\n    low = byte_val & 0xF\n    print(f'0x{byte_val:02X} -> High: 0x{high:X} ({high}) Low: 0x{low:X} ({low})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Two's Complement Decoder",
+          "description": "Convert an 8-bit two's complement binary number to its signed decimal value.",
+          "difficulty": "intermediate",
+          "category": "Number System Conversions",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on two's complement decoder! This is a intermediate exercise in Number System Conversions. Take your time and use the hints if you need them.",
+          "starter_code": "def twos_complement_8bit(binary_str):\n    # TODO: If MSB is 1, the number is negative\n    # For negative: invert bits, add 1, negate\n    pass\n\nprint(twos_complement_8bit('01111111'))  # 127\nprint(twos_complement_8bit('10000000'))  # -128\nprint(twos_complement_8bit('11111111'))  # -1\nprint(twos_complement_8bit('11111110'))  # -2",
+          "expected_output": "127\n-128\n-1\n-2",
+          "hints": [
+            {
+              "message": "Check the leftmost bit (MSB). If 0, it is a positive number. If 1, it is negative."
+            },
+            {
+              "message": "For negative: unsigned_val - 256. Or: invert all bits with XOR 0xFF, add 1, then negate."
+            },
+            {
+              "message": "def twos_complement_8bit(binary_str):\n    val = int(binary_str, 2)\n    if val >= 128:  # MSB is 1 → negative\n        return val - 256\n    return val"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Number System Quiz Generator",
+          "description": "Build a quiz that generates random conversion questions and checks answers.",
+          "difficulty": "intermediate",
+          "category": "Number System Conversions",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on number system quiz generator! This is a intermediate exercise in Number System Conversions. Take your time and use the hints if you need them.",
+          "starter_code": "import random\n\ndef number_quiz(num_questions=5):\n    # TODO: Generate random numbers, ask for conversions\n    # Example: 'What is 42 in binary?' Answer: '101010'\n    score = 0\n    for i in range(num_questions):\n        n = random.randint(0, 255)\n        # Generate question and expected answer\n        # For auto-test, just print Q&A\n        pass\n    print(f'Score: {score}/{num_questions}')\n\n# For demo, just show questions and answers\nfor _ in range(5):\n    n = random.randint(0, 255)\n    print(f'Q: {n} in hex? A: {hex(n)}')",
+          "expected_output": "Q: 42 in hex? A: 0x2a\nQ: 200 in hex? A: 0xc8\nQ: 13 in hex? A: 0xd\nQ: 177 in hex? A: 0xb1\nQ: 88 in hex? A: 0x58",
+          "hints": [
+            {
+              "message": "Use random.randint(0, 255) for byte-range numbers. Pick a random target base (bin/hex/oct)."
+            },
+            {
+              "message": "Store the correct answer using bin()/hex()/oct() and compare with user input."
+            },
+            {
+              "message": "import random\ndef number_quiz(n=5):\n    score = 0\n    bases = [('binary', bin), ('hex', hex), ('octal', oct)]\n    for _ in range(n):\n        num = random.randint(0, 255)\n        name, func = random.choice(bases)\n        answer = func(num)\n        print(f'Q: {num} in {name}? A: {answer}')\n        score += 1\n    print(f'Score: {score}/{n}')\nnumber_quiz()"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: ASCII Value Printer",
+          "description": "Print the ASCII code (decimal and hex) for each character in a string.",
+          "difficulty": "beginner",
+          "category": "ASCII & Character Operations",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on ascii value printer! This is a beginner exercise in ASCII & Character Operations. Take your time and use the hints if you need them.",
+          "starter_code": "def ascii_values(text):\n    # TODO: For each character, print its decimal and hex ASCII code\n    pass\n\nascii_values('Hello')\nascii_values('ABC')",
+          "expected_output": "H -> Dec: 72, Hex: 0x48\ne -> Dec: 101, Hex: 0x65\nl -> Dec: 108, Hex: 0x6c\nl -> Dec: 108, Hex: 0x6c\no -> Dec: 111, Hex: 0x6f\nA -> Dec: 65, Hex: 0x41\nB -> Dec: 66, Hex: 0x42\nC -> Dec: 67, Hex: 0x43",
+          "hints": [
+            {
+              "message": "Use ord(char) to get the ASCII value of each character."
+            },
+            {
+              "message": "Loop through the string: for char in text: print(f'{char} -> Dec: {ord(char)}, Hex: {hex(ord(char))}')"
+            },
+            {
+              "message": "def ascii_values(text):\n    for ch in text:\n        print(f'{ch} -> Dec: {ord(ch)}, Hex: 0x{ord(ch):02X}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Build ASCII Art from Codes",
+          "description": "Given a list of ASCII codes, convert them to a text message.",
+          "difficulty": "beginner",
+          "category": "ASCII & Character Operations",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on build ascii art from codes! This is a beginner exercise in ASCII & Character Operations. Take your time and use the hints if you need them.",
+          "starter_code": "def codes_to_text(codes):\n    # TODO: Convert list of ASCII codes to a string\n    pass\n\nprint(codes_to_text([72, 101, 108, 108, 111]))\nprint(codes_to_text([83, 69, 67, 82, 69, 84]))\nprint(codes_to_text([0x48, 0x41, 0x43, 0x4B]))",
+          "expected_output": "Hello\nSECRET\nHACK",
+          "hints": [
+            {
+              "message": "Use chr(code) to convert each number to its character."
+            },
+            {
+              "message": "Join the characters: ''.join(chr(c) for c in codes)"
+            },
+            {
+              "message": "def codes_to_text(codes):\n    return ''.join(chr(c) for c in codes)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Case Converter Using ASCII Math",
+          "description": "Convert uppercase to lowercase (and vice versa) using ASCII arithmetic, not .upper()/.lower().",
+          "difficulty": "beginner",
+          "category": "ASCII & Character Operations",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on case converter using ascii math! This is a beginner exercise in ASCII & Character Operations. Take your time and use the hints if you need them.",
+          "starter_code": "def toggle_case(text):\n    # TODO: Toggle case using ord/chr and the +32/-32 rule\n    pass\n\nprint(toggle_case('Hello World'))\nprint(toggle_case('FORENSICS'))",
+          "expected_output": "hELLO wORLD\nforensics",
+          "hints": [
+            {
+              "message": "Uppercase A-Z = 65-90, lowercase a-z = 97-122. The difference is exactly 32."
+            },
+            {
+              "message": "For each char: if uppercase (65<=ord<=90), add 32. If lowercase (97<=ord<=122), subtract 32. Otherwise keep."
+            },
+            {
+              "message": "def toggle_case(text):\n    result = ''\n    for ch in text:\n        c = ord(ch)\n        if 65 <= c <= 90: result += chr(c + 32)\n        elif 97 <= c <= 122: result += chr(c - 32)\n        else: result += ch\n    return result"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Caesar Cipher Encoder",
+          "description": "Implement a Caesar cipher that shifts letters by a given amount, wrapping around the alphabet.",
+          "difficulty": "intermediate",
+          "category": "ASCII & Character Operations",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on caesar cipher encoder! This is a intermediate exercise in ASCII & Character Operations. Take your time and use the hints if you need them.",
+          "starter_code": "def caesar(text, shift):\n    # TODO: Shift each letter by 'shift' positions\n    # Wrap around: Z + 1 = A\n    pass\n\nprint(caesar('HELLO', 3))        # KHOOR\nprint(caesar('KHOOR', -3))       # HELLO\nprint(caesar('Attack at Dawn', 13))  # Nggnpx ng Qnja (ROT13)",
+          "expected_output": "KHOOR\nHELLO\nNggnpx ng Qnja",
+          "hints": [
+            {
+              "message": "For uppercase: new_char = chr((ord(ch) - 65 + shift) % 26 + 65). Similar for lowercase with 97."
+            },
+            {
+              "message": "Use modulo 26 to wrap around. Keep non-letters unchanged."
+            },
+            {
+              "message": "def caesar(text, shift):\n    result = ''\n    for ch in text:\n        if 'A' <= ch <= 'Z':\n            result += chr((ord(ch) - 65 + shift) % 26 + 65)\n        elif 'a' <= ch <= 'z':\n            result += chr((ord(ch) - 97 + shift) % 26 + 97)\n        else:\n            result += ch\n    return result"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Caesar Cipher Brute-Force Cracker",
+          "description": "Try all 26 shifts to crack a Caesar-encrypted message.",
+          "difficulty": "intermediate",
+          "category": "ASCII & Character Operations",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on caesar cipher brute-force cracker! This is a intermediate exercise in ASCII & Character Operations. Take your time and use the hints if you need them.",
+          "starter_code": "def crack_caesar(ciphertext):\n    # TODO: Try all 26 shifts, print each result\n    pass\n\ncrack_caesar('KHOOR')\n# One of the 26 outputs should be 'HELLO'",
+          "expected_output": "Shift  0: KHOOR\nShift  1: JGNNQ\nShift  2: IFMMP\nShift  3: HELLO  <-- readable!\n...\nShift 25: LIPPS",
+          "hints": [
+            {
+              "message": "Apply the caesar function with shifts from 0 to 25."
+            },
+            {
+              "message": "Print each shift result. The correct one will be readable English."
+            },
+            {
+              "message": "def crack_caesar(ct):\n    for s in range(26):\n        result = ''\n        for ch in ct:\n            if 'A'<=ch<='Z': result += chr((ord(ch)-65-s)%26+65)\n            elif 'a'<=ch<='z': result += chr((ord(ch)-97-s)%26+97)\n            else: result += ch\n        print(f'Shift {s:2d}: {result}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Printable Character Filter",
+          "description": "Given raw bytes, extract only the printable ASCII characters (codes 32-126).",
+          "difficulty": "beginner",
+          "category": "ASCII & Character Operations",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on printable character filter! This is a beginner exercise in ASCII & Character Operations. Take your time and use the hints if you need them.",
+          "starter_code": "def extract_printable(data):\n    # TODO: Return string of only printable characters\n    pass\n\nraw = bytes([72, 0, 101, 0, 108, 3, 108, 0, 111, 255])\nprint(repr(extract_printable(raw)))\n# Expected: 'Hello'",
+          "expected_output": "'Hello'",
+          "hints": [
+            {
+              "message": "Printable ASCII range: 32 to 126 inclusive."
+            },
+            {
+              "message": "Filter bytes: ''.join(chr(b) for b in data if 32 <= b <= 126)"
+            },
+            {
+              "message": "def extract_printable(data):\n    return ''.join(chr(b) for b in data if 32 <= b <= 126)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Character Frequency Analyser",
+          "description": "Count the frequency of each character in text and display sorted by frequency.",
+          "difficulty": "intermediate",
+          "category": "ASCII & Character Operations",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on character frequency analyser! This is a intermediate exercise in ASCII & Character Operations. Take your time and use the hints if you need them.",
+          "starter_code": "def char_frequency(text):\n    # TODO: Count each character, sort by frequency descending\n    pass\n\nchar_frequency('HELLO WORLD')\nchar_frequency('aaabbbcccc')",
+          "expected_output": "L: 3 (27.3%)\nO: 2 (18.2%)\nH: 1 (9.1%)\nE: 1 (9.1%)\n : 1 (9.1%)\nW: 1 (9.1%)\nR: 1 (9.1%)\nD: 1 (9.1%)\n---\nc: 4 (40.0%)\nb: 3 (30.0%)\na: 3 (30.0%)",
+          "hints": [
+            {
+              "message": "Use a dictionary to count characters. Sort by value descending."
+            },
+            {
+              "message": "freq = {}; for ch in text: freq[ch] = freq.get(ch, 0) + 1. Then sort and display."
+            },
+            {
+              "message": "def char_frequency(text):\n    freq = {}\n    for ch in text: freq[ch] = freq.get(ch, 0) + 1\n    total = len(text)\n    for ch, count in sorted(freq.items(), key=lambda x: -x[1]):\n        print(f'{ch}: {count} ({count/total*100:.1f}%)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: ROT13 Encoder/Decoder",
+          "description": "Implement ROT13 — a Caesar cipher with shift=13 that is its own inverse.",
+          "difficulty": "beginner",
+          "category": "ASCII & Character Operations",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on rot13 encoder/decoder! This is a beginner exercise in ASCII & Character Operations. Take your time and use the hints if you need them.",
+          "starter_code": "def rot13(text):\n    # TODO: Shift each letter by 13\n    # Special property: applying ROT13 twice gives original!\n    pass\n\nprint(rot13('Hello'))           # Uryyb\nprint(rot13('Uryyb'))           # Hello (self-inverting!)\nprint(rot13('ATTACK AT DAWN'))  # NGGNPX NG QNJA",
+          "expected_output": "Uryyb\nHello\nNGGNPX NG QNJA",
+          "hints": [
+            {
+              "message": "ROT13 is Caesar cipher with shift=13. Since 13+13=26, applying it twice returns the original."
+            },
+            {
+              "message": "Same as Caesar but always shift by 13. Letters only — keep spaces and punctuation."
+            },
+            {
+              "message": "def rot13(text):\n    result = ''\n    for ch in text:\n        if 'A'<=ch<='Z': result += chr((ord(ch)-65+13)%26+65)\n        elif 'a'<=ch<='z': result += chr((ord(ch)-97+13)%26+97)\n        else: result += ch\n    return result"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Detect Non-ASCII Characters",
+          "description": "Scan a string and flag any characters outside the ASCII range (0-127).",
+          "difficulty": "intermediate",
+          "category": "ASCII & Character Operations",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on detect non-ascii characters! This is a intermediate exercise in ASCII & Character Operations. Take your time and use the hints if you need them.",
+          "starter_code": "def detect_non_ascii(text):\n    # TODO: Find and report non-ASCII characters with position and code point\n    pass\n\ndetect_non_ascii('Hello World')       # All ASCII\ndetect_non_ascii('caf\\u00e9 na\\u00efve')  # Non-ASCII found",
+          "expected_output": "All characters are ASCII\nPosition 3: 'é' (U+00E9) - NOT ASCII\nPosition 7: 'ï' (U+00EF) - NOT ASCII",
+          "hints": [
+            {
+              "message": "Check if ord(char) > 127 for each character."
+            },
+            {
+              "message": "Loop with enumerate: for i, ch in enumerate(text): if ord(ch) > 127: report it."
+            },
+            {
+              "message": "def detect_non_ascii(text):\n    found = False\n    for i, ch in enumerate(text):\n        if ord(ch) > 127:\n            print(f'Position {i}: {ch!r} (U+{ord(ch):04X}) - NOT ASCII')\n            found = True\n    if not found:\n        print('All characters are ASCII')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: ASCII Art Message Encoder",
+          "description": "Encode a message as a sequence of hex codes separated by spaces, then decode it back.",
+          "difficulty": "intermediate",
+          "category": "ASCII & Character Operations",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on ascii art message encoder! This is a intermediate exercise in ASCII & Character Operations. Take your time and use the hints if you need them.",
+          "starter_code": "def encode_hex(message):\n    # TODO: Convert each character to 2-digit hex\n    pass\n\ndef decode_hex(hex_string):\n    # TODO: Convert hex codes back to text\n    pass\n\nencoded = encode_hex('HACK')\nprint(encoded)                # 48 41 43 4B\nprint(decode_hex(encoded))    # HACK",
+          "expected_output": "48 41 43 4B\nHACK",
+          "hints": [
+            {
+              "message": "For encoding: ' '.join(f'{ord(c):02X}' for c in message)"
+            },
+            {
+              "message": "For decoding: split by space, convert each hex pair with int(h, 16), then chr()."
+            },
+            {
+              "message": "def encode_hex(msg):\n    return ' '.join(f'{ord(c):02X}' for c in msg)\n\ndef decode_hex(hx):\n    return ''.join(chr(int(h, 16)) for h in hx.split())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Simple Hex Dump",
+          "description": "Write a function that displays bytes as hex values with an offset column.",
+          "difficulty": "beginner",
+          "category": "Hex Dumps & Binary Inspection",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on simple hex dump! This is a beginner exercise in Hex Dumps & Binary Inspection. Take your time and use the hints if you need them.",
+          "starter_code": "def simple_hex(data):\n    # TODO: Show offset and hex bytes, 16 bytes per line\n    pass\n\nsimple_hex(b'Hello, World! This is a test.')",
+          "expected_output": "00000000  48 65 6c 6c 6f 2c 20 57 6f 72 6c 64 21 20 54 68\n00000010  69 73 20 69 73 20 61 20 74 65 73 74 2e",
+          "hints": [
+            {
+              "message": "Loop through data in chunks of 16 bytes. Format each byte as 2-digit hex."
+            },
+            {
+              "message": "Use range(0, len(data), 16) for the outer loop. For each chunk: ' '.join(f'{b:02x}' for b in chunk)."
+            },
+            {
+              "message": "def simple_hex(data):\n    for i in range(0, len(data), 16):\n        chunk = data[i:i+16]\n        hx = ' '.join(f'{b:02x}' for b in chunk)\n        print(f'{i:08x}  {hx}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Hex Dump with ASCII Column",
+          "description": "Add an ASCII column to the hex dump — printable chars shown, others as dots.",
+          "difficulty": "intermediate",
+          "category": "Hex Dumps & Binary Inspection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on hex dump with ascii column! This is a intermediate exercise in Hex Dumps & Binary Inspection. Take your time and use the hints if you need them.",
+          "starter_code": "def hex_dump(data, width=16):\n    # TODO: offset | hex bytes | ASCII representation\n    pass\n\nhex_dump(b'MZ\\x90\\x00\\x03\\x00\\x00\\x00Hello World')",
+          "expected_output": "00000000  4d 5a 90 00 03 00 00 00 48 65 6c 6c 6f 20 57 6f  |MZ......Hello Wo|\n00000010  72 6c 64                                          |rld|",
+          "hints": [
+            {
+              "message": "For the ASCII column: chr(b) if 32 <= b < 127 else '.' for each byte in the chunk."
+            },
+            {
+              "message": "Pad the hex column so lines align: use f'{hx:<{width*3}}'."
+            },
+            {
+              "message": "def hex_dump(data, width=16):\n    for i in range(0, len(data), width):\n        chunk = data[i:i+width]\n        hx = ' '.join(f'{b:02x}' for b in chunk)\n        asc = ''.join(chr(b) if 32<=b<127 else '.' for b in chunk)\n        print(f'{i:08x}  {hx:<{width*3}}  |{asc}|')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Read First N Bytes of File",
+          "description": "Read the first 32 bytes of a file in binary mode and display as hex.",
+          "difficulty": "beginner",
+          "category": "Hex Dumps & Binary Inspection",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on read first n bytes of file! This is a beginner exercise in Hex Dumps & Binary Inspection. Take your time and use the hints if you need them.",
+          "starter_code": "def peek_file(filepath, n=32):\n    # TODO: Open in 'rb' mode, read n bytes, display as hex\n    pass\n\n# Create test file first\nwith open('/tmp/testfile.bin', 'wb') as f:\n    f.write(b'\\x89PNG\\r\\n\\x1a\\n' + bytes(range(24)))\n\npeek_file('/tmp/testfile.bin')",
+          "expected_output": "File: /tmp/testfile.bin (32 bytes)\n89 50 4e 47 0d 0a 1a 0a 00 01 02 03 04 05 06 07\n08 09 0a 0b 0c 0d 0e 0f 10 11 12 13 14 15 16 17",
+          "hints": [
+            {
+              "message": "Open with open(filepath, 'rb') to read binary. Use f.read(n) to get n bytes."
+            },
+            {
+              "message": "Display the bytes: ' '.join(f'{b:02x}' for b in data). Show file size with os.path.getsize()."
+            },
+            {
+              "message": "import os\ndef peek_file(filepath, n=32):\n    with open(filepath, 'rb') as f:\n        data = f.read(n)\n    print(f'File: {filepath} ({os.path.getsize(filepath)} bytes)')\n    for i in range(0, len(data), 16):\n        print(' '.join(f'{b:02x}' for b in data[i:i+16]))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Compare Bytes at Specific Offset",
+          "description": "Read bytes at a specific offset in a file and display them.",
+          "difficulty": "intermediate",
+          "category": "Hex Dumps & Binary Inspection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on compare bytes at specific offset! This is a intermediate exercise in Hex Dumps & Binary Inspection. Take your time and use the hints if you need them.",
+          "starter_code": "def read_at_offset(filepath, offset, length=16):\n    # TODO: Seek to offset, read length bytes, display\n    pass\n\nwith open('/tmp/sample.bin', 'wb') as f:\n    f.write(b'\\x00' * 100 + b'SECRET DATA HERE' + b'\\x00' * 100)\n\nread_at_offset('/tmp/sample.bin', 100, 16)",
+          "expected_output": "Offset 0x0064 (100): 53 45 43 52 45 54 20 44 41 54 41 20 48 45 52 45\nASCII: SECRET DATA HERE",
+          "hints": [
+            {
+              "message": "Use f.seek(offset) to jump to the position, then f.read(length) to read bytes."
+            },
+            {
+              "message": "After reading, display both hex and ASCII representation of the data."
+            },
+            {
+              "message": "def read_at_offset(filepath, offset, length=16):\n    with open(filepath, 'rb') as f:\n        f.seek(offset)\n        data = f.read(length)\n    hx = ' '.join(f'{b:02x}' for b in data)\n    asc = ''.join(chr(b) if 32<=b<127 else '.' for b in data)\n    print(f'Offset 0x{offset:04X} ({offset}): {hx}')\n    print(f'ASCII: {asc}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Null Byte Counter",
+          "description": "Count null bytes (0x00), printable bytes, and high bytes (>127) in binary data.",
+          "difficulty": "beginner",
+          "category": "Hex Dumps & Binary Inspection",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on null byte counter! This is a beginner exercise in Hex Dumps & Binary Inspection. Take your time and use the hints if you need them.",
+          "starter_code": "def byte_stats(data):\n    # TODO: Count null, printable, and high bytes\n    pass\n\nsample = bytes([0,0,0,72,101,108,108,111,0,0,200,255,32,65])\nbyte_stats(sample)",
+          "expected_output": "Total: 14 bytes\nNull (0x00): 4 (28.6%)\nPrintable (0x20-0x7E): 7 (50.0%)\nHigh (0x80-0xFF): 2 (14.3%)\nOther control: 1 (7.1%)",
+          "hints": [
+            {
+              "message": "Categorise each byte: 0=null, 32-126=printable, 128-255=high, rest=control."
+            },
+            {
+              "message": "Use counters and loop through data. Calculate percentages from total."
+            },
+            {
+              "message": "def byte_stats(data):\n    null=printable=high=control=0\n    for b in data:\n        if b==0: null+=1\n        elif 32<=b<=126: printable+=1\n        elif b>127: high+=1\n        else: control+=1\n    t=len(data)\n    print(f'Total: {t} bytes')\n    print(f'Null (0x00): {null} ({null/t*100:.1f}%)')\n    print(f'Printable (0x20-0x7E): {printable} ({printable/t*100:.1f}%)')\n    print(f'High (0x80-0xFF): {high} ({high/t*100:.1f}%)')\n    print(f'Other control: {control} ({control/t*100:.1f}%)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: String Extractor from Binary",
+          "description": "Extract all ASCII strings of length >= 4 from binary data (like the Linux 'strings' command).",
+          "difficulty": "intermediate",
+          "category": "Hex Dumps & Binary Inspection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on string extractor from binary! This is a intermediate exercise in Hex Dumps & Binary Inspection. Take your time and use the hints if you need them.",
+          "starter_code": "def extract_strings(data, min_length=4):\n    # TODO: Find sequences of printable chars >= min_length\n    pass\n\nbinary = bytes([0]*10) + b'password' + bytes([0]*5) + b'http://evil.com' + bytes([0]*10)\nfor s in extract_strings(binary):\n    print(f'  \"{s}\"')",
+          "expected_output": "  \"password\"\n  \"http://evil.com\"",
+          "hints": [
+            {
+              "message": "Build a current string buffer. When you hit a printable char, append. When non-printable, if buffer >= min_length, save it."
+            },
+            {
+              "message": "Alternatively use regex: re.findall(rb'[\\x20-\\x7E]{4,}', data) and decode each match."
+            },
+            {
+              "message": "import re\ndef extract_strings(data, min_length=4):\n    pattern = rb'[\\x20-\\x7E]{' + str(min_length).encode() + rb',}'\n    return [m.decode() for m in re.findall(pattern, data)]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Hex Search Tool",
+          "description": "Search binary data for a hex pattern (like 'FF D8 FF') and report all offsets found.",
+          "difficulty": "intermediate",
+          "category": "Hex Dumps & Binary Inspection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on hex search tool! This is a intermediate exercise in Hex Dumps & Binary Inspection. Take your time and use the hints if you need them.",
+          "starter_code": "def hex_search(data, hex_pattern):\n    # TODO: Convert hex pattern to bytes, find all occurrences\n    pass\n\nsample = b'\\x00\\xff\\xd8\\xff\\xe0\\x00\\x00test\\xff\\xd8\\xff\\xe1\\x00'\nhex_search(sample, 'FF D8 FF')",
+          "expected_output": "Pattern 'FF D8 FF' found at:\n  Offset 0x0001 (1)\n  Offset 0x000B (11)\nTotal: 2 match(es)",
+          "hints": [
+            {
+              "message": "Convert the hex pattern: bytes.fromhex(pattern.replace(' ', '')). Then use data.find() in a loop."
+            },
+            {
+              "message": "Start searching from position 0. After each find, start from pos+1 to find the next occurrence."
+            },
+            {
+              "message": "def hex_search(data, hex_pattern):\n    search = bytes.fromhex(hex_pattern.replace(' ', ''))\n    results = []\n    pos = 0\n    while True:\n        idx = data.find(search, pos)\n        if idx == -1: break\n        results.append(idx)\n        pos = idx + 1\n    print(f\"Pattern '{hex_pattern}' found at:\")\n    for off in results:\n        print(f'  Offset 0x{off:04X} ({off})')\n    print(f'Total: {len(results)} match(es)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Binary Patch Applier",
+          "description": "Apply a patch to binary data: replace bytes at a specific offset.",
+          "difficulty": "intermediate",
+          "category": "Hex Dumps & Binary Inspection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on binary patch applier! This is a intermediate exercise in Hex Dumps & Binary Inspection. Take your time and use the hints if you need them.",
+          "starter_code": "def apply_patch(data, offset, new_bytes):\n    # TODO: Replace bytes at offset with new_bytes\n    # Return the patched data\n    pass\n\noriginal = bytearray(b'Hello World')\npatched = apply_patch(original, 6, b'Earth')\nprint(patched)",
+          "expected_output": "Hello Earth",
+          "hints": [
+            {
+              "message": "Convert to bytearray if needed (bytes are immutable). Use slice assignment."
+            },
+            {
+              "message": "buf = bytearray(data); buf[offset:offset+len(new_bytes)] = new_bytes; return bytes(buf)"
+            },
+            {
+              "message": "def apply_patch(data, offset, new_bytes):\n    buf = bytearray(data)\n    buf[offset:offset+len(new_bytes)] = new_bytes\n    return bytes(buf)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Byte Pattern Frequency Counter",
+          "description": "Count how often each unique byte value appears in binary data and show the top 10.",
+          "difficulty": "intermediate",
+          "category": "Hex Dumps & Binary Inspection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on byte pattern frequency counter! This is a intermediate exercise in Hex Dumps & Binary Inspection. Take your time and use the hints if you need them.",
+          "starter_code": "def byte_frequency(data, top_n=10):\n    # TODO: Count each byte value 0-255, show top N\n    pass\n\nimport random\nrandom.seed(42)\nsample = bytes(random.choices(range(256), k=200))\nbyte_frequency(sample)",
+          "expected_output": "Top 10 byte frequencies:\n0xA7 (167): 5 times\n0x23 (35): 4 times\n0x81 (129): 4 times\n...",
+          "hints": [
+            {
+              "message": "Use a list of 256 zeros as counters. Increment freq[byte] for each byte."
+            },
+            {
+              "message": "Sort by count descending and display the top N entries with hex and decimal values."
+            },
+            {
+              "message": "def byte_frequency(data, top_n=10):\n    freq = [0]*256\n    for b in data: freq[b] += 1\n    ranked = sorted(enumerate(freq), key=lambda x: -x[1])\n    print(f'Top {top_n} byte frequencies:')\n    for val, count in ranked[:top_n]:\n        print(f'0x{val:02X} ({val:3d}): {count} times')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Binary File Size Analyser",
+          "description": "Display file size in bytes, KB, MB with hex representation of the size value.",
+          "difficulty": "beginner",
+          "category": "Hex Dumps & Binary Inspection",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on binary file size analyser! This is a beginner exercise in Hex Dumps & Binary Inspection. Take your time and use the hints if you need them.",
+          "starter_code": "import os\n\ndef file_size_info(filepath):\n    # TODO: Show size in bytes, KB, MB and hex\n    pass\n\nwith open('/tmp/sizetest.bin', 'wb') as f:\n    f.write(b'X' * 150000)\nfile_size_info('/tmp/sizetest.bin')",
+          "expected_output": "File: /tmp/sizetest.bin\nSize: 150,000 bytes (0x249F0)\nSize: 146.5 KB\nSize: 0.1 MB",
+          "hints": [
+            {
+              "message": "Use os.path.getsize() to get size in bytes. Divide by 1024 for KB, by 1048576 for MB."
+            },
+            {
+              "message": "Show hex of the size with hex(size). Format KB/MB with one decimal place."
+            },
+            {
+              "message": "import os\ndef file_size_info(filepath):\n    size = os.path.getsize(filepath)\n    print(f'File: {filepath}')\n    print(f'Size: {size:,} bytes ({hex(size)})')\n    print(f'Size: {size/1024:.1f} KB')\n    print(f'Size: {size/1048576:.1f} MB')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Base64 Encode a String",
+          "description": "Encode a text message into Base64 using the base64 module.",
+          "difficulty": "beginner",
+          "category": "Base64 & Encoding",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on base64 encode a string! This is a beginner exercise in Base64 & Encoding. Take your time and use the hints if needed.",
+          "starter_code": "import base64\n\ndef encode_b64(text):\n    # TODO: Encode text to Base64 string\n    pass\n\nprint(encode_b64('Hello World'))\nprint(encode_b64('admin:password'))\nprint(encode_b64('Attack at Dawn'))",
+          "expected_output": "SGVsbG8gV29ybGQ=\nYWRtaW46cGFzc3dvcmQ=\nQXR0YWNrIGF0IERhd24=",
+          "hints": [
+            {
+              "message": "First convert text to bytes with .encode(), then use base64.b64encode()."
+            },
+            {
+              "message": "The result is bytes — use .decode() to get a string: base64.b64encode(text.encode()).decode()"
+            },
+            {
+              "message": "import base64\ndef encode_b64(text):\n    return base64.b64encode(text.encode()).decode()"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Base64 Decode a String",
+          "description": "Decode a Base64 string back to the original text.",
+          "difficulty": "beginner",
+          "category": "Base64 & Encoding",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on base64 decode a string! This is a beginner exercise in Base64 & Encoding. Take your time and use the hints if needed.",
+          "starter_code": "import base64\n\ndef decode_b64(b64_string):\n    # TODO: Decode Base64 back to text\n    pass\n\nprint(decode_b64('SGVsbG8gV29ybGQ='))\nprint(decode_b64('YWRtaW46cGFzc3dvcmQ='))\nprint(decode_b64('eyJ1c2VyIjoiYWRtaW4ifQ=='))",
+          "expected_output": "Hello World\nadmin:password\n{\"user\":\"admin\"}",
+          "hints": [
+            {
+              "message": "Use base64.b64decode() which takes a string or bytes and returns bytes."
+            },
+            {
+              "message": "Decode the result to string: base64.b64decode(b64_string).decode('utf-8')"
+            },
+            {
+              "message": "import base64\ndef decode_b64(b64_string):\n    return base64.b64decode(b64_string).decode('utf-8')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Detect Base64 in Log Files",
+          "description": "Scan text for Base64-encoded strings and decode them.",
+          "difficulty": "intermediate",
+          "category": "Base64 & Encoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on detect base64 in log files! This is a intermediate exercise in Base64 & Encoding. Take your time and use the hints if needed.",
+          "starter_code": "import base64, re\n\ndef find_base64(text):\n    # TODO: Find Base64 patterns (16+ chars), decode each\n    pass\n\nlog = '''2024-01-15 Login OK\nPayload: SGVsbG8gV29ybGQ=\nToken: eyJ1c2VyIjoiYWRtaW4iLCJyb2xlIjoicm9vdCJ9\nNormal line here'''\n\nfind_base64(log)",
+          "expected_output": "Found: SGVsbG8gV29ybGQ= -> Hello World\nFound: eyJ1c2VyIjoiYWRtaW4iLCJyb2xlIjoicm9vdCJ9 -> {\"user\":\"admin\",\"role\":\"root\"}",
+          "hints": [
+            {
+              "message": "Use regex: r'[A-Za-z0-9+/]{16,}={0,2}' to find Base64-like patterns."
+            },
+            {
+              "message": "Try decoding each match. If it produces mostly printable chars, it is likely real Base64."
+            },
+            {
+              "message": "import base64, re\ndef find_base64(text):\n    for m in re.findall(r'[A-Za-z0-9+/]{16,}={0,2}', text):\n        try:\n            dec = base64.b64decode(m).decode('utf-8','replace')\n            if sum(1 for c in dec if 32<=ord(c)<127)/len(dec) > 0.7:\n                print(f'Found: {m} -> {dec}')\n        except: pass"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: URL Encoding & Decoding",
+          "description": "URL-encode special characters and decode URL-encoded strings.",
+          "difficulty": "beginner",
+          "category": "Base64 & Encoding",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on url encoding & decoding! This is a beginner exercise in Base64 & Encoding. Take your time and use the hints if needed.",
+          "starter_code": "import urllib.parse\n\ndef url_encode(text):\n    # TODO: URL-encode the text\n    pass\n\ndef url_decode(encoded):\n    # TODO: Decode URL-encoded text\n    pass\n\nprint(url_encode('hello world&name=test'))\nprint(url_decode('hello%20world%26name%3Dtest'))\nprint(url_decode('..%2F..%2Fetc%2Fpasswd'))",
+          "expected_output": "hello+world%26name%3Dtest\nhello world&name=test\n../../etc/passwd",
+          "hints": [
+            {
+              "message": "urllib.parse.quote() encodes, urllib.parse.unquote() decodes."
+            },
+            {
+              "message": "quote() replaces special chars with %XX hex codes. unquote() reverses it."
+            },
+            {
+              "message": "import urllib.parse\ndef url_encode(text):\n    return urllib.parse.quote_plus(text)\ndef url_decode(encoded):\n    return urllib.parse.unquote(encoded)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Hex String Encoder/Decoder",
+          "description": "Encode text as hex string (like '48656c6c6f') and decode it back.",
+          "difficulty": "beginner",
+          "category": "Base64 & Encoding",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on hex string encoder/decoder! This is a beginner exercise in Base64 & Encoding. Take your time and use the hints if needed.",
+          "starter_code": "def text_to_hex(text):\n    # TODO: Convert text to hex string\n    pass\n\ndef hex_to_text(hex_str):\n    # TODO: Convert hex string back to text\n    pass\n\nprint(text_to_hex('Hello'))\nprint(hex_to_text('48656c6c6f'))\nprint(text_to_hex('HACK THE PLANET'))",
+          "expected_output": "48656c6c6f\nHello\n4841434b2054484520504c414e4554",
+          "hints": [
+            {
+              "message": "For encoding: text.encode().hex() or ''.join(f'{ord(c):02x}' for c in text)."
+            },
+            {
+              "message": "For decoding: bytes.fromhex(hex_str).decode()"
+            },
+            {
+              "message": "def text_to_hex(text):\n    return text.encode().hex()\ndef hex_to_text(hex_str):\n    return bytes.fromhex(hex_str).decode()"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Multi-Encoding Detector",
+          "description": "Given a string, detect if it is Base64, hex-encoded, URL-encoded, or plain text.",
+          "difficulty": "intermediate",
+          "category": "Base64 & Encoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on multi-encoding detector! This is a intermediate exercise in Base64 & Encoding. Take your time and use the hints if needed.",
+          "starter_code": "import re\n\ndef detect_encoding(text):\n    # TODO: Check patterns to guess encoding type\n    pass\n\ndetect_encoding('SGVsbG8gV29ybGQ=')      # Base64\ndetect_encoding('48656c6c6f')              # Hex\ndetect_encoding('hello%20world')           # URL-encoded\ndetect_encoding('Hello World')             # Plain text",
+          "expected_output": "SGVsbG8gV29ybGQ= -> Likely Base64\n48656c6c6f -> Likely Hex-encoded\nhello%20world -> Likely URL-encoded\nHello World -> Plain text",
+          "hints": [
+            {
+              "message": "Check for % followed by hex digits (URL). Check if all chars are hex digits (hex). Check for = padding and Base64 charset."
+            },
+            {
+              "message": "Order of checks matters: URL first (%XX pattern), then Base64 (= padding, A-Za-z0-9+/), then hex (only 0-9a-fA-F), else plain."
+            },
+            {
+              "message": "import re\ndef detect_encoding(text):\n    if re.search(r'%[0-9A-Fa-f]{2}', text):\n        kind = 'Likely URL-encoded'\n    elif re.match(r'^[A-Za-z0-9+/]{4,}={0,2}$', text) and len(text)%4==0:\n        kind = 'Likely Base64'\n    elif re.match(r'^[0-9a-fA-F]+$', text) and len(text)%2==0:\n        kind = 'Likely Hex-encoded'\n    else:\n        kind = 'Plain text'\n    print(f'{text} -> {kind}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: JWT Token Decoder",
+          "description": "Decode the header and payload sections of a JWT token (they are Base64URL-encoded).",
+          "difficulty": "intermediate",
+          "category": "Base64 & Encoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on jwt token decoder! This is a intermediate exercise in Base64 & Encoding. Take your time and use the hints if needed.",
+          "starter_code": "import base64, json\n\ndef decode_jwt(token):\n    # TODO: Split by '.', decode first two parts\n    # JWT uses Base64URL (replace - with + and _ with /)\n    pass\n\njwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiYWRtaW4iLCJyb2xlIjoic3VwZXJ1c2VyIiwiaWF0IjoxNzA1MzI0ODAwfQ.signature_here'\ndecode_jwt(jwt)",
+          "expected_output": "Header: {'alg': 'HS256', 'typ': 'JWT'}\nPayload: {'user': 'admin', 'role': 'superuser', 'iat': 1705324800}",
+          "hints": [
+            {
+              "message": "Split the token by '.' — you get header, payload, signature (3 parts)."
+            },
+            {
+              "message": "For Base64URL: replace '-' with '+' and '_' with '/'. Add '=' padding to make length divisible by 4."
+            },
+            {
+              "message": "import base64, json\ndef decode_jwt(token):\n    parts = token.split('.')\n    for i, name in enumerate(['Header', 'Payload']):\n        padded = parts[i] + '=' * (4 - len(parts[i]) % 4)\n        decoded = base64.urlsafe_b64decode(padded)\n        data = json.loads(decoded)\n        print(f'{name}: {data}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Encoding Chain Builder",
+          "description": "Build a tool that chains multiple encoding operations: Base64 → URL → Hex and reverse.",
+          "difficulty": "advanced",
+          "category": "Base64 & Encoding",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's work on encoding chain builder! This is a advanced exercise in Base64 & Encoding. Take your time and use the hints if needed.",
+          "starter_code": "import base64, urllib.parse\n\ndef encode_chain(text, steps):\n    # TODO: Apply encoding steps in order\n    # steps is a list like ['base64', 'url', 'hex']\n    data = text\n    for step in steps:\n        if step == 'base64':\n            data = base64.b64encode(data.encode() if isinstance(data,str) else data).decode()\n        elif step == 'url':\n            data = urllib.parse.quote(data)\n        elif step == 'hex':\n            data = data.encode().hex() if isinstance(data,str) else data.hex()\n        print(f'  After {step}: {data[:60]}...' if len(str(data))>60 else f'  After {step}: {data}')\n    return data\n\nprint('=== Encoding Chain ===')\nencode_chain('Secret Message', ['base64', 'url'])\nprint()\nencode_chain('admin:root', ['hex', 'base64'])",
+          "expected_output": "=== Encoding Chain ===\n  After base64: U2VjcmV0IE1lc3NhZ2U=\n  After url: U2VjcmV0IE1lc3NhZ2U%3D\n\n  After hex: 61646d696e3a726f6f74\n  After base64: NjE2NDZkNjk2ZTNhNzI2ZjZmNzQ=",
+          "hints": [
+            {
+              "message": "Process each step in order. Each step transforms the current data."
+            },
+            {
+              "message": "Be careful with types — some steps expect strings, others bytes. Convert as needed."
+            },
+            {
+              "message": "import base64, urllib.parse\ndef encode_chain(text, steps):\n    data = text\n    for step in steps:\n        if step=='base64': data=base64.b64encode((data if isinstance(data,bytes) else data.encode())).decode()\n        elif step=='url': data=urllib.parse.quote(str(data))\n        elif step=='hex': data=(data if isinstance(data,bytes) else data.encode()).hex()\n        print(f'  After {step}: {data}')\n    return data"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Character Encoding Comparison",
+          "description": "Encode the same text in UTF-8, Latin-1, and ASCII — compare byte lengths and show differences.",
+          "difficulty": "intermediate",
+          "category": "Base64 & Encoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on character encoding comparison! This is a intermediate exercise in Base64 & Encoding. Take your time and use the hints if needed.",
+          "starter_code": "def compare_encodings(text):\n    # TODO: Encode in different charsets, show bytes and lengths\n    pass\n\ncompare_encodings('Hello')\ncompare_encodings('cafe\\u0301')\ncompare_encodings('\\u00e9l\\u00e8ve')",
+          "expected_output": "Text: Hello\n  UTF-8:   5 bytes [48 65 6c 6c 6f]\n  Latin-1: 5 bytes [48 65 6c 6c 6f]\n  ASCII:   5 bytes [48 65 6c 6c 6f]\n\nText: café\n  UTF-8:   5 bytes [63 61 66 c3 a9]\n  Latin-1: 4 bytes [63 61 66 e9]\n  ASCII:   Error - can't encode",
+          "hints": [
+            {
+              "message": "Use text.encode('utf-8'), text.encode('latin-1'), text.encode('ascii')."
+            },
+            {
+              "message": "Wrap ASCII encoding in try/except since it fails for non-ASCII characters."
+            },
+            {
+              "message": "def compare_encodings(text):\n    print(f'Text: {text}')\n    for enc in ['utf-8', 'latin-1', 'ascii']:\n        try:\n            b = text.encode(enc)\n            print(f'  {enc:8s}: {len(b)} bytes [{b.hex(\" \")}]')\n        except UnicodeEncodeError:\n            print(f'  {enc:8s}: Error - can\\'t encode')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Binary-to-Base64 File Encoder",
+          "description": "Read a binary file and encode its contents as a Base64 string (like email attachments work).",
+          "difficulty": "intermediate",
+          "category": "Base64 & Encoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on binary-to-base64 file encoder! This is a intermediate exercise in Base64 & Encoding. Take your time and use the hints if needed.",
+          "starter_code": "import base64\n\ndef file_to_base64(filepath):\n    # TODO: Read file as binary, encode to Base64\n    pass\n\ndef base64_to_file(b64_string, output_path):\n    # TODO: Decode Base64 and write to file\n    pass\n\n# Create test file\nwith open('/tmp/original.bin', 'wb') as f:\n    f.write(b'\\x89PNG\\r\\n\\x1a\\n' + b'FAKE_IMAGE_DATA' * 5)\n\nb64 = file_to_base64('/tmp/original.bin')\nprint(f'Base64 ({len(b64)} chars): {b64[:50]}...')\n\nbase64_to_file(b64, '/tmp/restored.bin')\n\nwith open('/tmp/original.bin','rb') as a, open('/tmp/restored.bin','rb') as b:\n    print(f'Files match: {a.read() == b.read()}')",
+          "expected_output": "Base64 (120 chars): iVBORk0KGgoFQUtFX0lNQUdFX0RBVEFGQU...\nFiles match: True",
+          "hints": [
+            {
+              "message": "Read the file in 'rb' mode, then base64.b64encode() the bytes."
+            },
+            {
+              "message": "For restoring: base64.b64decode() and write to file in 'wb' mode."
+            },
+            {
+              "message": "import base64\ndef file_to_base64(path):\n    with open(path,'rb') as f: return base64.b64encode(f.read()).decode()\ndef base64_to_file(b64, path):\n    with open(path,'wb') as f: f.write(base64.b64decode(b64))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Single-Byte XOR Encrypt",
+          "description": "XOR each byte of a message with a single key byte.",
+          "difficulty": "beginner",
+          "category": "XOR & Cryptography",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on single-byte xor encrypt! This is a beginner exercise in XOR & Cryptography. Take your time and use the hints if needed.",
+          "starter_code": "def xor_single(data, key):\n    # TODO: XOR each byte with key\n    pass\n\nplain = b'HELLO'\nenc = xor_single(plain, 0x42)\nprint(f'Encrypted: {enc.hex()}')\ndec = xor_single(enc, 0x42)\nprint(f'Decrypted: {dec.decode()}')",
+          "expected_output": "Encrypted: 0a070e0e0d\nDecrypted: HELLO",
+          "hints": [
+            {
+              "message": "XOR each byte: bytes([b ^ key for b in data])"
+            },
+            {
+              "message": "Same operation encrypts AND decrypts — that is the magic of XOR!"
+            },
+            {
+              "message": "def xor_single(data, key):\n    return bytes([b ^ key for b in data])"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Multi-Byte XOR Key",
+          "description": "XOR data with a repeating multi-byte key.",
+          "difficulty": "intermediate",
+          "category": "XOR & Cryptography",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on multi-byte xor key! This is a intermediate exercise in XOR & Cryptography. Take your time and use the hints if needed.",
+          "starter_code": "def xor_multi(data, key):\n    # TODO: XOR with repeating key\n    pass\n\nplain = b'SECRET MESSAGE HERE'\nkey = b'KEY'\nenc = xor_multi(plain, key)\nprint(f'Encrypted: {enc.hex()}')\ndec = xor_multi(enc, key)\nprint(f'Decrypted: {dec.decode()}')",
+          "expected_output": "Encrypted: 180a0813001a6c02160004100e6c08040b04\nDecrypted: SECRET MESSAGE HERE",
+          "hints": [
+            {
+              "message": "Use key[i % len(key)] to cycle through the key bytes."
+            },
+            {
+              "message": "bytes([b ^ key[i % len(key)] for i, b in enumerate(data)])"
+            },
+            {
+              "message": "def xor_multi(data, key):\n    if isinstance(key, str): key = key.encode()\n    return bytes([b ^ key[i%len(key)] for i,b in enumerate(data)])"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Brute-Force Single-Byte XOR",
+          "description": "Try all 256 single-byte keys to crack XOR encryption. Score by printable character ratio.",
+          "difficulty": "intermediate",
+          "category": "XOR & Cryptography",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on brute-force single-byte xor! This is a intermediate exercise in XOR & Cryptography. Take your time and use the hints if needed.",
+          "starter_code": "def brute_xor(encrypted):\n    # TODO: Try keys 0-255, score each, show top 5\n    pass\n\nsecret = bytes([b ^ 0x4B for b in b'FORENSIC EVIDENCE'])\nbrute_xor(secret)",
+          "expected_output": "Top 5 candidates:\nKey 0x4B (75): FORENSIC EVIDENCE    [100%]\nKey 0x0B (11): ./*$-.'.$n$1'#$-.$  [35%]\n...",
+          "hints": [
+            {
+              "message": "For each key 0-255: decrypt all bytes, count printable chars (32-126), calculate ratio."
+            },
+            {
+              "message": "Sort results by printability score descending. The correct key will have the highest score."
+            },
+            {
+              "message": "def brute_xor(encrypted):\n    results = []\n    for key in range(256):\n        dec = bytes([b^key for b in encrypted])\n        score = sum(1 for b in dec if 32<=b<127)/len(dec)\n        results.append((key, dec, score))\n    results.sort(key=lambda x:-x[2])\n    print('Top 5 candidates:')\n    for k,p,s in results[:5]:\n        print(f'Key 0x{k:02X} ({k:3d}): {p.decode(\"ascii\",errors=\".\"):<25s} [{s:.0%}]')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Known-Plaintext XOR Attack",
+          "description": "Given encrypted data and a known plaintext fragment, extract the XOR key.",
+          "difficulty": "advanced",
+          "category": "XOR & Cryptography",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's work on known-plaintext xor attack! This is a advanced exercise in XOR & Cryptography. Take your time and use the hints if needed.",
+          "starter_code": "def known_plaintext_attack(encrypted, known_plain, position=0):\n    # TODO: XOR encrypted bytes at position with known plaintext to get key\n    pass\n\nkey = b'SECRETKEY'\nplain = b'The password is hunter2 and the server is 10.0.0.1'\nenc = bytes([b ^ key[i%len(key)] for i,b in enumerate(plain)])\n\n# Attacker knows 'password' appears somewhere\nknown_plaintext_attack(enc, b'password', 4)",
+          "expected_output": "Extracted key fragment: TKEYSECR\nFull key (repeating): SECRETKEY\nDecrypted: The password is hunter2 and the server is 10.0.0.1",
+          "hints": [
+            {
+              "message": "XOR encrypted[pos:pos+len(known)] with known_plain to get key fragment."
+            },
+            {
+              "message": "The key repeats — align the fragment to find the full key cycle."
+            },
+            {
+              "message": "def known_plaintext_attack(encrypted, known_plain, position=0):\n    key_frag = bytes([encrypted[position+i]^known_plain[i] for i in range(len(known_plain))])\n    print(f'Extracted key fragment: {key_frag.decode(\"ascii\",errors=\"?\")}')\n    # Try different key lengths\n    for kl in range(1, len(key_frag)+1):\n        candidate = key_frag[:kl]\n        dec = bytes([encrypted[i]^candidate[i%kl] for i in range(len(encrypted))])\n        score = sum(1 for b in dec if 32<=b<127)/len(dec)\n        if score > 0.9:\n            print(f'Full key (repeating): {candidate.decode()}')\n            print(f'Decrypted: {dec.decode()}')\n            break"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: XOR Key Length Finder",
+          "description": "Use Hamming distance to guess the key length of a repeating XOR cipher.",
+          "difficulty": "advanced",
+          "category": "XOR & Cryptography",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's work on xor key length finder! This is a advanced exercise in XOR & Cryptography. Take your time and use the hints if needed.",
+          "starter_code": "def hamming_distance(b1, b2):\n    # TODO: Count differing bits between two byte sequences\n    pass\n\ndef guess_key_length(encrypted, max_len=20):\n    # TODO: Try key lengths 1-max_len, lowest normalised Hamming distance wins\n    pass\n\nprint(hamming_distance(b'this is a test', b'wokka wokka!!!'))\n# Expected: 37",
+          "expected_output": "Hamming distance: 37\nKey length guesses:\n  Length 3: 2.83\n  Length 9: 3.01\n  Length 6: 3.12\n  ...",
+          "hints": [
+            {
+              "message": "Hamming distance = count of differing bits. XOR two bytes, then count 1-bits in the result."
+            },
+            {
+              "message": "For key length: take first two blocks of that length, compute normalised Hamming distance (distance / length). Lowest wins."
+            },
+            {
+              "message": "def hamming_distance(b1, b2):\n    return sum(bin(a^b).count('1') for a,b in zip(b1,b2))\n\ndef guess_key_length(encrypted, max_len=20):\n    scores = []\n    for kl in range(2, min(max_len+1, len(encrypted)//2)):\n        block1 = encrypted[:kl]\n        block2 = encrypted[kl:2*kl]\n        dist = hamming_distance(block1, block2) / kl\n        scores.append((kl, dist))\n    scores.sort(key=lambda x: x[1])\n    print('Key length guesses:')\n    for kl, dist in scores[:5]:\n        print(f'  Length {kl}: {dist:.2f}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: XOR Visual Trace",
+          "description": "Show a step-by-step visual trace of XOR operation on each byte.",
+          "difficulty": "beginner",
+          "category": "XOR & Cryptography",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on xor visual trace! This is a beginner exercise in XOR & Cryptography. Take your time and use the hints if needed.",
+          "starter_code": "def xor_trace(plain, key):\n    # TODO: Show binary XOR for each byte pair\n    pass\n\nxor_trace(b'ABC', 0x42)",
+          "expected_output": "Byte 0: A (0x41) XOR 0x42\n  01000001\n  01000010  XOR\n  --------\n  00000011 = 0x03\n\nByte 1: B (0x42) XOR 0x42\n  01000010\n  01000010  XOR\n  --------\n  00000000 = 0x00\n...",
+          "hints": [
+            {
+              "message": "For each byte: show the binary of both values, the XOR operator, a line, and the result."
+            },
+            {
+              "message": "Use f'{byte:08b}' for 8-bit binary formatting."
+            },
+            {
+              "message": "def xor_trace(plain, key):\n    for i, b in enumerate(plain):\n        r = b ^ key\n        ch = chr(b) if 32<=b<127 else '.'\n        print(f'Byte {i}: {ch} (0x{b:02X}) XOR 0x{key:02X}')\n        print(f'  {b:08b}')\n        print(f'  {key:08b}  XOR')\n        print(f'  --------')\n        print(f'  {r:08b} = 0x{r:02X}\\n')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Detect XOR-Encrypted Data",
+          "description": "Analyse binary data to determine if it might be XOR-encrypted (check byte distribution).",
+          "difficulty": "intermediate",
+          "category": "XOR & Cryptography",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on detect xor-encrypted data! This is a intermediate exercise in XOR & Cryptography. Take your time and use the hints if needed.",
+          "starter_code": "import math\n\ndef is_xor_encrypted(data):\n    # TODO: Calculate byte frequency distribution\n    # XOR'd English text has a specific pattern\n    pass\n\nplaintext = b'This is normal English text with regular character distribution.'\nxored = bytes([b ^ 0x55 for b in plaintext])\nrandom_data = bytes(range(256))\n\nis_xor_encrypted(plaintext)\nis_xor_encrypted(xored)\nis_xor_encrypted(random_data)",
+          "expected_output": "Normal English: entropy=4.2, likely plaintext\nXOR'd data: entropy=4.2, likely single-byte XOR (similar entropy to plaintext)\nRandom data: entropy=8.0, likely encrypted/compressed",
+          "hints": [
+            {
+              "message": "Calculate Shannon entropy. Plaintext ~4.0-5.0, single-byte XOR same as plaintext, random ~8.0."
+            },
+            {
+              "message": "Single-byte XOR preserves the frequency distribution shape — just shifts which byte values are common."
+            },
+            {
+              "message": "import math\ndef is_xor_encrypted(data):\n    freq = [0]*256\n    for b in data: freq[b]+=1\n    t = len(data)\n    ent = -sum(c/t*math.log2(c/t) for c in freq if c>0)\n    # Check if distribution resembles shifted English\n    top = max(freq)\n    label = 'likely plaintext' if ent<5.5 else 'likely encrypted/compressed'\n    print(f'Entropy: {ent:.1f}, {label}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: XOR File Encryptor",
+          "description": "Encrypt and decrypt entire files using XOR with a multi-byte key.",
+          "difficulty": "intermediate",
+          "category": "XOR & Cryptography",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on xor file encryptor! This is a intermediate exercise in XOR & Cryptography. Take your time and use the hints if needed.",
+          "starter_code": "def xor_file(input_path, output_path, key):\n    # TODO: Read binary, XOR with key, write output\n    pass\n\n# Create test file\nwith open('/tmp/secret.txt', 'wb') as f:\n    f.write(b'TOP SECRET: Launch codes are 12345')\n\nxor_file('/tmp/secret.txt', '/tmp/encrypted.bin', b'MyKey')\n\n# Check encrypted\nwith open('/tmp/encrypted.bin', 'rb') as f:\n    enc = f.read()\nprint(f'Encrypted: {enc.hex()[:40]}...')\n\n# Decrypt\nxor_file('/tmp/encrypted.bin', '/tmp/decrypted.txt', b'MyKey')\nwith open('/tmp/decrypted.txt', 'rb') as f:\n    print(f'Decrypted: {f.read().decode()}')",
+          "expected_output": "Encrypted: 190e1911004a1017040b0917...\nDecrypted: TOP SECRET: Launch codes are 12345",
+          "hints": [
+            {
+              "message": "Read input in 'rb', XOR each byte with cycling key, write to output in 'wb'."
+            },
+            {
+              "message": "Same function works for both encrypt and decrypt since XOR is self-inverting."
+            },
+            {
+              "message": "def xor_file(inp, out, key):\n    with open(inp,'rb') as f: data=f.read()\n    result = bytes([b^key[i%len(key)] for i,b in enumerate(data)])\n    with open(out,'wb') as f: f.write(result)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: XOR Null Byte Key Recovery",
+          "description": "Exploit null bytes in XOR-encrypted data to recover the key directly.",
+          "difficulty": "intermediate",
+          "category": "XOR & Cryptography",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on xor null byte key recovery! This is a intermediate exercise in XOR & Cryptography. Take your time and use the hints if needed.",
+          "starter_code": "def recover_key_from_nulls(encrypted, key_length):\n    # TODO: Where plaintext has null bytes (0x00), encrypted byte = key byte\n    # Common in binary files with lots of nulls\n    pass\n\nkey = b'SECRET'\nplain = b'\\x00\\x00\\x00\\x00\\x00\\x00DATA\\x00\\x00\\x00\\x00\\x00\\x00'\nenc = bytes([b^key[i%len(key)] for i,b in enumerate(plain)])\n\nrecover_key_from_nulls(enc, 6)",
+          "expected_output": "Recovered key bytes:\n  Position 0: 0x53 = 'S'\n  Position 1: 0x45 = 'E'\n  Position 2: 0x43 = 'C'\n  Position 3: 0x52 = 'R'\n  Position 4: 0x45 = 'E'\n  Position 5: 0x54 = 'T'\nKey: SECRET",
+          "hints": [
+            {
+              "message": "When plaintext byte = 0x00, then 0x00 XOR key_byte = key_byte. The encrypted byte IS the key!"
+            },
+            {
+              "message": "For each key position (0 to key_length-1), collect all encrypted bytes at that position. If the plaintext has nulls, some of these will be the actual key byte."
+            },
+            {
+              "message": "def recover_key_from_nulls(enc, kl):\n    key = bytearray(kl)\n    for pos in range(kl):\n        bytes_at_pos = [enc[i] for i in range(pos, len(enc), kl)]\n        # Most common byte (if lots of nulls in plaintext) is the key byte\n        from collections import Counter\n        key[pos] = Counter(bytes_at_pos).most_common(1)[0][0]\n    print('Recovered key bytes:')\n    for i,b in enumerate(key):\n        ch = chr(b) if 32<=b<127 else '.'\n        print(f'  Position {i}: 0x{b:02X} = \\'{ch}\\'')\n    print(f'Key: {key.decode(\"ascii\",errors=\"?\")}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Build a Simple Stream Cipher",
+          "description": "Create a stream cipher using XOR with a pseudo-random keystream generated from a seed.",
+          "difficulty": "advanced",
+          "category": "XOR & Cryptography",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's work on build a simple stream cipher! This is a advanced exercise in XOR & Cryptography. Take your time and use the hints if needed.",
+          "starter_code": "import random\n\ndef stream_cipher(data, seed):\n    # TODO: Generate keystream from seed, XOR with data\n    pass\n\nplain = b'CONFIDENTIAL: Project Synapse details'\nenc = stream_cipher(plain, 42)\nprint(f'Encrypted: {enc.hex()[:40]}...')\ndec = stream_cipher(enc, 42)\nprint(f'Decrypted: {dec.decode()}')\n\n# Wrong seed fails!\nwrong = stream_cipher(enc, 99)\nprint(f'Wrong key: {wrong[:20]}')",
+          "expected_output": "Encrypted: a1b2c3d4e5f6...\nDecrypted: CONFIDENTIAL: Project Synapse details\nWrong key: b'garbled nonsense...'",
+          "hints": [
+            {
+              "message": "Use random.seed(seed) to initialise the PRNG, then random.randint(0,255) for each keystream byte."
+            },
+            {
+              "message": "XOR each data byte with the next random byte. Same seed produces same keystream, so it decrypts too."
+            },
+            {
+              "message": "import random\ndef stream_cipher(data, seed):\n    random.seed(seed)\n    keystream = bytes([random.randint(0,255) for _ in range(len(data))])\n    return bytes([b^k for b,k in zip(data, keystream)])"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Identify Multiple File Types",
+          "description": "Given a list of file headers (as bytes), identify each file type from magic bytes.",
+          "difficulty": "beginner",
+          "category": "Real-World Forensics",
+          "estimated_minutes": 3,
+          "ai_intro": "Let's work on identify multiple file types! This is a beginner exercise in Real-World Forensics. Take your time and use the hints if needed.",
+          "starter_code": "SIGS = {b'\\x89PNG':'PNG', b'\\xff\\xd8\\xff':'JPEG', b'%PDF':'PDF',\n         b'PK\\x03\\x04':'ZIP', b'MZ':'EXE', b'\\x7fELF':'ELF'}\n\ndef identify_all(headers):\n    # TODO: Check each header against SIGS\n    pass\n\ntest_files = [\n    b'\\x89PNG\\r\\n\\x1a\\n\\x00\\x00',\n    b'MZ\\x90\\x00\\x03\\x00',\n    b'%PDF-1.4 blah',\n    b'\\xff\\xd8\\xff\\xe0\\x00\\x10',\n    b'\\x00\\x00\\x00\\x00\\x00',\n]\nidentify_all(test_files)",
+          "expected_output": "File 1: PNG\nFile 2: EXE\nFile 3: PDF\nFile 4: JPEG\nFile 5: Unknown",
+          "hints": [
+            {
+              "message": "Loop through headers. For each, check if it starts with any known signature."
+            },
+            {
+              "message": "Use data.startswith(sig) for each signature in your database."
+            },
+            {
+              "message": "SIGS = {b'\\x89PNG':'PNG', b'\\xff\\xd8\\xff':'JPEG', b'%PDF':'PDF',\n         b'PK\\x03\\x04':'ZIP', b'MZ':'EXE', b'\\x7fELF':'ELF'}\ndef identify_all(headers):\n    for i, h in enumerate(headers, 1):\n        found = 'Unknown'\n        for sig, name in SIGS.items():\n            if h.startswith(sig): found = name; break\n        print(f'File {i}: {found}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Shannon Entropy Calculator",
+          "description": "Calculate Shannon entropy of data to detect encryption or compression.",
+          "difficulty": "intermediate",
+          "category": "Real-World Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on shannon entropy calculator! This is a intermediate exercise in Real-World Forensics. Take your time and use the hints if needed.",
+          "starter_code": "import math\n\ndef entropy(data):\n    # TODO: Calculate Shannon entropy (0-8 scale for bytes)\n    pass\n\nprint(f'English text: {entropy(b\"Hello World this is normal English text\"):.2f}')\nprint(f'Repeated:     {entropy(b\"AAAAAAAAAA\"):.2f}')\nprint(f'Random:       {entropy(bytes(range(256))):.2f}')",
+          "expected_output": "English text: 3.85\nRepeated:     0.00\nRandom:       8.00",
+          "hints": [
+            {
+              "message": "Count frequency of each byte value (0-255). Entropy = -sum(p * log2(p)) for each non-zero probability."
+            },
+            {
+              "message": "Probability p = count / total_bytes. Only include bytes that actually appear (count > 0)."
+            },
+            {
+              "message": "import math\ndef entropy(data):\n    if not data: return 0\n    freq = [0]*256\n    for b in data: freq[b]+=1\n    t = len(data)\n    return -sum(c/t*math.log2(c/t) for c in freq if c>0)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Build Evidence Integrity Checker",
+          "description": "Calculate MD5 and SHA-256 hashes of data to verify evidence integrity.",
+          "difficulty": "intermediate",
+          "category": "Real-World Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on build evidence integrity checker! This is a intermediate exercise in Real-World Forensics. Take your time and use the hints if needed.",
+          "starter_code": "import hashlib\n\ndef hash_evidence(data):\n    # TODO: Calculate MD5 and SHA-256 hashes\n    pass\n\nevidence = b'Critical forensic evidence file contents'\nhash_evidence(evidence)\n\n# Tamper with one byte\ntampered = bytearray(evidence)\ntampered[0] = tampered[0] ^ 1\nprint('\\nAfter tampering 1 bit:')\nhash_evidence(bytes(tampered))",
+          "expected_output": "MD5:    a1b2c3d4e5f6...\nSHA256: 9f86d081884c7d659a2feaa0c55ad015...\n\nAfter tampering 1 bit:\nMD5:    completely_different_hash\nSHA256: completely_different_hash",
+          "hints": [
+            {
+              "message": "Use hashlib.md5(data).hexdigest() and hashlib.sha256(data).hexdigest()."
+            },
+            {
+              "message": "Even changing one bit produces a completely different hash — this is how evidence integrity is verified."
+            },
+            {
+              "message": "import hashlib\ndef hash_evidence(data):\n    print(f'MD5:    {hashlib.md5(data).hexdigest()}')\n    print(f'SHA256: {hashlib.sha256(data).hexdigest()}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Suspicious String Scanner",
+          "description": "Scan binary data for suspicious patterns: IP addresses, email addresses, URLs, Base64 strings.",
+          "difficulty": "intermediate",
+          "category": "Real-World Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on suspicious string scanner! This is a intermediate exercise in Real-World Forensics. Take your time and use the hints if needed.",
+          "starter_code": "import re\n\ndef scan_suspicious(data):\n    # TODO: Find IPs, emails, URLs, Base64 patterns\n    pass\n\nevidence = b'Normal data here\\x00'\nevidence += b'Contact: hacker@evil.com\\n'\nevidence += b'C2: http://192.168.1.50:4444/shell\\n'\nevidence += b'Encoded: YWRtaW46cGFzc3dvcmQ=\\n'\nscan_suspicious(evidence)",
+          "expected_output": "Emails: ['hacker@evil.com']\nURLs: ['http://192.168.1.50:4444/shell']\nIPs: ['192.168.1.50']\nBase64: ['YWRtaW46cGFzc3dvcmQ=']",
+          "hints": [
+            {
+              "message": "Use regex patterns: emails = r'[\\w.+-]+@[\\w.-]+\\.\\w{2,}', URLs = r'https?://\\S+', IPs = r'\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}'"
+            },
+            {
+              "message": "Apply re.findall() for each pattern on the data decoded as ASCII (errors='ignore')."
+            },
+            {
+              "message": "import re\ndef scan_suspicious(data):\n    text = data.decode('ascii', errors='ignore')\n    print(f'Emails: {re.findall(r\"[\\w.+-]+@[\\w.-]+\\.\\w{2,}\", text)}')\n    print(f'URLs: {re.findall(r\"https?://[^\\s]+\", text)}')\n    print(f'IPs: {re.findall(r\"\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\", text)}')\n    print(f'Base64: {re.findall(r\"[A-Za-z0-9+/]{16,}={0,2}\", text)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: File Carving Tool",
+          "description": "Carve (extract) embedded files from raw binary data using magic byte signatures.",
+          "difficulty": "advanced",
+          "category": "Real-World Forensics",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's work on file carving tool! This is a advanced exercise in Real-World Forensics. Take your time and use the hints if needed.",
+          "starter_code": "def carve_files(data):\n    # TODO: Search for file signatures, extract until next signature or end\n    pass\n\n# Simulate disk with embedded files\ndisk = b'\\x00' * 50\ndisk += b'\\x89PNG\\r\\n\\x1a\\n' + b'FAKE_PNG_DATA_' * 5\ndisk += b'\\x00' * 30\ndisk += b'%PDF-1.4 FAKE_PDF_CONTENT_HERE'\ndisk += b'\\x00' * 40\n\ncarve_files(disk)",
+          "expected_output": "Found PNG at offset 50 (83 bytes)\nFound PDF at offset 163 (30 bytes)\nTotal: 2 files carved",
+          "hints": [
+            {
+              "message": "Search for each known signature in the data. Record the offset where each is found."
+            },
+            {
+              "message": "For simple carving, extract from signature start to the next signature or end of data."
+            },
+            {
+              "message": "def carve_files(data):\n    sigs = [(b'\\x89PNG','PNG'),(b'%PDF','PDF'),(b'MZ','EXE'),(b'\\xff\\xd8\\xff','JPEG')]\n    found = []\n    for sig,name in sigs:\n        pos = 0\n        while True:\n            idx = data.find(sig, pos)\n            if idx == -1: break\n            found.append((idx, name))\n            pos = idx + 1\n    found.sort()\n    for i,(off,name) in enumerate(found):\n        end = found[i+1][0] if i+1<len(found) else len(data)\n        size = end - off\n        print(f'Found {name} at offset {off} ({size} bytes)')\n    print(f'Total: {len(found)} files carved')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Steganography Detector",
+          "description": "Check if LSB (Least Significant Bit) steganography might be present by analysing bit distribution.",
+          "difficulty": "advanced",
+          "category": "Real-World Forensics",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's work on steganography detector! This is a advanced exercise in Real-World Forensics. Take your time and use the hints if needed.",
+          "starter_code": "def detect_lsb_stego(data):\n    # TODO: Analyse the distribution of least significant bits\n    # Natural images have ~50% 0s and 50% 1s in LSB\n    # Stego images might show different patterns\n    pass\n\n# Normal random data (natural-looking LSBs)\nimport random\nrandom.seed(42)\nnormal = bytes([random.randint(0,255) for _ in range(1000)])\n\n# Data with all LSBs set to encode a message\nstego = bytearray(normal)\nfor i in range(len(stego)):\n    stego[i] = (stego[i] & 0xFE) | (i % 2)  # Alternating 0/1 pattern\n\ndetect_lsb_stego(normal)\ndetect_lsb_stego(bytes(stego))",
+          "expected_output": "LSB Analysis (1000 bytes):\n  LSB=0: 512 (51.2%)  LSB=1: 488 (48.8%)\n  Distribution: NATURAL (within expected range)\n\nLSB Analysis (1000 bytes):\n  LSB=0: 500 (50.0%)  LSB=1: 500 (50.0%)\n  Distribution: SUSPICIOUS (exactly 50/50 — possible steganography)",
+          "hints": [
+            {
+              "message": "Extract the LSB of each byte: lsb = byte & 1. Count zeros and ones."
+            },
+            {
+              "message": "Natural data has roughly 50/50 but with some variance. Exactly 50/50 or very structured patterns suggest stego."
+            },
+            {
+              "message": "def detect_lsb_stego(data):\n    lsb_0 = sum(1 for b in data if b&1==0)\n    lsb_1 = len(data) - lsb_0\n    ratio = lsb_0 / len(data)\n    label = 'NATURAL' if abs(ratio-0.5)>0.005 else 'SUSPICIOUS (exactly 50/50)'\n    print(f'LSB Analysis ({len(data)} bytes):')\n    print(f'  LSB=0: {lsb_0} ({lsb_0/len(data)*100:.1f}%)  LSB=1: {lsb_1} ({lsb_1/len(data)*100:.1f}%)')\n    print(f'  Distribution: {label}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Malware Indicator Scanner",
+          "description": "Scan a binary for common malware indicators: suspicious strings, high entropy sections, packed signatures.",
+          "difficulty": "advanced",
+          "category": "Real-World Forensics",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's work on malware indicator scanner! This is a advanced exercise in Real-World Forensics. Take your time and use the hints if needed.",
+          "starter_code": "import math, re\n\ndef malware_scan(data):\n    # TODO: Check for suspicious indicators\n    # - Known bad strings (cmd.exe, /bin/sh, powershell)\n    # - High entropy sections (packed/encrypted)\n    # - Suspicious API-like strings\n    pass\n\nmalware = b'MZ\\x90\\x00' + b'\\x00'*20\nmalware += b'cmd.exe /c whoami\\x00'\nmalware += b'http://c2server.evil:8080/beacon\\x00'\nmalware += b'\\x00'*10 + bytes([random.randint(0,255) for _ in range(100)])\nmalware += b'CreateRemoteThread\\x00LoadLibraryA\\x00'\n\nmalware_scan(malware)",
+          "expected_output": "=== Malware Indicator Scan ===\nFile type: PE/EXE (MZ header)\n\nSuspicious strings:\n  [!] cmd.exe /c whoami\n  [!] http://c2server.evil:8080/beacon\n  [!] CreateRemoteThread\n  [!] LoadLibraryA\n\nHigh entropy section at offset 54-154: 7.2 (likely packed/encrypted)\n\nRisk level: HIGH (4 indicators found)",
+          "hints": [
+            {
+              "message": "Define lists of suspicious strings: shell commands, C2 patterns, Windows API names."
+            },
+            {
+              "message": "Calculate entropy of overlapping blocks. Flag blocks with entropy > 7.0."
+            },
+            {
+              "message": "import math, re, random\ndef malware_scan(data):\n    print('=== Malware Indicator Scan ===')\n    sig = 'PE/EXE' if data[:2]==b'MZ' else 'Unknown'\n    print(f'File type: {sig}')\n    bad = [b'cmd.exe',b'/bin/sh',b'powershell',b'CreateRemoteThread',b'LoadLibrary',b'http://']\n    text = data.decode('ascii',errors='ignore')\n    found = []\n    for b in bad:\n        if b in data:\n            idx = data.find(b)\n            s = data[idx:idx+50].split(b'\\x00')[0].decode('ascii',errors='?')\n            found.append(s)\n    if found:\n        print('\\nSuspicious strings:')\n        for s in found: print(f'  [!] {s}')\n    print(f'\\nRisk level: {\"HIGH\" if len(found)>=3 else \"MEDIUM\" if found else \"LOW\"} ({len(found)} indicators)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Timestamp Decoder",
+          "description": "Decode Unix timestamps and Windows FILETIME values from raw bytes.",
+          "difficulty": "intermediate",
+          "category": "Real-World Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on timestamp decoder! This is a intermediate exercise in Real-World Forensics. Take your time and use the hints if needed.",
+          "starter_code": "import struct\nfrom datetime import datetime\n\ndef decode_timestamps(data):\n    # TODO: Try decoding as Unix timestamp (4 bytes) and Windows FILETIME (8 bytes)\n    pass\n\n# Unix timestamp for 2024-01-15 12:00:00\nunix_ts = struct.pack('<I', 1705320000)\ndecode_timestamps(unix_ts)\n\n# Another timestamp\nunix_ts2 = struct.pack('<I', 1609459200)  # 2021-01-01\ndecode_timestamps(unix_ts2)",
+          "expected_output": "Unix timestamp: 1705320000 -> 2024-01-15 12:00:00\nUnix timestamp: 1609459200 -> 2021-01-01 00:00:00",
+          "hints": [
+            {
+              "message": "Use struct.unpack('<I', data)[0] to read 4-byte little-endian unsigned int."
+            },
+            {
+              "message": "Convert to datetime: datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')"
+            },
+            {
+              "message": "import struct\nfrom datetime import datetime\ndef decode_timestamps(data):\n    ts = struct.unpack('<I', data[:4])[0]\n    dt = datetime.utcfromtimestamp(ts)\n    print(f'Unix timestamp: {ts} -> {dt.strftime(\"%Y-%m-%d %H:%M:%S\")}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Network Traffic Summariser",
+          "description": "Parse multiple raw IP packets and generate a traffic summary.",
+          "difficulty": "advanced",
+          "category": "Real-World Forensics",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's work on network traffic summariser! This is a advanced exercise in Real-World Forensics. Take your time and use the hints if needed.",
+          "starter_code": "import struct\nfrom collections import Counter\n\ndef summarise_traffic(packets):\n    # TODO: Parse each packet's IP header, summarise connections\n    pass\n\n# Build synthetic packets\ndef make_packet(src, dst, sport, dport, proto=6):\n    pkt = bytearray(40)\n    pkt[0] = 0x45; pkt[8] = 64; pkt[9] = proto\n    pkt[12:16] = bytes(map(int, src.split('.')))\n    pkt[16:20] = bytes(map(int, dst.split('.')))\n    struct.pack_into('>H', pkt, 20, sport)\n    struct.pack_into('>H', pkt, 22, dport)\n    return bytes(pkt)\n\npackets = [\n    make_packet('192.168.1.10', '10.0.0.1', 50000, 443),\n    make_packet('192.168.1.10', '10.0.0.1', 50001, 443),\n    make_packet('192.168.1.10', '10.0.0.2', 50002, 80),\n    make_packet('10.0.0.1', '192.168.1.10', 443, 50000),\n    make_packet('192.168.1.10', '10.0.0.3', 50003, 22),\n]\nsummarise_traffic(packets)",
+          "expected_output": "Traffic Summary (5 packets):\nUnique sources: 2\nUnique destinations: 3\nTop destinations:\n  10.0.0.1: 2 packets\n  10.0.0.2: 1 packet\n  10.0.0.3: 1 packet\nTop destination ports:\n  443 (HTTPS): 3\n  80 (HTTP): 1\n  22 (SSH): 1",
+          "hints": [
+            {
+              "message": "Parse each packet's source/destination IPs (bytes 12-15 and 16-19) and ports (bytes 20-23)."
+            },
+            {
+              "message": "Use Counter to count occurrences. Map common ports: 80=HTTP, 443=HTTPS, 22=SSH, etc."
+            },
+            {
+              "message": "import struct\nfrom collections import Counter\ndef summarise_traffic(packets):\n    srcs, dsts, dports = Counter(), Counter(), Counter()\n    ports = {80:'HTTP',443:'HTTPS',22:'SSH',53:'DNS',8080:'HTTP-Alt'}\n    for pkt in packets:\n        src = '.'.join(str(b) for b in pkt[12:16])\n        dst = '.'.join(str(b) for b in pkt[16:20])\n        dp = struct.unpack('>H', pkt[22:24])[0]\n        srcs[src]+=1; dsts[dst]+=1; dports[dp]+=1\n    print(f'Traffic Summary ({len(packets)} packets):')\n    print(f'Unique sources: {len(srcs)}')\n    print(f'Unique destinations: {len(dsts)}')\n    print('Top destinations:')\n    for d,c in dsts.most_common(5): print(f'  {d}: {c} packet{\"s\" if c>1 else \"\"}')\n    print('Top destination ports:')\n    for p,c in dports.most_common(5): print(f'  {p} ({ports.get(p,\"?\")}): {c}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Capstone: Full Evidence Analysis Pipeline",
+          "description": "Build a complete forensic pipeline: identify file, extract strings, decode encodings, calculate hashes, generate report.",
+          "difficulty": "advanced",
+          "category": "Real-World Forensics",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's work on capstone: full evidence analysis pipeline! This is a advanced exercise in Real-World Forensics. Take your time and use the hints if needed.",
+          "starter_code": "import hashlib, base64, re, math\n\ndef forensic_pipeline(data, filename='evidence.bin'):\n    # TODO: Complete analysis pipeline\n    # 1. File identification (magic bytes)\n    # 2. Hash calculation (MD5 + SHA256)\n    # 3. Entropy analysis\n    # 4. String extraction\n    # 5. Pattern detection (emails, URLs, IPs, Base64)\n    # 6. Generate summary report\n    pass\n\n# Build complex evidence\nevidence = b'MZ\\x90\\x00' + b'\\x00'*20\nevidence += b'admin@company.com password=Secret123\\n'\nevidence += b'C2: http://10.13.37.100:4444/callback\\n'\nevidence += b'Token: ' + base64.b64encode(b'root:toor') + b'\\n'\nevidence += bytes([i%256 for i in range(200)])\n\nforensic_pipeline(evidence, 'suspect_binary.exe')",
+          "expected_output": "=== FORENSIC ANALYSIS REPORT ===\nFile: suspect_binary.exe\nSize: 300 bytes\nType: PE/EXE (Windows Executable)\nMD5: abc123...\nSHA256: def456...\nEntropy: 5.8 (mixed content)\n\nStrings (8 found):\n  admin@company.com password=Secret123\n  C2: http://10.13.37.100:4444/callback\n  Token: cm9vdDp0b29y\n\nIndicators:\n  Emails: admin@company.com\n  URLs: http://10.13.37.100:4444/callback\n  IPs: 10.13.37.100\n  Base64: cm9vdDp0b29y -> root:toor\n\nVERDICT: SUSPICIOUS - multiple indicators found",
+          "hints": [
+            {
+              "message": "Break the task into functions: identify(), hash_it(), entropy(), extract_strings(), scan_patterns()."
+            },
+            {
+              "message": "Call each function in order and collect results. Print a formatted report at the end."
+            },
+            {
+              "message": "import hashlib, base64, re, math\ndef forensic_pipeline(data, fn='evidence.bin'):\n    sigs = {b'\\x89PNG':'PNG',b'\\xff\\xd8\\xff':'JPEG',b'%PDF':'PDF',b'MZ':'PE/EXE'}\n    ftype = 'Unknown'\n    for s,n in sigs.items():\n        if data.startswith(s): ftype=n; break\n    md5 = hashlib.md5(data).hexdigest()\n    sha = hashlib.sha256(data).hexdigest()\n    freq=[0]*256\n    for b in data: freq[b]+=1\n    t=len(data)\n    ent=-sum(c/t*math.log2(c/t) for c in freq if c>0)\n    text=data.decode('ascii',errors='ignore')\n    strings=re.findall(r'[\\x20-\\x7E]{6,}',text)\n    emails=re.findall(r'[\\w.+-]+@[\\w.-]+\\.\\w{2,}',text)\n    urls=re.findall(r'https?://[^\\s]+',text)\n    ips=re.findall(r'\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}',text)\n    b64s=re.findall(r'[A-Za-z0-9+/]{12,}={0,2}',text)\n    print(f'=== FORENSIC ANALYSIS REPORT ===')\n    print(f'File: {fn}\\nSize: {len(data)} bytes\\nType: {ftype}')\n    print(f'MD5: {md5}\\nSHA256: {sha}\\nEntropy: {ent:.1f}')\n    print(f'\\nStrings ({len(strings)} found):')\n    for s in strings[:10]: print(f'  {s}')\n    print(f'\\nIndicators:')\n    if emails: print(f'  Emails: {\", \".join(emails)}')\n    if urls: print(f'  URLs: {\", \".join(urls)}')\n    if ips: print(f'  IPs: {\", \".join(set(ips))}')\n    for b in b64s[:3]:\n        try: print(f'  Base64: {b} -> {base64.b64decode(b).decode()}')\n        except: pass\n    indicators = len(emails)+len(urls)+len(ips)+len(b64s)\n    print(f'\\nVERDICT: {\"SUSPICIOUS\" if indicators>=2 else \"CLEAN\"}')"
+            }
+          ]
+        }
+      ],
+      "visual_diagram": {
+        "title": "Hex, ASCII & Binary — Complete Reference Flowchart",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 20px; max-width: 900px;\">\n<h2 style=\"color: #e74c3c;\">🔢 Number Systems & Encoding — Complete Forensic Reference</h2>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #3498db;\">📊 Number Systems Comparison</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"background: #e74c3c; color: white; padding: 3px 10px; border-radius: 4px;\">DECIMAL (Base-10)</span>  Human-readable: 0, 1, 2 ... 9, 10, 11 ... 255\n         ↕\n  <span style=\"background: #3498db; color: white; padding: 3px 10px; border-radius: 4px;\">BINARY (Base-2)</span>   Computer-native: 0, 1, 10, 11, 100 ... 11111111\n         ↕\n  <span style=\"background: #2ecc71; color: white; padding: 3px 10px; border-radius: 4px;\">HEX (Base-16)</span>     Forensic shorthand: 0-9, A-F ... 00 to FF\n         ↕\n  <span style=\"background: #9b59b6; color: white; padding: 3px 10px; border-radius: 4px;\">OCTAL (Base-8)</span>    Unix permissions: 0-7 ... 000 to 377\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #2ecc71;\">🐍 Python Conversion Functions</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"color: #f39c12;\">bin(65)</span>  → '0b1000001'     <span style=\"color: #95a5a6;\">decimal → binary string</span>\n  <span style=\"color: #f39c12;\">hex(65)</span>  → '0x41'          <span style=\"color: #95a5a6;\">decimal → hex string</span>\n  <span style=\"color: #f39c12;\">oct(65)</span>  → '0o101'         <span style=\"color: #95a5a6;\">decimal → octal string</span>\n  <span style=\"color: #f39c12;\">ord('A')</span> → 65              <span style=\"color: #95a5a6;\">character → ASCII code</span>\n  <span style=\"color: #f39c12;\">chr(65)</span>  → 'A'             <span style=\"color: #95a5a6;\">ASCII code → character</span>\n  <span style=\"color: #f39c12;\">int('FF', 16)</span> → 255       <span style=\"color: #95a5a6;\">hex string → decimal</span>\n  <span style=\"color: #f39c12;\">int('10110', 2)</span> → 22     <span style=\"color: #95a5a6;\">binary string → decimal</span>\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #e74c3c;\">📋 ASCII Key Ranges</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"background: #e74c3c; padding: 2px 8px; border-radius: 3px;\">0-31</span>    Control characters (NUL, TAB, LF, CR)\n  <span style=\"background: #3498db; padding: 2px 8px; border-radius: 3px;\">32</span>      SPACE\n  <span style=\"background: #2ecc71; padding: 2px 8px; border-radius: 3px;\">48-57</span>   Digits '0'-'9'  (0x30-0x39)\n  <span style=\"background: #f39c12; padding: 2px 8px; border-radius: 3px;\">65-90</span>   Uppercase 'A'-'Z' (0x41-0x5A)\n  <span style=\"background: #9b59b6; padding: 2px 8px; border-radius: 3px;\">97-122</span>  Lowercase 'a'-'z' (0x61-0x7A)\n  <span style=\"color: #e74c3c;\">⚡ Upper↔Lower difference = 32 (0x20) — toggle with XOR!</span>\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #f39c12;\">📁 File Signatures (Magic Bytes)</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"color: #2ecc71;\">89 50 4E 47</span>  →  PNG Image         (.png)\n  <span style=\"color: #2ecc71;\">FF D8 FF</span>     →  JPEG Image        (.jpg)\n  <span style=\"color: #3498db;\">25 50 44 46</span>  →  PDF Document      (.pdf)  = %PDF\n  <span style=\"color: #3498db;\">50 4B 03 04</span>  →  ZIP/DOCX/XLSX     (.zip)  = PK\n  <span style=\"color: #e74c3c;\">4D 5A</span>        →  Windows EXE/DLL   (.exe)  = MZ\n  <span style=\"color: #e74c3c;\">7F 45 4C 46</span>  →  Linux ELF         (bin)   = .ELF\n  <span style=\"color: #9b59b6;\">CA FE BA BE</span>  →  Java .class       (.class)\n  <span style=\"color: #f39c12;\">52 61 72 21</span>  →  RAR Archive       (.rar)  = Rar!\n  <span style=\"color: #e74c3c;\">⚠️ Extensions LIE — Magic bytes tell the TRUTH!</span>\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #9b59b6;\">🔐 Encoding & Encryption Flow</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"background: #3498db; color: white; padding: 3px 10px; border-radius: 4px;\">PLAINTEXT</span>\n       │\n       ├──→ <span style=\"color: #2ecc71;\">Base64</span>: 3 bytes → 4 chars (33% larger) [NOT encryption!]\n       │      Uses: Email, JWT, data URIs, API payloads\n       │\n       ├──→ <span style=\"color: #f39c12;\">URL Encode</span>: Special chars → %XX\n       │      / → %2F   space → %20   = → %3D\n       │\n       ├──→ <span style=\"color: #e74c3c;\">XOR</span>: data ⊕ key = encrypted  |  encrypted ⊕ key = data\n       │      Single-byte: brute-force 256 keys in seconds!\n       │\n       └──→ <span style=\"color: #9b59b6;\">ROT13</span>: A↔N, B↔O ... shift by 13 (self-inverting)\n\n  <span style=\"color: #e74c3c;\">⚡ Attackers LAYER encodings: Base64(URL(XOR(payload)))</span>\n  <span style=\"color: #2ecc71;\">✅ Forensic analysts peel layers one at a time!</span>\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #3498db;\">🔧 Bitwise Operations Quick Reference</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"color: #2ecc71;\">AND (&)</span>   Check/extract bits    1010 & 1100 = 1000\n  <span style=\"color: #3498db;\">OR  (|)</span>   Set/combine flags     1010 | 1100 = 1110\n  <span style=\"color: #e74c3c;\">XOR (^)</span>   Toggle/encrypt        1010 ^ 1100 = 0110\n  <span style=\"color: #f39c12;\">NOT (~)</span>   Invert all bits       ~1010 = 0101\n  <span style=\"color: #9b59b6;\">&lt;&lt; n</span>     Shift left (×2ⁿ)      0001 << 3 = 1000 (×8)\n  <span style=\"color: #9b59b6;\">&gt;&gt; n</span>     Shift right (÷2ⁿ)     1000 >> 2 = 0010 (÷4)\n\n  <span style=\"color: #f39c12;\">Common patterns:</span>\n  Set flag:    permissions |= FLAG\n  Check flag:  if permissions & FLAG\n  Clear flag:  permissions &= ~FLAG\n  Toggle flag: permissions ^= FLAG\n</pre>\n</div>\n\n<div style=\"background: #0d3b0d; padding: 15px; border-radius: 12px; margin: 15px 0; border: 2px solid #2ecc71;\">\n<h3 style=\"color: #2ecc71;\">🏆 10 Golden Rules of Hex & Binary Forensics</h3>\n<pre style=\"color: #ecf0f1;\">\n  1. File extensions LIE — always check magic bytes\n  2. Base64 is encoding, NOT encryption — anyone can decode it\n  3. XOR same key encrypts AND decrypts — brute-force 256 single-byte keys\n  4. Hex is just compact binary — each hex digit = 4 bits\n  5. ASCII 'A'=65, 'a'=97, '0'=48 — memorise these three anchors\n  6. UTF-8 is variable-length — len(text) ≠ len(text.encode())\n  7. Attackers layer encodings — peel one layer at a time\n  8. Shannon entropy reveals encryption (>7.5) vs text (<5.0)\n  9. Network bytes are big-endian, Windows files are little-endian\n  10. Always keep original evidence READ-ONLY — work on copies!\n</pre>\n</div>\n\n</div>"
+      }
+    }
+  ]
+}

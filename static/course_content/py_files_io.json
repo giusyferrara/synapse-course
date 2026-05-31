@@ -1,0 +1,1587 @@
+{
+  "course_id": "py_files_io",
+  "title": "Files & I/O Operations",
+  "description": "Read, write, and analyse files — the foundation of every forensic investigation",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 12,
+  "prerequisites": [
+    "py_syntax_output",
+    "py_variables_datatypes",
+    "py_conditions_loops",
+    "py_functions_modules"
+  ],
+  "learning_outcomes": [
+    "Open, read, and close files safely using the with statement",
+    "Read files line by line for memory-efficient log analysis",
+    "Write forensic reports and analysis results to text files",
+    "Work with file paths using os and os.path modules",
+    "Read and write CSV files for structured forensic data",
+    "Handle binary files for disk image and executable analysis",
+    "Calculate file hashes (MD5/SHA-256) for evidence integrity verification",
+    "Parse structured data from JSON configuration and evidence files",
+    "Handle file encoding (UTF-8, Latin-1) and common encoding errors",
+    "Build file scanning tools that walk directory trees recursively",
+    "Implement error handling for missing, locked, and corrupted files",
+    "Create professional forensic report generators that output to multiple formats"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging evidence analyst. Files are like locked filing cabinets — Python gives you the keys. Every open() is like opening an evidence bag. Every read() is like examining what is inside. Every write() is like creating your forensic report. Celebrates when students process their first real file!",
+    "intervention_triggers": {
+      "idle_40_seconds": "File operations can feel scary — what if you mess up a file? The with statement protects you by automatically closing files. Want me to show the safe pattern? 🔒",
+      "idle_90_seconds": "Think of files like evidence bags: open() = unseal the bag, read() = examine contents, write() = record your findings, close() = reseal it. The with statement does open AND close automatically! 📁",
+      "idle_180_seconds": "Take a break! File I/O is a BIG topic with many modes and methods. I will break it into tiny pieces when you are ready. Start with just reading a text file — everything else builds on that! ☕",
+      "first_error": "File errors are super common! FileNotFoundError = wrong path. PermissionError = no access. UnicodeDecodeError = wrong encoding. Let me help you figure out which one you have! 🔍",
+      "repeated_errors": "File paths trip everyone up! Let me show you an absolutely bulletproof pattern using os.path that works on every operating system... 🛡️",
+      "after_success": "You just processed a file with Python! 🎉 Every forensic tool — Autopsy, Volatility, Wireshark — starts by reading files exactly like you just did. Real forensic skills!"
+    },
+    "encouragement_phrases": [
+      "Every forensic investigation starts with opening a file. You are learning the FIRST skill every analyst needs! 📂",
+      "with open() as f: is the SAFEST pattern. It is like an evidence bag that seals itself! 🔐",
+      "Reading files line by line? That is how grep, Splunk, and every log parser works! 📊",
+      "Binary mode (rb) unlocks disk images, executables, and memory dumps. Powerful stuff! 💾",
+      "File hashing is THE most important forensic skill. If the hash matches, the evidence is untampered! ✅",
+      "CSV files are everywhere in forensics — firewall logs, IDS alerts, vulnerability reports. Master them! 📋",
+      "os.walk() is your recursive file scanner. It finds EVERY file in EVERY subfolder automatically! 🔍",
+      "Error handling makes your tools professional. Real tools do not crash on bad files — they report and continue! 🛡️",
+      "Writing reports programmatically? That saves HOURS of manual work in real investigations! ⏱️",
+      "JSON parsing is essential — APIs, config files, and modern logs all use JSON format! 📦"
+    ],
+    "explanation_styles": {
+      "analogy": "Files are like filing cabinets in an evidence room. open() = pull out the drawer. read() = look at the documents. write() = add new documents. close() = push the drawer back. The with statement is like having an assistant who ALWAYS closes the drawer when you walk away — even if you forget!",
+      "visual": "Picture a stream: data flows FROM the file INTO your program (reading) or FROM your program INTO the file (writing). The file object is the pipe connecting them. Mode ('r', 'w', 'a', 'rb') controls the direction and format of the flow.",
+      "step_by_step": "Step 1: with open('file.txt', 'r') as f: — opens file, assigns to f. Step 2: content = f.read() — reads entire file into a string. Step 3: Process the content (split, search, analyse). Step 4: with block ends — file automatically closed. Step 5: Use results!",
+      "code_trace": "with open('log.txt', 'r') as f: — Python (1) finds the file, (2) opens it in read mode, (3) creates a file object, (4) assigns it to f. f.read() — Python reads bytes from disk, decodes to string. Block ends — Python calls f.close() automatically.",
+      "comparison": "Java: BufferedReader br = new BufferedReader(new FileReader('file.txt')); try { ... } finally { br.close(); }. Python: with open('file.txt') as f: content = f.read(). Python is dramatically simpler and safer!"
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "py_files_io_lesson_1",
+      "title": "Files & I/O — Reading, Writing, and Analysing Evidence",
+      "theory": {
+        "introduction": "Every forensic investigation starts and ends with FILES. Log files record what happened. Disk images capture entire hard drives. Memory dumps freeze a computer's state. Network captures store packet data. Configuration files reveal system settings. Without the ability to read, write, and analyse files, you simply cannot do digital forensics.\n\nIn the previous topics, you worked with data created inside your scripts — strings, numbers, lists. Now you learn to work with EXTERNAL data: files on disk, evidence from other systems, logs from servers, and reports you generate for your team or for court.\n\nThink of file I/O as the bridge between your Python skills and the real world. Every forensic tool you will ever use — Autopsy, Volatility, Wireshark, Sleuth Kit — reads and writes files. Autopsy reads disk images. Volatility reads memory dumps. Wireshark reads packet captures. Your Python scripts will do the same.\n\nThis topic covers: reading text files (logs, configs), writing reports, working with CSV data (structured evidence), binary file analysis (executables, disk images), file hashing for integrity verification, JSON parsing, directory scanning, and error handling for real-world messiness.\n\nVM TIP: On your Kali Linux VM, try: cat /var/log/auth.log | head -20 — that reads the first 20 lines of the authentication log. By the end of this topic, you will build Python tools that do the same thing — and much more.",
+        "why_important": "File I/O is the #1 most essential skill in forensic programming. Without it, your scripts are isolated from real evidence. With it, you can: parse gigabytes of logs in seconds, verify evidence integrity with hash comparison, extract hidden data from binary files, generate court-ready reports automatically, scan entire directory trees for suspicious files, and process CSV exports from security tools. Every penetration testing report, every incident response timeline, every malware analysis writeup involves reading input files and writing output reports. This is where your Python skills become real forensic capabilities.",
+        "key_concepts": [
+          {
+            "concept": "Opening Files — The with Statement",
+            "explanation": "The with statement is the SAFE way to open files in Python. It guarantees the file is closed when you are done, even if an error occurs. Think of it like an evidence bag that automatically reseals itself — you never accidentally leave evidence exposed.\n\nwith open('filename', 'mode') as variable: — this opens the file, assigns it to the variable, runs your code block, then AUTOMATICALLY closes the file. Without with, you must remember to call file.close() manually — and forgetting causes resource leaks.\n\nALWAYS use with for file operations. It is shorter, safer, and more Pythonic.",
+            "example": "# Safe file opening with 'with'\nwith open('evidence.txt', 'r') as f:\n    content = f.read()\n    print(content)\n# File is automatically closed here!\n\n# WITHOUT with (old, unsafe way):\n# f = open('evidence.txt', 'r')\n# content = f.read()\n# f.close()  # Must remember this!",
+            "ai_hint": "ALWAYS use with open() as f: — it is like an evidence bag that seals itself. Never worry about forgetting to close files again!"
+          },
+          {
+            "concept": "File Modes — Read, Write, Append, Binary",
+            "explanation": "File modes control HOW you interact with the file:\n\n'r' = Read (default) — read text. File must exist.\n'w' = Write — create new file or OVERWRITE existing. DANGER: destroys old content!\n'a' = Append — add to end of file. Safe: does not destroy existing content.\n'x' = Exclusive create — create new file, FAIL if it already exists. Safe for evidence.\n'rb' = Read binary — read raw bytes (for images, executables, disk images).\n'wb' = Write binary — write raw bytes.\n\nIn forensics: use 'r' for logs and configs, 'rb' for disk images and executables, 'w' for new reports, 'a' for adding to existing logs. NEVER use 'w' on evidence files — it destroys the original data!",
+            "example": "# File modes\n# 'r'  — Read text (default)\n# 'w'  — Write text (OVERWRITES!)\n# 'a'  — Append text (adds to end)\n# 'x'  — Create new (fails if exists)\n# 'rb' — Read binary (raw bytes)\n# 'wb' — Write binary\n\n# Read a text file\nwith open('log.txt', 'r') as f:\n    content = f.read()\n\n# Write a new report\nwith open('report.txt', 'w') as f:\n    f.write('Forensic Report\\n')\n\n# Append to a log\nwith open('audit.log', 'a') as f:\n    f.write('New entry\\n')\n\n# Read binary (images, executables)\nwith open('evidence.img', 'rb') as f:\n    header = f.read(16)  # First 16 bytes",
+            "ai_hint": "'r' = read, 'w' = write (OVERWRITES!), 'a' = append (safe), 'rb' = read binary. NEVER 'w' on evidence — it destroys the original!"
+          },
+          {
+            "concept": "Reading Files — Multiple Methods",
+            "explanation": "Python offers several ways to read files, each suited to different situations:\n\nf.read() — reads the ENTIRE file as one string. Good for small files.\nf.readline() — reads ONE line at a time. Good for very large files.\nf.readlines() — reads ALL lines into a list. Good when you need line numbers.\nfor line in f: — iterates line by line. BEST for large files (memory efficient).\n\nFor forensic log analysis, the for loop pattern is usually best: it handles gigabyte log files without loading everything into memory. Each line is processed and discarded.",
+            "example": "# Reading methods\nwith open('log.txt', 'r') as f:\n    # Method 1: Read everything\n    all_text = f.read()\n\nwith open('log.txt', 'r') as f:\n    # Method 2: Read all lines into list\n    lines = f.readlines()\n    print(f\"Total lines: {len(lines)}\")\n\nwith open('log.txt', 'r') as f:\n    # Method 3: Iterate (BEST for large files)\n    for line_num, line in enumerate(f, 1):\n        if 'FAILED' in line:\n            print(f\"Line {line_num}: {line.strip()}\")",
+            "ai_hint": "For small files: f.read(). For line-by-line processing (logs, CSVs): for line in f. The for loop is memory-efficient — essential for large evidence files!"
+          },
+          {
+            "concept": "Writing Files — Creating Forensic Reports",
+            "explanation": "Writing files creates new content: reports, analysis results, filtered logs, extracted data. Use 'w' mode for new files and 'a' mode to add to existing files.\n\nf.write(string) — writes a string. Does NOT add a newline automatically (you must include \\n).\nf.writelines(list) — writes a list of strings. Also no automatic newlines.\nprint(text, file=f) — redirects print to a file. DOES add newline automatically.\n\nCRITICAL: 'w' mode DESTROYS existing content! Always double-check you are not overwriting evidence. Use 'x' mode if you want to fail safely when a file already exists.",
+            "example": "# Writing a forensic report\nwith open('report.txt', 'w') as f:\n    f.write('FORENSIC ANALYSIS REPORT\\n')\n    f.write('=' * 40 + '\\n')\n    f.write('Date: 2025-02-28\\n')\n    f.write('Analyst: Synapse Student\\n\\n')\n    \n    # Using print with file parameter\n    print('Findings:', file=f)\n    print('  1. Suspicious login attempts detected', file=f)\n    print('  2. Unauthorised file access logged', file=f)\n\n# Verify by reading back\nwith open('report.txt', 'r') as f:\n    print(f.read())",
+            "ai_hint": "f.write() does NOT add newlines — include \\n yourself. print(text, file=f) adds newlines automatically. NEVER use 'w' on evidence files!"
+          },
+          {
+            "concept": "File Paths — os.path for Cross-Platform Safety",
+            "explanation": "File paths differ across operating systems: Windows uses backslashes (C:\\Users\\file.txt), Linux/Mac uses forward slashes (/home/user/file.txt). The os.path module handles this automatically.\n\nos.path.join('dir', 'file.txt') — builds paths correctly for ANY operating system.\nos.path.exists(path) — checks if file/directory exists before opening.\nos.path.basename(path) — gets just the filename from a full path.\nos.path.splitext(path) — separates filename from extension.\nos.path.getsize(path) — gets file size in bytes.\n\nNEVER hardcode paths with slashes! Always use os.path.join() for portable forensic tools.",
+            "example": "import os\n\n# Build paths safely\nevidence_dir = os.path.join('cases', 'case_001', 'evidence')\nfile_path = os.path.join(evidence_dir, 'photo.jpg')\nprint(f\"Path: {file_path}\")\n\n# Analyse path components\nprint(f\"Dir:  {os.path.dirname(file_path)}\")\nprint(f\"Name: {os.path.basename(file_path)}\")\nprint(f\"Ext:  {os.path.splitext(file_path)[1]}\")\n\n# Check existence before opening\nif os.path.exists(file_path):\n    print(f\"Size: {os.path.getsize(file_path)} bytes\")\nelse:\n    print(\"File not found!\")",
+            "ai_hint": "os.path.join() builds paths that work on Windows, Linux, AND Mac. os.path.exists() prevents FileNotFoundError. Always check before opening!"
+          },
+          {
+            "concept": "CSV Files — Structured Forensic Data",
+            "explanation": "CSV (Comma-Separated Values) files are everywhere in forensics: firewall logs, IDS alert exports, vulnerability scan results, user activity reports. Python's csv module reads and writes them safely.\n\ncsv.reader(f) — reads rows as lists. csv.DictReader(f) — reads rows as dictionaries (column names as keys). csv.writer(f) — writes rows from lists. csv.DictWriter(f, fieldnames) — writes from dictionaries.\n\nDictReader is usually better for forensics because you access columns by NAME (row['ip_address']) instead of INDEX (row[3]) — much more readable and less error-prone.",
+            "example": "import csv\nfrom io import StringIO\n\n# Read CSV data\ncsv_data = 'ip,port,status\\n10.0.0.1,80,open\\n10.0.0.2,443,closed\\n'\n\nreader = csv.DictReader(StringIO(csv_data))\nfor row in reader:\n    print(f\"{row['ip']}:{row['port']} = {row['status']}\")\n\n# Write CSV\nwith open('scan_results.csv', 'w', newline='') as f:\n    writer = csv.DictWriter(f, fieldnames=['ip', 'port', 'status'])\n    writer.writeheader()\n    writer.writerow({'ip': '10.0.0.1', 'port': 80, 'status': 'open'})",
+            "ai_hint": "DictReader is best for forensics — access columns by name, not number. Always use newline='' when writing CSV files to prevent double spacing!"
+          },
+          {
+            "concept": "Binary Files — Reading Raw Evidence",
+            "explanation": "Binary mode ('rb') reads files as raw bytes, not text. Essential for: disk images (.img, .dd), executables (.exe), memory dumps (.raw), packet captures (.pcap), images (.jpg, .png).\n\nIn binary mode, you work with bytes objects (b'\\x89PNG'). Key operations: f.read(n) reads n bytes. Bytes can be compared to known signatures (magic numbers) to identify file types regardless of extension.\n\nMagic bytes examples: JPEG starts with FF D8 FF. PNG starts with 89 50 4E 47. PDF starts with 25 50 44 46. EXE starts with 4D 5A (MZ). These signatures cannot be faked by simply renaming a file!",
+            "example": "# Reading binary files\n# Magic number signatures\nSIGNATURES = {\n    b'\\xff\\xd8\\xff': 'JPEG image',\n    b'\\x89PNG': 'PNG image',\n    b'%PDF': 'PDF document',\n    b'MZ': 'Windows executable',\n    b'PK': 'ZIP/Office archive',\n}\n\ndef identify_file(filepath):\n    with open(filepath, 'rb') as f:\n        header = f.read(8)  # Read first 8 bytes\n    for sig, filetype in SIGNATURES.items():\n        if header.startswith(sig):\n            return filetype\n    return f'Unknown (header: {header[:4].hex()})'",
+            "ai_hint": "Binary mode reads raw bytes — not text! Magic bytes identify file types by their CONTENT, not their extension. A renamed .exe is still detected as an executable!"
+          },
+          {
+            "concept": "File Hashing — Evidence Integrity Verification",
+            "explanation": "File hashing is THE most critical forensic skill. When you seize evidence, you hash it immediately. Before court, you hash it again. If hashes match, the evidence was not tampered with. If they differ, the evidence is compromised.\n\nFor large files, you cannot read the entire file into memory. Instead, read in CHUNKS: read 4096 bytes, update the hash, read next 4096 bytes, update again, until end of file. This handles files of ANY size — even terabyte disk images.\n\nStandard forensic hashes: MD5 (fast, legacy), SHA-1 (deprecated), SHA-256 (recommended).",
+            "example": "import hashlib\n\ndef hash_file(filepath, algorithm='sha256', chunk_size=4096):\n    \"\"\"Hash a file of any size using chunked reading.\"\"\"\n    h = hashlib.new(algorithm)\n    with open(filepath, 'rb') as f:\n        while True:\n            chunk = f.read(chunk_size)\n            if not chunk:\n                break\n            h.update(chunk)\n    return h.hexdigest()\n\n# Usage:\n# sha = hash_file('/evidence/disk.img')\n# print(f'SHA-256: {sha}')",
+            "ai_hint": "Read in chunks (4096 bytes at a time) for ANY file size. Hash verification is legally required for digital evidence admissibility!"
+          },
+          {
+            "concept": "JSON Files — Modern Data Format",
+            "explanation": "JSON (JavaScript Object Notation) is the standard data format for APIs, configuration files, and modern log systems. Python's json module converts between JSON strings and Python objects.\n\njson.load(file_object) — reads JSON from a file. json.loads(string) — reads JSON from a string. json.dump(data, file_object) — writes Python data to a JSON file. json.dumps(data) — converts to string.\n\nIn forensics, JSON appears in: API responses, Elasticsearch logs, cloud service configs, web application data, and many security tool outputs.",
+            "example": "import json\n\n# Read JSON\nwith open('config.json', 'r') as f:\n    config = json.load(f)\nprint(config['server'])\n\n# Write JSON\nfindings = {'case': 'FR-001', 'threats': ['malware.exe'], 'score': 8.5}\nwith open('findings.json', 'w') as f:\n    json.dump(findings, f, indent=2)\n\n# Pretty print\nprint(json.dumps(findings, indent=2))",
+            "ai_hint": "json.load(file) reads from file. json.loads(string) reads from string. The 's' = string! Use indent=2 for readable output."
+          },
+          {
+            "concept": "Directory Scanning — os.walk() and os.listdir()",
+            "explanation": "Forensic investigations often require scanning entire directory trees — finding all images in an evidence folder, listing all executables, or cataloguing every file with its hash.\n\nos.listdir(path) — lists items in ONE directory (not recursive).\nos.walk(path) — walks through EVERY subdirectory recursively. Returns (dirpath, dirnames, filenames) for each directory it visits.\n\nos.walk() is your recursive forensic scanner. Combined with file hashing and classification, it becomes a complete evidence cataloguing tool.",
+            "example": "import os\n\n# List one directory\nfor item in os.listdir('.'):\n    print(item)\n\n# Walk entire tree recursively\nfor dirpath, dirnames, filenames in os.walk('/evidence'):\n    for filename in filenames:\n        full_path = os.path.join(dirpath, filename)\n        size = os.path.getsize(full_path)\n        print(f\"{full_path} ({size} bytes)\")",
+            "ai_hint": "os.listdir() = one folder. os.walk() = entire tree recursively. os.walk() is your forensic file scanner — it finds EVERYTHING!"
+          },
+          {
+            "concept": "Encoding — Handling Text from Different Systems",
+            "explanation": "Text files store characters as bytes using an ENCODING. UTF-8 is the modern standard, but evidence from older or international systems may use Latin-1, Windows-1252, or other encodings.\n\nIf you open a file with the wrong encoding, you get UnicodeDecodeError or garbled text. Common fix: try UTF-8 first, then Latin-1 (which accepts ANY byte value).\n\nopen('file.txt', 'r', encoding='utf-8') — specify encoding explicitly. errors='replace' replaces undecodable bytes with a placeholder instead of crashing.",
+            "example": "# Handle encoding safely\ndef safe_read(filepath):\n    \"\"\"Try UTF-8 first, fall back to Latin-1.\"\"\"\n    for encoding in ['utf-8', 'latin-1']:\n        try:\n            with open(filepath, 'r', encoding=encoding) as f:\n                content = f.read()\n            print(f\"Read with {encoding}\")\n            return content\n        except UnicodeDecodeError:\n            continue\n    # Last resort: read as binary\n    with open(filepath, 'rb') as f:\n        return f.read().decode('utf-8', errors='replace')",
+            "ai_hint": "UTF-8 first, Latin-1 as fallback. errors='replace' prevents crashes on bad bytes. Evidence comes from all kinds of systems — be ready for anything!"
+          },
+          {
+            "concept": "Error Handling — Defensive File Operations",
+            "explanation": "Files in the real world are messy: they might not exist, you might not have permission, they might be corrupted, or another program might have them locked. Professional forensic tools handle ALL these cases gracefully.\n\nFileNotFoundError — file does not exist at that path.\nPermissionError — no read/write permission.\nIsADirectoryError — tried to open a directory as a file.\nUnicodeDecodeError — wrong text encoding.\nOSError — general operating system error (disk full, etc.).\n\nWrap file operations in try/except to catch these. A good forensic tool logs errors and continues processing the remaining files.",
+            "example": "import os\n\ndef safe_read_file(filepath):\n    \"\"\"Read a file with comprehensive error handling.\"\"\"\n    try:\n        if not os.path.exists(filepath):\n            return None, f\"Not found: {filepath}\"\n        with open(filepath, 'r', encoding='utf-8') as f:\n            return f.read(), None\n    except PermissionError:\n        return None, f\"Permission denied: {filepath}\"\n    except UnicodeDecodeError:\n        return None, f\"Encoding error: {filepath}\"\n    except OSError as e:\n        return None, f\"OS error: {e}\"",
+            "ai_hint": "Always try/except around file operations. Return (data, error) tuples so callers can check for problems. A forensic tool that crashes on one bad file is useless!"
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Reading and Analysing a Log File",
+          "description": "Open a text file, read line by line, count threats",
+          "difficulty": "beginner",
+          "code": "# Create a sample log file first\nlog_content = \"\"\"2025-02-28 08:15:22 INFO Server started\n2025-02-28 08:20:01 WARNING Login FAILED user=admin ip=203.0.113.42\n2025-02-28 08:20:02 WARNING Login FAILED user=admin ip=203.0.113.42\n2025-02-28 08:20:03 WARNING Login FAILED user=admin ip=203.0.113.42\n2025-02-28 08:30:00 INFO Backup completed successfully\n2025-02-28 09:00:00 ERROR Connection DENIED from 198.51.100.1\n2025-02-28 09:15:00 INFO User john logged in from 10.0.0.5\n2025-02-28 10:00:00 CRITICAL Possible brute force ATTACK detected\n2025-02-28 11:00:00 INFO Health check passed\n2025-02-28 12:00:00 WARNING Disk usage at 85%\n\"\"\"\n\n# Write sample file\nwith open('server.log', 'w') as f:\n    f.write(log_content)\n\n# Now analyse it!\nprint(\"=== LOG FILE ANALYSIS ===\")\ntotal_lines = 0\nthreat_lines = []\nlevel_counts = {}\n\nwith open('server.log', 'r') as f:\n    for line_num, line in enumerate(f, 1):\n        line = line.strip()\n        if not line:\n            continue\n        total_lines += 1\n        \n        # Extract log level\n        parts = line.split()\n        if len(parts) >= 3:\n            level = parts[2]\n            level_counts[level] = level_counts.get(level, 0) + 1\n        \n        # Check for threats\n        if any(word in line.upper() for word in ['FAILED', 'DENIED', 'ATTACK']):\n            threat_lines.append((line_num, line))\n\nprint(f\"Total entries: {total_lines}\")\nprint(f\"Threats found: {len(threat_lines)}\")\nprint(f\"\\nBy level:\")\nfor level, count in sorted(level_counts.items()):\n    bar = '#' * (count * 3)\n    print(f\"  {level:<10} {count} {bar}\")\nprint(f\"\\nThreat details:\")\nfor num, line in threat_lines:\n    print(f\"  Line {num}: {line}\")",
+          "output": "=== LOG FILE ANALYSIS ===\nTotal entries: 10\nThreats found: 5\n\nBy level:\n  CRITICAL   1 ###\n  ERROR      1 ###\n  INFO       4 ############\n  WARNING    4 ############\n\nThreat details:\n  Line 2: 2025-02-28 08:20:01 WARNING Login FAILED user=admin ip=203.0.113.42\n  Line 3: ...\n  Line 4: ...\n  Line 6: 2025-02-28 09:00:00 ERROR Connection DENIED from 198.51.100.1\n  Line 8: 2025-02-28 10:00:00 CRITICAL Possible brute force ATTACK detected",
+          "ai_explanation": "This is a REAL log analysis pattern:\n1. Create a sample log (in real work, the log already exists).\n2. open('server.log', 'r') opens in read mode.\n3. enumerate(f, 1) gives line numbers starting at 1.\n4. .strip() removes leading/trailing whitespace and newlines.\n5. .split() breaks the line into parts for level extraction.\n6. Keyword search finds threat-related entries.\n7. Statistics are collected in dictionaries.\n\nThis is exactly how tools like grep, Fail2ban, and OSSEC work — read logs line by line, match patterns, and report findings. On Kali, try: grep -c 'FAILED' /var/log/auth.log",
+          "ai_challenge": "Add IP address extraction: parse the 'ip=' field from failed login lines and count failures per IP."
+        },
+        {
+          "title": "Example 2: Writing a Forensic Report",
+          "description": "Generate a structured report file from analysis results",
+          "difficulty": "beginner",
+          "code": "import datetime\n\ndef generate_report(findings, analyst='Synapse Student', case_id='FR-2025-001'):\n    \"\"\"Generate a formatted forensic report.\"\"\"\n    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')\n    \n    report_name = f\"report_{case_id}.txt\"\n    with open(report_name, 'w') as f:\n        # Header\n        f.write('=' * 55 + '\\n')\n        f.write(f'  FORENSIC ANALYSIS REPORT\\n')\n        f.write('=' * 55 + '\\n')\n        f.write(f'  Case ID:    {case_id}\\n')\n        f.write(f'  Analyst:    {analyst}\\n')\n        f.write(f'  Generated:  {timestamp}\\n')\n        f.write('=' * 55 + '\\n\\n')\n        \n        # Summary\n        f.write('EXECUTIVE SUMMARY\\n')\n        f.write('-' * 40 + '\\n')\n        f.write(f'Total findings: {len(findings)}\\n')\n        critical = sum(1 for item in findings if item[\"severity\"] == \"CRITICAL\")\n        f.write(f'Critical:       {critical}\\n\\n')\n        \n        # Detailed findings\n        f.write('DETAILED FINDINGS\\n')\n        f.write('-' * 40 + '\\n')\n        for i, finding in enumerate(findings, 1):\n            f.write(f'\\n[{i}] {finding[\"title\"]}\\n')\n            f.write(f'    Severity:    {finding[\"severity\"]}\\n')\n            f.write(f'    Evidence:    {finding[\"evidence\"]}\\n')\n            f.write(f'    Action:      {finding[\"action\"]}\\n')\n        \n        f.write('\\n' + '=' * 55 + '\\n')\n        f.write('END OF REPORT\\n')\n    \n    return report_name\n\n# Create findings\nfindings = [\n    {\"title\": \"Brute force attack on SSH\", \"severity\": \"CRITICAL\",\n     \"evidence\": \"203.0.113.42 — 500 failed logins in 5 minutes\",\n     \"action\": \"Block IP, enable fail2ban\"},\n    {\"title\": \"Unusual data transfer\", \"severity\": \"HIGH\",\n     \"evidence\": \"15 GB uploaded to external IP at 3 AM\",\n     \"action\": \"Investigate user account, check DLP logs\"},\n    {\"title\": \"Outdated TLS version\", \"severity\": \"MEDIUM\",\n     \"evidence\": \"Server accepting TLS 1.0 connections\",\n     \"action\": \"Upgrade to TLS 1.3 minimum\"},\n]\n\nfilename = generate_report(findings)\nprint(f\"Report saved: {filename}\")\n\n# Read back and display\nwith open(filename, 'r') as f:\n    print(f.read())",
+          "output": "Report saved: report_FR-2025-001.txt\n=======================================================\n  FORENSIC ANALYSIS REPORT\n=======================================================\n  Case ID:    FR-2025-001\n  Analyst:    Synapse Student\n  Generated:  2025-02-28 15:30:00\n=======================================================\n\nEXECUTIVE SUMMARY\n----------------------------------------\nTotal findings: 3\nCritical:       1\n...",
+          "ai_explanation": "This creates a PROFESSIONAL forensic report:\n1. The function takes findings data and metadata parameters.\n2. open(report_name, 'w') creates a new file.\n3. f.write() builds the report section by section.\n4. String formatting (f-strings, alignment) creates clean structure.\n5. The function returns the filename so the caller knows where the report was saved.\n\nIn real forensic work, reports must be: structured, timestamped, attributed to an analyst, and reproducible. This template follows those requirements. Many forensic teams use Python to auto-generate reports from analysis data.",
+          "ai_challenge": "Add a 'format' parameter that supports 'txt' and 'csv'. For CSV, output findings as a spreadsheet-style file."
+        },
+        {
+          "title": "Example 3: CSV Log Processor",
+          "description": "Read, filter, and analyse structured CSV security data",
+          "difficulty": "intermediate",
+          "code": "import csv\nfrom io import StringIO\nfrom collections import Counter\n\n# Create sample CSV data (simulating a firewall export)\ncsv_data = \"\"\"timestamp,source_ip,dest_ip,port,protocol,action,bytes\n2025-02-28 08:00:01,203.0.113.42,10.0.0.5,22,TCP,BLOCK,0\n2025-02-28 08:00:02,203.0.113.42,10.0.0.5,22,TCP,BLOCK,0\n2025-02-28 08:00:03,203.0.113.42,10.0.0.5,22,TCP,BLOCK,0\n2025-02-28 08:15:00,10.0.0.12,8.8.8.8,443,TCP,ALLOW,15234\n2025-02-28 08:20:00,10.0.0.5,10.0.0.100,80,TCP,ALLOW,52100\n2025-02-28 09:00:00,198.51.100.1,10.0.0.5,3306,TCP,BLOCK,0\n2025-02-28 09:30:00,10.0.0.12,104.18.32.7,443,TCP,ALLOW,892034\n2025-02-28 10:00:00,10.0.0.5,10.0.0.100,443,TCP,ALLOW,1024\n2025-02-28 10:30:00,203.0.113.42,10.0.0.5,80,TCP,BLOCK,0\n2025-02-28 11:00:00,172.16.0.99,10.0.0.5,4444,TCP,BLOCK,0\n\"\"\"\n\n# Write to file\nwith open('firewall.csv', 'w') as f:\n    f.write(csv_data)\n\n# Analyse the CSV\nprint(\"FIREWALL LOG ANALYSIS\")\nprint(\"=\" * 55)\n\ntotal = 0\nblocked = 0\nallowed = 0\ntotal_bytes = 0\nblocked_ips = Counter()\nport_targets = Counter()\n\nwith open('firewall.csv', 'r') as f:\n    reader = csv.DictReader(f)\n    for row in reader:\n        total += 1\n        if row['action'] == 'BLOCK':\n            blocked += 1\n            blocked_ips[row['source_ip']] += 1\n        else:\n            allowed += 1\n            total_bytes += int(row['bytes'])\n        port_targets[row['port']] += 1\n\nprint(f\"Total entries:     {total}\")\nprint(f\"Blocked:           {blocked}\")\nprint(f\"Allowed:           {allowed}\")\nprint(f\"Data transferred:  {total_bytes:,} bytes ({total_bytes/1024:.1f} KB)\")\n\nprint(f\"\\nTop blocked IPs:\")\nfor ip, count in blocked_ips.most_common(3):\n    print(f\"  {ip:<20} blocked {count} times\")\n\nprint(f\"\\nTargeted ports:\")\nfor port, count in port_targets.most_common():\n    print(f\"  Port {port:<6} hit {count} times\")",
+          "output": "FIREWALL LOG ANALYSIS\n=======================================================\nTotal entries:     10\nBlocked:           5\nAllowed:           5\nData transferred:  960,392 bytes (937.9 KB)\n\nTop blocked IPs:\n  203.0.113.42         blocked 4 times\n  198.51.100.1         blocked 1 times\n  172.16.0.99          blocked 1 times\n\nTargeted ports:\n  Port 22     hit 3 times\n  Port 443    hit 3 times\n  ...",
+          "ai_explanation": "CSV processing is a CORE forensic skill:\n1. csv.DictReader reads each row as a dictionary with column names as keys.\n2. row['action'], row['source_ip'] — access data by column name (readable!).\n3. Counter() automatically counts occurrences — perfect for frequency analysis.\n4. .most_common(3) gives the top 3 most frequent items.\n\nFirewall logs, IDS exports, and vulnerability scan results all come as CSV. This exact pattern works for Snort alerts, Nessus results, and Splunk exports.\n\nOn Kali, export data from security tools and parse it with this pattern!",
+          "ai_challenge": "Add time-based analysis: group blocked connections by hour and show which hours had the most blocks."
+        },
+        {
+          "title": "Example 4: Binary File Identifier (Magic Bytes)",
+          "description": "Read file headers to identify true file types regardless of extension",
+          "difficulty": "intermediate",
+          "code": "import os\n\n# File signature database\nFILE_SIGNATURES = {\n    b'\\xff\\xd8\\xff': ('JPEG', 'Image file'),\n    b'\\x89PNG\\r\\n\\x1a\\n': ('PNG', 'Image file'),\n    b'GIF87a': ('GIF87', 'Image file'),\n    b'GIF89a': ('GIF89', 'Animated image'),\n    b'%PDF': ('PDF', 'Document'),\n    b'PK\\x03\\x04': ('ZIP/DOCX/XLSX', 'Archive or Office doc'),\n    b'MZ': ('EXE/DLL', 'Windows executable'),\n    b'\\x7fELF': ('ELF', 'Linux executable'),\n    b'Rar!': ('RAR', 'Archive'),\n    b'\\x1f\\x8b': ('GZIP', 'Compressed file'),\n}\n\ndef identify_file_type(filepath):\n    \"\"\"Identify file type from magic bytes, not extension.\"\"\"\n    try:\n        with open(filepath, 'rb') as f:\n            header = f.read(16)\n    except (FileNotFoundError, PermissionError) as e:\n        return None, None, str(e)\n    \n    for signature, (name, desc) in FILE_SIGNATURES.items():\n        if header[:len(signature)] == signature:\n            return name, desc, None\n    \n    return 'UNKNOWN', f'Header: {header[:8].hex().upper()}', None\n\n# Create test files with different signatures\ntest_files = {\n    'photo.jpg': b'\\xff\\xd8\\xff\\xe0' + b'\\x00' * 20,\n    'document.pdf': b'%PDF-1.7' + b'\\x00' * 20,\n    'hidden.txt': b'MZ\\x90\\x00' + b'\\x00' * 20,  # EXE disguised as .txt!\n    'archive.zip': b'PK\\x03\\x04' + b'\\x00' * 20,\n    'mystery.dat': b'\\x00\\x01\\x02\\x03' + b'\\x00' * 20,\n}\n\nfor name, content in test_files.items():\n    with open(name, 'wb') as f:\n        f.write(content)\n\n# Scan all files\nprint(\"FILE TYPE IDENTIFICATION\")\nprint(\"=\" * 60)\nprint(f\"{'Filename':<18} {'Extension':<10} {'True Type':<15} {'Match?'}\")\nprint(\"-\" * 60)\n\nalerts = []\nfor filename in test_files:\n    ext = os.path.splitext(filename)[1]\n    true_type, desc, error = identify_file_type(filename)\n    \n    # Check if extension matches true type\n    ext_map = {'.jpg': 'JPEG', '.pdf': 'PDF', '.txt': 'UNKNOWN',\n               '.zip': 'ZIP/DOCX/XLSX', '.dat': 'UNKNOWN'}\n    expected = ext_map.get(ext, 'UNKNOWN')\n    match = 'YES' if true_type == expected or expected == 'UNKNOWN' else 'MISMATCH!'\n    \n    if match == 'MISMATCH!':\n        alerts.append(f\"{filename}: claims to be {ext} but is actually {true_type}\")\n    \n    print(f\"{filename:<18} {ext:<10} {true_type:<15} {match}\")\n\nprint(\"-\" * 60)\nif alerts:\n    print(f\"\\nALERTS ({len(alerts)}):\")\n    for alert in alerts:\n        print(f\"  >>> {alert}\")",
+          "output": "FILE TYPE IDENTIFICATION\n============================================================\nFilename           Extension  True Type       Match?\n------------------------------------------------------------\nphoto.jpg          .jpg       JPEG            YES\ndocument.pdf       .pdf       PDF             YES\nhidden.txt         .txt       EXE/DLL         MISMATCH!\narchive.zip        .zip       ZIP/DOCX/XLSX   YES\nmystery.dat        .dat       UNKNOWN         YES\n------------------------------------------------------------\n\nALERTS (1):\n  >>> hidden.txt: claims to be .txt but is actually EXE/DLL",
+          "ai_explanation": "Magic byte analysis is CRITICAL for forensics:\n1. open(filepath, 'rb') reads raw bytes — not text.\n2. f.read(16) gets the file header (first 16 bytes).\n3. Comparison against known signatures identifies the TRUE file type.\n4. Extension mismatch detection catches disguised files!\n\nhidden.txt has extension .txt but its bytes start with MZ (Windows executable). An attacker renamed an .exe to .txt to hide it — magic bytes caught it!\n\nThis is how antivirus software and forensic tools like 'file' command on Linux work. Try on Kali: file hidden.txt — it will show 'PE32 executable' regardless of the .txt extension.",
+          "ai_challenge": "Add file SIZE analysis alongside magic bytes. Flag files where the type/size combination is suspicious (e.g., a 50KB JPEG or a 10GB text file)."
+        },
+        {
+          "title": "Example 5: File Hash Calculator & Verifier",
+          "description": "Calculate and verify file hashes for evidence integrity",
+          "difficulty": "intermediate",
+          "code": "import hashlib\nimport os\n\ndef hash_file(filepath, algorithm='sha256', chunk_size=4096):\n    \"\"\"Calculate hash of any file, regardless of size.\"\"\"\n    h = hashlib.new(algorithm)\n    file_size = 0\n    try:\n        with open(filepath, 'rb') as f:\n            while True:\n                chunk = f.read(chunk_size)\n                if not chunk:\n                    break\n                h.update(chunk)\n                file_size += len(chunk)\n    except FileNotFoundError:\n        return None, 0\n    return h.hexdigest(), file_size\n\ndef verify_integrity(filepath, expected_hash, algorithm='sha256'):\n    \"\"\"Verify a file has not been tampered with.\"\"\"\n    actual_hash, _ = hash_file(filepath, algorithm)\n    return actual_hash == expected_hash\n\n# Create test evidence files\nfiles = {\n    'evidence_001.txt': b'Critical forensic evidence - do not modify!',\n    'evidence_002.txt': b'Financial records from suspect laptop',\n    'evidence_003.txt': b'Chat logs extracted from mobile device',\n}\nfor name, content in files.items():\n    with open(name, 'wb') as f:\n        f.write(content)\n\n# Hash all evidence\nprint(\"EVIDENCE HASH MANIFEST\")\nprint(\"=\" * 70)\nhash_manifest = {}\nfor filename in files:\n    md5, _ = hash_file(filename, 'md5')\n    sha256, size = hash_file(filename, 'sha256')\n    hash_manifest[filename] = sha256\n    print(f\"\\nFile: {filename} ({size} bytes)\")\n    print(f\"  MD5:    {md5}\")\n    print(f\"  SHA256: {sha256}\")\n\n# Tamper with one file\nwith open('evidence_002.txt', 'ab') as f:\n    f.write(b' TAMPERED')  # Append data!\n\n# Verify all files\nprint(f\"\\n{'=' * 70}\")\nprint(\"INTEGRITY VERIFICATION\")\nprint(f\"{'=' * 70}\")\nfor filename, expected in hash_manifest.items():\n    is_valid = verify_integrity(filename, expected)\n    status = 'VERIFIED' if is_valid else 'TAMPERED!'\n    icon = '[OK]' if is_valid else '[!!]'\n    print(f\"  {icon} {filename}: {status}\")\n    if not is_valid:\n        actual, _ = hash_file(filename)\n        print(f\"       Expected: {expected[:32]}...\")\n        print(f\"       Got:      {actual[:32]}...\")",
+          "output": "EVIDENCE HASH MANIFEST\n======================================================================\n\nFile: evidence_001.txt (43 bytes)\n  MD5:    a1b2c3d4...\n  SHA256: e5f6a7b8...\n...\n\n======================================================================\nINTEGRITY VERIFICATION\n======================================================================\n  [OK] evidence_001.txt: VERIFIED\n  [!!] evidence_002.txt: TAMPERED!\n       Expected: e5f6a7b8c9d01234...\n       Got:      1234567890abcdef...\n  [OK] evidence_003.txt: VERIFIED",
+          "ai_explanation": "File hashing is THE most critical forensic skill:\n1. hash_file() reads in 4096-byte chunks — handles files of ANY size.\n2. h.update(chunk) adds each chunk to the running hash.\n3. The manifest records all hashes at the time of evidence seizure.\n4. After simulated tampering (appending bytes), verification DETECTS the change.\n\nIn court, digital evidence must have documented chain of custody. Hash verification proves evidence was not modified between seizure and analysis. If hashes do not match, the evidence may be inadmissible.\n\nThis is exactly how tools like EnCase, FTK, and md5deep work. On Kali: sha256sum evidence_001.txt",
+          "ai_challenge": "Create a hash_directory() function that hashes every file in a folder and saves a manifest.json with all hashes for later verification."
+        },
+        {
+          "title": "Example 6: JSON Evidence Database",
+          "description": "Create, read, update, and query a JSON-based evidence database",
+          "difficulty": "intermediate",
+          "code": "import json\nimport datetime\n\ndef create_evidence_db(filepath):\n    \"\"\"Create a new evidence database.\"\"\"\n    db = {\n        'metadata': {\n            'case_id': 'FR-2025-042',\n            'created': datetime.datetime.now().isoformat(),\n            'analyst': 'Synapse Student'\n        },\n        'evidence': []\n    }\n    save_db(filepath, db)\n    return db\n\ndef save_db(filepath, db):\n    \"\"\"Save database to JSON file.\"\"\"\n    with open(filepath, 'w') as f:\n        json.dump(db, f, indent=2)\n\ndef load_db(filepath):\n    \"\"\"Load database from JSON file.\"\"\"\n    with open(filepath, 'r') as f:\n        return json.load(f)\n\ndef add_evidence(db, name, etype, hash_val, notes=''):\n    \"\"\"Add an evidence item.\"\"\"\n    item = {\n        'id': f'E{len(db[\"evidence\"]) + 1:03d}',\n        'name': name,\n        'type': etype,\n        'hash': hash_val,\n        'notes': notes,\n        'added': datetime.datetime.now().isoformat()\n    }\n    db['evidence'].append(item)\n    return item\n\ndef search_evidence(db, query):\n    \"\"\"Search evidence by name or notes.\"\"\"\n    query = query.lower()\n    return [e for e in db['evidence']\n            if query in e['name'].lower() or query in e.get('notes', '').lower()]\n\n# Build the database\nDB_FILE = 'evidence_db.json'\ndb = create_evidence_db(DB_FILE)\n\nadd_evidence(db, 'laptop.img', 'disk_image', 'abc123def456', 'Suspect primary laptop')\nadd_evidence(db, 'phone_backup.tar', 'mobile', 'def456ghi789', 'iPhone 14 full backup')\nadd_evidence(db, 'usb_drive.dd', 'removable', 'ghi789jkl012', 'Kingston 32GB USB')\nadd_evidence(db, 'email_export.pst', 'email', 'jkl012mno345', 'Outlook 2019 archive')\nadd_evidence(db, 'browser_history.json', 'browser', 'mno345pqr678', 'Chrome browsing data')\n\nsave_db(DB_FILE, db)\n\n# Load and query\ndb = load_db(DB_FILE)\nprint(f\"Case: {db['metadata']['case_id']}\")\nprint(f\"Evidence items: {len(db['evidence'])}\")\nprint(f\"\\nAll evidence:\")\nfor item in db['evidence']:\n    print(f\"  [{item['id']}] {item['name']:<25} {item['type']:<12} Hash: {item['hash'][:8]}...\")\n\n# Search\nresults = search_evidence(db, 'laptop')\nprint(f\"\\nSearch 'laptop': {len(results)} results\")\nfor r in results:\n    print(f\"  {r['id']}: {r['name']} — {r['notes']}\")\n\n# Show the raw JSON\nprint(f\"\\nJSON file size: {len(json.dumps(db, indent=2))} chars\")",
+          "output": "Case: FR-2025-042\nEvidence items: 5\n\nAll evidence:\n  [E001] laptop.img                disk_image   Hash: abc123de...\n  [E002] phone_backup.tar          mobile       Hash: def456gh...\n  [E003] usb_drive.dd              removable    Hash: ghi789jk...\n  [E004] email_export.pst          email        Hash: jkl012mn...\n  [E005] browser_history.json      browser      Hash: mno345pq...\n\nSearch 'laptop': 1 results\n  E001: laptop.img — Suspect primary laptop",
+          "ai_explanation": "This is a complete JSON-based database:\n1. create_evidence_db() initialises the structure.\n2. json.dump(db, f, indent=2) writes pretty-printed JSON.\n3. json.load(f) reads it back as Python dictionaries/lists.\n4. add_evidence() appends items with auto-generated IDs.\n5. search_evidence() filters using list comprehension.\n\nJSON databases are common in forensic tools for case management, evidence tracking, and analysis results. Tools like TheHive and Cortex use JSON for their entire API.\n\nThe pattern of save/load/add/search is a mini CRUD system (Create, Read, Update, Delete) — the foundation of every database application.",
+          "ai_challenge": "Add delete_evidence(db, evidence_id) and update_notes(db, evidence_id, new_notes) functions. Also add export_csv(db, filepath) to export evidence as CSV."
+        },
+        {
+          "title": "Example 7: Directory Scanner — Evidence Cataloguer",
+          "description": "Recursively scan directories, classify files, and create an evidence catalogue",
+          "difficulty": "intermediate",
+          "code": "import os\nimport hashlib\n\ndef quick_hash(filepath, size=1024):\n    \"\"\"Fast hash using only first 1024 bytes.\"\"\"\n    try:\n        with open(filepath, 'rb') as f:\n            return hashlib.md5(f.read(size)).hexdigest()[:12]\n    except (PermissionError, OSError):\n        return 'ERROR'\n\ndef classify_extension(ext):\n    \"\"\"Classify file by extension.\"\"\"\n    categories = {\n        'image': ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg'],\n        'document': ['.pdf', '.doc', '.docx', '.txt', '.md', '.csv'],\n        'executable': ['.exe', '.bat', '.ps1', '.sh', '.py', '.cmd'],\n        'archive': ['.zip', '.tar', '.gz', '.rar', '.7z'],\n        'data': ['.json', '.xml', '.db', '.sql', '.log'],\n    }\n    for cat, exts in categories.items():\n        if ext.lower() in exts:\n            return cat\n    return 'other'\n\ndef scan_directory(root_path):\n    \"\"\"Recursively scan a directory and catalogue all files.\"\"\"\n    catalogue = []\n    \n    for dirpath, dirnames, filenames in os.walk(root_path):\n        for filename in filenames:\n            filepath = os.path.join(dirpath, filename)\n            ext = os.path.splitext(filename)[1]\n            \n            try:\n                size = os.path.getsize(filepath)\n            except OSError:\n                size = 0\n            \n            catalogue.append({\n                'path': filepath,\n                'name': filename,\n                'ext': ext,\n                'category': classify_extension(ext),\n                'size': size,\n                'hash': quick_hash(filepath),\n            })\n    \n    return catalogue\n\n# Create test directory structure\nos.makedirs('test_evidence/case_001/photos', exist_ok=True)\nos.makedirs('test_evidence/case_001/logs', exist_ok=True)\nos.makedirs('test_evidence/case_002', exist_ok=True)\n\ntest_files = [\n    ('test_evidence/case_001/photos/img001.jpg', b'\\xff\\xd8\\xff fake jpeg'),\n    ('test_evidence/case_001/photos/img002.png', b'\\x89PNG fake png'),\n    ('test_evidence/case_001/logs/access.log', b'2025-02-28 GET /index.html'),\n    ('test_evidence/case_001/logs/error.log', b'ERROR: connection refused'),\n    ('test_evidence/case_001/report.pdf', b'%PDF-1.7 fake pdf'),\n    ('test_evidence/case_002/malware.exe', b'MZ fake executable'),\n    ('test_evidence/case_002/data.csv', b'ip,port,status\\n10.0.0.1,80,open'),\n    ('test_evidence/case_002/config.json', b'{\"setting\": \"value\"}'),\n]\nfor path, content in test_files:\n    with open(path, 'wb') as f:\n        f.write(content)\n\n# Scan!\ncatalogue = scan_directory('test_evidence')\n\n# Report\nprint(\"EVIDENCE CATALOGUE\")\nprint(\"=\" * 65)\nprint(f\"Total files: {len(catalogue)}\")\n\n# Group by category\nfrom collections import Counter\ncats = Counter(f['category'] for f in catalogue)\nprint(f\"\\nBy category:\")\nfor cat, count in cats.most_common():\n    print(f\"  {cat:<12}: {count}\")\n\nprint(f\"\\nFile listing:\")\nfor f in sorted(catalogue, key=lambda x: x['path']):\n    size_str = f\"{f['size']:>6}\"\n    print(f\"  [{f['category']:<10}] {f['name']:<20} {size_str}B  {f['hash']}\")\n\n# Cleanup\nimport shutil\nshutil.rmtree('test_evidence')",
+          "output": "EVIDENCE CATALOGUE\n=================================================================\nTotal files: 8\n\nBy category:\n  image       : 2\n  data        : 3\n  executable  : 1\n  document    : 2\n\nFile listing:\n  [data      ] access.log           26B  a1b2c3d4e5f6\n  [data      ] config.json          20B  c3d4e5f6a7b8\n  [data      ] data.csv             26B  d4e5f6a7b8c9\n  [document  ] report.pdf           18B  e5f6a7b8c9d0\n  ...",
+          "ai_explanation": "os.walk() is the ULTIMATE file scanner:\n1. os.walk(root) yields (dirpath, dirnames, filenames) for EVERY directory.\n2. os.path.join(dirpath, filename) builds the full path safely.\n3. Each file is classified by extension and hashed.\n4. Results are collected in a catalogue list.\n\nThis is how forensic tools catalogue evidence: Autopsy, FTK, and EnCase all build file catalogues from disk images using the same recursive walk pattern.\n\nThe catalogue can be exported to CSV or JSON for further analysis, court documentation, or evidence chain-of-custody records.",
+          "ai_challenge": "Add duplicate detection: files with the same hash are potential duplicates. Flag them in the report."
+        },
+        {
+          "title": "Example 8: Encoding Detective",
+          "description": "Handle different file encodings and detect encoding issues",
+          "difficulty": "intermediate",
+          "code": "# Encoding Detective — handle files from any system\n\ndef detect_encoding(filepath):\n    \"\"\"Try to detect file encoding by attempting multiple decodings.\"\"\"\n    encodings = ['utf-8', 'ascii', 'latin-1', 'utf-16', 'cp1252']\n    \n    with open(filepath, 'rb') as f:\n        raw = f.read()\n    \n    results = []\n    for enc in encodings:\n        try:\n            text = raw.decode(enc)\n            # Check for common signs of wrong encoding\n            garbled = sum(1 for c in text if ord(c) > 127 and c not in 'aeiou')\n            results.append((enc, True, garbled, text[:50]))\n        except (UnicodeDecodeError, UnicodeError):\n            results.append((enc, False, -1, 'FAILED'))\n    \n    return results, raw\n\ndef safe_read(filepath):\n    \"\"\"Read file with automatic encoding detection.\"\"\"\n    for encoding in ['utf-8', 'latin-1']:\n        try:\n            with open(filepath, 'r', encoding=encoding) as f:\n                content = f.read()\n            return content, encoding\n        except UnicodeDecodeError:\n            continue\n    with open(filepath, 'rb') as f:\n        return f.read().decode('utf-8', errors='replace'), 'binary-fallback'\n\n# Create files with different encodings\nwith open('utf8_file.txt', 'w', encoding='utf-8') as f:\n    f.write('Hello World - UTF-8 encoded text')\n\nwith open('latin1_file.txt', 'wb') as f:\n    f.write('Caf\\xe9 cr\\xe8me - Latin-1 text'.encode('latin-1'))\n\n# Test safe reading\nfor filename in ['utf8_file.txt', 'latin1_file.txt']:\n    content, encoding = safe_read(filename)\n    print(f\"{filename}:\")\n    print(f\"  Encoding: {encoding}\")\n    print(f\"  Content:  {content[:40]}\")\n    print(f\"  Length:   {len(content)} chars\")\n    print()\n\n# Show raw bytes\nprint(\"Byte-level analysis of latin1_file.txt:\")\nwith open('latin1_file.txt', 'rb') as f:\n    raw = f.read()\n    for i, byte in enumerate(raw[:20]):\n        char = chr(byte) if 32 <= byte < 127 else '.'\n        print(f\"  Byte {i:>2}: 0x{byte:02X} ({byte:>3}) '{char}'\")",
+          "output": "utf8_file.txt:\n  Encoding: utf-8\n  Content:  Hello World - UTF-8 encoded text\n  Length:   32 chars\n\nlatin1_file.txt:\n  Encoding: latin-1\n  Content:  Cafe creme - Latin-1 text\n  Length:   25 chars\n\nByte-level analysis of latin1_file.txt:\n  Byte  0: 0x43 ( 67) 'C'\n  Byte  1: 0x61 ( 97) 'a'\n  Byte  2: 0x66 (102) 'f'\n  Byte  3: 0xE9 (233) '.'  <- accented 'e'\n  ...",
+          "ai_explanation": "Encoding issues are common in forensics because evidence comes from diverse systems:\n1. safe_read() tries UTF-8 first (most common), falls back to Latin-1 (accepts any byte).\n2. Raw byte analysis reveals the actual encoding: 0xE9 is the Latin-1 code for accented 'e'.\n3. errors='replace' prevents crashes by substituting unreadable characters.\n\nWhen analysing evidence from Windows systems, you will often encounter CP-1252. From older servers, Latin-1. From international systems, various UTF variants. This defensive pattern handles them all.\n\nOn Kali: file --mime-encoding filename.txt shows the detected encoding.",
+          "ai_challenge": "Create a batch_convert(directory, target_encoding='utf-8') function that reads all .txt files and re-saves them in UTF-8."
+        },
+        {
+          "title": "Example 9: Multi-Format Report Generator",
+          "description": "Generate reports in TXT, CSV, and JSON formats from the same data",
+          "difficulty": "advanced",
+          "code": "import csv\nimport json\nimport datetime\n\ndef generate_reports(findings, case_id='FR-2025-001'):\n    \"\"\"Generate forensic reports in multiple formats.\"\"\"\n    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')\n    \n    # TXT Report\n    txt_file = f'{case_id}_report.txt'\n    with open(txt_file, 'w') as f:\n        f.write(f'FORENSIC REPORT - {case_id}\\n')\n        f.write(f'Generated: {timestamp}\\n')\n        f.write('=' * 50 + '\\n\\n')\n        for i, finding in enumerate(findings, 1):\n            f.write(f'[{i}] {finding[\"title\"]}\\n')\n            f.write(f'    Severity: {finding[\"severity\"]}\\n')\n            f.write(f'    Detail:   {finding[\"detail\"]}\\n\\n')\n    \n    # CSV Report\n    csv_file = f'{case_id}_report.csv'\n    with open(csv_file, 'w', newline='') as f:\n        writer = csv.DictWriter(f, fieldnames=['id', 'title', 'severity', 'detail'])\n        writer.writeheader()\n        for i, finding in enumerate(findings, 1):\n            writer.writerow({'id': i, **finding})\n    \n    # JSON Report\n    json_file = f'{case_id}_report.json'\n    report_data = {\n        'case_id': case_id,\n        'generated': timestamp,\n        'total_findings': len(findings),\n        'findings': findings\n    }\n    with open(json_file, 'w') as f:\n        json.dump(report_data, f, indent=2)\n    \n    return [txt_file, csv_file, json_file]\n\n# Findings data\nfindings = [\n    {'title': 'SSH Brute Force', 'severity': 'CRITICAL', 'detail': '500 failed logins from 203.0.113.42'},\n    {'title': 'Data Exfiltration', 'severity': 'HIGH', 'detail': '15 GB transfer to external IP'},\n    {'title': 'Weak Password', 'severity': 'MEDIUM', 'detail': 'Admin account using default credentials'},\n]\n\nfiles = generate_reports(findings)\nprint(\"Reports generated:\")\nimport os\nfor f in files:\n    size = os.path.getsize(f)\n    ext = os.path.splitext(f)[1]\n    print(f\"  {f:<30} {size:>6} bytes  ({ext})\")\n\n# Preview each\nfor f in files:\n    print(f\"\\n--- {f} ---\")\n    with open(f, 'r') as fh:\n        content = fh.read()\n        # Show first 200 chars\n        preview = content[:200] + ('...' if len(content) > 200 else '')\n        print(preview)",
+          "output": "Reports generated:\n  FR-2025-001_report.txt           250 bytes  (.txt)\n  FR-2025-001_report.csv           180 bytes  (.csv)\n  FR-2025-001_report.json          350 bytes  (.json)\n\n--- FR-2025-001_report.txt ---\nFORENSIC REPORT - FR-2025-001\nGenerated: 2025-02-28 15:30:00\n==================================================\n...",
+          "ai_explanation": "Multi-format report generation is a professional forensic requirement:\n1. TXT — human-readable, universally openable, good for email.\n2. CSV — importable into Excel, Splunk, databases, for further analysis.\n3. JSON — machine-readable, API-friendly, best for tool integration.\n\nThe SAME findings data generates ALL three formats. Change the data once, all reports update. This is the power of separating DATA from PRESENTATION.\n\nReal forensic frameworks like TheHive generate reports in PDF, HTML, JSON, and STIX formats from the same underlying data.",
+          "ai_challenge": "Add HTML report generation with colour-coded severity levels (CRITICAL=red, HIGH=orange, MEDIUM=yellow, LOW=green)."
+        },
+        {
+          "title": "Example 10: File Comparison Tool",
+          "description": "Compare two files byte-by-byte and report differences",
+          "difficulty": "advanced",
+          "code": "def compare_files(file1, file2, context_bytes=8):\n    \"\"\"Compare two files and report differences.\"\"\"\n    with open(file1, 'rb') as f1, open(file2, 'rb') as f2:\n        data1 = f1.read()\n        data2 = f2.read()\n    \n    print(f\"File 1: {file1} ({len(data1)} bytes)\")\n    print(f\"File 2: {file2} ({len(data2)} bytes)\")\n    print(f\"Size match: {len(data1) == len(data2)}\")\n    \n    # Find differences\n    diffs = []\n    min_len = min(len(data1), len(data2))\n    for i in range(min_len):\n        if data1[i] != data2[i]:\n            diffs.append((i, data1[i], data2[i]))\n    \n    # Extra bytes\n    if len(data1) != len(data2):\n        extra_in = file1 if len(data1) > len(data2) else file2\n        extra_bytes = abs(len(data1) - len(data2))\n    else:\n        extra_in = None\n        extra_bytes = 0\n    \n    print(f\"Differences: {len(diffs)} bytes differ\")\n    if extra_bytes:\n        print(f\"Extra bytes: {extra_bytes} in {extra_in}\")\n    \n    if diffs:\n        print(f\"\\nFirst 5 differences:\")\n        for offset, b1, b2 in diffs[:5]:\n            c1 = chr(b1) if 32 <= b1 < 127 else '.'\n            c2 = chr(b2) if 32 <= b2 < 127 else '.'\n            print(f\"  Offset 0x{offset:04X} ({offset:>5}): \"\n                  f\"0x{b1:02X} '{c1}' vs 0x{b2:02X} '{c2}'\")\n    \n    identical = len(diffs) == 0 and extra_bytes == 0\n    return identical\n\n# Create test files\noriginal = b'The secret password is: forensics2025!\\nKeep this safe.'\nmodified = b'The secret password is: CHANGED!!2025!\\nKeep this safe.'\n\nwith open('original.bin', 'wb') as f: f.write(original)\nwith open('modified.bin', 'wb') as f: f.write(modified)\n\nprint(\"FILE COMPARISON REPORT\")\nprint(\"=\" * 50)\nidentical = compare_files('original.bin', 'modified.bin')\nprint(f\"\\nVerdict: {'IDENTICAL' if identical else 'FILES DIFFER — EVIDENCE MAY BE TAMPERED'}\")",
+          "output": "FILE COMPARISON REPORT\n==================================================\nFile 1: original.bin (53 bytes)\nFile 2: modified.bin (53 bytes)\nSize match: True\nDifferences: 9 bytes differ\n\nFirst 5 differences:\n  Offset 0x0018 (   24): 0x66 'f' vs 0x43 'C'\n  Offset 0x0019 (   25): 0x6F 'o' vs 0x48 'H'\n  Offset 0x001A (   26): 0x72 'r' vs 0x41 'A'\n  Offset 0x001B (   27): 0x65 'e' vs 0x4E 'N'\n  Offset 0x001C (   28): 0x6E 'n' vs 0x47 'G'\n\nVerdict: FILES DIFFER — EVIDENCE MAY BE TAMPERED",
+          "ai_explanation": "Byte-by-byte comparison is fundamental in forensics:\n1. Both files opened in binary mode ('rb').\n2. Each byte compared at the same offset.\n3. Hex offsets show exactly WHERE changes occurred.\n4. Character display shows WHAT changed (forensics→CHANGED).\n\nThis reveals not just THAT files differ, but exactly WHERE and HOW. In malware analysis, comparing a clean file to a suspected infected copy reveals the injected code.\n\nOn Kali: diff original.bin modified.bin or xxd original.bin | diff - <(xxd modified.bin)",
+          "ai_challenge": "Add a hex dump view showing surrounding context around each difference, like a side-by-side hex editor comparison."
+        },
+        {
+          "title": "Example 11: Streaming Log Monitor",
+          "description": "Simulate tail -f: read new lines as they are appended to a log file",
+          "difficulty": "advanced",
+          "code": "import time\nimport os\n\ndef simulate_log_writes(filepath, entries):\n    \"\"\"Write log entries one at a time to simulate a live log.\"\"\"\n    with open(filepath, 'a') as f:\n        for entry in entries:\n            f.write(entry + '\\n')\n            f.flush()\n\ndef monitor_log(filepath, max_reads=10):\n    \"\"\"Monitor a log file for new entries (like tail -f).\"\"\"\n    print(f\"Monitoring: {filepath}\")\n    print(\"Watching for threats...\\n\")\n    \n    # Start from end of file\n    if os.path.exists(filepath):\n        with open(filepath, 'r') as f:\n            f.seek(0, 2)  # Seek to end\n            position = f.tell()\n    else:\n        position = 0\n    \n    threats = []\n    reads = 0\n    \n    while reads < max_reads:\n        with open(filepath, 'r') as f:\n            f.seek(position)\n            new_lines = f.readlines()\n            position = f.tell()\n        \n        for line in new_lines:\n            line = line.strip()\n            if not line:\n                continue\n            reads += 1\n            \n            # Check for threats\n            is_threat = any(w in line.upper() for w in ['FAILED', 'ATTACK', 'ERROR'])\n            icon = '>>>' if is_threat else '   '\n            print(f\"{icon} {line}\")\n            \n            if is_threat:\n                threats.append(line)\n        \n        if not new_lines:\n            break\n    \n    return threats\n\n# Create initial empty log\nwith open('live.log', 'w') as f:\n    f.write('')\n\n# Simulate new entries being written\nsimulate_log_writes('live.log', [\n    '2025-02-28 08:00:00 INFO Server started',\n    '2025-02-28 08:15:00 WARNING Login FAILED user=admin',\n    '2025-02-28 08:15:01 WARNING Login FAILED user=admin',\n    '2025-02-28 08:30:00 INFO Backup complete',\n    '2025-02-28 09:00:00 CRITICAL ATTACK detected from 203.0.113.42',\n    '2025-02-28 09:30:00 INFO Normal operation resumed',\n    '2025-02-28 10:00:00 ERROR Disk write failure',\n])\n\n# Monitor\nthreats = monitor_log('live.log')\nprint(f\"\\nTotal threats detected: {len(threats)}\")\nfor t in threats:\n    print(f\"  ! {t}\")",
+          "output": "Monitoring: live.log\nWatching for threats...\n\n    2025-02-28 08:00:00 INFO Server started\n>>> 2025-02-28 08:15:00 WARNING Login FAILED user=admin\n>>> 2025-02-28 08:15:01 WARNING Login FAILED user=admin\n    2025-02-28 08:30:00 INFO Backup complete\n>>> 2025-02-28 09:00:00 CRITICAL ATTACK detected from 203.0.113.42\n    2025-02-28 09:30:00 INFO Normal operation resumed\n>>> 2025-02-28 10:00:00 ERROR Disk write failure\n\nTotal threats detected: 4",
+          "ai_explanation": "This simulates 'tail -f' — a core monitoring tool:\n1. f.seek(0, 2) positions the cursor at the END of the file.\n2. f.tell() saves the current position.\n3. On each check, we seek to the saved position and read NEW lines only.\n4. The position is updated after reading.\n\nThis is how real-time security monitoring works: SIEM systems continuously read new log entries as they appear, check for threat patterns, and generate alerts.\n\nOn Kali: tail -f /var/log/auth.log shows new authentication events in real-time. Your Python version adds custom threat detection logic!",
+          "ai_challenge": "Add rate-based detection: alert if more than 3 threats appear within 5 lines (potential ongoing attack)."
+        },
+        {
+          "title": "Example 12: Complete Forensic File Processing Pipeline",
+          "description": "End-to-end: scan, classify, hash, analyse, and report on an evidence directory",
+          "difficulty": "advanced",
+          "code": "import os, hashlib, json, csv, datetime\n\ndef process_evidence_directory(evidence_dir, output_dir):\n    \"\"\"Complete forensic processing pipeline.\"\"\"\n    # Ensure output directory exists\n    os.makedirs(output_dir, exist_ok=True)\n    \n    # Phase 1: Catalogue\n    print(\"Phase 1: Cataloguing files...\")\n    catalogue = []\n    for dirpath, _, filenames in os.walk(evidence_dir):\n        for fname in filenames:\n            fpath = os.path.join(dirpath, fname)\n            ext = os.path.splitext(fname)[1].lower()\n            try:\n                size = os.path.getsize(fpath)\n                with open(fpath, 'rb') as f:\n                    header = f.read(8)\n                    f.seek(0)\n                    sha = hashlib.sha256(f.read()).hexdigest()\n            except OSError:\n                continue\n            \n            # Classify risk\n            risk = 'HIGH' if ext in ['.exe','.bat','.ps1'] else 'MEDIUM' if ext in ['.zip','.py'] else 'LOW'\n            \n            catalogue.append({\n                'path': fpath, 'name': fname, 'ext': ext,\n                'size': size, 'sha256': sha, 'risk': risk,\n                'header_hex': header[:4].hex()\n            })\n    \n    print(f\"  Found {len(catalogue)} files\")\n    \n    # Phase 2: Analysis\n    print(\"Phase 2: Analysing...\")\n    stats = {\n        'total_files': len(catalogue),\n        'total_size': sum(f['size'] for f in catalogue),\n        'by_risk': {}, 'by_ext': {},\n        'duplicates': []\n    }\n    \n    hash_seen = {}\n    for item in catalogue:\n        stats['by_risk'][item['risk']] = stats['by_risk'].get(item['risk'], 0) + 1\n        stats['by_ext'][item['ext']] = stats['by_ext'].get(item['ext'], 0) + 1\n        \n        if item['sha256'] in hash_seen:\n            stats['duplicates'].append((item['name'], hash_seen[item['sha256']]))\n        else:\n            hash_seen[item['sha256']] = item['name']\n    \n    # Phase 3: Generate reports\n    print(\"Phase 3: Generating reports...\")\n    \n    # CSV manifest\n    csv_path = os.path.join(output_dir, 'manifest.csv')\n    with open(csv_path, 'w', newline='') as f:\n        w = csv.DictWriter(f, fieldnames=['name','ext','size','sha256','risk','header_hex'])\n        w.writeheader()\n        for item in catalogue:\n            w.writerow({k: item[k] for k in w.fieldnames})\n    \n    # JSON report\n    json_path = os.path.join(output_dir, 'analysis.json')\n    report = {\n        'timestamp': datetime.datetime.now().isoformat(),\n        'evidence_dir': evidence_dir,\n        'stats': stats,\n        'high_risk_files': [f for f in catalogue if f['risk'] == 'HIGH']\n    }\n    with open(json_path, 'w') as f:\n        json.dump(report, f, indent=2)\n    \n    # Summary\n    txt_path = os.path.join(output_dir, 'summary.txt')\n    with open(txt_path, 'w') as f:\n        f.write(f'Evidence Processing Summary\\n{\"=\" * 40}\\n')\n        f.write(f'Files: {stats[\"total_files\"]}\\n')\n        f.write(f'Size:  {stats[\"total_size\"]:,} bytes\\n')\n        f.write(f'Risk:  {stats[\"by_risk\"]}\\n')\n        f.write(f'Duplicates: {len(stats[\"duplicates\"])}\\n')\n    \n    return catalogue, stats\n\n# Create test evidence\nos.makedirs('evidence/suspect/docs', exist_ok=True)\nfor name, content in [('evidence/suspect/malware.exe', b'MZ evil'),\n                       ('evidence/suspect/photo.jpg', b'\\xff\\xd8\\xff image'),\n                       ('evidence/suspect/docs/secret.pdf', b'%PDF secrets'),\n                       ('evidence/suspect/docs/notes.txt', b'meeting notes'),\n                       ('evidence/suspect/backup.zip', b'PK archive')]:\n    with open(name, 'wb') as f: f.write(content)\n\ncatalogue, stats = process_evidence_directory('evidence', 'output')\n\nprint(f\"\\nRESULTS:\")\nprint(f\"  Files processed: {stats['total_files']}\")\nprint(f\"  Total size: {stats['total_size']:,} bytes\")\nprint(f\"  Risk breakdown: {stats['by_risk']}\")\nprint(f\"  Reports saved to: output/\")\n\n# Cleanup\nimport shutil\nshutil.rmtree('evidence')\nshutil.rmtree('output')",
+          "output": "Phase 1: Cataloguing files...\n  Found 5 files\nPhase 2: Analysing...\nPhase 3: Generating reports...\n\nRESULTS:\n  Files processed: 5\n  Total size: 42 bytes\n  Risk breakdown: {'HIGH': 1, 'LOW': 3, 'MEDIUM': 1}\n  Reports saved to: output/",
+          "ai_explanation": "This is a COMPLETE forensic processing pipeline:\n\nPhase 1 (Catalogue): os.walk scans all files, reads headers, calculates hashes, classifies risk.\nPhase 2 (Analysis): Statistics, risk breakdown, duplicate detection via hash comparison.\nPhase 3 (Reports): CSV manifest, JSON analysis, TXT summary — three formats from one dataset.\n\nThis combines EVERY file I/O concept: reading text, writing reports, binary headers, CSV output, JSON export, directory walking, hashing, error handling, and path manipulation.\n\nProfessional forensic tools follow this exact pipeline: Ingest → Catalogue → Analyse → Report. You just built one from scratch!",
+          "ai_challenge": "Add Phase 0: create a hash of the entire evidence directory before processing (so you can verify nothing was modified during analysis)."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Files & I/O — Evidence Processing Reference",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 10px;\"><div style=\"text-align: center; margin-bottom: 20px;\"><span style=\"background: #e74c3c; color: white; padding: 8px 20px; border-radius: 6px; font-size: 16px; font-weight: bold;\">📁 FILES & I/O — REFERENCE</span></div>\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">FILE MODES</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">r</span> Read text (default). File MUST exist.\n  <span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">w</span> Write text. CREATES new or OVERWRITES existing!\n  <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 3px;\">a</span> Append text. Adds to END. Safe — no data loss.\n  <span style=\"background: #f39c12; color: white; padding: 2px 8px; border-radius: 3px;\">x</span> Exclusive create. FAILS if file exists. Safest.\n  <span style=\"background: #9b59b6; color: white; padding: 2px 8px; border-radius: 3px;\">rb</span> Read binary. For images, executables, disk images.\n  <span style=\"background: #95a5a6; color: white; padding: 2px 8px; border-radius: 3px;\">wb</span> Write binary. Raw bytes output.\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">THE SAFE PATTERN</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n<div style=\"text-align: center;\"><span style=\"background: #2ecc71; color: white; padding: 4px 16px; border-radius: 4px;\">with open(file, mode) as f:</span></div>\n<div style=\"text-align: center; color: #2ecc71;\">│</div>\n<div style=\"text-align: center; color: #2ecc71;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #3498db; color: white; padding: 4px 16px; border-radius: 4px;\">    content = f.read()</span></div>\n<div style=\"text-align: center; color: #3498db;\">│</div>\n<div style=\"text-align: center; color: #3498db;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #9b59b6; color: white; padding: 4px 16px; border-radius: 4px;\">    process(content)</span></div>\n<div style=\"text-align: center; color: #9b59b6;\">│</div>\n<div style=\"text-align: center; color: #9b59b6;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #2ecc71; color: white; padding: 4px 16px; border-radius: 4px;\">File automatically closed!</span></div>\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">READ METHODS</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">f.read()</span> Entire file as one string\n  <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 3px;\">f.readline()</span> One line at a time\n  <span style=\"background: #f39c12; color: white; padding: 2px 8px; border-radius: 3px;\">f.readlines()</span> All lines as a list\n  <span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">for line in f:</span> Line by line (BEST for large files!)\n  <span style=\"background: #9b59b6; color: white; padding: 2px 8px; border-radius: 3px;\">f.read(n)</span> Read n bytes (binary mode)\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">MAGIC BYTES (FILE SIGNATURES)</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"color: #e74c3c;\">FF D8 FF</span>    = JPEG image\n  <span style=\"color: #3498db;\">89 50 4E 47</span> = PNG image (\\x89PNG)\n  <span style=\"color: #2ecc71;\">25 50 44 46</span> = PDF document (%PDF)\n  <span style=\"color: #f39c12;\">4D 5A</span>       = Windows EXE/DLL (MZ)\n  <span style=\"color: #9b59b6;\">50 4B 03 04</span> = ZIP/DOCX/XLSX (PK)\n  <span style=\"color: #95a5a6;\">7F 45 4C 46</span> = Linux ELF executable\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">ESSENTIAL MODULES</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">os / os.path</span> File paths, existence, size, walk\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">csv</span> Read/write comma-separated data\n  <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 3px;\">json</span> Read/write JSON data\n  <span style=\"background: #f39c12; color: white; padding: 2px 8px; border-radius: 3px;\">hashlib</span> MD5, SHA-256 file hashing\n  <span style=\"background: #9b59b6; color: white; padding: 2px 8px; border-radius: 3px;\">shutil</span> Copy, move, delete files/dirs\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">💡 REMEMBER</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> ALWAYS use with open() — auto-closes files\n  <span style=\"color: #e74c3c; font-weight: bold;\">✓</span> NEVER use \"w\" on evidence — it destroys data!\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> Use \"rb\" for binary files (images, executables)\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> Hash files in chunks for any file size\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> os.path.join() for cross-platform paths\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> csv.DictReader for named column access\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> try/except around ALL file operations\n  <span style=\"color: #e74c3c; font-weight: bold;\">✓</span> Check os.path.exists() before opening!\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Read Entire File",
+          "description": "Create a file with 3 lines, then read and print the entire content.",
+          "difficulty": "beginner",
+          "category": "Reading Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Reading evidence! Create a file with 3 lines, then read and print the entire content.",
+          "starter_code": "# Step 1: Create the file\nwith open(\"test.txt\", \"w\") as f:\n    f.write(\"Line 1\\nLine 2\\nLine 3\\n\")\n\n# TODO: Read and print the file\n",
+          "expected_output": "Line 1\nLine 2\nLine 3",
+          "hints": [
+            {
+              "message": "with open('test.txt', 'r') as f: content = f.read()"
+            },
+            {
+              "message": "Then print(content)"
+            },
+            {
+              "message": "Solution:\\nwith open('test.txt', 'r') as f:\\n    content = f.read()\\nprint(content)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Read Lines as List",
+          "description": "Read a file and print the number of lines.",
+          "difficulty": "beginner",
+          "category": "Reading Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Reading evidence! Read a file and print the number of lines.",
+          "starter_code": "with open(\"test.txt\", \"w\") as f:\n    f.write(\"Alpha\\nBravo\\nCharlie\\nDelta\\n\")\n\n# TODO: Read lines and count them\n",
+          "expected_output": "Lines: 4",
+          "hints": [
+            {
+              "message": "f.readlines() returns a list of lines."
+            },
+            {
+              "message": "len(f.readlines()) gives the count."
+            },
+            {
+              "message": "Solution:\\nwith open('test.txt', 'r') as f:\\n    lines = f.readlines()\\nprint(f'Lines: {len(lines)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Line-by-Line Loop",
+          "description": "Read a file line by line and print each with its line number.",
+          "difficulty": "beginner",
+          "category": "Reading Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Reading evidence! Read a file line by line and print each with its line number.",
+          "starter_code": "with open(\"test.txt\", \"w\") as f:\n    f.write(\"Red\\nGreen\\nBlue\\n\")\n\n# TODO: enumerate and print each line\n",
+          "expected_output": "[1] Red\n[2] Green\n[3] Blue",
+          "hints": [
+            {
+              "message": "for i, line in enumerate(f, 1): print(f'[{i}] {line.strip()}')"
+            },
+            {
+              "message": ".strip() removes the newline at the end of each line."
+            },
+            {
+              "message": "Solution:\\nwith open('test.txt', 'r') as f:\\n    for i, line in enumerate(f, 1):\\n        print(f'[{i}] {line.strip()}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Filter Log Lines",
+          "description": "Read a log and print only lines containing 'ERROR'.",
+          "difficulty": "beginner",
+          "category": "Reading Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Reading evidence! Read a log and print only lines containing 'ERROR'.",
+          "starter_code": "with open(\"app.log\", \"w\") as f:\n    f.write(\"INFO: Started\\nERROR: Disk full\\nINFO: OK\\nERROR: Timeout\\n\")\n\n# TODO: Print only ERROR lines\n",
+          "expected_output": "ERROR: Disk full\nERROR: Timeout",
+          "hints": [
+            {
+              "message": "for line in f: if 'ERROR' in line: print(line.strip())"
+            },
+            {
+              "message": "The 'in' operator searches within strings."
+            },
+            {
+              "message": "Solution:\\nwith open('app.log', 'r') as f:\\n    for line in f:\\n        if 'ERROR' in line:\\n            print(line.strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Count Keyword",
+          "description": "Count how many times 'FAILED' appears in a log file.",
+          "difficulty": "beginner",
+          "category": "Reading Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Reading evidence! Count how many times 'FAILED' appears in a log file.",
+          "starter_code": "with open(\"auth.log\", \"w\") as f:\n    f.write(\"LOGIN OK\\nLOGIN FAILED\\nLOGIN FAILED\\nLOGIN OK\\nLOGIN FAILED\\n\")\n\n# TODO: Count FAILED occurrences\n",
+          "expected_output": "Failed logins: 3",
+          "hints": [
+            {
+              "message": "count = 0, then for line in f: if 'FAILED' in line: count += 1"
+            },
+            {
+              "message": "Or use: content.count('FAILED')"
+            },
+            {
+              "message": "Solution:\\nwith open('auth.log', 'r') as f:\\n    count = sum(1 for line in f if 'FAILED' in line)\\nprint(f'Failed logins: {count}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Read First N Lines",
+          "description": "Read and print only the first 3 lines of a 10-line file.",
+          "difficulty": "beginner",
+          "category": "Reading Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Reading evidence! Read and print only the first 3 lines of a 10-line file.",
+          "starter_code": "with open(\"big.log\", \"w\") as f:\n    for i in range(10):\n        f.write(f\"Entry {i+1}\\n\")\n\n# TODO: Read first 3 lines only\n",
+          "expected_output": "Entry 1\nEntry 2\nEntry 3",
+          "hints": [
+            {
+              "message": "Read 3 lines with a counter or use f.readlines()[:3]."
+            },
+            {
+              "message": "for i, line in enumerate(f): if i >= 3: break"
+            },
+            {
+              "message": "Solution:\\nwith open('big.log', 'r') as f:\\n    for i, line in enumerate(f):\\n        if i >= 3: break\\n        print(line.strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Search and Extract",
+          "description": "Find lines containing an IP address pattern and extract the IP.",
+          "difficulty": "intermediate",
+          "category": "Reading Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Reading evidence! Find lines containing an IP address pattern and extract the IP.",
+          "starter_code": "with open(\"conn.log\", \"w\") as f:\n    f.write(\"Connected from 10.0.0.5\\nTimeout\\nConnected from 203.0.113.42\\n\")\n\n# TODO: Extract IPs from \"Connected from\" lines\n",
+          "expected_output": "10.0.0.5\n203.0.113.42",
+          "hints": [
+            {
+              "message": "if 'Connected from' in line: ip = line.split('from ')[-1].strip()"
+            },
+            {
+              "message": "split('from ') splits on the word, [-1] gets the last part."
+            },
+            {
+              "message": "Solution:\\nwith open('conn.log', 'r') as f:\\n    for line in f:\\n        if 'Connected from' in line:\\n            ip = line.split('from ')[-1].strip()\\n            print(ip)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Read Binary Header",
+          "description": "Read the first 4 bytes of a binary file and print as hex.",
+          "difficulty": "intermediate",
+          "category": "Reading Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Reading evidence! Read the first 4 bytes of a binary file and print as hex.",
+          "starter_code": "with open(\"sample.bin\", \"wb\") as f:\n    f.write(b\"\\x89PNG\\r\\n\\x1a\\n\" + b\"\\x00\" * 20)\n\n# TODO: Read first 4 bytes in binary mode\n",
+          "expected_output": "Header: 89504e47\nFile type: PNG",
+          "hints": [
+            {
+              "message": "with open('sample.bin', 'rb') as f: header = f.read(4)"
+            },
+            {
+              "message": "header.hex() converts bytes to hex string."
+            },
+            {
+              "message": "Solution:\\nwith open('sample.bin', 'rb') as f:\\n    header = f.read(4)\\nprint(f'Header: {header.hex()}')\\nif header == b'\\x89PNG':\\n    print('File type: PNG')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Word Frequency",
+          "description": "Read a text file and count word frequencies.",
+          "difficulty": "intermediate",
+          "category": "Reading Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Reading evidence! Read a text file and count word frequencies.",
+          "starter_code": "with open(\"sample.txt\", \"w\") as f:\n    f.write(\"the cat sat on the mat the cat\")\n\n# TODO: Count word frequencies\n",
+          "expected_output": "the: 3\ncat: 2\nsat: 1\non: 1\nmat: 1",
+          "hints": [
+            {
+              "message": "Split content into words, use a dict or Counter to count."
+            },
+            {
+              "message": "from collections import Counter; Counter(content.split())"
+            },
+            {
+              "message": "Solution:\\nfrom collections import Counter\\nwith open('sample.txt', 'r') as f:\\n    words = f.read().split()\\nfor word, count in Counter(words).most_common():\\n    print(f'{word}: {count}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: File Size Check",
+          "description": "Read a file and report its size in bytes and lines.",
+          "difficulty": "beginner",
+          "category": "Reading Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Reading evidence! Read a file and report its size in bytes and lines.",
+          "starter_code": "with open(\"data.txt\", \"w\") as f:\n    f.write(\"Hello World\\nPython Forensics\\nFile I/O\\n\")\n\n# TODO: Report file size and line count\n",
+          "expected_output": "Size: 38 bytes\nLines: 3",
+          "hints": [
+            {
+              "message": "os.path.getsize('data.txt') for bytes. Count lines with readlines()."
+            },
+            {
+              "message": "import os; size = os.path.getsize('data.txt')"
+            },
+            {
+              "message": "Solution:\\nimport os\\nsize = os.path.getsize('data.txt')\\nwith open('data.txt', 'r') as f:\\n    lines = len(f.readlines())\\nprint(f'Size: {size} bytes')\\nprint(f'Lines: {lines}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Read with Encoding",
+          "description": "Read a Latin-1 encoded file safely.",
+          "difficulty": "intermediate",
+          "category": "Reading Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Reading evidence! Read a Latin-1 encoded file safely.",
+          "starter_code": "with open(\"latin.txt\", \"wb\") as f:\n    f.write(\"Caf\\xe9 cr\\xe8me\".encode(\"latin-1\"))\n\n# TODO: Read with correct encoding\n",
+          "expected_output": "Content: Cafe creme",
+          "hints": [
+            {
+              "message": "open('latin.txt', 'r', encoding='latin-1')"
+            },
+            {
+              "message": "Latin-1 (ISO 8859-1) handles accented characters."
+            },
+            {
+              "message": "Solution:\\nwith open('latin.txt', 'r', encoding='latin-1') as f:\\n    content = f.read()\\nprint(f'Content: {content}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Multiple File Read",
+          "description": "Read 3 files and combine their contents.",
+          "difficulty": "intermediate",
+          "category": "Reading Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Reading evidence! Read 3 files and combine their contents.",
+          "starter_code": "for name in [\"a.txt\", \"b.txt\", \"c.txt\"]:\n    with open(name, \"w\") as f:\n        f.write(f\"Content of {name}\\n\")\n\n# TODO: Read all 3 files and combine\n",
+          "expected_output": "Content of a.txt\nContent of b.txt\nContent of c.txt",
+          "hints": [
+            {
+              "message": "Loop through filenames, read each, accumulate content."
+            },
+            {
+              "message": "combined = '' then for each file: combined += f.read()"
+            },
+            {
+              "message": "Solution:\\ncombined = ''\\nfor name in ['a.txt', 'b.txt', 'c.txt']:\\n    with open(name, 'r') as f:\\n        combined += f.read()\\nprint(combined.strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Write Text File",
+          "description": "Write 'Hello Forensics' to a file and read it back.",
+          "difficulty": "beginner",
+          "category": "Writing Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Creating output! Write 'Hello Forensics' to a file and read it back.",
+          "starter_code": "# TODO: Write and read back\n",
+          "expected_output": "Hello Forensics",
+          "hints": [
+            {
+              "message": "with open('out.txt', 'w') as f: f.write('Hello Forensics')"
+            },
+            {
+              "message": "Then open in 'r' mode and read."
+            },
+            {
+              "message": "Solution:\\nwith open('out.txt', 'w') as f:\\n    f.write('Hello Forensics')\\nwith open('out.txt', 'r') as f:\\n    print(f.read())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Write Multiple Lines",
+          "description": "Write 5 numbered lines to a file.",
+          "difficulty": "beginner",
+          "category": "Writing Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Creating output! Write 5 numbered lines to a file.",
+          "starter_code": "# TODO: Write lines 1-5\n",
+          "expected_output": "Line 1\nLine 2\nLine 3\nLine 4\nLine 5",
+          "hints": [
+            {
+              "message": "for i in range(1, 6): f.write(f'Line {i}\\n')"
+            },
+            {
+              "message": "Remember \\n at the end of each line!"
+            },
+            {
+              "message": "Solution:\\nwith open('lines.txt', 'w') as f:\\n    for i in range(1, 6):\\n        f.write(f'Line {i}\\n')\\nwith open('lines.txt', 'r') as f:\\n    print(f.read().strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Append to File",
+          "description": "Create a file, then append 2 more lines without losing the original.",
+          "difficulty": "beginner",
+          "category": "Writing Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Creating output! Create a file, then append 2 more lines without losing the original.",
+          "starter_code": "# Step 1: Create\nwith open(\"log.txt\", \"w\") as f:\n    f.write(\"Entry 1\\n\")\n\n# TODO: Append 2 more entries\n",
+          "expected_output": "Entry 1\nEntry 2\nEntry 3",
+          "hints": [
+            {
+              "message": "Use 'a' mode (append) not 'w' mode!"
+            },
+            {
+              "message": "with open('log.txt', 'a') as f: f.write('Entry 2\\n')"
+            },
+            {
+              "message": "Solution:\\nwith open('log.txt', 'a') as f:\\n    f.write('Entry 2\\n')\\n    f.write('Entry 3\\n')\\nwith open('log.txt', 'r') as f:\\n    print(f.read().strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Write with print()",
+          "description": "Use print(text, file=f) to write to a file.",
+          "difficulty": "beginner",
+          "category": "Writing Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Creating output! Use print(text, file=f) to write to a file.",
+          "starter_code": "# TODO: Use print with file parameter\n",
+          "expected_output": "Name: Alice\nRole: Analyst",
+          "hints": [
+            {
+              "message": "print('Name: Alice', file=f) writes to the file AND adds newline."
+            },
+            {
+              "message": "No need for \\n with print()!"
+            },
+            {
+              "message": "Solution:\\nwith open('out.txt', 'w') as f:\\n    print('Name: Alice', file=f)\\n    print('Role: Analyst', file=f)\\nwith open('out.txt', 'r') as f:\\n    print(f.read().strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Write Filtered Data",
+          "description": "Read a log, filter ERROR lines, write to a new file.",
+          "difficulty": "intermediate",
+          "category": "Writing Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Creating output! Read a log, filter ERROR lines, write to a new file.",
+          "starter_code": "with open(\"full.log\", \"w\") as f:\n    f.write(\"INFO OK\\nERROR Bad\\nINFO OK\\nERROR Fail\\n\")\n\n# TODO: Write only ERROR lines to errors.log\n",
+          "expected_output": "ERROR Bad\nERROR Fail",
+          "hints": [
+            {
+              "message": "Read from full.log, filter, write to errors.log."
+            },
+            {
+              "message": "Open two files: one for reading, one for writing."
+            },
+            {
+              "message": "Solution:\\nwith open('full.log', 'r') as fin, open('errors.log', 'w') as fout:\\n    for line in fin:\\n        if 'ERROR' in line:\\n            fout.write(line)\\nwith open('errors.log', 'r') as f:\\n    print(f.read().strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Exclusive Create",
+          "description": "Use 'x' mode to safely create a new file (fails if exists).",
+          "difficulty": "intermediate",
+          "category": "Writing Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Creating output! Use 'x' mode to safely create a new file (fails if exists).",
+          "starter_code": "import os\nif os.path.exists(\"new.txt\"):\n    os.remove(\"new.txt\")\n\n# TODO: Create with x mode, handle FileExistsError\n",
+          "expected_output": "Created: new.txt",
+          "hints": [
+            {
+              "message": "try: open('new.txt', 'x') except FileExistsError: print('Already exists')"
+            },
+            {
+              "message": "'x' mode is safest for evidence — never accidentally overwrites."
+            },
+            {
+              "message": "Solution:\\ntry:\\n    with open('new.txt', 'x') as f:\\n        f.write('New evidence file')\\n    print('Created: new.txt')\\nexcept FileExistsError:\\n    print('File already exists!')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Write Binary",
+          "description": "Write raw bytes (a fake JPEG header) to a binary file.",
+          "difficulty": "intermediate",
+          "category": "Writing Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Creating output! Write raw bytes (a fake JPEG header) to a binary file.",
+          "starter_code": "# TODO: Write JPEG header bytes\n",
+          "expected_output": "Written 24 bytes\nHeader: ffd8ffe0",
+          "hints": [
+            {
+              "message": "with open('fake.jpg', 'wb') as f: f.write(b'\\xff\\xd8\\xff\\xe0' + b'\\x00'*20)"
+            },
+            {
+              "message": "'wb' mode writes raw bytes."
+            },
+            {
+              "message": "Solution:\\ndata = b'\\xff\\xd8\\xff\\xe0' + b'\\x00' * 20\\nwith open('fake.jpg', 'wb') as f:\\n    f.write(data)\\nprint(f'Written {len(data)} bytes')\\nwith open('fake.jpg', 'rb') as f:\\n    print(f'Header: {f.read(4).hex()}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Write List to File",
+          "description": "Write a list of IPs to a file, one per line.",
+          "difficulty": "beginner",
+          "category": "Writing Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Creating output! Write a list of IPs to a file, one per line.",
+          "starter_code": "ips = [\"10.0.0.1\", \"192.168.1.1\", \"8.8.8.8\"]\n# TODO: Write each IP on its own line\n",
+          "expected_output": "10.0.0.1\n192.168.1.1\n8.8.8.8",
+          "hints": [
+            {
+              "message": "for ip in ips: f.write(ip + '\\n')"
+            },
+            {
+              "message": "Or use f.writelines(ip + '\\n' for ip in ips)"
+            },
+            {
+              "message": "Solution:\\nwith open('ips.txt', 'w') as f:\\n    for ip in ips:\\n        f.write(ip + '\\n')\\nwith open('ips.txt', 'r') as f:\\n    print(f.read().strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Generate Report Header",
+          "description": "Write a formatted report header with case info to a file.",
+          "difficulty": "intermediate",
+          "category": "Writing Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Creating output! Write a formatted report header with case info to a file.",
+          "starter_code": "case_id = \"FR-2025-001\"\nanalyst = \"Student\"\n# TODO: Write formatted header\n",
+          "expected_output": "==========\nCase: FR-2025-001\nAnalyst: Student\n==========",
+          "hints": [
+            {
+              "message": "f.write('=' * 10 + '\\n') for the separator lines."
+            },
+            {
+              "message": "Use f-strings for the case info."
+            },
+            {
+              "message": "Solution:\\nwith open('header.txt', 'w') as f:\\n    f.write('=' * 10 + '\\n')\\n    f.write(f'Case: {case_id}\\n')\\n    f.write(f'Analyst: {analyst}\\n')\\n    f.write('=' * 10 + '\\n')\\nwith open('header.txt', 'r') as f:\\n    print(f.read().strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Copy File",
+          "description": "Read one file and write its contents to a new file (manual copy).",
+          "difficulty": "intermediate",
+          "category": "Writing Files",
+          "estimated_minutes": 3,
+          "ai_intro": "Creating output! Read one file and write its contents to a new file (manual copy).",
+          "starter_code": "with open(\"original.txt\", \"w\") as f:\n    f.write(\"Original content here\")\n\n# TODO: Copy to copy.txt\n",
+          "expected_output": "Copy matches: True",
+          "hints": [
+            {
+              "message": "Read original.txt, write to copy.txt."
+            },
+            {
+              "message": "with open('original.txt', 'r') as src, open('copy.txt', 'w') as dst:"
+            },
+            {
+              "message": "Solution:\\nwith open('original.txt', 'r') as src:\\n    data = src.read()\\nwith open('copy.txt', 'w') as dst:\\n    dst.write(data)\\nwith open('copy.txt', 'r') as f:\\n    print(f'Copy matches: {f.read() == data}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Read CSV",
+          "description": "Read a CSV and print each row.",
+          "difficulty": "beginner",
+          "category": "CSV Processing",
+          "estimated_minutes": 4,
+          "ai_intro": "CSV data processing! Read a CSV and print each row.",
+          "starter_code": "with open(\"data.csv\", \"w\") as f:\n    f.write(\"name,score\\nAlice,95\\nBob,87\\n\")\n\nimport csv\n# TODO: Read and print rows\n",
+          "expected_output": "Alice: 95\nBob: 87",
+          "hints": [
+            {
+              "message": "csv.DictReader(f) gives rows as dictionaries."
+            },
+            {
+              "message": "row['name'] and row['score'] access columns."
+            },
+            {
+              "message": "Solution:\\nimport csv\\nwith open('data.csv', 'r') as f:\\n    for row in csv.DictReader(f):\\n        print(f\"{row['name']}: {row['score']}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Write CSV",
+          "description": "Write 3 rows to a CSV file with headers.",
+          "difficulty": "beginner",
+          "category": "CSV Processing",
+          "estimated_minutes": 4,
+          "ai_intro": "CSV data processing! Write 3 rows to a CSV file with headers.",
+          "starter_code": "import csv\n# TODO: Create CSV with name, age, role columns\n",
+          "expected_output": "name,age,role\nAlice,30,Analyst\nBob,25,Developer",
+          "hints": [
+            {
+              "message": "csv.DictWriter(f, fieldnames=['name','age','role'])"
+            },
+            {
+              "message": "writer.writeheader() then writer.writerow({...})"
+            },
+            {
+              "message": "Solution:\\nimport csv\\nwith open('team.csv', 'w', newline='') as f:\\n    w = csv.DictWriter(f, fieldnames=['name','age','role'])\\n    w.writeheader()\\n    w.writerow({'name':'Alice','age':30,'role':'Analyst'})\\n    w.writerow({'name':'Bob','age':25,'role':'Developer'})\\nwith open('team.csv', 'r') as f:\\n    print(f.read().strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: CSV Filter",
+          "description": "Read CSV, filter rows where score > 90, write to new CSV.",
+          "difficulty": "intermediate",
+          "category": "CSV Processing",
+          "estimated_minutes": 4,
+          "ai_intro": "CSV data processing! Read CSV, filter rows where score > 90, write to new CSV.",
+          "starter_code": "import csv\nwith open(\"scores.csv\", \"w\", newline=\"\") as f:\n    w = csv.writer(f)\n    w.writerow([\"name\",\"score\"])\n    w.writerows([[\"Alice\",\"95\"],[\"Bob\",\"87\"],[\"Carol\",\"92\"]])\n\n# TODO: Filter score > 90\n",
+          "expected_output": "High scorers: Alice (95), Carol (92)",
+          "hints": [
+            {
+              "message": "Read with DictReader, check int(row['score']) > 90."
+            },
+            {
+              "message": "Collect filtered rows and print."
+            },
+            {
+              "message": "Solution:\\nimport csv\\nhigh = []\\nwith open('scores.csv', 'r') as f:\\n    for row in csv.DictReader(f):\\n        if int(row['score']) > 90:\\n            high.append(f\"{row['name']} ({row['score']})\"  )\\nprint(f\"High scorers: {', '.join(high)}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: CSV Statistics",
+          "description": "Calculate the average of a numeric column in a CSV.",
+          "difficulty": "intermediate",
+          "category": "CSV Processing",
+          "estimated_minutes": 4,
+          "ai_intro": "CSV data processing! Calculate the average of a numeric column in a CSV.",
+          "starter_code": "import csv\nwith open(\"temps.csv\", \"w\", newline=\"\") as f:\n    w = csv.writer(f)\n    w.writerow([\"city\",\"temp\"])\n    w.writerows([[\"London\",\"12\"],[\"Paris\",\"15\"],[\"Berlin\",\"10\"]])\n\n# TODO: Calculate average temperature\n",
+          "expected_output": "Average temp: 12.3",
+          "hints": [
+            {
+              "message": "Read all temps, convert to float, calculate mean."
+            },
+            {
+              "message": "total/count gives the average."
+            },
+            {
+              "message": "Solution:\\nimport csv\\ntemps = []\\nwith open('temps.csv', 'r') as f:\\n    for row in csv.DictReader(f):\\n        temps.append(float(row['temp']))\\nprint(f'Average temp: {sum(temps)/len(temps):.1f}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: CSV to Dict",
+          "description": "Convert CSV rows into a list of dictionaries.",
+          "difficulty": "intermediate",
+          "category": "CSV Processing",
+          "estimated_minutes": 4,
+          "ai_intro": "CSV data processing! Convert CSV rows into a list of dictionaries.",
+          "starter_code": "import csv\nwith open(\"users.csv\", \"w\", newline=\"\") as f:\n    w = csv.writer(f)\n    w.writerow([\"user\",\"ip\"])\n    w.writerows([[\"admin\",\"10.0.0.1\"],[\"john\",\"10.0.0.2\"]])\n\n# TODO: Convert to list of dicts\n",
+          "expected_output": "[{'user': 'admin', 'ip': '10.0.0.1'}, {'user': 'john', 'ip': '10.0.0.2'}]",
+          "hints": [
+            {
+              "message": "list(csv.DictReader(f)) converts all rows at once."
+            },
+            {
+              "message": "Each row becomes a dictionary."
+            },
+            {
+              "message": "Solution:\\nimport csv\\nwith open('users.csv', 'r') as f:\\n    data = list(csv.DictReader(f))\\nprint(data)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Count by Column",
+          "description": "Count how many times each value appears in a column.",
+          "difficulty": "intermediate",
+          "category": "CSV Processing",
+          "estimated_minutes": 4,
+          "ai_intro": "CSV data processing! Count how many times each value appears in a column.",
+          "starter_code": "import csv\nfrom collections import Counter\nwith open(\"logs.csv\", \"w\", newline=\"\") as f:\n    w = csv.writer(f)\n    w.writerow([\"action\"])\n    for a in [\"ALLOW\",\"BLOCK\",\"ALLOW\",\"ALLOW\",\"BLOCK\",\"BLOCK\",\"BLOCK\"]:\n        w.writerow([a])\n\n# TODO: Count actions\n",
+          "expected_output": "BLOCK: 4\nALLOW: 3",
+          "hints": [
+            {
+              "message": "Counter(row['action'] for row in DictReader(f))"
+            },
+            {
+              "message": "most_common() sorts by frequency."
+            },
+            {
+              "message": "Solution:\\nimport csv\\nfrom collections import Counter\\nwith open('logs.csv', 'r') as f:\\n    counts = Counter(row['action'] for row in csv.DictReader(f))\\nfor action, n in counts.most_common():\\n    print(f'{action}: {n}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Merge CSVs",
+          "description": "Read two CSV files and combine into one.",
+          "difficulty": "advanced",
+          "category": "CSV Processing",
+          "estimated_minutes": 4,
+          "ai_intro": "CSV data processing! Read two CSV files and combine into one.",
+          "starter_code": "import csv\nfor name, rows in [(\"a.csv\",[[\"x\",\"1\"]]), (\"b.csv\",[[\"y\",\"2\"]])]:\n    with open(name, \"w\", newline=\"\") as f:\n        w = csv.writer(f)\n        w.writerow([\"name\",\"val\"])\n        w.writerows(rows)\n\n# TODO: Merge a.csv and b.csv into merged.csv\n",
+          "expected_output": "name,val\nx,1\ny,2",
+          "hints": [
+            {
+              "message": "Read both files, write all rows to a third file."
+            },
+            {
+              "message": "Write header once, then rows from both."
+            },
+            {
+              "message": "Solution:\\nimport csv\\nall_rows = []\\nfor name in ['a.csv', 'b.csv']:\\n    with open(name, 'r') as f:\\n        for row in csv.DictReader(f):\\n            all_rows.append(row)\\nwith open('merged.csv', 'w', newline='') as f:\\n    w = csv.DictWriter(f, fieldnames=['name','val'])\\n    w.writeheader()\\n    w.writerows(all_rows)\\nwith open('merged.csv', 'r') as f:\\n    print(f.read().strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: CSV Report",
+          "description": "Read evidence CSV, classify risk, write report CSV.",
+          "difficulty": "advanced",
+          "category": "CSV Processing",
+          "estimated_minutes": 4,
+          "ai_intro": "CSV data processing! Read evidence CSV, classify risk, write report CSV.",
+          "starter_code": "import csv\nwith open(\"evidence.csv\", \"w\", newline=\"\") as f:\n    w = csv.writer(f)\n    w.writerow([\"file\",\"ext\"])\n    w.writerows([[\"mal.exe\",\".exe\"],[\"doc.pdf\",\".pdf\"],[\"script.bat\",\".bat\"]])\n\n# TODO: Add risk column and write report\n",
+          "expected_output": "mal.exe,.exe,HIGH\ndoc.pdf,.pdf,LOW\nscript.bat,.bat,HIGH",
+          "hints": [
+            {
+              "message": "Read, classify by extension, write with added risk column."
+            },
+            {
+              "message": "HIGH for .exe/.bat, LOW otherwise."
+            },
+            {
+              "message": "Solution:\\nimport csv\\nwith open('evidence.csv', 'r') as fin, open('report.csv', 'w', newline='') as fout:\\n    reader = csv.DictReader(fin)\\n    writer = csv.DictWriter(fout, fieldnames=['file','ext','risk'])\\n    writer.writeheader()\\n    for row in reader:\\n        risk = 'HIGH' if row['ext'] in ['.exe','.bat'] else 'LOW'\\n        writer.writerow({**row, 'risk': risk})\\nwith open('report.csv', 'r') as f:\\n    for line in f.readlines()[1:]: print(line.strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Read Bytes",
+          "description": "Read first 4 bytes of a file and print as hex.",
+          "difficulty": "beginner",
+          "category": "Binary Files & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Binary forensics! Read first 4 bytes of a file and print as hex.",
+          "starter_code": "with open(\"sample.bin\", \"wb\") as f:\n    f.write(b\"\\x89PNG\" + b\"\\x00\" * 20)\n\n# TODO: Read and print hex\n",
+          "expected_output": "89504e47",
+          "hints": [
+            {
+              "message": "with open('sample.bin', 'rb') as f: header = f.read(4)"
+            },
+            {
+              "message": "header.hex() converts bytes to hex string."
+            },
+            {
+              "message": "Solution:\\nwith open('sample.bin', 'rb') as f:\\n    header = f.read(4)\\nprint(header.hex())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Hash a String",
+          "description": "Calculate SHA-256 hash of 'forensics'.",
+          "difficulty": "beginner",
+          "category": "Binary Files & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Binary forensics! Calculate SHA-256 hash of 'forensics'.",
+          "starter_code": "import hashlib\n# TODO: Hash the string\n",
+          "expected_output": "SHA-256: 7f3b...",
+          "hints": [
+            {
+              "message": "hashlib.sha256(b'forensics').hexdigest()"
+            },
+            {
+              "message": "b'forensics' converts string to bytes."
+            },
+            {
+              "message": "Solution:\\nimport hashlib\\nh = hashlib.sha256(b'forensics').hexdigest()\\nprint(f'SHA-256: {h[:4]}...')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Hash a File",
+          "description": "Calculate MD5 hash of a file using chunked reading.",
+          "difficulty": "intermediate",
+          "category": "Binary Files & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Binary forensics! Calculate MD5 hash of a file using chunked reading.",
+          "starter_code": "import hashlib\nwith open(\"evidence.txt\", \"w\") as f:\n    f.write(\"Critical evidence data\")\n\n# TODO: Hash the file\n",
+          "expected_output": "MD5: ...",
+          "hints": [
+            {
+              "message": "Open in 'rb', read chunks, update hash."
+            },
+            {
+              "message": "h = hashlib.md5(); while chunk: h.update(chunk)"
+            },
+            {
+              "message": "Solution:\\nimport hashlib\\nh = hashlib.md5()\\nwith open('evidence.txt', 'rb') as f:\\n    while True:\\n        chunk = f.read(4096)\\n        if not chunk: break\\n        h.update(chunk)\\nprint(f'MD5: {h.hexdigest()}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Verify Hash",
+          "description": "Hash a file, modify it, hash again, compare.",
+          "difficulty": "intermediate",
+          "category": "Binary Files & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Binary forensics! Hash a file, modify it, hash again, compare.",
+          "starter_code": "import hashlib\nwith open(\"test.bin\", \"wb\") as f:\n    f.write(b\"original data\")\n\n# TODO: Hash, modify, hash again, compare\n",
+          "expected_output": "Match: False (tampered!)",
+          "hints": [
+            {
+              "message": "Hash once, append data, hash again, compare."
+            },
+            {
+              "message": "If hashes differ, file was modified."
+            },
+            {
+              "message": "Solution:\\nimport hashlib\\ndef get_hash(path):\\n    with open(path, 'rb') as f:\\n        return hashlib.sha256(f.read()).hexdigest()\\n\\nhash1 = get_hash('test.bin')\\nwith open('test.bin', 'ab') as f:\\n    f.write(b' TAMPERED')\\nhash2 = get_hash('test.bin')\\nprint(f'Match: {hash1 == hash2} {\"(tampered!)\" if hash1 != hash2 else \"\"}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Magic Byte Check",
+          "description": "Check if a file is a PNG by reading magic bytes.",
+          "difficulty": "intermediate",
+          "category": "Binary Files & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Binary forensics! Check if a file is a PNG by reading magic bytes.",
+          "starter_code": "with open(\"mystery.dat\", \"wb\") as f:\n    f.write(b\"\\x89PNG\\r\\n\\x1a\\n\" + b\"\\x00\" * 20)\n\n# TODO: Check if PNG\n",
+          "expected_output": "mystery.dat is a PNG file",
+          "hints": [
+            {
+              "message": "PNG magic bytes: b'\\x89PNG\\r\\n\\x1a\\n' (8 bytes)"
+            },
+            {
+              "message": "Read first 8 bytes and compare."
+            },
+            {
+              "message": "Solution:\\nwith open('mystery.dat', 'rb') as f:\\n    header = f.read(8)\\nif header == b'\\x89PNG\\r\\n\\x1a\\n':\\n    print('mystery.dat is a PNG file')\\nelse:\\n    print('Not a PNG')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Hex Dump",
+          "description": "Print the first 16 bytes of a file in hex dump format.",
+          "difficulty": "intermediate",
+          "category": "Binary Files & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Binary forensics! Print the first 16 bytes of a file in hex dump format.",
+          "starter_code": "with open(\"dump.bin\", \"wb\") as f:\n    f.write(b\"Hello World!\\x00\\x01\\x02\\x03\")\n\n# TODO: Print hex dump\n",
+          "expected_output": "00: 48 65 6C 6C 6F 20 57 6F 72 6C 64 21 00 01 02 03  Hello World!....",
+          "hints": [
+            {
+              "message": "Read bytes, format each as 2-digit hex, show ASCII alongside."
+            },
+            {
+              "message": "chr(b) if 32<=b<127 else '.' for printable chars."
+            },
+            {
+              "message": "Solution:\\nwith open('dump.bin', 'rb') as f:\\n    data = f.read(16)\\nhex_str = ' '.join(f'{b:02X}' for b in data)\\nascii_str = ''.join(chr(b) if 32<=b<127 else '.' for b in data)\\nprint(f'00: {hex_str}  {ascii_str}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: File Size in Units",
+          "description": "Read file size and convert to appropriate unit (B/KB/MB).",
+          "difficulty": "beginner",
+          "category": "Binary Files & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Binary forensics! Read file size and convert to appropriate unit (B/KB/MB).",
+          "starter_code": "import os\nwith open(\"big.txt\", \"w\") as f:\n    f.write(\"x\" * 5000)\n\n# TODO: Show size in best unit\n",
+          "expected_output": "big.txt: 4.9 KB",
+          "hints": [
+            {
+              "message": "os.path.getsize() returns bytes. Divide by 1024 for KB, 1024^2 for MB."
+            },
+            {
+              "message": "if size >= 1024*1024: MB, elif >= 1024: KB, else: B"
+            },
+            {
+              "message": "Solution:\\nimport os\\nsize = os.path.getsize('big.txt')\\nif size >= 1024*1024:\\n    print(f'big.txt: {size/1024/1024:.1f} MB')\\nelif size >= 1024:\\n    print(f'big.txt: {size/1024:.1f} KB')\\nelse:\\n    print(f'big.txt: {size} B')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Compare Two Hashes",
+          "description": "Hash two files and determine if they are identical.",
+          "difficulty": "beginner",
+          "category": "Binary Files & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Binary forensics! Hash two files and determine if they are identical.",
+          "starter_code": "import hashlib\nwith open(\"f1.txt\", \"w\") as f: f.write(\"same\")\nwith open(\"f2.txt\", \"w\") as f: f.write(\"same\")\n\n# TODO: Compare hashes\n",
+          "expected_output": "Files are identical: True",
+          "hints": [
+            {
+              "message": "Hash both files and compare the hash strings."
+            },
+            {
+              "message": "hashlib.sha256(open(f,'rb').read()).hexdigest()"
+            },
+            {
+              "message": "Solution:\\nimport hashlib\\ndef fhash(path):\\n    return hashlib.sha256(open(path, 'rb').read()).hexdigest()\\nprint(f'Files are identical: {fhash(\"f1.txt\") == fhash(\"f2.txt\")}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Extract Strings",
+          "description": "Extract printable ASCII strings (4+ chars) from a binary file.",
+          "difficulty": "advanced",
+          "category": "Binary Files & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Binary forensics! Extract printable ASCII strings (4+ chars) from a binary file.",
+          "starter_code": "with open(\"malware.bin\", \"wb\") as f:\n    f.write(b\"\\x00\\x00password\\x00\\x00secret_key\\x00\\xff\\xfe\")\n\n# TODO: Extract readable strings\n",
+          "expected_output": "password\nsecret_key",
+          "hints": [
+            {
+              "message": "Read bytes, collect runs of printable ASCII chars >= 4 long."
+            },
+            {
+              "message": "chr(b) if 32 <= b < 127 else a break point."
+            },
+            {
+              "message": "Solution:\\nwith open('malware.bin', 'rb') as f:\\n    data = f.read()\\ncurrent = ''\\nfor b in data:\\n    if 32 <= b < 127:\\n        current += chr(b)\\n    else:\\n        if len(current) >= 4:\\n            print(current)\\n        current = ''\\nif len(current) >= 4: print(current)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Multi-Algorithm Hash",
+          "description": "Hash a file with MD5, SHA-1, and SHA-256. Show all three.",
+          "difficulty": "intermediate",
+          "category": "Binary Files & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Binary forensics! Hash a file with MD5, SHA-1, and SHA-256. Show all three.",
+          "starter_code": "import hashlib\nwith open(\"evidence.txt\", \"w\") as f:\n    f.write(\"Important evidence\")\n\n# TODO: Show all three hashes\n",
+          "expected_output": "MD5:    ...\nSHA-1:  ...\nSHA-256: ...",
+          "hints": [
+            {
+              "message": "hashlib.new(algo, data).hexdigest() works for any algorithm."
+            },
+            {
+              "message": "Read file once, hash with each algorithm."
+            },
+            {
+              "message": "Solution:\\nimport hashlib\\nwith open('evidence.txt', 'rb') as f:\\n    data = f.read()\\nfor algo in ['md5', 'sha1', 'sha256']:\\n    h = hashlib.new(algo, data).hexdigest()\\n    print(f'{algo.upper():<8}: {h}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Write JSON",
+          "description": "Save a dictionary to a JSON file.",
+          "difficulty": "beginner",
+          "category": "JSON & File Paths",
+          "estimated_minutes": 4,
+          "ai_intro": "Structured data! Save a dictionary to a JSON file.",
+          "starter_code": "import json\ndata = {\"name\": \"Alice\", \"role\": \"Analyst\"}\n# TODO: Save to file\n",
+          "expected_output": "{\"name\": \"Alice\", \"role\": \"Analyst\"}",
+          "hints": [
+            {
+              "message": "json.dump(data, f, indent=2)"
+            },
+            {
+              "message": "with open('data.json', 'w') as f: json.dump(data, f)"
+            },
+            {
+              "message": "Solution:\\nimport json\\nwith open('data.json', 'w') as f:\\n    json.dump(data, f, indent=2)\\nwith open('data.json', 'r') as f:\\n    print(f.read().strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Read JSON",
+          "description": "Load a JSON file and access a nested value.",
+          "difficulty": "beginner",
+          "category": "JSON & File Paths",
+          "estimated_minutes": 4,
+          "ai_intro": "Structured data! Load a JSON file and access a nested value.",
+          "starter_code": "import json\nwith open(\"config.json\", \"w\") as f:\n    json.dump({\"server\": {\"ip\": \"10.0.0.1\", \"port\": 8080}}, f)\n\n# TODO: Read and access server.ip\n",
+          "expected_output": "Server: 10.0.0.1:8080",
+          "hints": [
+            {
+              "message": "json.load(f) returns a Python dict."
+            },
+            {
+              "message": "data['server']['ip'] accesses nested values."
+            },
+            {
+              "message": "Solution:\\nimport json\\nwith open('config.json', 'r') as f:\\n    data = json.load(f)\\nprint(f\"Server: {data['server']['ip']}:{data['server']['port']}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: JSON List",
+          "description": "Save a list of evidence items to JSON.",
+          "difficulty": "beginner",
+          "category": "JSON & File Paths",
+          "estimated_minutes": 4,
+          "ai_intro": "Structured data! Save a list of evidence items to JSON.",
+          "starter_code": "import json\nevidence = [\n    {\"id\": \"E001\", \"file\": \"laptop.img\"},\n    {\"id\": \"E002\", \"file\": \"phone.tar\"}\n]\n# TODO: Save and load\n",
+          "expected_output": "Loaded 2 items",
+          "hints": [
+            {
+              "message": "json.dump(evidence, f, indent=2)"
+            },
+            {
+              "message": "json.load(f) returns the list."
+            },
+            {
+              "message": "Solution:\\nimport json\\nwith open('evidence.json', 'w') as f:\\n    json.dump(evidence, f, indent=2)\\nwith open('evidence.json', 'r') as f:\\n    loaded = json.load(f)\\nprint(f'Loaded {len(loaded)} items')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Path Join",
+          "description": "Build a file path using os.path.join for 3 components.",
+          "difficulty": "beginner",
+          "category": "JSON & File Paths",
+          "estimated_minutes": 4,
+          "ai_intro": "Structured data! Build a file path using os.path.join for 3 components.",
+          "starter_code": "import os\n# TODO: Join \"cases\", \"001\", \"evidence.img\"\n",
+          "expected_output": "cases/001/evidence.img",
+          "hints": [
+            {
+              "message": "os.path.join('cases', '001', 'evidence.img')"
+            },
+            {
+              "message": "This works on both Windows and Linux!"
+            },
+            {
+              "message": "Solution:\\nimport os\\npath = os.path.join('cases', '001', 'evidence.img')\\nprint(path)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Split Path",
+          "description": "Extract directory, filename, and extension from a full path.",
+          "difficulty": "beginner",
+          "category": "JSON & File Paths",
+          "estimated_minutes": 4,
+          "ai_intro": "Structured data! Extract directory, filename, and extension from a full path.",
+          "starter_code": "import os\npath = \"/evidence/case_001/photo.jpg\"\n# TODO: Extract components\n",
+          "expected_output": "Dir: /evidence/case_001\nFile: photo.jpg\nExt: .jpg",
+          "hints": [
+            {
+              "message": "os.path.dirname, basename, splitext"
+            },
+            {
+              "message": "dirname = directory, basename = filename, splitext = (name, ext)"
+            },
+            {
+              "message": "Solution:\\nimport os\\nprint(f'Dir: {os.path.dirname(path)}')\\nprint(f'File: {os.path.basename(path)}')\\nprint(f'Ext: {os.path.splitext(path)[1]}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Check Exists",
+          "description": "Check if 3 files exist and report which are missing.",
+          "difficulty": "intermediate",
+          "category": "JSON & File Paths",
+          "estimated_minutes": 4,
+          "ai_intro": "Structured data! Check if 3 files exist and report which are missing.",
+          "starter_code": "import os\nwith open(\"exists.txt\", \"w\") as f: f.write(\"here\")\n\n# TODO: Check exists.txt, missing.txt, gone.txt\n",
+          "expected_output": "exists.txt: FOUND\nmissing.txt: MISSING\ngone.txt: MISSING",
+          "hints": [
+            {
+              "message": "os.path.exists(filename) returns True/False."
+            },
+            {
+              "message": "Loop through names and check each."
+            },
+            {
+              "message": "Solution:\\nimport os\\nfor name in ['exists.txt', 'missing.txt', 'gone.txt']:\\n    status = 'FOUND' if os.path.exists(name) else 'MISSING'\\n    print(f'{name}: {status}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: List Directory",
+          "description": "List all .txt files in the current directory.",
+          "difficulty": "intermediate",
+          "category": "JSON & File Paths",
+          "estimated_minutes": 4,
+          "ai_intro": "Structured data! List all .txt files in the current directory.",
+          "starter_code": "import os\nfor name in [\"a.txt\", \"b.py\", \"c.txt\", \"d.csv\"]:\n    with open(name, \"w\") as f: f.write(\"test\")\n\n# TODO: List only .txt files\n",
+          "expected_output": "a.txt\nc.txt",
+          "hints": [
+            {
+              "message": "os.listdir('.') then filter with endswith('.txt')."
+            },
+            {
+              "message": "[f for f in os.listdir('.') if f.endswith('.txt')]"
+            },
+            {
+              "message": "Solution:\\nimport os\\nfor f in sorted(os.listdir('.')):\\n    if f.endswith('.txt'):\\n        print(f)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: JSON Update",
+          "description": "Load JSON, add a field, save back.",
+          "difficulty": "intermediate",
+          "category": "JSON & File Paths",
+          "estimated_minutes": 4,
+          "ai_intro": "Structured data! Load JSON, add a field, save back.",
+          "starter_code": "import json\nwith open(\"record.json\", \"w\") as f:\n    json.dump({\"name\": \"Alice\", \"score\": 95}, f)\n\n# TODO: Load, add \"grade\": \"A\", save\n",
+          "expected_output": "{\"name\": \"Alice\", \"score\": 95, \"grade\": \"A\"}",
+          "hints": [
+            {
+              "message": "Load, modify the dict, dump back."
+            },
+            {
+              "message": "data['grade'] = 'A' then json.dump(data, f)"
+            },
+            {
+              "message": "Solution:\\nimport json\\nwith open('record.json', 'r') as f:\\n    data = json.load(f)\\ndata['grade'] = 'A'\\nwith open('record.json', 'w') as f:\\n    json.dump(data, f)\\nwith open('record.json', 'r') as f:\\n    print(f.read())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Pretty JSON",
+          "description": "Print a complex dict as nicely formatted JSON.",
+          "difficulty": "beginner",
+          "category": "JSON & File Paths",
+          "estimated_minutes": 4,
+          "ai_intro": "Structured data! Print a complex dict as nicely formatted JSON.",
+          "starter_code": "import json\ndata = {\"case\": \"FR-001\", \"findings\": [{\"id\": 1, \"severity\": \"HIGH\"}, {\"id\": 2, \"severity\": \"LOW\"}]}\n# TODO: Print pretty\n",
+          "expected_output": "{\n  \"case\": \"FR-001\",\n  ...\n}",
+          "hints": [
+            {
+              "message": "json.dumps(data, indent=2) returns a formatted string."
+            },
+            {
+              "message": "dumps = dump to string (note the 's')."
+            },
+            {
+              "message": "Solution:\\nimport json\\nprint(json.dumps(data, indent=2))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Walk Directory",
+          "description": "Use os.walk to find all files in nested directories.",
+          "difficulty": "advanced",
+          "category": "JSON & File Paths",
+          "estimated_minutes": 4,
+          "ai_intro": "Structured data! Use os.walk to find all files in nested directories.",
+          "starter_code": "import os\nos.makedirs(\"root/sub1\", exist_ok=True)\nos.makedirs(\"root/sub2\", exist_ok=True)\nfor p in [\"root/a.txt\", \"root/sub1/b.txt\", \"root/sub2/c.txt\"]:\n    with open(p, \"w\") as f: f.write(\"test\")\n\n# TODO: Walk and list all files\n",
+          "expected_output": "root/a.txt\nroot/sub1/b.txt\nroot/sub2/c.txt",
+          "hints": [
+            {
+              "message": "for dirpath, _, filenames in os.walk('root'):"
+            },
+            {
+              "message": "os.path.join(dirpath, filename) builds full paths."
+            },
+            {
+              "message": "Solution:\\nimport os\\nfor dirpath, _, filenames in os.walk('root'):\\n    for fname in sorted(filenames):\\n        print(os.path.join(dirpath, fname))\\nimport shutil; shutil.rmtree('root')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: FileNotFoundError",
+          "description": "Handle a missing file gracefully.",
+          "difficulty": "beginner",
+          "category": "Error Handling & Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Defensive coding! Handle a missing file gracefully.",
+          "starter_code": "# TODO: Try to read non-existent file, handle error\n",
+          "expected_output": "Error: File not found!",
+          "hints": [
+            {
+              "message": "try: open('missing.txt') except FileNotFoundError: print error"
+            },
+            {
+              "message": "Wrap the open in try/except."
+            },
+            {
+              "message": "Solution:\\ntry:\\n    with open('missing.txt', 'r') as f:\\n        print(f.read())\\nexcept FileNotFoundError:\\n    print('Error: File not found!')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Fix: No with",
+          "description": "Fix code that forgets to close the file.",
+          "difficulty": "beginner",
+          "category": "Error Handling & Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Defensive coding! Fix code that forgets to close the file.",
+          "starter_code": "# FIX: File never closed!\nf = open(\"test.txt\", \"w\")\nf.write(\"Hello\")\n# Missing f.close()!\n",
+          "expected_output": "Fixed with context manager",
+          "hints": [
+            {
+              "message": "Use with open() as f: to auto-close."
+            },
+            {
+              "message": "with open('test.txt', 'w') as f: f.write('Hello')"
+            },
+            {
+              "message": "Fix: Use with statement:\\nwith open('test.txt', 'w') as f:\\n    f.write('Hello')\\nprint('Fixed with context manager')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Fix: Wrong Mode",
+          "description": "Fix: trying to write to a file opened in read mode.",
+          "difficulty": "beginner",
+          "category": "Error Handling & Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Defensive coding! Fix: trying to write to a file opened in read mode.",
+          "starter_code": "# FIX: Can not write in read mode!\nwith open(\"test.txt\", \"w\") as f:\n    f.write(\"data\")\n\nwith open(\"test.txt\", \"r\") as f:\n    f.write(\"more data\")  # ERROR!\n",
+          "expected_output": "Fixed: use 'a' mode to append",
+          "hints": [
+            {
+              "message": "You cannot write to a file opened in 'r' mode!"
+            },
+            {
+              "message": "Change 'r' to 'a' (append) or 'w' (overwrite)."
+            },
+            {
+              "message": "Fix: Change the second open to 'a' mode:\\nwith open('test.txt', 'a') as f:\\n    f.write('more data')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Safe File Reader",
+          "description": "Create a function that handles all common file errors.",
+          "difficulty": "intermediate",
+          "category": "Error Handling & Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Defensive coding! Create a function that handles all common file errors.",
+          "starter_code": "# TODO: safe_read that handles FileNotFoundError, PermissionError, etc.\n",
+          "expected_output": "test.txt: Read OK (5 bytes)\nmissing.txt: Not found",
+          "hints": [
+            {
+              "message": "def safe_read(path): try/except with multiple exception types."
+            },
+            {
+              "message": "Return (content, None) on success, (None, error_msg) on failure."
+            },
+            {
+              "message": "Solution:\\ndef safe_read(path):\\n    try:\\n        with open(path, 'r') as f:\\n            data = f.read()\\n        return data, None\\n    except FileNotFoundError:\\n        return None, 'Not found'\\n    except PermissionError:\\n        return None, 'Permission denied'\\n\\nwith open('test.txt', 'w') as f: f.write('Hello')\\nfor name in ['test.txt', 'missing.txt']:\\n    data, err = safe_read(name)\\n    if data:\\n        print(f'{name}: Read OK ({len(data)} bytes)')\\n    else:\\n        print(f'{name}: {err}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Fix: Newline Issues",
+          "description": "Fix: CSV has double-spaced rows on Windows.",
+          "difficulty": "intermediate",
+          "category": "Error Handling & Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Defensive coding! Fix: CSV has double-spaced rows on Windows.",
+          "starter_code": "import csv\n# FIX: Double spacing in CSV!\nwith open(\"test.csv\", \"w\") as f:  # Missing newline=\"\"\n    w = csv.writer(f)\n    w.writerow([\"a\", \"b\"])\n    w.writerow([\"1\", \"2\"])\n",
+          "expected_output": "Fixed with newline parameter",
+          "hints": [
+            {
+              "message": "Add newline='' to the open() call."
+            },
+            {
+              "message": "open('test.csv', 'w', newline='') prevents double newlines."
+            },
+            {
+              "message": "Fix: with open('test.csv', 'w', newline='') as f:"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Fix: Encoding Error",
+          "description": "Fix: UnicodeDecodeError when reading a binary file as text.",
+          "difficulty": "intermediate",
+          "category": "Error Handling & Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Defensive coding! Fix: UnicodeDecodeError when reading a binary file as text.",
+          "starter_code": "# FIX: UnicodeDecodeError!\nwith open(\"binary.dat\", \"wb\") as f:\n    f.write(b\"\\xff\\xfe\\x00\\x01\")\n\n# This crashes:\n# with open(\"binary.dat\", \"r\") as f:\n#     print(f.read())\n\n# TODO: Fix it\n",
+          "expected_output": "Read 4 bytes successfully",
+          "hints": [
+            {
+              "message": "Binary files must be opened with 'rb', not 'r'!"
+            },
+            {
+              "message": "Or use encoding='latin-1' which accepts any byte."
+            },
+            {
+              "message": "Solution:\\nwith open('binary.dat', 'rb') as f:\\n    data = f.read()\\nprint(f'Read {len(data)} bytes successfully')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Batch Error Handler",
+          "description": "Process 5 files, skip errors, report summary.",
+          "difficulty": "intermediate",
+          "category": "Error Handling & Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Defensive coding! Process 5 files, skip errors, report summary.",
+          "starter_code": "import os\nwith open(\"good.txt\", \"w\") as f: f.write(\"OK\")\n\n# TODO: Process good.txt, bad1.txt, bad2.txt — skip errors\n",
+          "expected_output": "good.txt: OK\nbad1.txt: SKIPPED (not found)\nbad2.txt: SKIPPED (not found)\nProcessed: 1/3",
+          "hints": [
+            {
+              "message": "try/except in a loop — catch errors but keep processing."
+            },
+            {
+              "message": "Track success count vs total."
+            },
+            {
+              "message": "Solution:\\nsuccess = 0\\nfor name in ['good.txt', 'bad1.txt', 'bad2.txt']:\\n    try:\\n        with open(name, 'r') as f:\\n            print(f'{name}: {f.read().strip()}')\\n            success += 1\\n    except FileNotFoundError:\\n        print(f'{name}: SKIPPED (not found)')\\nprint(f'Processed: {success}/3')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Fix: Overwrite Evidence",
+          "description": "Fix: 'w' mode destroys evidence! Use safe alternative.",
+          "difficulty": "beginner",
+          "category": "Error Handling & Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Defensive coding! Fix: 'w' mode destroys evidence! Use safe alternative.",
+          "starter_code": "# FIX: This DESTROYS the original evidence!\nwith open(\"evidence.txt\", \"w\") as f:\n    f.write(\"Original critical evidence\")\n\n# This overwrites it!\nwith open(\"evidence.txt\", \"w\") as f:\n    f.write(\"Analysis notes\")\n# Original data is GONE!\n",
+          "expected_output": "Solution: Write to separate file",
+          "hints": [
+            {
+              "message": "NEVER use 'w' on evidence files! Write analysis to a DIFFERENT file."
+            },
+            {
+              "message": "Write to 'analysis_evidence.txt' instead."
+            },
+            {
+              "message": "Fix: Write to a separate file:\\nwith open('evidence.txt', 'w') as f:\\n    f.write('Original critical evidence')\\nwith open('analysis_evidence.txt', 'w') as f:\\n    f.write('Analysis notes')\\nprint('Solution: Write to separate file')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Fix: Path Separator",
+          "description": "Fix: hardcoded path separators that break on different OS.",
+          "difficulty": "beginner",
+          "category": "Error Handling & Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Defensive coding! Fix: hardcoded path separators that break on different OS.",
+          "starter_code": "import os\n# FIX: This breaks on Windows!\npath = \"cases/001/evidence.img\"\n# TODO: Use os.path.join instead\n",
+          "expected_output": "cases/001/evidence.img",
+          "hints": [
+            {
+              "message": "Replace string concatenation with os.path.join()."
+            },
+            {
+              "message": "os.path.join('cases', '001', 'evidence.img')"
+            },
+            {
+              "message": "Solution:\\nimport os\\npath = os.path.join('cases', '001', 'evidence.img')\\nprint(path)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Robust File Processor",
+          "description": "Create a function that processes a file with full error handling and logging.",
+          "difficulty": "advanced",
+          "category": "Error Handling & Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Defensive coding! Create a function that processes a file with full error handling and logging.",
+          "starter_code": "import os\n# TODO: process_file(path) with complete error handling\n",
+          "expected_output": "Processing: test.txt\nStatus: SUCCESS (5 bytes)",
+          "hints": [
+            {
+              "message": "Check exists, handle permissions, encoding, and OS errors."
+            },
+            {
+              "message": "Return a status dict with success/failure info."
+            },
+            {
+              "message": "Solution:\\ndef process_file(path):\\n    if not os.path.exists(path):\\n        return {'status': 'NOT_FOUND'}\\n    try:\\n        with open(path, 'r') as f:\\n            data = f.read()\\n        return {'status': 'SUCCESS', 'bytes': len(data)}\\n    except Exception as e:\\n        return {'status': 'ERROR', 'msg': str(e)}\\n\\nwith open('test.txt', 'w') as f: f.write('Hello')\\nresult = process_file('test.txt')\\nprint(f'Processing: test.txt')\\nprint(f\"Status: {result['status']} ({result.get('bytes', 0)} bytes)\")"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

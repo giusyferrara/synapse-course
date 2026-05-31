@@ -1,0 +1,1576 @@
+{
+  "course_id": "vuln_assessment_methodology",
+  "title": "Vulnerability Assessment Methodology",
+  "description": "Systematically find, test, and document security vulnerabilities in any web application using a repeatable step-by-step process",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 8,
+  "prerequisites": [
+    "java_syntax_output"
+  ],
+  "learning_outcomes": [
+    "Map a web application's complete attack surface systematically",
+    "Test every input field for injection vulnerabilities (XSS, SQLi)",
+    "Inspect cookies, headers, and session management for flaws",
+    "Check access controls by testing URLs across different user roles",
+    "Document findings with CWE references and CIA impact analysis",
+    "Write professional vulnerability reports with evidence"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Vulnerability hunting is like being a detective. Want me to give you the first clue to look for?",
+      "idle_90_seconds": "Still thinking? Let me simplify: start with the login form. Type a single quote. What happens? That one test can reveal SQL injection.",
+      "idle_180_seconds": "No rush. Let me walk you through a complete example — testing one form field from start to finish.",
+      "first_error": "Good attempt! Remember: we test ONE thing at a time. Check if the input even reaches the server first.",
+      "repeated_errors": "Let me show you the checklist approach. We go through each test mechanically — no guessing needed.",
+      "after_success": "Excellent find! You just discovered a vulnerability that could affect real users. Now document it with the CWE number."
+    },
+    "encouragement_phrases": [
+      "You're thinking like a security auditor now!",
+      "That's exactly how professional penetration testers work.",
+      "Every form field you test is a potential discovery.",
+      "Bug bounty hunters earn thousands for finds like this.",
+      "Systematic testing beats random guessing every time.",
+      "You just found something most developers miss!",
+      "Documentation is what separates amateurs from professionals.",
+      "Real security audits follow exactly this methodology."
+    ],
+    "explanation_styles": {
+      "analogy": "Testing a web app is like checking every door and window of a building. You walk the perimeter, try each handle, and note which ones are unlocked. Systematic, thorough, no shortcuts.",
+      "visual": "Attack Surface Map: [Login Form] → test SQLi, XSS | [Profile Form] → test XSS, CSRF | [Transfer Form] → test CSRF | [Cookies] → check flags | [URLs] → check access control",
+      "step_by_step": "Step 1: List all pages. Step 2: List all forms. Step 3: List all input fields. Step 4: Test each field. Step 5: Check cookies. Step 6: Check access controls. Step 7: Document everything.",
+      "code_trace": "Input: ' OR '1'='1 → Goes into SQL query → WHERE password='' OR '1'='1' → Always TRUE → Authentication bypassed",
+      "comparison": "Random testing: try stuff, hope for the best, miss most bugs. Systematic testing: follow a checklist, test everything, find ALL the bugs. Same time, 10x more results."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "vuln_methodology_lesson_1",
+      "title": "Vulnerability Assessment — Systematic Security Testing from Zero to Report",
+      "theory": {
+        "introduction": "Imagine you're a home inspector. You don't just walk in, glance around, and say 'looks fine.' You have a checklist: check the foundation, the roof, the plumbing, the electrical, the insulation — every system, methodically.\n\nVulnerability assessment works the same way. You don't randomly poke at a web application hoping something breaks. You follow a systematic process: map the application, identify every input point, test each one against known vulnerability types, and document what you find.\n\nThis module gives you that process. By the end, you'll have a repeatable methodology you can apply to ANY web application — not just the one you're testing today. Whether you're doing a university assessment, a bug bounty, or a professional penetration test, the steps are the same.\n\nThe difference between a beginner and a professional isn't talent — it's methodology. Professionals find more bugs because they test more thoroughly, not because they're smarter.",
+        "why_important": "Random testing misses vulnerabilities. A systematic approach ensures you check EVERYTHING:\n\nWithout methodology: 'I tried SQL injection on the login and it didn't work, so the app is secure.' (Wrong — you only tested ONE field on ONE page.)\n\nWith methodology: 'I tested all 12 input fields across 5 pages for SQLi, XSS, and command injection. I checked all cookies for security flags. I tested all URLs for access control. Here are the 5 vulnerabilities I found.' (Professional.)\n\nThe methodology also ensures your documentation is complete — which is critical for assessment, bug bounty reports, and professional security assessments.",
+        "key_concepts": [
+          {
+            "concept": "Phase 1: Reconnaissance — Map the Application",
+            "explanation": "Before testing anything, you need to know WHAT to test. Reconnaissance means exploring every page, every form, every link in the application.\n\nCreate an Attack Surface Map:\n1. Visit every page as each user role (admin, normal user, not logged in)\n2. Write down every URL\n3. List every form and its input fields\n4. Note every link in the navigation\n5. Check the HTML source for hidden fields, comments, and JavaScript files\n6. Open Developer Tools (F12) and check Network tab while browsing\n\nThis map becomes your testing checklist. Every item on it gets tested.",
+            "example": "// ATTACK SURFACE MAP TEMPLATE:\n//\n// === URLS FOUND ===\n// /welcome — login page (public)\n// /account — user profile (authenticated)\n// /transfer — fund transfer (authenticated)\n// /balance — customer list (admin only?)\n// /logout — session destruction\n//\n// === FORMS FOUND ===\n// Login: [username] [password] → POST /welcome\n// Profile: [description] → POST /account\n// Transfer: [to] [transferAmount] → POST /transfer\n// Upload: [profilePic] → POST /account (multipart)\n//\n// === COOKIES ===\n// JSESSIONID — session cookie\n// Flags: HttpOnly=? Secure=? SameSite=?\n//\n// === HIDDEN ELEMENTS ===\n// HTML comments: <!-- TODO: remove debug -->\n// JavaScript files: Account.js, Transfer.js\n// Hidden form fields: none found / csrf_token?",
+            "ai_hint": "The attack surface map is your treasure map. Every X marks a potential vulnerability. The more thorough your map, the more treasures you'll find."
+          },
+          {
+            "concept": "Phase 2: Input Testing — Injection Vulnerabilities",
+            "explanation": "Every input field is a potential injection point. Test each one systematically:\n\nSQL Injection test:\n1. Enter a single quote: '\n2. Enter: ' OR '1'='1' --\n3. Enter: ' OR 'x'='x\n4. Watch for: error messages, unexpected access, data leakage\n\nXSS test:\n1. Enter: <script>alert(1)</script>\n2. Enter: <img src=x onerror=alert(1)>\n3. Enter: \"><script>alert(1)</script>\n4. Check: does the input appear in the page? Is it encoded?\n\nCommand Injection test:\n1. Enter: ; ls\n2. Enter: | whoami\n3. Enter: && cat /etc/passwd\n4. Watch for: system output in responses\n\nTest EVERY field, not just the obvious ones.",
+            "example": "// SYSTEMATIC INPUT TESTING:\n// Field: Login password\n// Test 1: ' → Error? SQL error message? → SQLi possible\n// Test 2: ' OR '1'='1' -- → Logged in? → SQLi confirmed\n// Test 3: <script>alert(1)</script> → Alert? → XSS\n// Test 4: admin'; DROP TABLE users;-- → Don't try this first!\n\n// Field: Profile description\n// Test 1: <b>bold</b> → Shows bold text? → HTML injection\n// Test 2: <script>alert('XSS')</script> → Alert? → Stored XSS!\n// Test 3: <img src=x onerror=alert(1)> → Alert? → XSS bypass\n\n// Field: Transfer 'to' field\n// Test 1: abc (non-numeric) → Error handling?\n// Test 2: -100 (negative) → Logic flaw?\n// Test 3: 999999999999 (overflow) → Integer overflow?",
+            "ai_hint": "Test like a toddler exploring a room — touch everything, push every button, open every drawer. But write down what happens each time."
+          },
+          {
+            "concept": "Phase 3: Cookie and Session Analysis",
+            "explanation": "Session management is one of the most common vulnerability areas. Check:\n\n1. Cookie flags (F12 → Storage/Application → Cookies):\n   - HttpOnly: Can JavaScript read the cookie? (should be true)\n   - Secure: Is cookie sent over HTTP? (should be true)\n   - SameSite: Is cookie sent cross-site? (should be Strict or Lax)\n\n2. Session behaviour:\n   - Does the session ID change after login? (should change)\n   - Does logout actually destroy the session? (should invalidate)\n   - How long until the session expires? (should be reasonable)\n\n3. Cookie content:\n   - Is the session ID random and long? (should be unpredictable)\n   - Does the cookie contain sensitive data? (should NOT)",
+            "example": "// COOKIE INSPECTION CHECKLIST:\n//\n// Open F12 → Storage tab → Cookies\n// Find JSESSIONID:\n//\n// ┌────────────┬───────────┬──────────┬────────────┐\n// │ Name       │ Value     │ HttpOnly │ Secure     │\n// ├────────────┼───────────┼──────────┼────────────┤\n// │ JSESSIONID │ node0abc  │ false ✗  │ false ✗    │\n// └────────────┴───────────┴──────────┴────────────┘\n//\n// Findings:\n// ✗ HttpOnly=false → CWE-1004 → JS can steal cookie\n// ✗ Secure=false → CWE-614 → sent over plain HTTP\n// ✗ SameSite=none → CSRF possible\n//\n// TEST: document.cookie in console\n// If JSESSIONID appears → HttpOnly is NOT set → VULNERABLE",
+            "ai_hint": "Checking cookie flags takes 30 seconds but can reveal critical vulnerabilities. It's the highest-value, lowest-effort test in your toolkit."
+          },
+          {
+            "concept": "Phase 4: Access Control Testing",
+            "explanation": "Access control bugs are among the most common and most impactful vulnerabilities. Test:\n\n1. Horizontal access control (same role, different users):\n   - Log in as user1, note the URL: /account?username=user1\n   - Change to: /account?username=user2\n   - Can you see user2's data? → IDOR (CWE-639)\n\n2. Vertical access control (different roles):\n   - Log in as normal user\n   - Try accessing admin URLs: /balance, /admin, /users\n   - Can you access admin pages? → Missing authorisation (CWE-862)\n\n3. Function-level access:\n   - Can a normal user perform admin actions via direct POST?\n   - Remove authentication cookies — can you still access pages?",
+            "example": "// ACCESS CONTROL TEST MATRIX:\n//\n// URL             | Admin  | User1  | User2  | No auth\n// ────────────────┼────────┼────────┼────────┼────────\n// /account        | Own ✓  | Own ✓  | Own ✓  | → login\n// /account?u=user2| user2  | user2? | Own    | → login\n// /balance        | All ✓  | All?   | All?   | → login\n// /transfer       | ✓      | ✓      | ✓      | → login\n//\n// If User1 can access /balance → CWE-862 (Missing Auth)\n// If User1 sees user2 data via URL → CWE-639 (IDOR)\n//\n// HOW TO TEST:\n// 1. Login as user1\n// 2. Note your URLs and what you can see\n// 3. Try admin URLs (just type them in the address bar)\n// 4. Try other users' URLs (change username parameter)",
+            "ai_hint": "Access control testing is like checking if a hotel key card opens rooms it shouldn't. Log in as a regular guest, then try opening the manager's office door."
+          },
+          {
+            "concept": "Phase 5: CSRF Testing",
+            "explanation": "For every form that performs an action (transfer, update, delete), check:\n\n1. Does the form have a hidden CSRF token field?\n   - Right-click → Inspect → look for <input type='hidden' name='csrf_token'>\n   - If NO token → vulnerable to CSRF (CWE-352)\n\n2. Can you replay the form from an external page?\n   - Create an HTML file with a hidden form pointing to the target\n   - Add auto-submit JavaScript\n   - Open it while logged into the application\n   - If the action succeeds → CSRF confirmed\n\n3. Check the Network tab (F12):\n   - Submit the form normally\n   - Look at the POST request parameters\n   - Is there any token or nonce? Or just the data fields?",
+            "example": "// CSRF TEST — Transfer form:\n// Step 1: Inspect the form HTML\n// <form action='/transfer' method='POST'>\n//   <input name='to' type='text'>\n//   <input name='transferAmount' type='text'>\n//   <button>Transfer</button>\n// </form>\n// No csrf_token field → VULNERABLE!\n\n// Step 2: Create attack page (csrf_test.html):\n// <html><body>\n// <form action='http://localhost:15000/transfer' method='POST'>\n//   <input type='hidden' name='to' value='999999'>\n//   <input type='hidden' name='transferAmount' value='100'>\n// </form>\n// <script>document.forms[0].submit();</script>\n// </body></html>\n\n// Step 3: Open csrf_test.html while logged in\n// If transfer succeeds → CSRF confirmed!",
+            "ai_hint": "No CSRF token = anyone can submit that form on behalf of any logged-in user. Check EVERY form that does something important."
+          },
+          {
+            "concept": "Phase 6: Error Handling and Information Disclosure",
+            "explanation": "Applications often leak information through error messages. Test:\n\n1. Trigger errors with invalid input:\n   - Enter a quote (') in form fields → SQL error?\n   - Request non-existent pages → stack trace?\n   - Submit empty required fields → exception details?\n   - Upload wrong file types → internal error messages?\n\n2. Check what the error reveals:\n   - Database type (MySQL, SQLite, Oracle)\n   - Server technology (Jetty, Tomcat, Apache)\n   - File paths (/opt/app/src/Servlet.java)\n   - Class names (AccountPageServlet, Database.java)\n   - Query structure (SELECT * FROM users WHERE...)\n\n3. Check HTML source:\n   - HTML comments with TODOs or debug info\n   - JavaScript files with API endpoints\n   - Hidden form fields with internal data",
+            "example": "// ERROR HANDLING TESTS:\n//\n// Test 1: Single quote in login\n// Input: admin / '\n// Result: 'SQL error: near \"'\": syntax error'\n// Finding: CWE-209 — SQL query structure exposed!\n//\n// Test 2: Non-existent URL\n// Visit: /nonexistentpage\n// Result: Jetty 500 error with full stack trace\n// Finding: CWE-209 — Server version + class names exposed!\n//\n// Test 3: View HTML source (Ctrl+U)\n// Found: <!-- TODO: remove before production -->\n// Found: <!-- Admin panel at /admin/debug -->\n// Finding: CWE-615 — Sensitive comments in HTML!\n//\n// Test 4: Check response headers (F12 → Network)\n// Server: Jetty(9.4.z-SNAPSHOT)\n// Finding: Server version disclosed in headers!",
+            "ai_hint": "Error messages are like a chatty receptionist who tells you the building's alarm code when you ask for directions. The information seems harmless but helps an attacker plan their real attack."
+          },
+          {
+            "concept": "Phase 7: Documentation — CWE and CIA",
+            "explanation": "Every vulnerability needs proper documentation:\n\n1. Name and CWE number:\n   - SQL Injection → CWE-89\n   - Stored XSS → CWE-79\n   - CSRF → CWE-352\n   - Missing authorisation → CWE-862\n   - Info disclosure → CWE-209\n   - Insecure cookies → CWE-614, CWE-1004\n\n2. OWASP Top 10 category:\n   - A01: Broken Access Control\n   - A02: Cryptographic Failures\n   - A03: Injection (SQLi, XSS, Command Injection)\n   - A05: Security Misconfiguration\n   - A07: Authentication Failures\n\n3. CIA Impact:\n   - Confidentiality: Can attacker see private data?\n   - Integrity: Can attacker modify data?\n   - Availability: Can attacker disrupt the service?",
+            "example": "// VULNERABILITY DOCUMENTATION TEMPLATE:\n//\n// Name: Stored Cross-Site Scripting (XSS)\n// CWE: CWE-79\n// OWASP: A03:2021 Injection\n// Location: Profile description field (/account)\n// Severity: HIGH\n//\n// Description:\n// The profile description field stores user input without\n// sanitisation and renders it without encoding.\n//\n// Steps to reproduce:\n// 1. Login as admin\n// 2. Enter <script>alert('XSS')</script> in profile\n// 3. Save profile\n// 4. Refresh page → alert executes\n//\n// Evidence: [screenshot of alert popup]\n//\n// CIA Impact:\n// Confidentiality: HIGH — session cookies stolen\n// Integrity: HIGH — profiles modified, funds transferred\n// Availability: LOW — page manipulation possible\n//\n// Reference: https://cwe.mitre.org/data/definitions/79.html",
+            "ai_hint": "Good documentation is what gets you marks in assessments and gets you paid in bug bounties. Same finding, 10x more value with proper write-up."
+          },
+          {
+            "concept": "The Testing Checklist — Quick Reference",
+            "explanation": "Use this checklist for every web application you test:\n\nRECONNAISSANCE:\n[ ] List all pages and URLs\n[ ] List all forms and input fields\n[ ] Check HTML source for comments and hidden fields\n[ ] Identify JavaScript files and API endpoints\n[ ] Map user roles and permissions\n\nINJECTION TESTING:\n[ ] Test every input field with: ' (single quote)\n[ ] Test every input field with: <script>alert(1)</script>\n[ ] Test every input field with: ; ls or | whoami\n[ ] Check if inputs are reflected in responses (reflected XSS)\n[ ] Check if inputs are stored and displayed later (stored XSS)\n\nSESSION TESTING:\n[ ] Check HttpOnly flag on session cookie\n[ ] Check Secure flag\n[ ] Check SameSite attribute\n[ ] Test session regeneration on login\n[ ] Test session destruction on logout\n\nACCESS CONTROL:\n[ ] Test horizontal access (user1 → user2's data)\n[ ] Test vertical access (user → admin pages)\n[ ] Test without authentication (direct URL access)\n\nCSRF:\n[ ] Check every action form for CSRF tokens\n[ ] Attempt auto-submit from external page\n\nERROR HANDLING:\n[ ] Trigger errors with invalid input\n[ ] Check for stack traces and version info\n[ ] Check response headers for server details",
+            "example": "// QUICK TEST — 5 vulnerabilities in under 10 minutes:\n//\n// Test 1 (SQLi): Login with ' as password\n//   → SQL error? → CWE-89\n//\n// Test 2 (XSS): Enter <script>alert(1)</script> in any text field\n//   → Alert popup? → CWE-79\n//\n// Test 3 (CSRF): Inspect transfer form source\n//   → No csrf_token? → CWE-352\n//\n// Test 4 (Session): F12 → Storage → Cookies\n//   → HttpOnly=false? → CWE-1004\n//\n// Test 5 (Access): Try admin URLs as normal user\n//   → Page loads? → CWE-862\n//\n// Each test takes about 2 minutes.\n// Total: ~10 minutes for 5 potential vulnerabilities.",
+            "ai_hint": "Print this checklist and keep it next to your keyboard. Professional pen testers have checklists too — it's not cheating, it's being thorough."
+          },
+          {
+            "concept": "Common CWE Numbers Reference",
+            "explanation": "The most frequently encountered CWEs in web application testing:\n\nInjection:\n• CWE-79: Cross-Site Scripting (XSS)\n• CWE-89: SQL Injection\n• CWE-78: OS Command Injection\n• CWE-22: Path Traversal\n\nAuthentication & Sessions:\n• CWE-287: Improper Authentication\n• CWE-384: Session Fixation\n• CWE-614: Cookie without Secure flag\n• CWE-1004: Cookie without HttpOnly flag\n\nAccess Control:\n• CWE-862: Missing Authorisation\n• CWE-639: IDOR (Insecure Direct Object Reference)\n• CWE-269: Improper Privilege Management\n\nOther:\n• CWE-352: Cross-Site Request Forgery\n• CWE-209: Error Message Information Disclosure\n• CWE-502: Insecure Deserialization\n• CWE-434: Unrestricted File Upload",
+            "example": "// CWE LOOKUP CHEAT SHEET:\n//\n// Found this?             → It's this CWE:\n// ─────────────────────────────────────────\n// ' causes SQL error      → CWE-89\n// <script> executes       → CWE-79\n// ; ls shows files        → CWE-78\n// ../ reads other files   → CWE-22\n// No CSRF token           → CWE-352\n// HttpOnly missing        → CWE-1004\n// Secure missing          → CWE-614\n// Stack trace shown       → CWE-209\n// User sees admin page    → CWE-862\n// User sees other's data  → CWE-639\n// Login with ' OR '1'='1  → CWE-89\n//\n// Full database: https://cwe.mitre.org/\n// OWASP Top 10: https://owasp.org/Top10/",
+            "ai_hint": "You don't need to memorise all CWE numbers — just the top 10. They cover 90% of what you'll find in web applications."
+          },
+          {
+            "concept": "CIA Impact Analysis",
+            "explanation": "For every vulnerability, assess its impact on the CIA triad:\n\nConfidentiality — Can the attacker SEE private data?\n• HIGH: Full database access, all user records exposed\n• MEDIUM: Some user data visible (names, emails)\n• LOW: Only technical info leaked (server version)\n\nIntegrity — Can the attacker CHANGE data?\n• HIGH: Modify accounts, transfer funds, alter records\n• MEDIUM: Change non-critical data (profile descriptions)\n• LOW: No direct modification possible\n\nAvailability — Can the attacker BREAK the service?\n• HIGH: Database destruction, server crash\n• MEDIUM: Some features disrupted\n• LOW: Minor inconvenience, service continues\n\nThe combination determines the overall severity. HIGH/HIGH/LOW is Critical. LOW/LOW/LOW is Informational.",
+            "example": "// CIA ASSESSMENT EXAMPLES:\n//\n// SQL Injection:\n// C: CRITICAL — read any user's data\n// I: CRITICAL — modify/delete records, DROP TABLE\n// A: HIGH — can destroy the database\n// Overall: CRITICAL\n//\n// Stored XSS:\n// C: HIGH — steal session cookies\n// I: HIGH — modify page content, transfer funds\n// A: LOW — can redirect users but service stays up\n// Overall: HIGH\n//\n// Missing HttpOnly:\n// C: HIGH — session cookie readable by JS\n// I: LOW — doesn't directly enable modification\n// A: LOW — no availability impact\n// Overall: MEDIUM (enables other attacks)\n//\n// Information Disclosure:\n// C: MEDIUM — server version, class names exposed\n// I: LOW — no modification possible\n// A: LOW — no disruption\n// Overall: LOW (but helps attacker plan other attacks)",
+            "ai_hint": "Think of CIA like this: Confidentiality = can they READ your diary? Integrity = can they WRITE in your diary? Availability = can they BURN your diary?"
+          },
+          {
+            "concept": "Writing the Vulnerability Report",
+            "explanation": "A professional vulnerability report has this structure for each finding:\n\n1. Title: [CWE number] — [Vulnerability name]\n2. Severity: CRITICAL / HIGH / MEDIUM / LOW\n3. Location: Which page, form, or feature\n4. Description: 2-3 sentences explaining the vulnerability\n5. Steps to reproduce: Numbered list, specific and repeatable\n6. Evidence: Screenshots showing each step and the result\n7. Impact: CIA analysis\n8. References: CWE URL, OWASP category\n\nTips for good reports:\n• Be specific — 'the profile description field' not 'an input field'\n• Include the EXACT input that triggers the vulnerability\n• Screenshots should show BEFORE and AFTER\n• Always include the CWE number\n• Keep descriptions short — evidence speaks louder than words",
+            "example": "// REPORT TEMPLATE — FILL IN FOR EACH VULNERABILITY:\n//\n// === VULNERABILITY #X ===\n// Title: CWE-XX — [Name]\n// Severity: HIGH\n// Location: /account page, profile description field\n//\n// Description:\n// [2-3 sentences explaining the vulnerability]\n//\n// Steps to reproduce:\n// 1. Navigate to [URL]\n// 2. Enter [specific input] in [specific field]\n// 3. Click [button]\n// 4. Observe [what happens]\n//\n// Evidence:\n// [Screenshot 1: input entered]\n// [Screenshot 2: result/impact]\n//\n// Impact on CIA:\n// Confidentiality: [HIGH/MEDIUM/LOW] — [why]\n// Integrity: [HIGH/MEDIUM/LOW] — [why]\n// Availability: [HIGH/MEDIUM/LOW] — [why]\n//\n// Reference:\n// https://cwe.mitre.org/data/definitions/XX.html\n// OWASP: A0X:2021 — [Category name]",
+            "ai_hint": "A vulnerability without a good report is like finding gold but not marking the location on the map. Document everything — your future self will thank you."
+          },
+          {
+            "concept": "Tools of the Trade",
+            "explanation": "Essential tools for vulnerability assessment:\n\nBuilt into every browser (F12):\n• Elements tab: View and edit HTML source\n• Console tab: Run JavaScript, see errors\n• Network tab: See all HTTP requests/responses\n• Storage tab: View and edit cookies\n\nCommand line:\n• curl: Make HTTP requests with custom headers/cookies\n• python3 -m http.server: Capture exfiltrated data\n• grep: Search through responses for patterns\n• nano/vim: Create attack files (csrf_attack.html)\n\nYou do NOT need expensive tools. Everything in this course can be done with a browser and a terminal. Professional tools (Burp Suite, OWASP ZAP) are helpful but not required.",
+            "example": "// BROWSER DEVTOOLS — YOUR BEST FRIEND:\n//\n// F12 → Network tab:\n// 1. Submit a form\n// 2. Click the new request entry\n// 3. See: URL, method, parameters, cookies, response\n// 4. Right-click → Copy as cURL (gives you the exact command!)\n//\n// F12 → Console tab:\n// 1. Type: document.cookie\n// 2. See all accessible cookies\n// 3. Type: document.forms[0]\n// 4. See the first form's structure\n//\n// F12 → Elements tab:\n// 1. Right-click any element → Inspect\n// 2. See the HTML structure\n// 3. Look for hidden inputs, CSRF tokens\n// 4. Check if values are HTML-encoded or raw\n//\n// CTRL+U: View full page source\n// Look for: comments, hidden fields, JS files, API endpoints",
+            "ai_hint": "F12 is your X-ray vision. It lets you see what the page is REALLY doing behind the pretty interface. Use it on every page you test."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Map a Login Page",
+          "description": "Examine a login page and list all testable elements.",
+          "difficulty": "beginner",
+          "code": "// Target: http://localhost:15000/welcome\n// TODO: Complete the attack surface map:\n//\n// URL: /welcome\n// Method: ___ (check Network tab after submitting)\n// Form fields:\n//   1. Name: ___ Type: ___\n//   2. Name: ___ Type: ___\n// Hidden fields: ___\n// CSRF token: ___\n// Action: ___\n\n// ANSWER:\n// Method: POST\n// Fields: username (text), password (password)\n// Hidden fields: none\n// CSRF token: NONE → vulnerable!\n// Action: /welcome (posts to itself)",
+          "output": "Attack surface mapped: 2 input fields, POST method, no CSRF token, no hidden fields",
+          "ai_explanation": "Always start here. The login page reveals the authentication method, input handling, and presence/absence of CSRF protection.",
+          "ai_challenge": "Can you adapt this technique to test a different type of web application?"
+        },
+        {
+          "title": "Example 2: Test for SQL Injection",
+          "description": "Use a single quote to test the login form.",
+          "difficulty": "beginner",
+          "code": "// Test 1: Enter in password field: '\n// Expected if vulnerable: SQL error message or unusual behaviour\n// Expected if safe: 'Invalid credentials' (generic error)\n\n// Test 2: Enter in username: admin  password: ' OR 'x'='x\n// Expected if vulnerable: Logged in as admin!\n// Expected if safe: 'Invalid credentials'\n\n// Test 3: Enter in username: ' OR '1'='1' --\n// Expected if vulnerable: Logged in (possibly as first user in DB)\n\n// WHAT THE SQL LOOKS LIKE:\n// Normal: SELECT * FROM users WHERE user='admin' AND pass='correct'\n// Attack: SELECT * FROM users WHERE user='admin' AND pass='' OR 'x'='x'\n// The OR 'x'='x' is always TRUE → password check bypassed!",
+          "output": "Login succeeds with ' OR 'x'='x → SQL Injection confirmed → CWE-89",
+          "ai_explanation": "A single quote is the universal SQL injection test. If it causes an error or unusual behaviour, dig deeper.",
+          "ai_challenge": "Can you adapt this technique to test a different type of web application?"
+        },
+        {
+          "title": "Example 3: Test for Stored XSS",
+          "description": "Inject a script into a profile field and check if it executes.",
+          "difficulty": "intermediate",
+          "code": "// Step 1: Login and find a text input that saves to database\n//   Example: Profile description, comment box, review field\n\n// Step 2: Enter: <script>alert('XSS')</script>\n// Step 3: Save/submit\n// Step 4: Refresh the page\n\n// IF alert appears → Stored XSS (CWE-79)!\n// IF text shows as '&lt;script&gt;' → properly encoded (safe)\n// IF text disappears → filtered but maybe bypassable\n\n// If filtered, try bypasses:\n// <img src=x onerror=alert(1)>\n// <svg onload=alert(1)>\n// <body onload=alert(1)>",
+          "output": "Alert popup appears on page refresh → Stored XSS confirmed → CWE-79",
+          "ai_explanation": "Stored XSS is the most dangerous because it affects EVERY visitor. Always test text fields that save to database.",
+          "ai_challenge": "Can you adapt this technique to test a different type of web application?"
+        },
+        {
+          "title": "Example 4: Inspect Cookie Security",
+          "description": "Check session cookie flags using Developer Tools.",
+          "difficulty": "beginner",
+          "code": "// Step 1: Press F12\n// Step 2: Storage tab (Firefox) or Application tab (Chrome)\n// Step 3: Click Cookies → select the site URL\n// Step 4: Find JSESSIONID row\n// Step 5: Check columns: HttpOnly, Secure, SameSite\n\n// FINDINGS TEMPLATE:\n// Cookie: JSESSIONID\n// HttpOnly: ___ → If false: CWE-1004\n// Secure: ___ → If false: CWE-614\n// SameSite: ___ → If empty: CSRF risk\n\n// BONUS TEST:\n// Open Console tab, type: document.cookie\n// If you see JSESSIONID → HttpOnly is NOT set!",
+          "output": "Cookie flags inspected — HttpOnly=false, Secure=false, SameSite=empty → three vulnerabilities found in 30 seconds",
+          "ai_explanation": "This 30-second test reveals three potential vulnerabilities. It's the highest-ROI test in your methodology.",
+          "ai_challenge": "Can you adapt this technique to test a different type of web application?"
+        },
+        {
+          "title": "Example 5: Test Access Controls",
+          "description": "Check if a normal user can access admin pages.",
+          "difficulty": "intermediate",
+          "code": "// Step 1: Login as normal user (user1/user1Password)\n// Step 2: Note which pages you CAN access\n// Step 3: Try these admin URLs:\n//   http://localhost:15000/balance\n//   http://localhost:15000/admin\n//   http://localhost:15000/customers\n\n// Step 4: Try accessing other users' data:\n//   http://localhost:15000/account?username=user2\n//   http://localhost:15000/account?username=admin\n\n// IF admin page loads → CWE-862 Missing Authorisation\n// IF other user's data shows → CWE-639 IDOR",
+          "output": "Normal user accesses admin page → CWE-862. User1 sees user2 data → CWE-639.",
+          "ai_explanation": "Access control bugs are in OWASP #1 for a reason — they're the most common and most impactful vulnerability category.",
+          "ai_challenge": "Can you adapt this technique to test a different type of web application?"
+        },
+        {
+          "title": "Example 6: Test for CSRF",
+          "description": "Check if a transfer form has CSRF protection.",
+          "difficulty": "intermediate",
+          "code": "// Step 1: Navigate to the transfer page\n// Step 2: Right-click → Inspect\n// Step 3: Look at the <form> HTML\n// Step 4: Count the input fields\n\n// If you see:\n//   <input name='to'>\n//   <input name='transferAmount'>\n//   <button>Submit</button>\n// And NOTHING else → No CSRF token!\n\n// Step 5: Create csrf_test.html:\n// <form action='http://target/transfer' method='POST'>\n//   <input type='hidden' name='to' value='999999'>\n//   <input type='hidden' name='transferAmount' value='100'>\n// </form>\n// <script>document.forms[0].submit();</script>\n\n// Step 6: Open while logged in → Transfer succeeds?",
+          "output": "Form has no CSRF token + auto-submit works → CWE-352 confirmed",
+          "ai_explanation": "Every form that performs an action (transfer, delete, update) needs a CSRF token. If it's missing, that's a vulnerability.",
+          "ai_challenge": "Can you adapt this technique to test a different type of web application?"
+        },
+        {
+          "title": "Example 7: Trigger Error Messages",
+          "description": "Force the application to reveal internal information.",
+          "difficulty": "intermediate",
+          "code": "// Test 1: Submit single quote as password\n// Observe: Does the error show SQL query structure?\n\n// Test 2: Visit /nonexistentpage\n// Observe: Does it show a stack trace? Server version?\n\n// Test 3: Submit empty fields in a form\n// Observe: NumberFormatException? NullPointerException?\n\n// Test 4: Upload wrong file type\n// Observe: Internal error message exposed?\n\n// Test 5: Check response headers (F12 → Network)\n// Look for: Server: Jetty/9.4, X-Powered-By, etc.\n\n// ANY internal details exposed → CWE-209",
+          "output": "Error messages reveal SQL structure, server version, class names → CWE-209",
+          "ai_explanation": "Developers often forget to configure custom error pages. Default error pages leak everything an attacker needs to know.",
+          "ai_challenge": "Can you adapt this technique to test a different type of web application?"
+        },
+        {
+          "title": "Example 8: Document a Finding",
+          "description": "Write a complete vulnerability report entry.",
+          "difficulty": "intermediate",
+          "code": "// TODO: Fill in this template for an XSS finding:\n//\n// Title: CWE-___ — ___\n// Severity: ___\n// Location: /___ page, ___ field\n//\n// Description:\n// The ___ field on the ___ page does not ___\n// user input, allowing injection of ___.\n//\n// Steps to reproduce:\n// 1. Login as ___\n// 2. Navigate to ___\n// 3. Enter ___ in the ___ field\n// 4. Click ___\n// 5. Observe ___\n//\n// CIA Impact:\n// C: ___ — ___\n// I: ___ — ___\n// A: ___ — ___",
+          "output": "Complete vulnerability report with CWE, steps, evidence placeholders, and CIA analysis",
+          "ai_explanation": "This template works for any vulnerability. Fill it in during testing so you don't forget details.",
+          "ai_challenge": "Can you adapt this technique to test a different type of web application?"
+        },
+        {
+          "title": "Example 9: Full Assessment: Login Page",
+          "description": "Complete a full assessment of just the login page.",
+          "difficulty": "advanced",
+          "code": "// TARGET: Login page at /welcome\n//\n// INJECTION:\n// [ ] SQLi test: ' in password → ___\n// [ ] SQLi test: ' OR '1'='1' -- → ___\n// [ ] XSS test: <script>alert(1)</script> → ___\n//\n// SESSION:\n// [ ] After login, check cookie flags → ___\n// [ ] Session ID change on login? → ___\n//\n// CSRF:\n// [ ] Login form has CSRF token? → ___\n//\n// ERROR HANDLING:\n// [ ] Wrong password shows what? → ___\n// [ ] Empty fields show what? → ___\n//\n// TOTAL VULNERABILITIES FOUND: ___",
+          "output": "Complete login page assessment with all tests documented and findings noted",
+          "ai_explanation": "This is how you approach every page. Systematic, thorough, documented.",
+          "ai_challenge": "Can you adapt this technique to test a different type of web application?"
+        },
+        {
+          "title": "Example 10: Full Assessment: Transfer Page",
+          "description": "Complete assessment of the fund transfer feature.",
+          "difficulty": "advanced",
+          "code": "// TARGET: Transfer page at /transfer\n//\n// FORM ANALYSIS:\n// Fields: ___ and ___\n// CSRF token: ___\n// Method: ___\n//\n// INJECTION:\n// [ ] SQLi in 'to' field: ___\n// [ ] XSS in 'to' field: ___\n// [ ] Negative amount: ___\n// [ ] Zero amount: ___\n// [ ] Huge amount: ___\n//\n// CSRF:\n// [ ] Auto-submit from external page: ___\n//\n// ACCESS CONTROL:\n// [ ] Can transfer without login? ___\n// [ ] Can transfer from other's account? ___\n//\n// TOTAL FINDINGS: ___",
+          "output": "Complete transfer page assessment — CSRF, input validation, access control all tested",
+          "ai_explanation": "Financial features deserve the most thorough testing. Every vulnerability here has direct monetary impact.",
+          "ai_challenge": "Can you adapt this technique to test a different type of web application?"
+        },
+        {
+          "title": "Example 11: Compare Your Findings",
+          "description": "Cross-reference findings to identify attack chains.",
+          "difficulty": "advanced",
+          "code": "// You found:\n// 1. Stored XSS in profile (CWE-79)\n// 2. No CSRF on transfer (CWE-352)\n// 3. HttpOnly missing (CWE-1004)\n// 4. SQL injection on login (CWE-89)\n// 5. Admin page accessible (CWE-862)\n//\n// TODO: Identify attack chains:\n// Chain 1: ___ + ___ + ___ = session hijacking\n// Chain 2: ___ + ___ = silent fund transfer\n// Chain 3: ___ + ___ = data theft\n//\n// Which single fix breaks the most chains? ___",
+          "output": "Chains identified: XSS+Cookie+Session, XSS+CSRF, SQLi+Access Control. Output encoding breaks the most chains.",
+          "ai_explanation": "Individual vulnerabilities are concerning. Chains are devastating. Always look for connections between findings.",
+          "ai_challenge": "Can you adapt this technique to test a different type of web application?"
+        },
+        {
+          "title": "Example 12: Write the Executive Summary",
+          "description": "Summarise all findings for a non-technical audience.",
+          "difficulty": "advanced",
+          "code": "// TODO: Write a 5-line summary:\n// Line 1: What was tested: ___\n// Line 2: How many vulnerabilities found: ___\n// Line 3: Most critical finding: ___\n// Line 4: Biggest risk: ___\n// Line 5: Top priority fix: ___\n//\n// Example:\n// 'BankWebsite was assessed for security vulnerabilities.\n//  Five vulnerabilities were identified, rated from Medium to Critical.\n//  The most critical is SQL injection enabling complete authentication bypass.\n//  Combined, these vulnerabilities enable a self-replicating worm that\n//  steals funds from every user who visits an infected profile.\n//  Priority fix: implement output encoding on all user-generated content.'",
+          "output": "Executive summary: 5 vulns found, SQLi most critical, worm risk from chaining, output encoding is priority fix",
+          "ai_explanation": "The executive summary is what managers and decision-makers read. Keep it short, clear, and focused on business impact.",
+          "ai_challenge": "Can you adapt this technique to test a different type of web application?"
+        }
+      ],
+      "visual_diagram": {
+        "title": "Vulnerability Assessment — 7-Phase Methodology",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 20px;\">\n<div style=\"text-align: center; margin-bottom: 20px;\">\n<span style=\"background: #3498db; color: white; padding: 8px 20px; border-radius: 6px; font-size: 18px; font-weight: bold;\">VULNERABILITY ASSESSMENT METHODOLOGY</span>\n</div>\n\n<div style=\"margin: 15px 0;\">\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 1</span> <strong>RECONNAISSANCE</strong>\n</div>\n<span style=\"color: #3498db;\">&#9654;</span> List ALL pages and URLs\n<span style=\"color: #3498db;\">&#9654;</span> List ALL forms and input fields\n<span style=\"color: #3498db;\">&#9654;</span> Check HTML source (Ctrl+U) for comments\n<span style=\"color: #3498db;\">&#9654;</span> Map user roles (admin vs normal vs anonymous)\n<span style=\"color: #3498db;\">&#9654;</span> Output: <span style=\"background: #d5f5e3; padding: 2px 6px; border-radius: 3px;\">Attack Surface Map</span>\n\n<div style=\"text-align: center; margin: 10px 0;\">&#x2193;</div>\n\n<div style=\"margin: 15px 0;\">\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 2</span> <strong>INJECTION TESTING</strong>\n</div>\n<span style=\"color: #e74c3c;\">&#9654;</span> Every field: type <span style=\"background: #f8d7da; padding: 1px 4px;\">&#x27;</span> (single quote) &#x2192; SQL error? &#x2192; <span style=\"color: #e74c3c;\">CWE-89</span>\n<span style=\"color: #e74c3c;\">&#9654;</span> Every field: type <span style=\"background: #f8d7da; padding: 1px 4px;\">&lt;script&gt;alert(1)&lt;/script&gt;</span> &#x2192; popup? &#x2192; <span style=\"color: #e74c3c;\">CWE-79</span>\n<span style=\"color: #e74c3c;\">&#9654;</span> Every field: type <span style=\"background: #f8d7da; padding: 1px 4px;\">; ls</span> &#x2192; file listing? &#x2192; <span style=\"color: #e74c3c;\">CWE-78</span>\n\n<div style=\"text-align: center; margin: 10px 0;\">&#x2193;</div>\n\n<div style=\"margin: 15px 0;\">\n<span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 3</span> <strong>SESSION ANALYSIS</strong>\n</div>\n<span style=\"color: #f39c12;\">&#9654;</span> F12 &#x2192; Storage &#x2192; Cookies &#x2192; check flags\n<span style=\"color: #f39c12;\">&#9654;</span> HttpOnly = false? &#x2192; <span style=\"color: #e74c3c;\">CWE-1004</span>\n<span style=\"color: #f39c12;\">&#9654;</span> Secure = false? &#x2192; <span style=\"color: #e74c3c;\">CWE-614</span>\n<span style=\"color: #f39c12;\">&#9654;</span> Console: document.cookie &#x2192; shows JSESSIONID? &#x2192; stealable!\n\n<div style=\"text-align: center; margin: 10px 0;\">&#x2193;</div>\n\n<div style=\"margin: 15px 0;\">\n<span style=\"background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 4</span> <strong>ACCESS CONTROL</strong>\n</div>\n<span style=\"color: #9b59b6;\">&#9654;</span> As user1: try /account?username=user2 &#x2192; see their data? &#x2192; <span style=\"color: #e74c3c;\">CWE-639</span>\n<span style=\"color: #9b59b6;\">&#9654;</span> As normal user: try admin URLs &#x2192; access granted? &#x2192; <span style=\"color: #e74c3c;\">CWE-862</span>\n\n<div style=\"text-align: center; margin: 10px 0;\">&#x2193;</div>\n\n<div style=\"margin: 15px 0;\">\n<span style=\"background: #1abc9c; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 5</span> <strong>CSRF TESTING</strong>\n</div>\n<span style=\"color: #1abc9c;\">&#9654;</span> Inspect every action form &#x2192; hidden csrf_token field? \n<span style=\"color: #1abc9c;\">&#9654;</span> No token? &#x2192; create auto-submit HTML &#x2192; test &#x2192; <span style=\"color: #e74c3c;\">CWE-352</span>\n\n<div style=\"text-align: center; margin: 10px 0;\">&#x2193;</div>\n\n<div style=\"margin: 15px 0;\">\n<span style=\"background: #e67e22; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 6</span> <strong>ERROR HANDLING</strong>\n</div>\n<span style=\"color: #e67e22;\">&#9654;</span> Trigger errors with invalid input &#x2192; stack trace? &#x2192; <span style=\"color: #e74c3c;\">CWE-209</span>\n<span style=\"color: #e67e22;\">&#9654;</span> Check source code &#x2192; Java comments visible? &#x2192; <span style=\"color: #e74c3c;\">CWE-615</span>\n<span style=\"color: #e67e22;\">&#9654;</span> Check headers &#x2192; server version exposed? &#x2192; <span style=\"color: #e74c3c;\">info disclosure</span>\n\n<div style=\"text-align: center; margin: 10px 0;\">&#x2193;</div>\n\n<div style=\"margin: 15px 0;\">\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 7</span> <strong>DOCUMENTATION</strong>\n</div>\n<span style=\"color: #2ecc71;\">&#9654;</span> For each finding: Name + CWE + Steps + Screenshots + CIA impact\n<span style=\"color: #2ecc71;\">&#9654;</span> OWASP Top 10 category\n<span style=\"color: #2ecc71;\">&#9654;</span> Reference links to cwe.mitre.org\n\n<div style=\"text-align: center; margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px;\">\n<strong>Remember:</strong> Systematic beats random. Follow all 7 phases for EVERY application.\nThe checklist finds bugs. Skipping steps misses bugs.\n</div>\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: List All Pages",
+          "description": "Map every URL in the application.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Reconnaissance! Follow the methodology step by step.",
+          "starter_code": "// Visit every link. TODO: List all URLs:\n// 1. /welcome — ___\n// 2. /account — ___\n// 3. ___\n// 4. ___\n// 5. ___",
+          "expected_output": "Login, profile, transfer, balance (admin), logout — list every page you can access",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Reconnaissance, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Login, profile, transfer, balance (admin), logout — list every page you can access"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: List All Forms",
+          "description": "Find every form and its input fields.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Reconnaissance! Follow the methodology step by step.",
+          "starter_code": "// TODO: For each page, list forms:\n// Page: /welcome\n//   Form: ___ fields: ___\n// Page: /account\n//   Form: ___ fields: ___\n// Page: /transfer\n//   Form: ___ fields: ___",
+          "expected_output": "Login: username+password. Profile: description. Transfer: to+transferAmount. Upload: profilePic.",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Reconnaissance, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Login: username+password. Profile: description. Transfer: to+transferAmount. Upload: profilePic."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Check HTML Comments",
+          "description": "View page source for hidden information.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Reconnaissance! Follow the methodology step by step.",
+          "starter_code": "// Press Ctrl+U on each page\n// TODO: Found comments?\n// Page: /welcome → ___\n// Page: /account → ___\n// Any TODO comments? ___",
+          "expected_output": "Look for <!-- comments -->, hidden debug info, API endpoints, developer notes",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Reconnaissance, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Look for <!-- comments -->, hidden debug info, API endpoints, developer notes"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Map User Roles",
+          "description": "List what each role can access.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Reconnaissance! Follow the methodology step by step.",
+          "starter_code": "// TODO:\n// Admin can access: ___\n// Normal user can access: ___\n// Not logged in can access: ___\n// Differences: ___",
+          "expected_output": "Admin: all pages + /balance. User: own account + transfer. Anonymous: only /welcome.",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Reconnaissance, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Admin: all pages + /balance. User: own account + transfer. Anonymous: only /welcome."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Find JavaScript Files",
+          "description": "List all JS files loaded by the application.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Reconnaissance! Follow the methodology step by step.",
+          "starter_code": "// F12 → Network tab → filter JS\n// Or Ctrl+U → search for .js\n// TODO: JS files found:\n// 1. ___\n// 2. ___\n// Do they contain useful info? ___",
+          "expected_output": "Account.js — contains ajaxSyncRequest function. Check for API endpoints, function names, validation logic.",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Reconnaissance, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Account.js — contains ajaxSyncRequest function. Check for API endpoints, function names, validation "
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Check Response Headers",
+          "description": "Examine HTTP headers for information leakage.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Reconnaissance! Follow the methodology step by step.",
+          "starter_code": "// F12 → Network → click request → Headers tab\n// TODO: Server header: ___\n// X-Powered-By: ___\n// Content-Security-Policy: ___\n// Security headers missing: ___",
+          "expected_output": "Server may show Jetty version. Missing: CSP, X-Frame-Options, HSTS",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Reconnaissance, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Server may show Jetty version. Missing: CSP, X-Frame-Options, HSTS"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Map Form Parameters",
+          "description": "Use Network tab to see exact POST data.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Reconnaissance! Follow the methodology step by step.",
+          "starter_code": "// F12 → Network → submit a form → click the POST\n// TODO: Transfer form sends:\n// Parameter 1: name=___ value=___\n// Parameter 2: name=___ value=___\n// Any hidden parameters? ___",
+          "expected_output": "to=cardnumber, transferAmount=amount, no hidden CSRF token",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Reconnaissance, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: to=cardnumber, transferAmount=amount, no hidden CSRF token"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Identify Authentication Method",
+          "description": "Determine how the app handles login.",
+          "difficulty": "advanced",
+          "category": "Reconnaissance",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Reconnaissance! Follow the methodology step by step.",
+          "starter_code": "// TODO:\n// Login sends credentials via: ___ (GET or POST?)\n// Password field type: ___ (text or password?)\n// Session cookie name: ___\n// Cookie set when: ___",
+          "expected_output": "POST, password type, JSESSIONID, set after successful login",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Reconnaissance, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: POST, password type, JSESSIONID, set after successful login"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Check for Directory Listing",
+          "description": "Try accessing directories directly.",
+          "difficulty": "advanced",
+          "category": "Reconnaissance",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Reconnaissance! Follow the methodology step by step.",
+          "starter_code": "// TODO: Try these URLs:\n// http://localhost:15000/ → ___\n// http://localhost:15000/static/ → ___\n// http://localhost:15000/WEB-INF/ → ___\n// Any directory listing? → CWE-___",
+          "expected_output": "Check if files are listed. If directory contents shown → CWE-548",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Reconnaissance, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Check if files are listed. If directory contents shown → CWE-548"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Complete Attack Surface Map",
+          "description": "Combine all reconnaissance into one document.",
+          "difficulty": "advanced",
+          "category": "Reconnaissance",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Reconnaissance! Follow the methodology step by step.",
+          "starter_code": "// TODO: Create the full map:\n// URLS: ___\n// FORMS: ___\n// COOKIES: ___\n// JS FILES: ___\n// HEADERS: ___\n// ROLES: ___\n// Total testable inputs: ___",
+          "expected_output": "Complete map with every URL, form, field, cookie, script, and header documented",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Reconnaissance, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Complete map with every URL, form, field, cookie, script, and header documented"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: SQLi: Single Quote Test",
+          "description": "Enter ' in every input field.",
+          "difficulty": "intermediate",
+          "category": "Injection Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Injection Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: Test each field:\n// Login username: ' → result: ___\n// Login password: ' → result: ___\n// Transfer to: ' → result: ___\n// Profile desc: ' → result: ___",
+          "expected_output": "Check for SQL errors in each field — any error message mentioning SQL = CWE-89",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Injection Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Check for SQL errors in each field — any error message mentioning SQL = CWE-89"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: SQLi: Authentication Bypass",
+          "description": "Try ' OR '1'='1' -- as username.",
+          "difficulty": "intermediate",
+          "category": "Injection Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Injection Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO:\n// Username: ' OR '1'='1' --\n// Password: anything\n// Result: ___\n// What CWE: ___",
+          "expected_output": "Logged in without valid credentials → CWE-89",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Injection Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Logged in without valid credentials → CWE-89"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: SQLi: Password Bypass",
+          "description": "Try ' OR 'x'='x as password.",
+          "difficulty": "intermediate",
+          "category": "Injection Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Injection Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO:\n// Username: admin\n// Password: ' OR 'x'='x\n// Result: ___\n// Difference from username attack: ___",
+          "expected_output": "Logged in as admin → same CWE-89 but targets password field instead of username",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Injection Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Logged in as admin → same CWE-89 but targets password field instead of username"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: XSS: Basic Script Test",
+          "description": "Enter <script>alert(1)</script> in text fields.",
+          "difficulty": "intermediate",
+          "category": "Injection Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Injection Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: Test each text field:\n// Profile description: ___\n// Result on page load: ___\n// Is it stored or reflected? ___",
+          "expected_output": "If alert appears on refresh → stored XSS (CWE-79)",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Injection Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If alert appears on refresh → stored XSS (CWE-79)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: XSS: Event Handler Test",
+          "description": "Try <img src=x onerror=alert(1)> bypass.",
+          "difficulty": "intermediate",
+          "category": "Injection Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Injection Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: If <script> is filtered:\n// Enter: <img src=x onerror=alert(1)>\n// Result: ___\n// Why this works when <script> doesn't: ___",
+          "expected_output": "Event handlers fire without script tags — filters that only check for <script> miss these",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Injection Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Event handlers fire without script tags — filters that only check for <script> miss these"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: XSS: Attribute Breakout",
+          "description": "Test for XSS in input value attributes.",
+          "difficulty": "intermediate",
+          "category": "Injection Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Injection Testing! Follow the methodology step by step.",
+          "starter_code": "// If your input appears in: <input value=\"YOUR_INPUT\">\n// TODO: What input breaks out?\n// Input: ___\n// Resulting HTML: ___\n// CWE: ___",
+          "expected_output": "Input: \" onfocus=alert(1) autofocus x=\"  → breaks out of value attribute",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Injection Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Input: \" onfocus=alert(1) autofocus x=\"  → breaks out of value attribute"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Command Injection Test",
+          "description": "Test for OS command injection.",
+          "difficulty": "intermediate",
+          "category": "Injection Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Injection Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: In any input field try:\n// Test 1: ; ls → ___\n// Test 2: | whoami → ___\n// Test 3: && cat /etc/passwd → ___\n// Any output? → CWE-___",
+          "expected_output": "If system output appears → CWE-78 command injection",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Injection Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If system output appears → CWE-78 command injection"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Path Traversal Test",
+          "description": "Test for directory traversal.",
+          "difficulty": "advanced",
+          "category": "Injection Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Injection Testing! Follow the methodology step by step.",
+          "starter_code": "// If the app has file access (downloads, uploads, includes):\n// TODO:\n// Normal: filename.pdf → ___\n// Attack: ../../../etc/passwd → ___\n// CWE: ___",
+          "expected_output": "If system file content returned → CWE-22 path traversal",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Injection Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If system file content returned → CWE-22 path traversal"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Input Encoding Check",
+          "description": "Verify if output is HTML-encoded.",
+          "difficulty": "advanced",
+          "category": "Injection Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Injection Testing! Follow the methodology step by step.",
+          "starter_code": "// Enter: <b>test</b> in a text field\n// TODO: On the page, the text shows:\n// A) test in bold → ___\n// B) <b>test</b> as visible text → ___\n// Which is safe? ___",
+          "expected_output": "A = HTML rendered (vulnerable to XSS). B = HTML-encoded (safe). B is correct — encoding converts < to &lt;",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Injection Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: A = HTML rendered (vulnerable to XSS). B = HTML-encoded (safe). B is correct — encoding converts < t"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Test All Fields Summary",
+          "description": "Complete injection testing matrix.",
+          "difficulty": "advanced",
+          "category": "Injection Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Injection Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: Fill the matrix:\n//          | SQLi | XSS | CMDi\n// Login U  | ___  | ___ | ___\n// Login P  | ___  | ___ | ___\n// Profile  | ___  | ___ | ___\n// Transfer | ___  | ___ | ___\n// Upload   | ___  | ___ | ___",
+          "expected_output": "Test every cell — mark each as Vulnerable, Safe, or N/A",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Injection Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Test every cell — mark each as Vulnerable, Safe, or N/A"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Check HttpOnly Flag",
+          "description": "Verify if JavaScript can access the session cookie.",
+          "difficulty": "intermediate",
+          "category": "Session & Cookie Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Session & Cookie Testing! Follow the methodology step by step.",
+          "starter_code": "// F12 → Console → type:\n// document.cookie\n// TODO: Output: ___\n// JSESSIONID visible? ___\n// If yes → CWE-___",
+          "expected_output": "If JSESSIONID appears → CWE-1004 (HttpOnly not set)",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Session & Cookie Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If JSESSIONID appears → CWE-1004 (HttpOnly not set)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Check Secure Flag",
+          "description": "Verify if cookie is HTTPS-only.",
+          "difficulty": "intermediate",
+          "category": "Session & Cookie Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Session & Cookie Testing! Follow the methodology step by step.",
+          "starter_code": "// F12 → Storage → Cookies\n// Find JSESSIONID row\n// TODO: Secure column: ___\n// If false → CWE-___",
+          "expected_output": "If Secure=false → CWE-614 (cookie sent over plain HTTP)",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Session & Cookie Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If Secure=false → CWE-614 (cookie sent over plain HTTP)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Check SameSite",
+          "description": "Verify cross-site cookie behaviour.",
+          "difficulty": "intermediate",
+          "category": "Session & Cookie Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Session & Cookie Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: SameSite value: ___\n// If empty/None → risk of ___\n// Recommended value: ___",
+          "expected_output": "If empty → CSRF risk. Recommended: Strict or Lax",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Session & Cookie Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If empty → CSRF risk. Recommended: Strict or Lax"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Session Regeneration Test",
+          "description": "Check if session ID changes after login.",
+          "difficulty": "intermediate",
+          "category": "Session & Cookie Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Session & Cookie Testing! Follow the methodology step by step.",
+          "starter_code": "// Step 1: Visit /welcome (note session ID)\n// Step 2: Login\n// Step 3: Check session ID again\n// TODO: Same or different? ___\n// If same → CWE-___",
+          "expected_output": "If same → CWE-384 session fixation vulnerability",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Session & Cookie Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If same → CWE-384 session fixation vulnerability"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Logout Validation",
+          "description": "Verify that logout destroys the session.",
+          "difficulty": "intermediate",
+          "category": "Session & Cookie Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Session & Cookie Testing! Follow the methodology step by step.",
+          "starter_code": "// Step 1: Login, note JSESSIONID value\n// Step 2: Logout\n// Step 3: Use curl with old cookie\n// TODO: curl result: ___\n// If still works → ___",
+          "expected_output": "If old cookie still works → session not properly invalidated on logout",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Session & Cookie Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If old cookie still works → session not properly invalidated on logout"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Session Timeout Test",
+          "description": "Check if sessions expire.",
+          "difficulty": "intermediate",
+          "category": "Session & Cookie Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Session & Cookie Testing! Follow the methodology step by step.",
+          "starter_code": "// Step 1: Login\n// Step 2: Wait 30+ minutes\n// Step 3: Try to access /account\n// TODO: Result: ___\n// If still logged in → ___",
+          "expected_output": "If still logged in after 30 minutes → session timeout not configured",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Session & Cookie Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If still logged in after 30 minutes → session timeout not configured"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Cookie Content Analysis",
+          "description": "Check what data is stored in cookies.",
+          "difficulty": "intermediate",
+          "category": "Session & Cookie Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Session & Cookie Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: List all cookies:\n// Name: ___ Value: ___ Purpose: ___\n// Name: ___ Value: ___ Purpose: ___\n// Any sensitive data in cookie values? ___",
+          "expected_output": "Only JSESSIONID should exist. If username, role, or balance is in a cookie → information exposure",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Session & Cookie Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Only JSESSIONID should exist. If username, role, or balance is in a cookie → information exposure"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Concurrent Session Test",
+          "description": "Check if multiple sessions allowed.",
+          "difficulty": "advanced",
+          "category": "Session & Cookie Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Session & Cookie Testing! Follow the methodology step by step.",
+          "starter_code": "// Login in Browser 1\n// Login in Browser 2 (same user)\n// TODO: Both work? ___\n// Is this a risk? ___\n// Defence: ___",
+          "expected_output": "If both work → attacker with stolen cookie can use it alongside real user. Defence: limit to 1 active session per user.",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Session & Cookie Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If both work → attacker with stolen cookie can use it alongside real user. Defence: limit to 1 activ"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Cookie Scope Test",
+          "description": "Check Path and Domain attributes.",
+          "difficulty": "advanced",
+          "category": "Session & Cookie Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Session & Cookie Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO:\n// Path: ___\n// Domain: ___\n// If Path=/ → cookie sent to ___ pages\n// Security implication: ___",
+          "expected_output": "Path=/ means cookie sent to ALL pages. Narrower path reduces exposure.",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Session & Cookie Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Path=/ means cookie sent to ALL pages. Narrower path reduces exposure."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Complete Session Audit",
+          "description": "Write up all session findings.",
+          "difficulty": "advanced",
+          "category": "Session & Cookie Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Session & Cookie Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: Session Security Report:\n// HttpOnly: ___ → CWE: ___\n// Secure: ___ → CWE: ___\n// SameSite: ___ → Risk: ___\n// Regeneration: ___ → CWE: ___\n// Timeout: ___\n// Logout: ___\n// Overall: ___",
+          "expected_output": "Complete session audit with all flags, behaviours, and CWE references",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Session & Cookie Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Complete session audit with all flags, behaviours, and CWE references"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Horizontal IDOR Test",
+          "description": "Access another user's data via URL.",
+          "difficulty": "intermediate",
+          "category": "Access Control Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Access Control Testing! Follow the methodology step by step.",
+          "starter_code": "// Login as user1\n// TODO: Change URL to:\n// /account?username=user2\n// Result: ___\n// If user2 data shows → CWE-___",
+          "expected_output": "If user2 data visible → CWE-639 IDOR",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Access Control Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If user2 data visible → CWE-639 IDOR"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Vertical Access Test",
+          "description": "Access admin page as normal user.",
+          "difficulty": "intermediate",
+          "category": "Access Control Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Access Control Testing! Follow the methodology step by step.",
+          "starter_code": "// Login as user1\n// TODO: Visit /balance\n// Result: ___\n// If data shows → CWE-___",
+          "expected_output": "If admin data shown to normal user → CWE-862",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Access Control Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If admin data shown to normal user → CWE-862"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Unauthenticated Access",
+          "description": "Try pages without logging in.",
+          "difficulty": "intermediate",
+          "category": "Access Control Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Access Control Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: Without login, visit:\n// /account → ___\n// /transfer → ___\n// /balance → ___\n// Any accessible? → CWE-___",
+          "expected_output": "All should redirect to login. If any page loads → CWE-306 missing auth for critical function",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Access Control Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: All should redirect to login. If any page loads → CWE-306 missing auth for critical function"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Parameter Tampering",
+          "description": "Modify hidden form values.",
+          "difficulty": "intermediate",
+          "category": "Access Control Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Access Control Testing! Follow the methodology step by step.",
+          "starter_code": "// If form has: <input type='hidden' name='userId' value='1'>\n// TODO: Change value to 2 using F12\n// Submit → result: ___\n// If other user affected → CWE-___",
+          "expected_output": "If action applies to user 2 → CWE-639 parameter tampering",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Access Control Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If action applies to user 2 → CWE-639 parameter tampering"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Method Tampering",
+          "description": "Try GET instead of POST.",
+          "difficulty": "intermediate",
+          "category": "Access Control Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Access Control Testing! Follow the methodology step by step.",
+          "starter_code": "// Transfer uses POST. Try GET:\n// http://localhost:15000/transfer?to=999999&amount=100\n// TODO: Result: ___\n// If it works → ___",
+          "expected_output": "If GET transfer works → method restriction missing, easier to exploit via CSRF",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Access Control Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If GET transfer works → method restriction missing, easier to exploit via CSRF"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Role Escalation",
+          "description": "Try to change your role.",
+          "difficulty": "intermediate",
+          "category": "Access Control Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Access Control Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: Check if role is stored in:\n// Cookie? ___\n// Hidden field? ___\n// URL parameter? ___\n// If changeable → CWE-___",
+          "expected_output": "If role stored client-side and changeable → CWE-269 privilege escalation",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Access Control Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If role stored client-side and changeable → CWE-269 privilege escalation"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Direct Object Reference",
+          "description": "Access objects by changing IDs.",
+          "difficulty": "intermediate",
+          "category": "Access Control Testing",
+          "estimated_minutes": 7,
+          "ai_intro": "Welcome to Access Control Testing! Follow the methodology step by step.",
+          "starter_code": "// If URLs contain IDs:\n// /statement?id=1\n// TODO: Try /statement?id=2, id=3...\n// Can you see others' statements? → CWE-___",
+          "expected_output": "If yes → CWE-639 IDOR. Each object should check ownership before returning.",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Access Control Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If yes → CWE-639 IDOR. Each object should check ownership before returning."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: API Access Control",
+          "description": "Test API endpoints without auth.",
+          "difficulty": "advanced",
+          "category": "Access Control Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Access Control Testing! Follow the methodology step by step.",
+          "starter_code": "// F12 → Network → find API calls\n// TODO: Try calling them with curl (no cookie):\n// curl http://localhost:15000/api/users → ___\n// If data returned → CWE-___",
+          "expected_output": "If API returns data without authentication → CWE-306",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Access Control Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If API returns data without authentication → CWE-306"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Admin Function Test",
+          "description": "Try admin actions as normal user.",
+          "difficulty": "advanced",
+          "category": "Access Control Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Access Control Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: Identify admin-only actions\n// Try performing them as user1:\n// Action 1: ___ → Result: ___\n// Action 2: ___ → Result: ___",
+          "expected_output": "If any admin action succeeds as normal user → CWE-862",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Access Control Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If any admin action succeeds as normal user → CWE-862"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Complete Access Matrix",
+          "description": "Document all access control findings.",
+          "difficulty": "advanced",
+          "category": "Access Control Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Access Control Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: Create the access matrix:\n//              | Admin | User | Anon | Should be\n// /account own  | ✓     | ✓    | ___  | ___\n// /account other| ✓     | ___  | ___  | ___\n// /balance      | ✓     | ___  | ___  | ___\n// /transfer     | ✓     | ✓    | ___  | ___",
+          "expected_output": "Fill every cell and compare actual vs expected access",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Access Control Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Fill every cell and compare actual vs expected access"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Inspect Transfer Form",
+          "description": "Check for CSRF token in the form.",
+          "difficulty": "advanced",
+          "category": "CSRF & Error Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to CSRF & Error Testing! Follow the methodology step by step.",
+          "starter_code": "// Right-click → Inspect on transfer form\n// TODO: List all input fields:\n// 1. name=___ type=___\n// 2. name=___ type=___\n// 3. CSRF token? ___",
+          "expected_output": "Only 'to' and 'transferAmount' — no CSRF token",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In CSRF & Error Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Only 'to' and 'transferAmount' — no CSRF token"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Build CSRF Exploit",
+          "description": "Create an auto-submitting attack page.",
+          "difficulty": "advanced",
+          "category": "CSRF & Error Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to CSRF & Error Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: Write csrf_attack.html:\n<html><body>\n<form action=\"___\" method=\"___\">\n<input type=\"hidden\" name=\"___\" value=\"___\">\n<input type=\"hidden\" name=\"___\" value=\"___\">\n</form>\n<script>___</script>\n</body></html>",
+          "expected_output": "action='http://localhost:15000/transfer' method='POST' / to / 999999 / transferAmount / 500 / document.forms[0].submit();",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In CSRF & Error Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: action='http://localhost:15000/transfer' method='POST' / to / 999999 / transferAmount / 500 / docume"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Test CSRF Exploit",
+          "description": "Execute the CSRF attack.",
+          "difficulty": "advanced",
+          "category": "CSRF & Error Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to CSRF & Error Testing! Follow the methodology step by step.",
+          "starter_code": "// Step 1: Login as user2\n// Step 2: Note balance: ___\n// Step 3: Open csrf_attack.html\n// Step 4: Check balance: ___\n// TODO: Did it change? ___",
+          "expected_output": "If balance decreased → CSRF confirmed (CWE-352)",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In CSRF & Error Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If balance decreased → CSRF confirmed (CWE-352)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Trigger SQL Error",
+          "description": "Force an SQL error message.",
+          "difficulty": "advanced",
+          "category": "CSRF & Error Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to CSRF & Error Testing! Follow the methodology step by step.",
+          "starter_code": "// Enter ' as password\n// TODO: Error message shows: ___\n// SQL structure revealed: ___\n// CWE: ___",
+          "expected_output": "If error shows query structure → CWE-209",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In CSRF & Error Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If error shows query structure → CWE-209"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Trigger Stack Trace",
+          "description": "Access a non-existent URL.",
+          "difficulty": "advanced",
+          "category": "CSRF & Error Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to CSRF & Error Testing! Follow the methodology step by step.",
+          "starter_code": "// Visit: /nonexistentpage\n// TODO: Response shows: ___\n// Server version: ___\n// Class names: ___\n// CWE: ___",
+          "expected_output": "Stack trace with server version and Java class names → CWE-209",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In CSRF & Error Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Stack trace with server version and Java class names → CWE-209"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Trigger Exception",
+          "description": "Submit invalid data types.",
+          "difficulty": "advanced",
+          "category": "CSRF & Error Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to CSRF & Error Testing! Follow the methodology step by step.",
+          "starter_code": "// Submit 'abc' in a numeric field\n// TODO: Error message: ___\n// Exception type: ___\n// CWE: ___",
+          "expected_output": "NumberFormatException or similar internal error exposed → CWE-209",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In CSRF & Error Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: NumberFormatException or similar internal error exposed → CWE-209"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Check Source Code Leaks",
+          "description": "Inspect HTML for code comments.",
+          "difficulty": "advanced",
+          "category": "CSRF & Error Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to CSRF & Error Testing! Follow the methodology step by step.",
+          "starter_code": "// Ctrl+U → Search for <!--\n// TODO: Comments found:\n// 1. ___\n// 2. ___\n// Any sensitive info? ___",
+          "expected_output": "Developer comments, TODO notes, debug info, API keys — all information disclosure",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In CSRF & Error Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Developer comments, TODO notes, debug info, API keys — all information disclosure"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Check Error Consistency",
+          "description": "Compare error messages for info leakage.",
+          "difficulty": "advanced",
+          "category": "CSRF & Error Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to CSRF & Error Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: Login with:\n// Valid user, wrong pass → message: ___\n// Invalid user, any pass → message: ___\n// Same message? → ___\n// If different → ___",
+          "expected_output": "If messages differ → username enumeration possible (attacker can discover valid usernames)",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In CSRF & Error Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: If messages differ → username enumeration possible (attacker can discover valid usernames)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Examine Upload Errors",
+          "description": "Test file upload error handling.",
+          "difficulty": "advanced",
+          "category": "CSRF & Error Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to CSRF & Error Testing! Follow the methodology step by step.",
+          "starter_code": "// Upload non-image file to profile picture\n// TODO: Error message: ___\n// Does it reveal: file path? ___\n// Library name? ___\n// Exception details? ___",
+          "expected_output": "Internal error messages exposing paths, libraries, exceptions → CWE-209",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In CSRF & Error Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Internal error messages exposing paths, libraries, exceptions → CWE-209"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Complete Error Audit",
+          "description": "Document all information disclosure.",
+          "difficulty": "advanced",
+          "category": "CSRF & Error Testing",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to CSRF & Error Testing! Follow the methodology step by step.",
+          "starter_code": "// TODO: All info leaks found:\n// 1. ___ reveals ___\n// 2. ___ reveals ___\n// 3. ___ reveals ___\n// Severity: ___\n// CWE references: ___",
+          "expected_output": "Complete list of all error-based information disclosure with CWE-209 references",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In CSRF & Error Testing, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Complete list of all error-based information disclosure with CWE-209 references"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Write CWE Reference",
+          "description": "Match findings to CWE numbers.",
+          "difficulty": "advanced",
+          "category": "Documentation & Reporting",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Documentation & Reporting! Follow the methodology step by step.",
+          "starter_code": "// TODO: Match:\n// SQL injection → CWE-___\n// Stored XSS → CWE-___\n// CSRF → CWE-___\n// Missing auth → CWE-___\n// Info disclosure → CWE-___",
+          "expected_output": "89, 79, 352, 862, 209",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Documentation & Reporting, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: 89, 79, 352, 862, 209"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Write CIA for SQLi",
+          "description": "Assess SQL injection impact.",
+          "difficulty": "advanced",
+          "category": "Documentation & Reporting",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Documentation & Reporting! Follow the methodology step by step.",
+          "starter_code": "// TODO:\n// Confidentiality: ___ — ___\n// Integrity: ___ — ___\n// Availability: ___ — ___\n// Overall severity: ___",
+          "expected_output": "C: CRITICAL (all data exposed). I: CRITICAL (modify/delete data). A: HIGH (DROP TABLE). Overall: CRITICAL.",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Documentation & Reporting, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: C: CRITICAL (all data exposed). I: CRITICAL (modify/delete data). A: HIGH (DROP TABLE). Overall: CRI"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Write CIA for XSS",
+          "description": "Assess stored XSS impact.",
+          "difficulty": "advanced",
+          "category": "Documentation & Reporting",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Documentation & Reporting! Follow the methodology step by step.",
+          "starter_code": "// TODO:\n// Confidentiality: ___ — ___\n// Integrity: ___ — ___\n// Availability: ___ — ___",
+          "expected_output": "C: HIGH (cookie theft). I: HIGH (profile modification, fund transfer). A: LOW (page manipulation).",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Documentation & Reporting, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: C: HIGH (cookie theft). I: HIGH (profile modification, fund transfer). A: LOW (page manipulation)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Write CIA for CSRF",
+          "description": "Assess CSRF impact.",
+          "difficulty": "advanced",
+          "category": "Documentation & Reporting",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Documentation & Reporting! Follow the methodology step by step.",
+          "starter_code": "// TODO:\n// Confidentiality: ___ — ___\n// Integrity: ___ — ___\n// Availability: ___ — ___",
+          "expected_output": "C: MEDIUM (infer account existence). I: CRITICAL (unauthorised transfers). A: LOW (service stays up).",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Documentation & Reporting, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: C: MEDIUM (infer account existence). I: CRITICAL (unauthorised transfers). A: LOW (service stays up)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Write Steps to Reproduce",
+          "description": "Create clear reproduction steps.",
+          "difficulty": "advanced",
+          "category": "Documentation & Reporting",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Documentation & Reporting! Follow the methodology step by step.",
+          "starter_code": "// TODO: Write steps for XSS:\n// 1. Navigate to ___\n// 2. Login as ___\n// 3. Enter ___ in ___ field\n// 4. Click ___\n// 5. Observe ___",
+          "expected_output": "Specific, numbered steps that anyone can follow to reproduce the finding",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Documentation & Reporting, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Specific, numbered steps that anyone can follow to reproduce the finding"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Screenshot Annotations",
+          "description": "List what each screenshot should show.",
+          "difficulty": "advanced",
+          "category": "Documentation & Reporting",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Documentation & Reporting! Follow the methodology step by step.",
+          "starter_code": "// TODO: For XSS, you need:\n// Screenshot 1: ___\n// Screenshot 2: ___\n// Screenshot 3: ___\n// Each should clearly show: ___",
+          "expected_output": "1: payload entered. 2: profile saved confirmation. 3: alert popup on refresh. Show URL bar + page content.",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Documentation & Reporting, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: 1: payload entered. 2: profile saved confirmation. 3: alert popup on refresh. Show URL bar + page co"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Write OWASP Mapping",
+          "description": "Map findings to OWASP Top 10.",
+          "difficulty": "advanced",
+          "category": "Documentation & Reporting",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Documentation & Reporting! Follow the methodology step by step.",
+          "starter_code": "// TODO:\n// XSS → OWASP ___\n// SQLi → OWASP ___\n// CSRF → OWASP ___\n// Access Control → OWASP ___\n// Session → OWASP ___",
+          "expected_output": "A03 Injection, A03 Injection, A01 Broken Access Control, A01, A07 Auth Failures",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Documentation & Reporting, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: A03 Injection, A03 Injection, A01 Broken Access Control, A01, A07 Auth Failures"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Write Executive Summary",
+          "description": "Summarise findings in 5 sentences.",
+          "difficulty": "advanced",
+          "category": "Documentation & Reporting",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Documentation & Reporting! Follow the methodology step by step.",
+          "starter_code": "// TODO: Write summary:\n// Sentence 1 (what was tested): ___\n// Sentence 2 (how many found): ___\n// Sentence 3 (most critical): ___\n// Sentence 4 (biggest risk): ___\n// Sentence 5 (priority fix): ___",
+          "expected_output": "Clear, non-technical summary for management — focus on business impact",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Documentation & Reporting, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Clear, non-technical summary for management — focus on business impact"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Create Finding Table",
+          "description": "Build a summary table of all findings.",
+          "difficulty": "advanced",
+          "category": "Documentation & Reporting",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Documentation & Reporting! Follow the methodology step by step.",
+          "starter_code": "// TODO: Complete the table:\n// # | Name | CWE | Severity | OWASP\n// 1 | ___  | ___ | ___     | ___\n// 2 | ___  | ___ | ___     | ___\n// 3 | ___  | ___ | ___     | ___\n// 4 | ___  | ___ | ___     | ___\n// 5 | ___  | ___ | ___     | ___",
+          "expected_output": "All 5 vulnerabilities with CWE numbers, severity ratings, and OWASP categories",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Documentation & Reporting, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: All 5 vulnerabilities with CWE numbers, severity ratings, and OWASP categories"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Full Report Assembly",
+          "description": "Put together a complete vulnerability report.",
+          "difficulty": "advanced",
+          "category": "Documentation & Reporting",
+          "estimated_minutes": 10,
+          "ai_intro": "Welcome to Documentation & Reporting! Follow the methodology step by step.",
+          "starter_code": "// TODO: Assemble your report:\n// [ ] Cover page with name and date\n// [ ] Summary table of findings\n// [ ] Section 2: Vulnerability identification\n// [ ] Section 3: Exploitation with evidence\n// [ ] CIA impact for each\n// [ ] References (CWE URLs)\n// [ ] Total word count under limit",
+          "expected_output": "Complete report following the prescribed structure with all required sections",
+          "hints": [
+            {
+              "message": "Start by reading the TODO markers carefully. In Documentation & Reporting, the key is to be systematic — don't skip any step. Think about what information you're trying to find."
+            },
+            {
+              "message": "Compare what you see with what you expected. If the application behaves differently from what a secure app should do, you've found something. Document it immediately with the exact input you used."
+            },
+            {
+              "message": "Expected: Complete report following the prescribed structure with all required sections"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

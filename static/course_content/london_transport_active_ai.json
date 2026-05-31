@@ -1,0 +1,376 @@
+{
+  "course_id": "london_transport_api",
+  "title": "London Transport API - Real-World Project",
+  "level": "advanced",
+  "icon": "🚇",
+  "description": "Build a real-time London Underground tracker using TfL's live API data",
+  "estimated_hours": 12,
+  
+  "ai_tutor_config": {
+    "personality": "project_focused_mentor",
+    "intervention_triggers": {
+      "api_connection_failed": {
+        "condition": "api_error_count >= 2",
+        "message": "🔌 API connection issues? Let me help! Common fixes: 1) Check your API key, 2) Verify the endpoint URL, 3) Check your internet connection. Want me to walk you through it?",
+        "action": "show_api_debugging_guide"
+      },
+      "json_parsing_error": {
+        "condition": "json_error == true",
+        "message": "📊 JSON parsing error! The API returns nested data. Let me show you how to navigate it step by step.",
+        "action": "show_json_structure"
+      },
+      "overwhelmed_by_data": {
+        "condition": "idle_time > 180 && on_api_response_page == true",
+        "message": "😅 That's a LOT of API data! Let's break it down. Focus on just ONE field first - like 'lineName'. Want me to show you?",
+        "action": "simplify_api_response"
+      },
+      "successful_api_call": {
+        "condition": "first_successful_api_call == true",
+        "message": "🎉 YES! You just made your first REAL API call! You're now working with LIVE London Transport data! Ready to parse it?",
+        "action": "celebrate_and_suggest_next"
+      },
+      "project_complete": {
+        "condition": "all_exercises_done == true",
+        "message": "🏆 AMAZING! You built a real-world project! You can now: ✅ Make API calls ✅ Parse JSON ✅ Handle errors ✅ Display live data. Add this to your portfolio!",
+        "action": "show_portfolio_tips"
+      }
+    }
+  },
+  
+  "lessons": [
+    {
+      "lesson_id": "tfl_api_intro",
+      "title": "London Transport API - Your First Real API!",
+      "duration_minutes": 60,
+      
+      "ai_welcome_message": "🚇 Welcome to the REAL WORLD! We're using Transport for London's LIVE API. Every request you make gets ACTUAL data from London's Underground right now. This is professional-level stuff!",
+      
+      "theory": {
+        "introduction": "APIs (Application Programming Interfaces) let programs talk to each other. TfL's API gives us real-time data about every tube line, bus, and station in London. We'll build a tracker that shows live arrival times!",
+        
+        "why_important": "This is how modern apps work! Twitter, Instagram, Google Maps - they ALL use APIs. By mastering this, you can build apps that use ANY web service. This skill gets you hired!",
+        
+        "key_concepts": [
+          {
+            "concept": "What is an API?",
+            "explanation": "An API is like a waiter in a restaurant. You (the program) ask the waiter (API) for something, and they bring back data from the kitchen (server). You don't need to know how the kitchen works!",
+            "example": "# Making an API request\nimport requests\n\nresponse = requests.get('https://api.tfl.gov.uk/Line/victoria/Status')\ndata = response.json()  # Convert response to Python dictionary\n\nprint(data)  # Real-time Victoria Line status!",
+            "ai_hint": "💡 Think of it like this: You're texting TfL and asking 'How's the Victoria Line?' They text back with live data!"
+          },
+          {
+            "concept": "API Endpoints",
+            "explanation": "An endpoint is a specific URL that gives you specific data. TfL has different endpoints for lines, arrivals, stations, disruptions, etc.",
+            "example": "# Different endpoints for different data\n\n# Get line status\nstatus_url = 'https://api.tfl.gov.uk/Line/victoria/Status'\n\n# Get arrivals at a station\narrivals_url = 'https://api.tfl.gov.uk/StopPoint/940GZZLUKSX/Arrivals'\n\n# Get all tube lines\nlines_url = 'https://api.tfl.gov.uk/Line/Mode/tube'",
+            "ai_hint": "🎯 Each endpoint is like a different phone number at TfL - one for status, one for arrivals, one for stations!"
+          },
+          {
+            "concept": "JSON Response Format",
+            "explanation": "APIs return data in JSON (JavaScript Object Notation). Python converts it to dictionaries and lists. You navigate it like nested boxes!",
+            "example": "# Typical TfL JSON response\n{\n  \"id\": \"victoria\",\n  \"name\": \"Victoria\",\n  \"lineStatuses\": [\n    {\n      \"statusSeverity\": 10,\n      \"statusSeverityDescription\": \"Good Service\"\n    }\n  ]\n}\n\n# Access data like this:\nline_name = data['name']  # 'Victoria'\nstatus = data['lineStatuses'][0]['statusSeverityDescription']  # 'Good Service'",
+            "ai_hint": "⚠️ Common mistake: Forgetting that 'lineStatuses' is a LIST []. Use [0] to get the first status!"
+          },
+          {
+            "concept": "HTTP Status Codes",
+            "explanation": "When you make an API request, you get a status code. 200 = success, 404 = not found, 500 = server error.",
+            "example": "response = requests.get(url)\n\nif response.status_code == 200:\n    print('✅ Success!')\n    data = response.json()\nelif response.status_code == 404:\n    print('❌ Not found!')\nelse:\n    print(f'⚠️ Error: {response.status_code}')",
+            "ai_hint": "🔥 ALWAYS check status_code before parsing JSON! Otherwise your program crashes!"
+          },
+          {
+            "concept": "Error Handling with try/except",
+            "explanation": "APIs can fail (no internet, server down, wrong URL). Use try/except to handle errors gracefully.",
+            "example": "try:\n    response = requests.get(url, timeout=5)\n    response.raise_for_status()  # Raises error for bad status codes\n    data = response.json()\n    print('✅ Data received!')\nexcept requests.exceptions.ConnectionError:\n    print('❌ No internet connection!')\nexcept requests.exceptions.Timeout:\n    print('⏱️ Request timed out!')\nexcept Exception as e:\n    print(f'⚠️ Error: {e}')",
+            "ai_hint": "💪 Professional programmers ALWAYS handle errors. Never assume the API will work!"
+          }
+        ],
+        
+        "ai_reading_checkpoints": [
+          {
+            "after_seconds": 90,
+            "message": "📖 You're learning the theory! Want to see a REAL API call right now? Let me show you LIVE data!",
+            "action": "suggest_live_demo"
+          },
+          {
+            "after_seconds": 240,
+            "message": "🤔 This is complex stuff! Let's make it real. I'll give you starter code to make your FIRST API call. Ready?",
+            "action": "force_gentle_practice"
+          }
+        ]
+      },
+      
+      "visual_diagram": {
+        "title": "How API Requests Work - The Journey of Data",
+        "content": "┌────────────────────────────────────────┐\n│  YOUR PYTHON PROGRAM                   │\n│  'Show me Victoria Line status'        │\n└───────────────┬────────────────────────┘\n                │\n                │ 1. HTTP GET Request\n                ↓\n┌────────────────────────────────────────┐\n│  TRANSPORT FOR LONDON API SERVER       │\n│  Receives: GET /Line/victoria/Status   │\n└───────────────┬────────────────────────┘\n                │\n                │ 2. Server checks database\n                ↓\n┌────────────────────────────────────────┐\n│  TfL LIVE DATABASE                     │\n│  Current status: Good Service          │\n└───────────────┬────────────────────────┘\n                │\n                │ 3. Returns JSON data\n                ↓\n┌────────────────────────────────────────┐\n│  YOUR PROGRAM                          │\n│  Receives: {\"name\": \"Victoria\", ...}   │\n│  Displays: Victoria Line - Good Service│\n└────────────────────────────────────────┘\n\nTIMING:\n1. Request sent: ~100ms (0.1 seconds)\n2. TfL processes: ~200ms\n3. Response received: ~100ms\nTotal: ~400ms (less than half a second!)\n\nERROR SCENARIOS:\n❌ No internet → ConnectionError\n❌ Wrong URL → 404 Not Found\n❌ TfL server down → 500 Server Error\n✅ Always handle these cases!",
+        
+        "ai_diagram_prompt": "👀 Looking at the flow? Want me to show you this in action with REAL CODE?"
+      },
+      
+      "complete_examples": [
+        {
+          "title": "Example 1: Get Victoria Line Status (Simplest API Call)",
+          "description": "Your first real API call - get live status of the Victoria Line",
+          "difficulty": "easy",
+          "code": "import requests\n\n# TfL API endpoint for Victoria Line status\nurl = 'https://api.tfl.gov.uk/Line/victoria/Status'\n\n# Make the request\nresponse = requests.get(url)\n\n# Check if successful\nif response.status_code == 200:\n    data = response.json()\n    \n    # Extract line name and status\n    line_name = data[0]['name']\n    status = data[0]['lineStatuses'][0]['statusSeverityDescription']\n    \n    # Display result\n    print('=' * 50)\n    print(f'🚇 Line: {line_name}')\n    print(f'📊 Status: {status}')\n    print('=' * 50)\nelse:\n    print(f'❌ Error: Status code {response.status_code}')",
+          "output": "==================================================\n🚇 Line: Victoria\n📊 Status: Good Service\n==================================================",
+          "ai_explanation": "🎯 See how we used [0] twice? That's because TfL returns a LIST of lines (even for one line), and lineStatuses is also a LIST. Navigate carefully!",
+          "ai_challenge": "🔥 Challenge: Change 'victoria' to 'central' in the URL and run it again!"
+        },
+        {
+          "title": "Example 2: Check Multiple Lines at Once",
+          "description": "Get status for all major tube lines in one API call",
+          "difficulty": "easy",
+          "code": "import requests\n\n# Get ALL tube lines status\nurl = 'https://api.tfl.gov.uk/Line/Mode/tube/Status'\n\ntry:\n    response = requests.get(url, timeout=5)\n    response.raise_for_status()\n    \n    lines = response.json()\n    \n    print('🚇 LONDON UNDERGROUND STATUS')\n    print('=' * 60)\n    \n    for line in lines:\n        name = line['name']\n        status = line['lineStatuses'][0]['statusSeverityDescription']\n        \n        # Add emoji based on status\n        if 'Good Service' in status:\n            emoji = '✅'\n        elif 'Minor Delays' in status:\n            emoji = '⚠️'\n        else:\n            emoji = '❌'\n        \n        print(f'{emoji} {name:20} | {status}')\n    \n    print('=' * 60)\n    \nexcept requests.exceptions.RequestException as e:\n    print(f'❌ API Error: {e}')",
+          "output": "🚇 LONDON UNDERGROUND STATUS\n============================================================\n✅ Bakerloo              | Good Service\n✅ Central               | Good Service\n✅ Circle                | Good Service\n⚠️ District              | Minor Delays\n✅ Hammersmith & City    | Good Service\n✅ Jubilee               | Good Service\n❌ Metropolitan          | Severe Delays\n✅ Northern              | Good Service\n✅ Piccadilly            | Good Service\n✅ Victoria              | Good Service\n✅ Waterloo & City       | Good Service\n============================================================",
+          "ai_explanation": "💪 Now we're talking! This is a REAL dashboard. We loop through all lines and add emojis for visual feedback. Professional stuff!",
+          "ai_challenge": "🎯 Challenge: Count how many lines have 'Good Service' and print the total at the end!"
+        },
+        {
+          "title": "Example 3: Get Live Arrivals at King's Cross",
+          "description": "See real-time train arrivals at King's Cross St. Pancras station",
+          "difficulty": "medium",
+          "code": "import requests\nfrom datetime import datetime\n\n# King's Cross St. Pancras station ID\nstation_id = '940GZZLUKSX'\nurl = f'https://api.tfl.gov.uk/StopPoint/{station_id}/Arrivals'\n\ntry:\n    response = requests.get(url, timeout=5)\n    response.raise_for_status()\n    \n    arrivals = response.json()\n    \n    # Sort by time to station (closest first)\n    arrivals.sort(key=lambda x: x['timeToStation'])\n    \n    print('🚇 KING\\'S CROSS ST. PANCRAS - LIVE ARRIVALS')\n    print('=' * 70)\n    print(f'📅 Updated: {datetime.now().strftime(\"%H:%M:%S\")}')\n    print('=' * 70)\n    \n    # Show next 10 trains\n    for arrival in arrivals[:10]:\n        line = arrival['lineName']\n        destination = arrival['destinationName']\n        minutes = arrival['timeToStation'] // 60\n        platform = arrival.get('platformName', 'N/A')\n        \n        if minutes == 0:\n            time_str = 'Due'\n        elif minutes == 1:\n            time_str = '1 min'\n        else:\n            time_str = f'{minutes} mins'\n        \n        print(f'🚆 {line:20} → {destination:25} | {time_str:8} | {platform}')\n    \n    print('=' * 70)\n    \nexcept requests.exceptions.RequestException as e:\n    print(f'❌ API Error: {e}')",
+          "output": "🚇 KING'S CROSS ST. PANCRAS - LIVE ARRIVALS\n======================================================================\n📅 Updated: 14:35:22\n======================================================================\n🚆 Victoria              → Brixton                  | Due      | Platform 3\n🚆 Northern              → Morden                   | 2 mins   | Platform 1\n🚆 Piccadilly            → Heathrow Terminal 5      | 3 mins   | Platform 4\n🚆 Victoria              → Walthamstow Central      | 4 mins   | Platform 4\n🚆 Northern              → High Barnet              | 5 mins   | Platform 2\n🚆 Piccadilly            → Cockfosters              | 6 mins   | Platform 3\n🚆 Victoria              → Brixton                  | 7 mins   | Platform 3\n🚆 Northern              → Edgware                  | 8 mins   | Platform 1\n🚆 Piccadilly            → Heathrow Terminal 4      | 9 mins   | Platform 4\n🚆 Victoria              → Walthamstow Central      | 10 mins  | Platform 4\n======================================================================",
+          "ai_explanation": "🔥 THIS IS LIVE DATA! Every time you run this, you get REAL train times. Professional apps like Citymapper do exactly this!",
+          "ai_challenge": "💪 Challenge: Filter to show ONLY Victoria Line trains. Hint: if 'Victoria' in line:"
+        },
+        {
+          "title": "Example 4: Find Nearest Station with Coordinates",
+          "description": "Use latitude/longitude to find the closest tube station",
+          "difficulty": "medium",
+          "code": "import requests\n\n# Coordinates for Buckingham Palace\nlat = 51.5014\nlon = -0.1419\n\nurl = f'https://api.tfl.gov.uk/StopPoint/?lat={lat}&lon={lon}&stopTypes=NaptanMetroStation&radius=500'\n\ntry:\n    response = requests.get(url, timeout=5)\n    response.raise_for_status()\n    \n    stations = response.json()['stopPoints']\n    \n    print('🗺️  NEAREST TUBE STATIONS')\n    print(f'📍 Location: {lat}, {lon}')\n    print('=' * 60)\n    \n    for station in stations[:5]:\n        name = station['commonName']\n        distance = station['distance']\n        lines = ', '.join([line['name'] for line in station['lines']])\n        \n        print(f'🚇 {name}')\n        print(f'   📏 Distance: {distance:.0f} meters')\n        print(f'   🚆 Lines: {lines}')\n        print()\n    \nexcept requests.exceptions.RequestException as e:\n    print(f'❌ API Error: {e}')",
+          "output": "🗺️  NEAREST TUBE STATIONS\n📍 Location: 51.5014, -0.1419\n============================================================\n🚇 St. James's Park Underground Station\n   📏 Distance: 423 meters\n   🚆 Lines: District, Circle\n\n🚇 Victoria Underground Station\n   �� Distance: 487 meters\n   🚆 Lines: Victoria, District, Circle\n\n🚇 Westminster Underground Station\n   📏 Distance: 612 meters\n   🚆 Lines: Jubilee, District, Circle\n\n🚇 Green Park Underground Station\n   📏 Distance: 785 meters\n   🚆 Lines: Piccadilly, Victoria, Jubilee\n\n🚇 Hyde Park Corner Underground Station\n   📏 Distance: 892 meters\n   🚆 Lines: Piccadilly",
+          "ai_explanation": "🌍 Location-based queries! This is how maps apps work. You give coordinates, the API finds nearby stations. GPS magic!",
+          "ai_challenge": "🎯 Challenge: Try coordinates for your own location! Use Google Maps to get your lat/lon."
+        },
+        {
+          "title": "Example 5: Journey Planner",
+          "description": "Plan a journey between two stations with live data",
+          "difficulty": "hard",
+          "code": "import requests\nfrom datetime import datetime\n\n# Journey: King's Cross to Heathrow Airport\nfrom_station = '940GZZLUKSX'  # King's Cross\nto_station = '940GZZLULHR5'  # Heathrow Terminal 5\n\nurl = f'https://api.tfl.gov.uk/Journey/JourneyResults/{from_station}/to/{to_station}'\n\ntry:\n    response = requests.get(url, timeout=10)\n    response.raise_for_status()\n    \n    data = response.json()\n    journeys = data['journeys']\n    \n    print('🗺️  JOURNEY PLANNER')\n    print('=' * 70)\n    print(f'📍 From: King\\'s Cross St. Pancras')\n    print(f'📍 To: Heathrow Terminal 5')\n    print(f'📅 Time: {datetime.now().strftime(\"%H:%M\")}')\n    print('=' * 70)\n    \n    for i, journey in enumerate(journeys[:3], 1):\n        duration = journey['duration']\n        print(f'\\n🚆 OPTION {i}')\n        print(f'⏱️  Duration: {duration} minutes')\n        print(f'📊 Steps:')\n        \n        for leg in journey['legs']:\n            mode = leg['mode']['name']\n            \n            if leg['mode']['id'] == 'walking':\n                duration_leg = leg['duration']\n                print(f'   🚶 Walk {duration_leg} mins')\n            else:\n                line = leg.get('routeOptions', [{}])[0].get('name', 'Unknown')\n                from_point = leg['departurePoint']['commonName']\n                to_point = leg['arrivalPoint']['commonName']\n                duration_leg = leg['duration']\n                \n                print(f'   🚇 {line}')\n                print(f'      From: {from_point}')\n                print(f'      To: {to_point}')\n                print(f'      Duration: {duration_leg} mins')\n    \n    print('\\n' + '=' * 70)\n    \nexcept requests.exceptions.RequestException as e:\n    print(f'❌ API Error: {e}')\nexcept KeyError as e:\n    print(f'⚠️  Data parsing error: {e}')",
+          "output": "🗺️  JOURNEY PLANNER\n======================================================================\n📍 From: King's Cross St. Pancras\n📍 To: Heathrow Terminal 5\n📅 Time: 14:35\n======================================================================\n\n🚆 OPTION 1\n⏱️  Duration: 52 minutes\n📊 Steps:\n   🚇 Piccadilly\n      From: King's Cross St. Pancras Underground Station\n      To: Heathrow Terminal 5 Underground Station\n      Duration: 50 mins\n   🚶 Walk 2 mins\n\n🚆 OPTION 2\n⏱️  Duration: 57 minutes\n📊 Steps:\n   🚶 Walk 3 mins\n   🚇 Piccadilly\n      From: Russell Square Underground Station\n      To: Heathrow Terminal 5 Underground Station\n      Duration: 52 mins\n   🚶 Walk 2 mins\n\n🚆 OPTION 3\n⏱️  Duration: 64 minutes\n📊 Steps:\n   🚇 Victoria\n      From: King's Cross St. Pancras Underground Station\n      To: Green Park Underground Station\n      Duration: 6 mins\n   🚶 Walk 4 mins\n   🚇 Piccadilly\n      From: Green Park Underground Station\n      To: Heathrow Terminal 5 Underground Station\n      Duration: 52 mins\n   🚶 Walk 2 mins\n\n======================================================================",
+          "ai_explanation": "🚀 PROFESSIONAL LEVEL! You just built a journey planner like Google Maps! This shows multiple route options with real-time data. Portfolio-worthy!",
+          "ai_challenge": "💎 MEGA CHALLENGE: Add arrival/departure times for each leg. Hint: Use 'departureTime' and 'arrivalTime' from the API!"
+        }
+      ],
+      
+      "practice_exercises": [
+        {
+          "exercise_id": "tfl_ex1",
+          "title": "Line Status Checker",
+          "difficulty": "easy",
+          "description": "Create a program that checks if a specific tube line has good service",
+          
+          "ai_intro": "🚇 Let's build your first API tool! This checks if your line is running smoothly. Real-world useful!",
+          
+          "starter_code": "import requests\n\n# TODO: Ask user which line to check\nline_name = input('Enter tube line name (e.g., victoria): ').lower()\n\n# TODO: Build the API URL\nurl = f'https://api.tfl.gov.uk/Line/{line_name}/Status'\n\ntry:\n    # TODO: Make the API request\n    response = # Your code here\n    \n    # TODO: Check if successful\n    if response.status_code == 200:\n        data = response.json()\n        \n        # TODO: Extract the status\n        status = # Your code here\n        \n        # TODO: Print result with emoji\n        # If Good Service → ✅\n        # Otherwise → ⚠️\n        \n    else:\n        print(f'❌ Error: {response.status_code}')\n        \nexcept Exception as e:\n    print(f'⚠️  Error: {e}')",
+          
+          "hints": [
+            {
+              "level": 1,
+              "trigger": "idle > 30s",
+              "message": "💡 Start simple:\n   response = requests.get(url)\n   That's your API call!"
+            },
+            {
+              "level": 2,
+              "trigger": "api_call_made && stuck_on_parsing",
+              "message": "📊 To get the status:\n   data[0]['lineStatuses'][0]['statusSeverityDescription']\n   Remember: TfL returns a list!"
+            },
+            {
+              "level": 3,
+              "trigger": "still_stuck > 120s",
+              "message": "👀 Full solution:\n\nresponse = requests.get(url)\n\nif response.status_code == 200:\n    data = response.json()\n    status = data[0]['lineStatuses'][0]['statusSeverityDescription']\n    \n    if 'Good Service' in status:\n        print(f'✅ {line_name.title()}: {status}')\n    else:\n        print(f'⚠️ {line_name.title()}: {status}')"
+            }
+          ],
+          
+          "solution": "import requests\n\nline_name = input('Enter tube line name (e.g., victoria): ').lower()\nurl = f'https://api.tfl.gov.uk/Line/{line_name}/Status'\n\ntry:\n    response = requests.get(url, timeout=5)\n    \n    if response.status_code == 200:\n        data = response.json()\n        status = data[0]['lineStatuses'][0]['statusSeverityDescription']\n        \n        if 'Good Service' in status:\n            print(f'✅ {line_name.title()}: {status}')\n        else:\n            print(f'⚠️ {line_name.title()}: {status}')\n    else:\n        print(f'❌ Error: Status code {response.status_code}')\n        \nexcept requests.exceptions.RequestException as e:\n    print(f'⚠️  API Error: {e}')",
+          
+          "ai_after_completion": "🎉 PERFECT! You just made your first useful API tool! This is exactly how real apps work.\n\n✅ You learned:\n• Making API requests\n• Handling responses\n• Parsing JSON data\n• Error handling\n\nReady for the next challenge? Let's get LIVE arrival times!",
+          
+          "follow_up_challenge": {
+            "message": "�� BONUS: Check ALL tube lines at once and count how many have delays!",
+            "hint": "Use '/Line/Mode/tube/Status' and loop through the results!"
+          }
+        },
+        {
+          "exercise_id": "tfl_ex2",
+          "title": "Station Arrival Board",
+          "difficulty": "medium",
+          "description": "Build a live arrival board for any station showing next 5 trains",
+          
+          "ai_intro": "🚆 Now you're building a REAL station board! Like the ones at every tube platform. This is pro-level!",
+          
+          "starter_code": "import requests\n\n# Common station IDs:\n# King's Cross: 940GZZLUKSX\n# Liverpool Street: 940GZZLULVT\n# Oxford Circus: 940GZZLUOXC\n# Waterloo: 940GZZLUWLO\n\nstation_id = input('Enter station ID: ')\nurl = f'https://api.tfl.gov.uk/StopPoint/{station_id}/Arrivals'\n\ntry:\n    response = requests.get(url, timeout=5)\n    \n    if response.status_code == 200:\n        arrivals = response.json()\n        \n        # TODO: Sort arrivals by timeToStation (closest first)\n        # Hint: arrivals.sort(key=lambda x: x['timeToStation'])\n        \n        print('🚇 LIVE ARRIVALS')\n        print('=' * 60)\n        \n        # TODO: Loop through first 5 arrivals\n        for arrival in arrivals[:5]:\n            # TODO: Extract: lineName, destinationName, timeToStation\n            line = # Your code\n            destination = # Your code\n            seconds = # Your code\n            \n            # TODO: Convert seconds to minutes\n            minutes = # Your code\n            \n            # TODO: Show 'Due' if 0 mins, otherwise show minutes\n            if minutes == 0:\n                time_str = 'Due'\n            else:\n                time_str = f'{minutes} min'\n            \n            # TODO: Print formatted result\n            print(f'🚆 {line:20} → {destination:25} | {time_str}')\n        \n        print('=' * 60)\n    else:\n        print(f'❌ Error: {response.status_code}')\n        \nexcept Exception as e:\n    print(f'⚠️  Error: {e}')",
+          
+          "hints": [
+            {
+              "level": 1,
+              "message": "📊 To sort arrivals:\n   arrivals.sort(key=lambda x: x['timeToStation'])\n   This puts closest trains first!"
+            },
+            {
+              "level": 2,
+              "message": "🎯 To extract data:\n   line = arrival['lineName']\n   destination = arrival['destinationName']\n   seconds = arrival['timeToStation']"
+            },
+            {
+              "level": 3,
+              "message": "⏱️  To convert to minutes:\n   minutes = seconds // 60\n   Use // for whole number division!"
+            }
+          ],
+          
+          "solution": "import requests\n\nstation_id = input('Enter station ID: ')\nurl = f'https://api.tfl.gov.uk/StopPoint/{station_id}/Arrivals'\n\ntry:\n    response = requests.get(url, timeout=5)\n    \n    if response.status_code == 200:\n        arrivals = response.json()\n        arrivals.sort(key=lambda x: x['timeToStation'])\n        \n        print('🚇 LIVE ARRIVALS')\n        print('=' * 60)\n        \n        for arrival in arrivals[:5]:\n            line = arrival['lineName']\n            destination = arrival['destinationName']\n            seconds = arrival['timeToStation']\n            minutes = seconds // 60\n            \n            if minutes == 0:\n                time_str = 'Due'\n            else:\n                time_str = f'{minutes} min'\n            \n            print(f'🚆 {line:20} → {destination:25} | {time_str}')\n        \n        print('=' * 60)\n    else:\n        print(f'❌ Error: {response.status_code}')\n        \nexcept requests.exceptions.RequestException as e:\n    print(f'⚠️  API Error: {e}')",
+          
+          "ai_after_completion": "🏆 INCREDIBLE! You built a LIVE arrival board! This is the same tech used in:\n• Citymapper\n• TfL's own app\n• Station displays\n\nYou're now working with REAL-TIME data like a professional developer!",
+          
+          "bonus_challenge": {
+            "title": "🔥 BONUS: Auto-refresh every 30 seconds",
+            "hint": "Use:\nimport time\nwhile True:\n    # Your code\n    time.sleep(30)  # Wait 30 seconds"
+          }
+        },
+        {
+          "exercise_id": "tfl_ex3",
+          "title": "Disruption Alert System",
+          "difficulty": "hard",
+          "description": "Build a system that alerts you of any disruptions on your favorite lines",
+          
+          "ai_intro": "🚨 Time to build a MONITORING SYSTEM! This checks multiple lines and alerts you to problems. Real DevOps stuff!",
+          
+          "starter_code": "import requests\nimport time\nfrom datetime import datetime\n\n# Your favorite lines\nfavorite_lines = ['victoria', 'northern', 'central']\n\ndef check_line_status(line_name):\n    \"\"\"Check status of a single line\"\"\"\n    url = f'https://api.tfl.gov.uk/Line/{line_name}/Status'\n    \n    try:\n        response = requests.get(url, timeout=5)\n        \n        if response.status_code == 200:\n            data = response.json()\n            # TODO: Extract status\n            status = # Your code\n            return status\n        else:\n            return None\n            \n    except Exception as e:\n        return None\n\ndef check_all_lines():\n    \"\"\"Check all favorite lines\"\"\"\n    print(f'\\n🔍 Checking lines at {datetime.now().strftime(\"%H:%M:%S\")}')\n    print('=' * 60)\n    \n    disruptions = []\n    \n    # TODO: Loop through favorite_lines\n    for line in favorite_lines:\n        status = check_line_status(line)\n        \n        if status:\n            # TODO: Check if status contains problems\n            # If 'Good Service' → ✅\n            # Otherwise → ⚠️ and add to disruptions list\n            \n            if 'Good Service' in status:\n                print(f'✅ {line.title():20} | {status}')\n            else:\n                print(f'⚠️ {line.title():20} | {status}')\n                # TODO: Add to disruptions list\n                disruptions.append(# Your code)\n        else:\n            print(f'❌ {line.title():20} | Could not check')\n    \n    print('=' * 60)\n    \n    # TODO: If there are disruptions, show alert\n    if len(disruptions) > 0:\n        print(f'\\n🚨 ALERT: {len(disruptions)} line(s) with disruptions!')\n        for line, status in disruptions:\n            print(f'   ⚠️  {line}: {status}')\n    else:\n        print('\\n✅ All lines running smoothly!')\n    \n    return disruptions\n\n# TODO: Run check every 60 seconds\nprint('🚇 TfL DISRUPTION MONITOR')\nprint('Monitoring:', ', '.join([l.title() for l in favorite_lines]))\nprint('Press Ctrl+C to stop')\n\ntry:\n    while True:\n        check_all_lines()\n        # TODO: Wait 60 seconds before next check\n        time.sleep(# Your code)\nexcept KeyboardInterrupt:\n    print('\\n\\n👋 Monitor stopped!')",
+          
+          "hints": [
+            {
+              "level": 1,
+              "message": "💡 To extract status:\n   status = data[0]['lineStatuses'][0]['statusSeverityDescription']"
+            },
+            {
+              "level": 2,
+              "message": "🎯 To add disruption:\n   disruptions.append((line, status))\n   This creates a tuple with line name and status!"
+            },
+            {
+              "level": 3,
+              "message": "⏱️  Full solution structure:\n\n1. Extract status in check_line_status()\n2. In check_all_lines(), check if 'Good Service' in status\n3. If not, append (line, status) to disruptions\n4. Use time.sleep(60) to wait\n\nWant the complete code?"
+            }
+          ],
+          
+          "solution": "import requests\nimport time\nfrom datetime import datetime\n\nfavorite_lines = ['victoria', 'northern', 'central']\n\ndef check_line_status(line_name):\n    url = f'https://api.tfl.gov.uk/Line/{line_name}/Status'\n    \n    try:\n        response = requests.get(url, timeout=5)\n        \n        if response.status_code == 200:\n            data = response.json()\n            status = data[0]['lineStatuses'][0]['statusSeverityDescription']\n            return status\n        else:\n            return None\n            \n    except Exception as e:\n        return None\n\ndef check_all_lines():\n    print(f'\\n🔍 Checking lines at {datetime.now().strftime(\"%H:%M:%S\")}')\n    print('=' * 60)\n    \n    disruptions = []\n    \n    for line in favorite_lines:\n        status = check_line_status(line)\n        \n        if status:\n            if 'Good Service' in status:\n                print(f'✅ {line.title():20} | {status}')\n            else:\n                print(f'⚠️ {line.title():20} | {status}')\n                disruptions.append((line, status))\n        else:\n            print(f'❌ {line.title():20} | Could not check')\n    \n    print('=' * 60)\n    \n    if len(disruptions) > 0:\n        print(f'\\n🚨 ALERT: {len(disruptions)} line(s) with disruptions!')\n        for line, status in disruptions:\n            print(f'   ⚠️  {line.title()}: {status}')\n    else:\n        print('\\n✅ All lines running smoothly!')\n    \n    return disruptions\n\nprint('🚇 TfL DISRUPTION MONITOR')\nprint('Monitoring:', ', '.join([l.title() for l in favorite_lines]))\nprint('Press Ctrl+C to stop')\n\ntry:\n    while True:\n        check_all_lines()\n        time.sleep(60)\nexcept KeyboardInterrupt:\n    print('\\n\\n👋 Monitor stopped!')",
+          
+          "ai_after_completion": "🏆 EXCEPTIONAL! You built a PROFESSIONAL monitoring system!\n\nThis project shows:\n✅ API integration\n✅ Error handling\n✅ Continuous monitoring\n✅ Real-time alerts\n✅ Clean code structure\n\n🎯 ADD THIS TO YOUR PORTFOLIO! Employers look for exactly this kind of project!\n\nNext steps:\n• Add email/SMS notifications\n• Save disruptions to a log file\n• Create a web dashboard\n\nYou're ready for PRODUCTION code!",
+          
+          "portfolio_tips": {
+            "title": "📝 Portfolio Enhancement Ideas",
+            "suggestions": [
+              "🔔 Add SMS notifications using Twilio API",
+              "📧 Send email alerts using smtplib",
+              "📊 Create graphs of disruption frequency",
+              "🌐 Build a web interface with Flask",
+              "💾 Store historical data in SQLite database",
+              "📱 Create a mobile-friendly dashboard"
+            ]
+          }
+        }
+      ],
+      
+      "ai_lesson_summary": {
+        "on_completion": "🎊 LESSON COMPLETE! API MASTER UNLOCKED!\n\nYou've mastered:\n\n✅ Making HTTP API requests\n✅ Parsing JSON responses\n✅ Error handling\n✅ Working with real-time data\n✅ Building professional tools\n\nExercises completed: {count}/3\nAPI calls made: {api_calls}\nTime spent: {minutes} minutes\n\n🏆 PROJECT PORTFOLIO:\n• Line Status Checker\n• Live Arrival Board\n• Disruption Monitor\n\n🎯 NEXT STEPS:\n1. Add this project to GitHub\n2. Deploy it on Heroku/Railway\n3. Share it on LinkedIn\n4. Build a web interface\n\nYOU'RE NOW A PROFESSIONAL API DEVELOPER! 🚀\n\n[View Certificate] [Share Project] [Continue Learning]",
+        
+        "achievements_earned": [
+          {
+            "id": "first_api_call",
+            "title": "🌐 First API Call",
+            "message": "You made your first real API request! Welcome to the web!"
+          },
+          {
+            "id": "live_data_master",
+            "title": "📡 Live Data Master",
+            "message": "You worked with real-time data! Professional level skill!"
+          },
+          {
+            "id": "error_handler",
+            "title": "🛡️ Error Handler",
+            "message": "You handled API errors like a pro! Production-ready code!"
+          },
+          {
+            "id": "project_builder",
+            "title": "🏗️ Project Builder",
+            "message": "You built complete, working projects! Portfolio-ready!"
+          }
+        ],
+        
+        "portfolio_ready": true,
+        "github_template": "https://github.com/your-username/tfl-monitor",
+        "deployment_guides": [
+          "Deploy to Heroku: https://heroku.com",
+          "Deploy to Railway: https://railway.app",
+          "Deploy to PythonAnywhere: https://pythonanywhere.com"
+        ]
+      }
+    }
+  ],
+  
+  "ai_general_responses": {
+    "api_connection_success": [
+      "🎉 API connected! You're now pulling LIVE London Transport data!",
+      "✅ Success! That's REAL data from TfL's servers!",
+      "💪 Perfect! You just made a professional API call!",
+      "🚀 YES! You're communicating with TfL's live system!"
+    ],
+    
+    "api_connection_failed": [
+      "🔌 Connection failed. Check: 1) Internet connection, 2) API URL, 3) TfL server status",
+      "⚠️ Can't reach TfL API. The URL might be wrong or TfL servers might be down",
+      "❌ API error. Let me help you debug this...",
+      "🔧 Connection issue. Let's troubleshoot step by step"
+    ],
+    
+    "json_parsing_error": [
+      "📊 JSON parsing error! The data structure might be different. Let me show you...",
+      "🤔 Can't parse that response. Let's look at the raw data first",
+      "⚠️ Data structure issue. Remember: use [0] for lists!",
+      "🔍 Parsing failed. Let's check what the API actually returned"
+    ],
+    
+    "celebrate_real_world": [
+      "🌍 This is REAL WORLD programming! You're using production APIs!",
+      "🏆 Professional work! This is exactly what developers do daily!",
+      "💼 Portfolio-worthy! Add this to your GitHub!",
+      "🚀 You're building actual useful tools! Keep going!"
+    ],
+    
+    "encourage_on_error": [
+      "💪 APIs are tricky! Every developer deals with these errors. Let's fix it together",
+      "🎯 Close! API debugging is a skill you're building right now",
+      "🔧 Error? Good! You're learning how to handle real-world problems",
+      "✨ This error teaches you something important. Let's solve it!"
+    ]
+  },
+  
+  "project_extensions": {
+    "next_steps": [
+      {
+        "title": "Add Email Notifications",
+        "difficulty": "medium",
+        "description": "Send email alerts when your line has disruptions",
+        "libraries": ["smtplib", "email"],
+        "hint": "Use Gmail SMTP server with an app password"
+      },
+      {
+        "title": "Create Web Dashboard",
+        "difficulty": "hard",
+        "description": "Build a Flask web interface to display live data",
+        "libraries": ["flask", "jinja2"],
+        "hint": "Use AJAX to auto-refresh data without reloading page"
+      },
+      {
+        "title": "Historical Analysis",
+        "difficulty": "hard",
+        "description": "Track and analyze disruption patterns over time",
+        "libraries": ["sqlite3", "pandas", "matplotlib"],
+        "hint": "Store status checks in SQLite, then visualize trends"
+      },
+      {
+        "title": "Multi-City Support",
+        "difficulty": "expert",
+        "description": "Extend to support multiple transit APIs (NYC, Paris, etc)",
+        "libraries": ["requests", "asyncio"],
+        "hint": "Create abstract base class for transit APIs"
+      }
+    ]
+  }
+}

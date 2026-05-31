@@ -1,0 +1,1617 @@
+{
+  "course_id": "path_traversal_design",
+  "title": "Path Traversal & Secure Design Principles",
+  "description": "Master directory traversal attacks and defences, plus the foundational security design principles every developer must know",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "java_syntax_output",
+    "java_methods",
+    "java_classes_objects",
+    "exceptions_security"
+  ],
+  "learning_outcomes": [
+    "Explain how file systems resolve paths including relative references like ../ and symbolic links",
+    "Demonstrate path traversal attacks using dot-dot-slash sequences to escape restricted directories",
+    "Trace how user input flows from HTTP requests to file system operations in Java code",
+    "Identify path traversal vulnerabilities in Java servlets and file-handling code",
+    "Implement whitelist validation using regex to restrict filenames to safe characters",
+    "Use getCanonicalPath() and toRealPath() to validate file paths against a base directory",
+    "Recognise the trailing-slash corner case that bypasses startsWith() checks",
+    "Explain and apply the Zip Slip vulnerability and its mitigation",
+    "Define and apply the 8 Saltzer and Schroeder secure design principles",
+    "Apply defence-in-depth by combining multiple path traversal mitigations",
+    "Classify path traversal under CWE-22 and relate it to OWASP Top 10",
+    "Analyse real-world path traversal breaches and their impact"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-7 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses building/house analogies. Never judges. Celebrates every vulnerability spotted and every defence built.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Hey there! Path traversal is all about understanding how file systems work — like navigating floors in a building. The attacker uses ../ to go UP to floors they should not access. Want me to draw the building analogy?",
+      "idle_90_seconds": "Still working? No worries — path traversal has many encoding tricks that make it confusing. Would you like me to: (A) Show the basic ../ attack step by step, (B) Compare vulnerable vs secure code side by side, or (C) Explain canonical paths with a real example?",
+      "idle_180_seconds": "Take your time! Here is the core idea: your app says 'users can only access files in /uploads/'. The attacker sends '../../../etc/passwd' as the filename. The server builds the path /uploads/../../../etc/passwd which resolves to /etc/passwd — OUTSIDE the safe directory! The fix: use getCanonicalPath() to resolve the real path and check it starts with /uploads/.",
+      "first_error": "Good attempt! Path traversal defences have subtle corner cases. Did you check: (1) the trailing slash on the base directory, (2) null bytes, (3) URL encoding of ../ ? Try again!",
+      "repeated_errors": "No problem! Let me break it down step by step. First, what path does the attacker provide? Second, what does the server build? Third, what does the canonical path resolve to? Fourth, does it still start with the base directory?",
+      "after_success": "Excellent! You just blocked an attacker from reading sensitive files on your server. Path traversal is in the OWASP Top 10 and you now know how to prevent it. Real security skill!"
+    },
+    "encouragement_phrases": [
+      "Path traversal is one of the oldest attacks — and it STILL works on modern applications!",
+      "You are learning to think like both the attacker AND the defender!",
+      "Great catch! That ../ would have escaped the safe directory!",
+      "The canonical path check you wrote would stop real attacks!",
+      "Secure design principles are the foundation of EVERYTHING in security!",
+      "Defence in depth means even if one check fails, the next one catches it!",
+      "Every file your app serves should be validated. You are building that skill now!",
+      "The Zip Slip attack is sneaky — and you just learned to block it!",
+      "Least privilege means the app should only access what it absolutely needs!",
+      "You are thinking about security at the DESIGN level — that is senior-developer thinking!"
+    ],
+    "explanation_styles": {
+      "analogy": "Think of your web server as a building. The /uploads/ folder is the lobby — visitors are allowed there. The /etc/ folder is the manager's office on a restricted floor. Path traversal is like someone in the lobby pressing the elevator button for the restricted floor because nobody checked their access badge. The ../ in a filepath means 'go up one floor'. Three ../../../ takes you from the lobby all the way up to the restricted floor.",
+      "visual": "VULNERABLE: base=/uploads/ + input=../../../etc/passwd -> /uploads/../../../etc/passwd -> resolves to /etc/passwd (OUTSIDE uploads!). SECURE: canonical path of /uploads/../../../etc/passwd = /etc/passwd. Does /etc/passwd start with /uploads/? NO! -> BLOCKED!",
+      "step_by_step": "Step 1: User sends filename parameter. Step 2: Server builds path: base_dir + filename. Step 3: If filename contains ../, the path goes ABOVE the base directory. Step 4: Without validation, the server reads/serves the file. Step 5: Attacker gets /etc/passwd, config files, source code, etc.",
+      "code_trace": "Input: file=../../../etc/passwd. Code: new File('/uploads/', filename). Built path: /uploads/../../../etc/passwd. Canonical: /etc/passwd. startsWith('/uploads/')? FALSE. BLOCK!",
+      "comparison": "Whitelist: Only allow [a-zA-Z0-9._] — rejects ANY path separator. Canonical path: Resolve then compare — catches encoded and symlink bypasses. BOTH together: Defence in depth!"
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "path_traversal_design_lesson_1",
+      "title": "Path Traversal & Secure Design Principles",
+      "theory": {
+        "introduction": "Imagine you work in a large office building. Your company occupies the 5th floor, and you have a keycard that should only let you access that floor. But what if the elevator had a bug where typing '-3' on your floor number took you to floor 2 — the HR department with everyone's salary data? That is path traversal.\n\nIn web applications, files are organised in directories (folders). A web app might store user uploads in /var/www/uploads/ and serve them when requested. The app builds the file path by combining the base directory with the user's requested filename: /var/www/uploads/ + photo.jpg = /var/www/uploads/photo.jpg.\n\nBut what if the user requests ../../../etc/passwd instead of photo.jpg? The server builds: /var/www/uploads/../../../etc/passwd. The ../ means 'go up one directory'. Three of them take you from /var/www/uploads/ up to / (the root), then into /etc/passwd — the Unix password file!\n\nPath Traversal (CWE-22) is classified as a HIGH severity vulnerability. It is part of the OWASP Top 10 under Broken Access Control (A01:2025). Real-world attacks have exposed source code, configuration files with database passwords, private keys, and customer data.\n\nIn this topic you will also learn the 8 Secure Design Principles from Saltzer and Schroeder (1975) — foundational rules that apply to ALL security, not just path traversal. These principles (Economy of Mechanism, Fail-Safe Defaults, Complete Mediation, Open Design, Separation of Privilege, Least Privilege, Least Common Mechanism, and Psychological Acceptability) are referenced in every major security standard including OWASP, NIST, and ISO 27001.",
+        "why_important": "Path traversal can expose ANY file on your server: source code, database credentials, private encryption keys, user data, and system configuration. A single path traversal vulnerability in a web application can lead to complete server compromise. The Equifax breach (2017) involved a path traversal component that helped attackers move through the system. Understanding secure design principles prevents not just path traversal but entire categories of vulnerabilities — they are the foundation that everything else is built on.",
+        "key_concepts": [
+          {
+            "concept": "How File Systems Work: Paths, Directories, and Resolution",
+            "explanation": "A file path is an address that tells the operating system where to find a file. There are two types:\n\nABSOLUTE paths start from the root: /var/www/uploads/photo.jpg (Linux) or C:\\Users\\Public\\photo.jpg (Windows)\n\nRELATIVE paths start from the current directory: ./photo.jpg (current dir) or ../config/db.properties (up one, into config)\n\nSpecial path components:\n- . means 'current directory'\n- .. means 'parent directory' (go UP one level)\n- / is the directory separator (Linux/Mac)\n- \\ is the directory separator (Windows, also accepts /)\n\nPath RESOLUTION is when the OS converts a path with ../ into its real location. /var/www/uploads/../../etc/passwd resolves step by step: /var/www/uploads/ -> /var/www/ (one ..) -> /var/ (two ..) -> /var/etc/passwd. Wait — that is wrong! Let me redo: /var/www/uploads/../.. = /var/www/.. wait no. The key: each ../ goes up one level from the current position.",
+            "example": "// Path resolution examples:\n//\n// Starting in: /var/www/uploads/\n//\n// ./photo.jpg        -> /var/www/uploads/photo.jpg     (stay here)\n// ../config.txt      -> /var/www/config.txt            (up one)\n// ../../secret.key   -> /var/secret.key                (up two)\n// ../../../etc/passwd -> /etc/passwd                    (up three = root!)\n//\n// Java code to see this:\nimport java.io.File;\n\npublic class PathDemo {\n    public static void main(String[] args) throws Exception {\n        File base = new File(\"/var/www/uploads/\");\n        File safe = new File(base, \"photo.jpg\");\n        File attack = new File(base, \"../../../etc/passwd\");\n        \n        System.out.println(\"Safe path:   \" + safe.getPath());\n        System.out.println(\"Safe canon:  \" + safe.getCanonicalPath());\n        System.out.println(\"Attack path: \" + attack.getPath());\n        System.out.println(\"Attack canon:\" + attack.getCanonicalPath());\n    }\n}\n// Output:\n// Safe path:   /var/www/uploads/photo.jpg\n// Safe canon:  /var/www/uploads/photo.jpg\n// Attack path: /var/www/uploads/../../../etc/passwd\n// Attack canon:/etc/passwd    <-- OUTSIDE uploads!",
+            "ai_hint": "Each ../ goes up one directory. Three ../../../ from /var/www/uploads/ takes you to / (root). From there, etc/passwd is the system password file."
+          },
+          {
+            "concept": "Path Traversal Attack (CWE-22): The Dot-Dot-Slash",
+            "explanation": "Path traversal (also called directory traversal) happens when a web application uses user input to construct a file path WITHOUT validating that the resulting path stays within the intended directory.\n\nThe attack is simple: the attacker includes ../ sequences in the filename to navigate UP from the safe directory into restricted areas of the file system.\n\nCommon targets:\n- /etc/passwd — Linux user accounts\n- /etc/shadow — Linux password hashes (if readable)\n- /etc/hosts — Network configuration\n- /var/log/ — Server logs\n- Web application source code\n- Configuration files with database passwords\n- Private SSL/TLS keys\n\nThe attack works because the file system resolves ../ BEFORE the application can check the path. By the time the OS opens the file, the ../ has already navigated outside the safe directory.",
+            "example": "// VULNERABLE Java Servlet:\nimport javax.servlet.http.*;\nimport java.io.*;\n\npublic class FileServlet extends HttpServlet {\n    private static final String BASE_DIR = \"/var/www/uploads/\";\n    \n    protected void doGet(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        String filename = req.getParameter(\"file\");\n        // VULNERABLE: directly concatenating user input!\n        File file = new File(BASE_DIR + filename);\n        \n        // Serve the file\n        FileInputStream fis = new FileInputStream(file);\n        byte[] buffer = new byte[1024];\n        int bytesRead;\n        while ((bytesRead = fis.read(buffer)) != -1) {\n            resp.getOutputStream().write(buffer, 0, bytesRead);\n        }\n        fis.close();\n    }\n}\n\n// Normal use:\n// GET /files?file=photo.jpg\n// Serves: /var/www/uploads/photo.jpg  ✅\n\n// ATTACK:\n// GET /files?file=../../../etc/passwd\n// Serves: /var/www/uploads/../../../etc/passwd = /etc/passwd  💀",
+            "ai_hint": "The attack works because the server trusts the filename. It builds the path and opens the file without checking if the result is still inside the safe directory."
+          },
+          {
+            "concept": "Encoding Bypasses: URL, Unicode, Double-Encoding",
+            "explanation": "Simple filters that block ../ can be bypassed using alternative encodings:\n\n1. URL encoding: ../ becomes %2e%2e%2f or %2e%2e/\n2. Double URL encoding: ../ becomes %252e%252e%252f (the % is encoded as %25)\n3. Unicode encoding: ../ can be represented as ..%c0%af or ..%ef%bc%8f\n4. Backslash on Windows: ..\\ works the same as ../ and can also be encoded\n5. Null byte: filename.jpg%00../../../etc/passwd — the null byte (%00) may terminate the string early in some languages\n6. Mixed encoding: %2e./ or .%2e/ — mixing encoded and plain characters\n\nThis is why simple string replacement (removing ../) is NOT sufficient. An attacker can encode the ../ in dozens of ways. The correct approach is to resolve the CANONICAL path and compare it to the base directory.",
+            "example": "// WEAK FILTER (easily bypassed):\nString filename = request.getParameter(\"file\");\nfilename = filename.replace(\"../\", \"\"); // Remove ../ sequences\nFile file = new File(BASE_DIR + filename);\n\n// Bypass 1: Double dot-dot-slash\n// Input: ....//....//....//etc/passwd\n// After filter: ../../../etc/passwd (the inner ../ was removed, leaving outer ../)\n\n// Bypass 2: URL encoding\n// Input: %2e%2e%2fetc/passwd\n// Filter checks for \"../\" but the input is \"%2e%2e%2f\" — doesn't match!\n// Web server decodes AFTER the filter runs\n\n// Bypass 3: Backslash (Windows)\n// Input: ..\\..\\..\\windows\\win.ini\n// Filter only removes \"../\" not \"..\\\\\" !\n\n// Bypass 4: Nested removal\n// Input: ..././..././..././etc/passwd\n// Filter removes ../ from middle: ../../../etc/passwd\n\n// CORRECT APPROACH: Canonical path (see next concept)",
+            "ai_hint": "Never try to BLOCK bad input. Instead, VALIDATE the RESULT. Resolve the canonical path and check it is still in the safe directory."
+          },
+          {
+            "concept": "Defence 1: Whitelist Validation (Regex)",
+            "explanation": "The simplest and most effective first defence is to WHITELIST which characters are allowed in filenames. If you only allow letters, numbers, dots, underscores, and hyphens, then ../ CANNOT be constructed because the / character is not in the whitelist.\n\nThe regex pattern [a-zA-Z0-9._-]+ matches only safe filename characters. Any input containing / or \\ or .. fails the validation immediately.\n\nThis works well when filenames follow a predictable pattern (like uploaded files). It does NOT work when the application needs to accept paths with subdirectories (like images/photo.jpg).",
+            "example": "// Whitelist validation:\nString filename = request.getParameter(\"file\");\n\n// Only allow alphanumeric, dot, underscore, hyphen\nif (!filename.matches(\"[a-zA-Z0-9._-]+\")) {\n    throw new SecurityException(filename + \" contains invalid characters\");\n}\n\nFile file = new File(BASE_DIR, filename);\n// Now safe: filename cannot contain / or \\ or ..\n\n// Test cases:\n// \"photo.jpg\"           -> PASS  (safe characters)\n// \"report_2024.pdf\"     -> PASS  (safe characters)\n// \"../../../etc/passwd\" -> FAIL  (contains / )\n// \"%2e%2e%2f\"           -> FAIL  (contains % )\n// \"..\\\\etc\\\\passwd\"   -> FAIL  (contains \\\\ )",
+            "ai_hint": "Whitelist = only allow KNOWN GOOD characters. If / is not allowed, ../ cannot be constructed. Simple and effective!"
+          },
+          {
+            "concept": "Defence 2: Canonical Path Validation",
+            "explanation": "The canonical path is the ABSOLUTE, RESOLVED, NORMALISED path to a file. It removes all ../ references, resolves symbolic links, and produces the one TRUE path to the file.\n\nThe defence: build the file path, get its canonical form, and verify it starts with the base directory's canonical path.\n\nJava provides two methods:\n- File.getCanonicalPath() — resolves ../ and symlinks, returns absolute path\n- Path.toRealPath() — similar but uses the newer NIO API\n\nCRITICAL CORNER CASE: The base directory string must end with / (trailing slash). Without it, the path /safedir could match /safedirEVIL because \"/safedirEVIL\".startsWith(\"/safedir\") is TRUE! Adding the trailing slash means we check startsWith(\"/safedir/\") which does NOT match /safedirEVIL.\n\nA SECOND corner case: the input ../safedir/ / (with a space) can fool getCanonicalPath() into keeping the trailing slash, making /safedir/ match /safedir/ even though it refers to the directory itself (which can then be deleted). The fix: also check that the canonical path length is greater than the base directory path length.",
+            "example": "// CORRECT canonical path validation:\nString filename = request.getParameter(\"file\");\nfinal String BASE = \"/var/www/uploads/\"; // MUST end with /\n\nFile baseDir = new File(BASE);\nFile requestedFile = new File(baseDir, filename);\n\nString canonicalPath = requestedFile.getCanonicalPath();\nString canonicalBase = baseDir.getCanonicalPath();\n\n// Check 1: Path must start with base directory\nif (!canonicalPath.startsWith(canonicalBase)) {\n    throw new SecurityException(\"Path traversal detected: \" + filename);\n}\n\n// Check 2: Path must be LONGER than base (not the directory itself)\nif (canonicalPath.length() <= canonicalBase.length() + 1) {\n    throw new SecurityException(\"Invalid path: \" + filename);\n}\n\n// Now safe to use the file\nFileInputStream fis = new FileInputStream(requestedFile.getCanonicalFile());\n\n// Trace:\n// Input: ../../../etc/passwd\n// Built: /var/www/uploads/../../../etc/passwd\n// Canonical: /etc/passwd\n// startsWith(\"/var/www/uploads\")? NO -> BLOCKED!",
+            "ai_hint": "Canonical path resolves ALL tricks (../, symlinks, encoding). Always compare canonical paths, and always use trailing / on the base directory."
+          },
+          {
+            "concept": "Defence 3: Java NIO Path Validation (toRealPath)",
+            "explanation": "Java's NIO (New I/O) API provides Path.toRealPath() which is the modern equivalent of getCanonicalPath(). It resolves symlinks and normalises the path.\n\nThe key method: Path.toRealPath(LinkOption... options) resolves symbolic links by default. You can also use Path.normalize() to remove ../ without resolving symlinks (useful for checking before the file exists).\n\nFor checking parent directories, use Path.startsWith(Path other) which is safer than String.startsWith() because it compares path COMPONENTS, not string prefixes. /safedir/file starts with /safedir/ but /safedirEVIL does NOT start with /safedir/ when using Path.startsWith().",
+            "example": "import java.nio.file.*;\n\npublic class SecureFileAccess {\n    private static final Path BASE = Paths.get(\"/var/www/uploads\").toAbsolutePath();\n    \n    public static Path validatePath(String userInput) throws Exception {\n        // Build path from user input\n        Path requested = BASE.resolve(userInput).normalize();\n        \n        // Check it is within the base directory\n        // Path.startsWith() compares COMPONENTS, not strings!\n        if (!requested.startsWith(BASE)) {\n            throw new SecurityException(\"Path traversal blocked: \" + userInput);\n        }\n        \n        // For existing files, also resolve symlinks:\n        Path realPath = requested.toRealPath();\n        if (!realPath.startsWith(BASE.toRealPath())) {\n            throw new SecurityException(\"Symlink escape blocked: \" + userInput);\n        }\n        \n        return realPath;\n    }\n}\n\n// Path.startsWith() is SAFER than String.startsWith():\n// Paths.get(\"/safedirEVIL\").startsWith(Paths.get(\"/safedir\"))  -> FALSE ✅\n// \"/safedirEVIL\".startsWith(\"/safedir\")                       -> TRUE  ❌",
+            "ai_hint": "Use Path.startsWith(Path) not String.startsWith(String). The Path version compares directory COMPONENTS and is immune to the /safedirEVIL trick."
+          },
+          {
+            "concept": "Zip Slip: Path Traversal via Archive Extraction",
+            "explanation": "Zip Slip is a clever path traversal attack that works through archive files (ZIP, TAR, JAR). The attacker creates a malicious ZIP file where the internal filenames contain ../ sequences. When the application extracts the ZIP, it writes files OUTSIDE the extraction directory.\n\nFor example, a ZIP file might contain an entry named: ../../../../tmp/evil.sh. When extracted to /var/www/uploads/, the file gets written to /tmp/evil.sh instead.\n\nThis is especially dangerous because:\n1. The malicious path is INSIDE the archive, not in the URL\n2. Many ZIP extraction libraries do NOT check for path traversal\n3. The attacker can overwrite any file the application has write access to\n4. Overwriting a shell script or configuration file can lead to Remote Code Execution\n\nThe fix: for every entry in the ZIP, resolve the canonical path of the destination and verify it starts with the extraction directory. Reject any entry that would write outside the safe directory.",
+            "example": "// VULNERABLE ZIP extraction:\nimport java.util.zip.*;\nimport java.io.*;\n\npublic void extractZip(String zipPath, String destDir) throws Exception {\n    ZipInputStream zis = new ZipInputStream(new FileInputStream(zipPath));\n    ZipEntry entry;\n    while ((entry = zis.getNextEntry()) != null) {\n        // VULNERABLE: entry.getName() could be \"../../../tmp/evil.sh\"\n        File outFile = new File(destDir, entry.getName());\n        // Writes to /tmp/evil.sh instead of destDir!\n        FileOutputStream fos = new FileOutputStream(outFile);\n        // ... copy data ...\n    }\n}\n\n// SECURE ZIP extraction:\npublic void extractZipSecure(String zipPath, String destDir) throws Exception {\n    File dest = new File(destDir);\n    ZipInputStream zis = new ZipInputStream(new FileInputStream(zipPath));\n    ZipEntry entry;\n    while ((entry = zis.getNextEntry()) != null) {\n        File outFile = new File(dest, entry.getName());\n        // Validate: canonical path must be inside destination!\n        String canonicalDest = dest.getCanonicalPath() + File.separator;\n        String canonicalOut = outFile.getCanonicalPath();\n        if (!canonicalOut.startsWith(canonicalDest)) {\n            throw new SecurityException(\"Zip Slip detected: \" + entry.getName());\n        }\n        FileOutputStream fos = new FileOutputStream(outFile);\n        // ... copy data ...\n    }\n}",
+            "ai_hint": "Zip Slip hides path traversal INSIDE archive files. Always validate every zip entry's destination path before extracting."
+          },
+          {
+            "concept": "Secure Design Principle 1: Economy of Mechanism",
+            "explanation": "Keep it simple. The simpler the security mechanism, the fewer bugs it will have and the easier it is to review. Complex code has more places for vulnerabilities to hide.\n\nIn practice: use well-tested libraries instead of writing your own crypto. Keep your codebase small. Remove unnecessary features. Every line of code is a potential vulnerability.\n\nApplied to path traversal: a simple whitelist regex ([a-zA-Z0-9._-]+) is easier to verify than a complex filter that tries to detect and remove every possible encoding of ../.",
+            "example": "// COMPLEX (hard to verify, likely has bugs):\npublic String sanitizePath(String input) {\n    input = input.replace(\"../\", \"\");\n    input = input.replace(\"..\\\\\" , \"\");\n    input = URLDecoder.decode(input, \"UTF-8\");\n    input = input.replace(\"%2e\", \"\");\n    input = input.replace(\"%2f\", \"\");\n    // ... 20 more replacements ...\n    return input;\n}\n\n// SIMPLE (easy to verify, hard to bypass):\npublic boolean isValidFilename(String input) {\n    return input.matches(\"[a-zA-Z0-9._-]+\");\n}",
+            "ai_hint": "Simple code = fewer bugs = fewer vulnerabilities. If you can explain your security in one sentence, it's probably good."
+          },
+          {
+            "concept": "Secure Design Principle 2: Fail-Safe Defaults",
+            "explanation": "The default should be to DENY access. Only explicitly grant access when all checks pass. If any check fails, if there is an error, if something unexpected happens — the default answer is NO.\n\nThis is the opposite of fail-open, where errors cause the system to allow access. Fail-open is one of the most dangerous design flaws in security.\n\nApplied to path traversal: if the canonical path check throws an exception (maybe the file does not exist), the application should DENY access, not serve a default file or skip the check.",
+            "example": "// FAIL-OPEN (DANGEROUS):\ntry {\n    String canonical = file.getCanonicalPath();\n    if (!canonical.startsWith(BASE)) {\n        // Block traversal\n        response.sendError(403);\n        return;\n    }\n} catch (IOException e) {\n    // Exception occurred... serve the file anyway?\n    // THIS IS FAIL-OPEN! If getCanonicalPath() fails,\n    // the attacker gets access!\n}\nserveFile(file); // Reached even on error!\n\n// FAIL-SAFE (CORRECT):\ntry {\n    String canonical = file.getCanonicalPath();\n    if (!canonical.startsWith(BASE)) {\n        response.sendError(403);\n        return;\n    }\n    serveFile(file); // Only reached if ALL checks pass\n} catch (IOException e) {\n    // Error = DENY\n    response.sendError(500, \"File access error\");\n    return; // Do NOT serve the file\n}",
+            "ai_hint": "Default = DENY. Only allow when ALL checks pass. If anything goes wrong, the answer is NO."
+          },
+          {
+            "concept": "Secure Design Principle 3: Complete Mediation",
+            "explanation": "Every access to every resource must be checked EVERY time. Do not cache authorisation decisions. Do not assume that because a user was allowed to access a file once, they should be allowed again.\n\nApplied to path traversal: validate the file path on EVERY request, not just the first time. The file system can change between requests (files moved, symlinks created). A path that was safe yesterday might be dangerous today.",
+            "example": "// WRONG: Cache the validation result\nMap<String, Boolean> validatedPaths = new HashMap<>();\n\npublic void serveFile(String filename) {\n    if (validatedPaths.containsKey(filename)) {\n        // Skip validation - already checked!\n        // DANGEROUS: file system could have changed!\n        doServe(filename);\n    } else {\n        if (validatePath(filename)) {\n            validatedPaths.put(filename, true);\n            doServe(filename);\n        }\n    }\n}\n\n// CORRECT: Validate EVERY time\npublic void serveFile(String filename) {\n    if (validatePath(filename)) {\n        doServe(filename);\n    } else {\n        denyAccess();\n    }\n}",
+            "ai_hint": "Check EVERY access, EVERY time. Never cache security decisions. The situation can change between requests."
+          },
+          {
+            "concept": "Secure Design Principle 4: Open Design",
+            "explanation": "Your security should not depend on the design being SECRET. The system should be secure even if attackers know exactly how it works. Security through obscurity is not security.\n\nIn cryptography: the algorithm (AES, RSA) is public. Only the KEY is secret. Even if the attacker knows the algorithm, they cannot break it without the key.\n\nApplied to path traversal: your validation code should work even if the attacker can read your source code. A whitelist regex or canonical path check works regardless of whether the attacker knows about it. A blacklist of specific attack patterns fails when the attacker finds a pattern you didn't think of.",
+            "example": "// SECURITY THROUGH OBSCURITY (BAD):\n// \"We renamed /etc/passwd to /etc/p4ssw0rd, nobody will find it!\"\n// Attacker: reads your deployment script, finds the real name\n\n// OPEN DESIGN (GOOD):\n// The validation works even if the attacker reads the source code:\npublic boolean isPathSafe(String filename, String baseDir) {\n    // This code can be made completely public.\n    // Even knowing the algorithm, attacker cannot bypass it.\n    File base = new File(baseDir);\n    File requested = new File(base, filename);\n    try {\n        return requested.getCanonicalPath().startsWith(\n            base.getCanonicalPath() + File.separator);\n    } catch (IOException e) {\n        return false; // Fail safe!\n    }\n}",
+            "ai_hint": "If your security only works because attackers don't know how it works, it WILL be broken. Design security that works even when the attacker reads your code."
+          },
+          {
+            "concept": "Secure Design Principle 5: Least Privilege",
+            "explanation": "Every program, process, and user should operate with the MINIMUM permissions needed to complete their task. No more, no less.\n\nFor web applications: the web server process should NOT run as root. It should only have read access to the directories it needs to serve. It should have write access ONLY to upload directories. It should have NO access to /etc/shadow, private keys, or system configuration.\n\nApplied to path traversal: even if a path traversal vulnerability exists, if the web server process only has read access to /var/www/, it CANNOT read /etc/passwd because the OS blocks it. Least privilege is a safety net that limits damage.",
+            "example": "// Application of Least Privilege:\n\n// BAD: Web server runs as root\n// sudo java -jar webapp.jar\n// If path traversal exists: attacker can read ANY file on the system!\n// /etc/shadow, /root/.ssh/id_rsa, /etc/sudoers...\n\n// GOOD: Web server runs as limited user 'webapp'\n// su webapp -c 'java -jar webapp.jar'\n// File permissions:\n// /var/www/uploads/  -> readable by webapp\n// /var/www/config/   -> readable by webapp\n// /etc/passwd        -> readable (but limited info)\n// /etc/shadow        -> NOT readable by webapp!\n// /root/             -> NOT readable by webapp!\n\n// Even with path traversal, damage is LIMITED\n// The OS enforces what the app process can access\n\n// Java security manager (additional layer):\n// System.setSecurityManager(new SecurityManager());\n// grant codeBase \"file:/var/www/webapp.jar\" {\n//     permission java.io.FilePermission \"/var/www/uploads/*\", \"read\";\n// };",
+            "ai_hint": "Least privilege = the app only gets the minimum access it needs. Even if attacked, the damage is contained."
+          },
+          {
+            "concept": "Secure Design Principle 6: Separation of Privilege",
+            "explanation": "Require more than one condition to be met before granting access. Like a bank vault that needs two keys turned simultaneously — no single person can open it alone.\n\nApplied to path traversal defence-in-depth:\n1. First check: whitelist validation (filename characters)\n2. Second check: canonical path validation (result location)\n3. Third check: OS-level file permissions (least privilege)\n\nAll three must pass. Even if one check has a bug, the others catch the attack.",
+            "example": "// Defence in depth with multiple checks:\npublic File secureFileAccess(String filename) throws SecurityException {\n    // CHECK 1: Whitelist validation\n    if (!filename.matches(\"[a-zA-Z0-9._-]+\")) {\n        throw new SecurityException(\"Invalid characters in filename\");\n    }\n    \n    // CHECK 2: Canonical path validation\n    File base = new File(BASE_DIR);\n    File requested = new File(base, filename);\n    try {\n        String canonical = requested.getCanonicalPath();\n        if (!canonical.startsWith(base.getCanonicalPath() + File.separator)) {\n            throw new SecurityException(\"Path traversal detected\");\n        }\n    } catch (IOException e) {\n        throw new SecurityException(\"Path validation failed\");\n    }\n    \n    // CHECK 3: File exists and is readable\n    if (!requested.exists() || !requested.canRead()) {\n        throw new SecurityException(\"File not accessible\");\n    }\n    \n    // CHECK 4: File size limit (prevent serving huge files)\n    if (requested.length() > 10_000_000) { // 10MB max\n        throw new SecurityException(\"File too large\");\n    }\n    \n    return requested;\n}",
+            "ai_hint": "Multiple checks = multiple layers. If one fails, the others protect you. This is defence in depth."
+          },
+          {
+            "concept": "Real-World Path Traversal Breaches",
+            "explanation": "Path traversal is not theoretical — it has caused major real-world breaches:\n\n1. Apache HTTP Server (CVE-2021-41773): A path traversal bug allowed attackers to read any file on the server by using %2e (URL-encoded dot) to bypass the path check. Affected thousands of servers worldwide.\n\n2. Spring Cloud Function (CVE-2022-22963): Path traversal in the routing functionality allowed remote code execution.\n\n3. Zip Slip (2018): Researchers at Snyk found path traversal in archive extraction in thousands of projects including HP, Amazon, Apache, and LinkedIn. The vulnerability affected libraries in Java, .NET, Ruby, JavaScript, and Go.\n\n4. Fortinet VPN (CVE-2018-13379): Path traversal in the FortiOS SSL VPN web portal allowed unauthenticated attackers to download system files, exposing VPN credentials. Used in real attacks against government agencies.\n\nThese breaches show that path traversal is current, dangerous, and actively exploited.",
+            "example": "// Apache CVE-2021-41773 simplified:\n// URL: http://server/icons/%2e%2e/%2e%2e/etc/passwd\n// The %2e is URL-encoded dot (.)\n// Apache decoded it to ../../etc/passwd\n// But the path check ran BEFORE URL decoding!\n// Check saw: /icons/%2e%2e/%2e%2e/etc/passwd (no ../ found)\n// File system saw: /icons/../../etc/passwd = /etc/passwd\n// Result: attacker reads /etc/passwd!\n\n// Lesson: ALWAYS decode input BEFORE checking it\n// Or better: check the CANONICAL path after resolution\n\npublic class PathTraversalLessons {\n    public static void main(String[] args) {\n        System.out.println(\"CVE-2021-41773: Apache path traversal\");\n        System.out.println(\"  Root cause: URL decoding after path check\");\n        System.out.println(\"  Impact: Any file readable by Apache user\");\n        System.out.println(\"  Fix: Canonical path validation\");\n        System.out.println();\n        System.out.println(\"CVE-2018-13379: Fortinet VPN\");\n        System.out.println(\"  Root cause: No path validation on SSL VPN portal\");\n        System.out.println(\"  Impact: VPN credentials stolen\");\n        System.out.println(\"  Fix: Input validation + canonical path check\");\n    }\n}",
+            "ai_hint": "Path traversal is actively exploited. CVE-2021-41773 affected thousands of Apache servers. These are not theoretical attacks."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Basic Path Traversal Attack",
+          "description": "A simple file download servlet vulnerable to path traversal. We trace the attack from URL to file system.",
+          "difficulty": "beginner",
+          "code": "// Vulnerable file download servlet:\nimport javax.servlet.http.*;\nimport java.io.*;\n\npublic class DownloadServlet extends HttpServlet {\n    private static final String UPLOAD_DIR = \"/var/www/uploads/\";\n    \n    protected void doGet(HttpServletRequest req, HttpServletResponse resp)\n            throws IOException {\n        String filename = req.getParameter(\"file\");\n        // VULNERABLE: no validation!\n        File file = new File(UPLOAD_DIR + filename);\n        \n        FileInputStream fis = new FileInputStream(file);\n        resp.setContentType(\"application/octet-stream\");\n        byte[] buffer = new byte[4096];\n        int bytesRead;\n        while ((bytesRead = fis.read(buffer)) != -1) {\n            resp.getOutputStream().write(buffer, 0, bytesRead);\n        }\n        fis.close();\n    }\n}\n\n// Normal: GET /download?file=photo.jpg\n// Path: /var/www/uploads/photo.jpg  ✅\n\n// Attack: GET /download?file=../../../etc/passwd\n// Path: /var/www/uploads/../../../etc/passwd\n// Resolves: /etc/passwd  💀",
+          "output": "Normal: Serves /var/www/uploads/photo.jpg (intended)\nAttack: Serves /etc/passwd (system file exposed!)",
+          "ai_explanation": "The servlet takes the 'file' parameter and concatenates it directly with the upload directory. No validation means the attacker can use ../ to navigate anywhere on the file system. The OS resolves the ../ sequences before opening the file.",
+          "ai_challenge": "How many ../ would you need to reach the root from /var/www/uploads/? (Answer: 3 — up from uploads, up from www, up from var)"
+        },
+        {
+          "title": "Example 2: Whitelist Defence",
+          "description": "Adding regex whitelist validation to block path traversal characters.",
+          "difficulty": "beginner",
+          "code": "protected void doGet(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException {\n    String filename = req.getParameter(\"file\");\n    \n    // DEFENCE: Whitelist validation\n    if (filename == null || !filename.matches(\"[a-zA-Z0-9._-]+\")) {\n        resp.sendError(400, \"Invalid filename\");\n        return;\n    }\n    \n    File file = new File(UPLOAD_DIR, filename);\n    if (!file.exists()) {\n        resp.sendError(404, \"File not found\");\n        return;\n    }\n    \n    // Safe to serve\n    serveFile(file, resp);\n}\n\n// Tests:\n// \"photo.jpg\"           -> PASS (a-z, dot)\n// \"report-2024.pdf\"     -> PASS (a-z, digit, hyphen, dot)\n// \"../../../etc/passwd\" -> BLOCKED (contains /)\n// \"%2e%2e%2f\"           -> BLOCKED (contains %)\n// \"..\\\\etc\\\\passwd\"   -> BLOCKED (contains \\\\)",
+          "output": "photo.jpg -> Allowed (safe characters only)\n../../../etc/passwd -> BLOCKED (/ not in whitelist)\nAll encoding bypasses also blocked (special chars not in whitelist)",
+          "ai_explanation": "The regex [a-zA-Z0-9._-]+ only allows letters, numbers, dots, underscores, and hyphens. Since / and \\ and % are not in the whitelist, no path traversal sequence can be constructed. This is the simplest and most effective first defence.",
+          "ai_challenge": "What if the application needs to serve files in subdirectories like images/photo.jpg? The whitelist blocks / so this would fail. How would you handle it?"
+        },
+        {
+          "title": "Example 3: Canonical Path Validation",
+          "description": "Using getCanonicalPath() to catch path traversal after resolving all ../ and symlinks.",
+          "difficulty": "intermediate",
+          "code": "protected void doGet(HttpServletRequest req, HttpServletResponse resp)\n        throws IOException {\n    String filename = req.getParameter(\"file\");\n    final String BASE = \"/var/www/uploads/\"; // Trailing slash!\n    \n    File baseDir = new File(BASE);\n    File requested = new File(baseDir, filename);\n    \n    // Get canonical (resolved) paths\n    String canonicalPath = requested.getCanonicalPath();\n    String canonicalBase = baseDir.getCanonicalPath() + File.separator;\n    \n    // Validate: resolved path must be inside base\n    if (!canonicalPath.startsWith(canonicalBase)) {\n        System.out.println(\"BLOCKED: \" + filename);\n        System.out.println(\"  Canonical: \" + canonicalPath);\n        System.out.println(\"  Base: \" + canonicalBase);\n        resp.sendError(403, \"Access denied\");\n        return;\n    }\n    \n    serveFile(requested, resp);\n}\n\n// Trace for attack input ../../../etc/passwd:\n// Built path: /var/www/uploads/../../../etc/passwd\n// Canonical: /etc/passwd\n// Base: /var/www/uploads/\n// Does /etc/passwd start with /var/www/uploads/ ? NO!\n// BLOCKED!",
+          "output": "photo.jpg -> Canonical: /var/www/uploads/photo.jpg, starts with base -> ALLOWED\n../../../etc/passwd -> Canonical: /etc/passwd, does NOT start with base -> BLOCKED\n%2e%2e%2fetc/passwd -> Canonical: /etc/passwd -> BLOCKED (decoded before canonical)",
+          "ai_explanation": "getCanonicalPath() resolves ALL tricks: ../, symlinks, URL encoding. The canonical path is the TRUE location of the file. By comparing it to the base directory's canonical path, we ensure the file is inside the allowed directory regardless of how the attacker constructed the input.",
+          "ai_challenge": "What is the trailing slash corner case? What happens if BASE = '/var/www/uploads' (no trailing slash)?"
+        },
+        {
+          "title": "Example 4: The Trailing Slash Corner Case",
+          "description": "Demonstrating why the base directory MUST end with / to prevent the /safedirEVIL bypass.",
+          "difficulty": "intermediate",
+          "code": "// THE BUG:\nfinal String BASE = \"/safedir\"; // NO trailing slash!\n\nFile base = new File(BASE);\nFile attack = new File(base, \"../safedirEVIL/malicious.txt\");\n\nString canonical = attack.getCanonicalPath();\n// canonical = \"/safedirEVIL/malicious.txt\"\n\n// Does it start with \"/safedir\"?\nSystem.out.println(canonical.startsWith(BASE)); // TRUE!\n// Because \"/safedirEVIL\" starts with \"/safedir\" !\n// BYPASSED!\n\n// THE FIX:\nfinal String SAFE_BASE = \"/safedir/\"; // WITH trailing slash!\n\nString canonicalBase = new File(SAFE_BASE).getCanonicalPath() + File.separator;\n// canonicalBase = \"/safedir/\"\n\nSystem.out.println(canonical.startsWith(canonicalBase)); // FALSE!\n// \"/safedirEVIL/malicious.txt\" does NOT start with \"/safedir/\"\n// BLOCKED!",
+          "output": "Without trailing /: /safedirEVIL starts with /safedir = TRUE (BYPASSED!)\nWith trailing /: /safedirEVIL does NOT start with /safedir/ = FALSE (BLOCKED!)",
+          "ai_explanation": "String.startsWith() checks character by character. '/safedirEVIL'.startsWith('/safedir') is TRUE because the first 8 characters match. Adding the trailing slash means we check '/safedirEVIL'.startsWith('/safedir/') which is FALSE because the 9th character is E, not /.",
+          "ai_challenge": "Java NIO's Path.startsWith(Path) does NOT have this bug. Why? Because it compares path COMPONENTS, not characters."
+        },
+        {
+          "title": "Example 5: Java NIO Path Validation",
+          "description": "Modern path validation using Java NIO which is safer than File.getCanonicalPath().",
+          "difficulty": "intermediate",
+          "code": "import java.nio.file.*;\n\npublic class SecureFileServer {\n    private static final Path BASE = Paths.get(\"/var/www/uploads\").toAbsolutePath();\n    \n    public static Path validateAndResolve(String userInput) throws SecurityException {\n        // Step 1: Resolve user input against base\n        Path requested = BASE.resolve(userInput).normalize();\n        \n        // Step 2: Check it's within base (Path.startsWith is component-based!)\n        if (!requested.startsWith(BASE)) {\n            throw new SecurityException(\"Path traversal blocked: \" + userInput);\n        }\n        \n        // Step 3: For existing files, also check real path (resolves symlinks)\n        try {\n            Path real = requested.toRealPath();\n            if (!real.startsWith(BASE.toRealPath())) {\n                throw new SecurityException(\"Symlink escape blocked: \" + userInput);\n            }\n            return real;\n        } catch (Exception e) {\n            throw new SecurityException(\"File access error\");\n        }\n    }\n}\n\n// Path.startsWith() is COMPONENT-BASED:\n// Paths.get(\"/safedirEVIL\").startsWith(Paths.get(\"/safedir\"))  = FALSE ✅\n// This is safer than String.startsWith()!",
+          "output": "photo.jpg -> Resolves within BASE -> ALLOWED\n../../../etc/passwd -> normalize removes ../, not in BASE -> BLOCKED\n/safedirEVIL -> Path.startsWith checks components -> BLOCKED (no trailing / needed!)",
+          "ai_explanation": "Java NIO Path.startsWith(Path) compares path COMPONENTS (directory names), not string characters. This means /safedirEVIL does NOT start with /safedir because 'safedirEVIL' is a different component than 'safedir'. This eliminates the trailing slash corner case entirely.",
+          "ai_challenge": "What does toRealPath() do that normalize() does not? (Answer: toRealPath resolves symbolic links, normalize only removes ../)"
+        },
+        {
+          "title": "Example 6: Zip Slip Attack and Defence",
+          "description": "Demonstrating the Zip Slip vulnerability where malicious archive entries write files outside the extraction directory.",
+          "difficulty": "intermediate",
+          "code": "import java.util.zip.*;\nimport java.io.*;\n\n// VULNERABLE extraction:\npublic void extractVulnerable(String zipPath, String destDir) throws Exception {\n    ZipInputStream zis = new ZipInputStream(new FileInputStream(zipPath));\n    ZipEntry entry;\n    while ((entry = zis.getNextEntry()) != null) {\n        // entry.getName() could be: \"../../../tmp/evil.sh\"\n        File outFile = new File(destDir, entry.getName());\n        outFile.getParentFile().mkdirs();\n        FileOutputStream fos = new FileOutputStream(outFile);\n        byte[] buffer = new byte[1024];\n        int len;\n        while ((len = zis.read(buffer)) > 0) {\n            fos.write(buffer, 0, len);\n        }\n        fos.close();\n    }\n    zis.close();\n}\n// If destDir = /var/www/uploads/\n// entry = ../../../tmp/evil.sh\n// outFile = /var/www/uploads/../../../tmp/evil.sh = /tmp/evil.sh!\n// Attacker writes to /tmp/evil.sh!\n\n// SECURE extraction:\npublic void extractSecure(String zipPath, String destDir) throws Exception {\n    File dest = new File(destDir);\n    String canonicalDest = dest.getCanonicalPath() + File.separator;\n    \n    ZipInputStream zis = new ZipInputStream(new FileInputStream(zipPath));\n    ZipEntry entry;\n    while ((entry = zis.getNextEntry()) != null) {\n        File outFile = new File(dest, entry.getName());\n        String canonicalOut = outFile.getCanonicalPath();\n        \n        // Validate EVERY entry!\n        if (!canonicalOut.startsWith(canonicalDest)) {\n            throw new SecurityException(\"Zip Slip detected: \" + entry.getName());\n        }\n        // Safe to extract\n        outFile.getParentFile().mkdirs();\n        FileOutputStream fos = new FileOutputStream(outFile);\n        byte[] buffer = new byte[1024];\n        int len;\n        while ((len = zis.read(buffer)) > 0) {\n            fos.write(buffer, 0, len);\n        }\n        fos.close();\n    }\n}",
+          "output": "Vulnerable: ../../../tmp/evil.sh extracts to /tmp/evil.sh (OUTSIDE dest!)\nSecure: Canonical path check catches it -> SecurityException thrown",
+          "ai_explanation": "Zip Slip is particularly dangerous because the malicious path is hidden INSIDE the archive file. The extraction code must validate EVERY entry's destination path against the extraction directory before writing any file.",
+          "ai_challenge": "What could an attacker overwrite with Zip Slip to achieve Remote Code Execution? (Hint: cron jobs, .bashrc, web shell in the web root)"
+        },
+        {
+          "title": "Example 7: Fail-Safe vs Fail-Open",
+          "description": "Comparing dangerous fail-open error handling with correct fail-safe design.",
+          "difficulty": "intermediate",
+          "code": "// FAIL-OPEN (DANGEROUS!):\npublic void serveFileFailOpen(String filename, HttpServletResponse resp) {\n    try {\n        File file = new File(BASE_DIR, filename);\n        String canonical = file.getCanonicalPath();\n        if (!canonical.startsWith(BASE_DIR)) {\n            resp.sendError(403);\n            return;\n        }\n        serveFile(file, resp);\n    } catch (IOException e) {\n        // ERROR: What do we do?\n        // Fail-open: try to serve anyway!\n        try {\n            File file = new File(BASE_DIR, filename);\n            serveFile(file, resp);  // NO VALIDATION!\n        } catch (Exception ex) {\n            resp.sendError(500);\n        }\n    }\n}\n// If getCanonicalPath() throws an exception,\n// the code SKIPS validation and serves the file!\n\n// FAIL-SAFE (CORRECT!):\npublic void serveFileFailSafe(String filename, HttpServletResponse resp) {\n    try {\n        File file = new File(BASE_DIR, filename);\n        String canonical = file.getCanonicalPath();\n        if (!canonical.startsWith(BASE_DIR)) {\n            resp.sendError(403);\n            return;\n        }\n        serveFile(file, resp); // Only if ALL checks pass\n    } catch (Exception e) {\n        // ANY error = DENY access\n        resp.sendError(500, \"File access denied\");\n    }\n}",
+          "output": "Fail-open: Exception -> serves file without validation -> VULNERABLE\nFail-safe: Exception -> denies access -> SECURE",
+          "ai_explanation": "Fail-safe means the default is to DENY access. If any check fails or throws an exception, the result is denial. Fail-open means errors cause the system to skip security checks and allow access — this is extremely dangerous.",
+          "ai_challenge": "Think of a real-world fail-safe: a building's fire doors are CLOSED by default and only open when the fire alarm triggers an unlock. What would fail-open look like?"
+        },
+        {
+          "title": "Example 8: Complete Mediation - Check Every Request",
+          "description": "Why you must validate every single file access, not cache validation results.",
+          "difficulty": "intermediate",
+          "code": "// BAD: Caching validation (violates Complete Mediation)\nimport java.util.*;\n\npublic class CachedFileServer {\n    private Set<String> validatedFiles = new HashSet<>();\n    \n    public void serve(String filename) {\n        if (validatedFiles.contains(filename)) {\n            // Already validated once - skip check!\n            // DANGEROUS: what if a symlink was created since last check?\n            doServe(filename);\n        } else if (isPathSafe(filename)) {\n            validatedFiles.add(filename);\n            doServe(filename);\n        } else {\n            deny();\n        }\n    }\n}\n// Attack scenario:\n// 1. Request photo.jpg -> validated, cached, served\n// 2. Attacker creates symlink: photo.jpg -> /etc/passwd\n// 3. Request photo.jpg -> CACHED! Skips validation!\n// 4. Serves /etc/passwd through the symlink!\n\n// CORRECT: Validate EVERY time\npublic class SecureFileServer {\n    public void serve(String filename) {\n        // NO caching - validate on every request\n        if (isPathSafe(filename)) {\n            doServe(filename);\n        } else {\n            deny();\n        }\n    }\n}",
+          "output": "Cached: symlink attack bypasses validation on second request\nEvery-time check: symlink caught because toRealPath() resolves it",
+          "ai_explanation": "Complete Mediation means checking EVERY access, EVERY time. File systems can change between requests: files moved, symlinks created, permissions changed. A path that was safe at 10:00 might be dangerous at 10:01.",
+          "ai_challenge": "Can you think of another scenario where caching a security decision is dangerous? (Hint: user permissions that were revoked between requests)"
+        },
+        {
+          "title": "Example 9: Least Privilege for Web Applications",
+          "description": "Configuring OS-level permissions so path traversal has limited impact.",
+          "difficulty": "intermediate",
+          "code": "// Even with path traversal, OS permissions limit damage:\n\npublic class LeastPrivilegeDemo {\n    public static void main(String[] args) {\n        System.out.println(\"=== RUNNING AS ROOT (BAD) ===\");\n        System.out.println(\"Path traversal to /etc/shadow -> SUCCESS (root can read anything)\");\n        System.out.println(\"Path traversal to /root/.ssh/id_rsa -> SUCCESS\");\n        System.out.println(\"Impact: TOTAL SYSTEM COMPROMISE\");\n        System.out.println();\n        \n        System.out.println(\"=== RUNNING AS 'webapp' USER (GOOD) ===\");\n        System.out.println(\"Path traversal to /etc/shadow -> DENIED (webapp has no access)\");\n        System.out.println(\"Path traversal to /root/.ssh/id_rsa -> DENIED\");\n        System.out.println(\"Path traversal to /etc/passwd -> readable (limited info)\");\n        System.out.println(\"Impact: LIMITED — only publicly readable files exposed\");\n    }\n}\n\n// Linux setup for least privilege:\n// 1. Create dedicated user:\n//    sudo useradd -r -s /bin/false webapp\n//\n// 2. Set directory permissions:\n//    sudo chown -R webapp:webapp /var/www/uploads/\n//    sudo chmod 750 /var/www/uploads/\n//\n// 3. Run app as limited user:\n//    sudo -u webapp java -jar webapp.jar\n//\n// 4. Verify: webapp cannot read sensitive files:\n//    sudo -u webapp cat /etc/shadow  -> Permission denied!",
+          "output": "As root: path traversal = total compromise\nAs webapp user: path traversal = only publicly readable files (damage limited)",
+          "ai_explanation": "Least privilege is a safety net. Even if your code has a path traversal vulnerability, the OS prevents the application from accessing files it does not have permission to read. Running as a limited user dramatically reduces the impact of path traversal.",
+          "ai_challenge": "What other principle does this demonstrate? (Answer: Defence in depth — multiple layers of protection)"
+        },
+        {
+          "title": "Example 10: Path Traversal in Windows vs Linux",
+          "description": "Platform differences in path separators and how they affect path traversal attacks.",
+          "difficulty": "intermediate",
+          "code": "public class CrossPlatformTraversal {\n    public static void main(String[] args) {\n        System.out.println(\"=== LINUX PATH TRAVERSAL ===\");\n        System.out.println(\"Separator: /\");\n        System.out.println(\"Attack: ../../../etc/passwd\");\n        System.out.println(\"Target: /etc/passwd (user accounts)\");\n        System.out.println();\n        \n        System.out.println(\"=== WINDOWS PATH TRAVERSAL ===\");\n        System.out.println(\"Separator: \\\\ (also accepts /)\");\n        System.out.println(\"Attack: ..\\\\..\\\\..\\\\windows\\\\win.ini\");\n        System.out.println(\"Also:   ../../../windows/win.ini (/ works too!)\");\n        System.out.println(\"Target: C:\\\\Windows\\\\win.ini (system config)\");\n        System.out.println();\n        \n        System.out.println(\"=== CROSS-PLATFORM DEFENCE ===\");\n        System.out.println(\"Use File.separator for platform-independent code\");\n        System.out.println(\"Check for BOTH / and \\\\ in input\");\n        System.out.println(\"Or use whitelist: [a-zA-Z0-9._-]+ blocks both\");\n    }\n}\n\n// Platform-safe validation:\npublic boolean isSafeFilename(String filename) {\n    // Block BOTH separators\n    if (filename.contains(\"/\") || filename.contains(\"\\\\\")) {\n        return false;\n    }\n    // Block parent directory reference\n    if (filename.contains(\"..\")) {\n        return false;\n    }\n    // Whitelist is simplest:\n    return filename.matches(\"[a-zA-Z0-9._-]+\");\n}",
+          "output": "Linux: ../ with / separator targets /etc/passwd\nWindows: ..\\ with \\ separator targets C:\\Windows\\win.ini\nWindows also accepts / so both work!\nDefence: whitelist blocks both separators",
+          "ai_explanation": "Windows accepts BOTH / and \\ as path separators, which means a filter that only checks for / will miss ..\\ attacks on Windows. The safest approach is a whitelist that blocks ALL characters except known-safe ones.",
+          "ai_challenge": "Java's File.separator returns / on Linux and \\ on Windows. How does this affect your validation code if it runs on both platforms?"
+        },
+        {
+          "title": "Example 11: Encoding Table - All Bypass Representations",
+          "description": "Complete reference of how ../ can be encoded in different ways to bypass filters.",
+          "difficulty": "advanced",
+          "code": "public class EncodingBypassTable {\n    public static void main(String[] args) {\n        System.out.println(\"=== ALL KNOWN ENCODINGS OF ../ ===\");\n        System.out.println();\n        System.out.println(\"Direct:           ../\");\n        System.out.println(\"URL encoded:      %2e%2e%2f\");\n        System.out.println(\"Partial URL:      %2e%2e/  or  ..%2f\");\n        System.out.println(\"Double encoded:   %252e%252e%252f\");\n        System.out.println(\"Unicode (UTF-8):  ..%c0%af  or  ..%ef%bc%8f\");\n        System.out.println(\"Backslash:        ..\\\\  (Windows)\");\n        System.out.println(\"URL backslash:    ..%5c\");\n        System.out.println(\"Mixed:            .%2e/  or  %2e./\");\n        System.out.println(\"Nested removal:   ....//  or  ..././\");\n        System.out.println(\"Null byte:        ../%00.jpg  (old systems)\");\n        System.out.println(\"Overlong UTF-8:   ..%c0%ae/  (dot as overlong)\");\n        System.out.println();\n        System.out.println(\"=== WHY BLACKLISTING FAILS ===\");\n        System.out.println(\"There are 15+ ways to encode ../\");\n        System.out.println(\"New encodings are discovered regularly\");\n        System.out.println(\"Blacklist = cat-and-mouse game (attacker wins)\");\n        System.out.println();\n        System.out.println(\"=== WHY CANONICAL PATH WORKS ===\");\n        System.out.println(\"ALL encodings resolve to the same canonical path\");\n        System.out.println(\"The OS decodes everything before resolving\");\n        System.out.println(\"Canonical path check catches ALL variants\");\n    }\n}",
+          "output": "15+ ways to encode ../ - blacklisting cannot catch them all\nCanonical path resolves ALL of them to the same real path\nAlways validate the RESULT, not the INPUT",
+          "ai_explanation": "This table shows why blacklisting (trying to block specific attack patterns) is fundamentally flawed for path traversal. There are too many ways to encode the same thing. Canonical path validation works because it checks the RESULT after the OS resolves all encoding.",
+          "ai_challenge": "A WAF (Web Application Firewall) blocks requests containing ../. Can you construct a path traversal payload that bypasses it? (Hint: double encoding)"
+        },
+        {
+          "title": "Example 12: Design Principles Applied to a File Server",
+          "description": "Applying all 8 Saltzer & Schroeder principles to design a secure file server.",
+          "difficulty": "advanced",
+          "code": "import java.io.*;\nimport java.nio.file.*;\nimport java.util.logging.*;\n\npublic class PrincipledFileServer {\n    private static final Logger log = Logger.getLogger(\"Security\");\n    private final Path baseDir;\n    \n    public PrincipledFileServer(String baseDirPath) throws IOException {\n        this.baseDir = Paths.get(baseDirPath).toRealPath();\n    }\n    \n    public byte[] serveFile(String filename) throws SecurityException {\n        // P1: Economy of Mechanism - simple whitelist\n        if (!filename.matches(\"[a-zA-Z0-9._-]+\")) {\n            log.warning(\"Invalid chars in: \" + filename);\n            throw new SecurityException(\"Invalid filename\");\n        }\n        \n        // P3: Complete Mediation - validate EVERY request\n        Path requested = baseDir.resolve(filename);\n        \n        // P5: Separation of Privilege - multiple checks\n        try {\n            Path real = requested.toRealPath();\n            if (!real.startsWith(baseDir)) {\n                log.severe(\"Path traversal: \" + filename + \" -> \" + real);\n                throw new SecurityException(\"Access denied\");\n            }\n            \n            // P6: Least Privilege - only read, size limit\n            if (Files.size(real) > 10_000_000) {\n                throw new SecurityException(\"File too large\");\n            }\n            \n            // P2: Fail-Safe - only serve if ALL checks pass\n            return Files.readAllBytes(real);\n            \n        } catch (IOException e) {\n            // P2: Fail-Safe - error = deny\n            log.warning(\"File error for: \" + filename);\n            throw new SecurityException(\"File not accessible\");\n        }\n    }\n    // P4: Open Design - this code works even if attacker reads it\n    // P7: Least Common Mechanism - file server is isolated\n    // P8: Psychological Acceptability - users just provide filename\n}",
+          "output": "All 8 principles applied:\n1. Economy: simple regex\n2. Fail-safe: errors = deny\n3. Complete mediation: every request validated\n4. Open design: code is secure even if public\n5. Separation: multiple checks\n6. Least privilege: read-only, size limit\n7. Least common: isolated server\n8. Psychological: simple user interface",
+          "ai_explanation": "This example shows how all 8 design principles work together in a single file server implementation. Each principle addresses a different aspect of security, and together they create a robust defence that is simple, verifiable, and effective.",
+          "ai_challenge": "Which principle do you think is most often violated in real applications? (Most common: fail-safe defaults — developers handle errors by allowing access instead of denying it)"
+        },
+        {
+          "title": "Example 13: Path Traversal in Command Execution",
+          "description": "Path traversal in a program that executes user-specified binaries from a safe directory.",
+          "difficulty": "advanced",
+          "code": "import java.nio.file.*;\n\npublic class SafeExecutor {\n    private static final Path SAFE_DIR = Paths.get(\"safe_programs\").toAbsolutePath();\n    \n    // VULNERABLE version:\n    public static int executeVulnerable(String programName) throws Exception {\n        Path program = SAFE_DIR.resolve(programName);\n        // No validation! Attacker sends: ../unsafe_program\n        Process p = Runtime.getRuntime().exec(program.toString());\n        return p.waitFor();\n    }\n    \n    // First attempt (weak):\n    public static int executeWeak(String programName) throws Exception {\n        // Only checks for File.separator\n        if (programName.contains(java.io.File.separator)) {\n            throw new SecurityException(\"Path separator detected\");\n        }\n        // On Windows, File.separator is \\\\ but / also works!\n        // Attacker sends: ../unsafe_program (uses / not \\\\)\n        Path program = SAFE_DIR.resolve(programName);\n        Process p = Runtime.getRuntime().exec(program.toString());\n        return p.waitFor();\n    }\n    \n    // SECURE version:\n    public static int executeSecure(String programName) throws Exception {\n        // Whitelist: only alphanumeric and underscore\n        if (!programName.matches(\"[a-zA-Z0-9_]+\")) {\n            throw new SecurityException(\"Invalid program name\");\n        }\n        \n        Path program = SAFE_DIR.resolve(programName).toRealPath();\n        \n        // Verify parent is exactly the safe directory\n        if (!program.getParent().equals(SAFE_DIR.toRealPath())) {\n            throw new SecurityException(\"Path traversal detected\");\n        }\n        \n        Process p = Runtime.getRuntime().exec(program.toString());\n        return p.waitFor();\n    }\n}",
+          "output": "Vulnerable: ../unsafe_program executes outside safe_programs/\nWeak: checks \\ but not / on Windows -> bypassed!\nSecure: whitelist + parent check -> blocks all traversal",
+          "ai_explanation": "This example from a command execution context shows that path traversal is not limited to file downloads. Any code that builds a path from user input is vulnerable. The secure version uses both whitelist validation and parent directory verification.",
+          "ai_challenge": "What if the safe_programs directory contains a symbolic link to an unsafe program? Would the parent check catch it? (Hint: toRealPath() resolves symlinks)"
+        },
+        {
+          "title": "Example 14: Apache CVE-2021-41773 Analysis",
+          "description": "Analysis of the real Apache HTTP Server path traversal vulnerability that affected thousands of servers.",
+          "difficulty": "advanced",
+          "code": "public class CVE_2021_41773_Analysis {\n    public static void main(String[] args) {\n        System.out.println(\"=== CVE-2021-41773: Apache HTTP Server ===\");\n        System.out.println(\"Severity: CRITICAL (CVSS 9.8)\");\n        System.out.println(\"Affected: Apache 2.4.49\");\n        System.out.println();\n        \n        System.out.println(\"ROOT CAUSE:\");\n        System.out.println(\"Apache's path normalization ran BEFORE URL decoding.\");\n        System.out.println(\"The normalization checked for ../ (literal characters).\");\n        System.out.println(\"But %2e was NOT decoded yet, so %2e%2e/ passed the check.\");\n        System.out.println(\"After the check, the URL was decoded: %2e%2e/ became ../\");\n        System.out.println(\"The file system then resolved ../ and escaped the web root!\");\n        System.out.println();\n        \n        System.out.println(\"ATTACK:\");\n        System.out.println(\"curl http://target/icons/%2e%2e/%2e%2e/etc/passwd\");\n        System.out.println(\"  Step 1: Apache receives /icons/%2e%2e/%2e%2e/etc/passwd\");\n        System.out.println(\"  Step 2: Normalization looks for ../ -> NOT found (%2e%2e)\");\n        System.out.println(\"  Step 3: URL decode -> /icons/../../etc/passwd\");\n        System.out.println(\"  Step 4: File system resolves -> /etc/passwd\");\n        System.out.println(\"  Step 5: Apache serves /etc/passwd!\");\n        System.out.println();\n        \n        System.out.println(\"LESSON:\");\n        System.out.println(\"Always decode ALL input BEFORE running security checks.\");\n        System.out.println(\"Or better: validate the CANONICAL path after resolution.\");\n        System.out.println(\"Order matters: decode -> normalize -> validate -> serve\");\n    }\n}",
+          "output": "CVE-2021-41773: Apache path traversal via URL encoding bypass\nCheck ran before decoding: %2e%2e/ passed check, then decoded to ../\nFix: Always decode before checking, or use canonical path validation",
+          "ai_explanation": "This real-world vulnerability perfectly illustrates why the ORDER of operations matters. Apache checked for ../ before URL-decoding, so %2e%2e/ bypassed the check. The canonical path approach avoids this because it resolves everything FIRST, then validates the result.",
+          "ai_challenge": "The fix for CVE-2021-41773 was incomplete — CVE-2021-42013 was found shortly after using double encoding (%252e). What lesson does this teach about patching?"
+        }
+      ],
+      "visual_diagram": {
+        "title": "Path Traversal & Secure Design: Attack Flow, Defences & Design Principles",
+        "content": "<div style=\"font-family: monospace; line-height: 1.6; padding: 10px;\">\n<div style=\"text-align: center; margin-bottom: 20px;\">\n<span style=\"background: #e74c3c; color: white; padding: 8px 20px; border-radius: 6px; font-size: 18px; font-weight: bold;\">PATH TRAVERSAL & SECURE DESIGN PRINCIPLES</span>\n</div>\n\n<div style=\"margin-bottom: 25px;\">\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">THE PATH TRAVERSAL ATTACK (CWE-22)</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"color: #3498db;\">User Request:</span>  GET /files?file=<span style=\"color: #e74c3c;\">../../../etc/passwd</span>\n       |\n       v\n  <span style=\"color: #3498db;\">Server Code:</span>   File f = new File(\"/uploads/\" + filename)\n       |\n       v\n  <span style=\"color: #f39c12;\">Built Path:</span>    /uploads/<span style=\"color: #e74c3c;\">../../../</span>etc/passwd\n       |\n       v\n  <span style=\"color: #f39c12;\">OS Resolves:</span>   /uploads/ -> / (up 3) -> /etc/passwd\n       |\n       v\n  <span style=\"color: #e74c3c; font-weight: bold;\">FILE SERVED:    /etc/passwd  (OUTSIDE uploads!)</span>\n\n  The <span style=\"color: #e74c3c;\">../</span> means \"go up one directory\"\n  Three <span style=\"color: #e74c3c;\">../../../</span> escapes from /uploads/ to root /\n</pre>\n</div>\n\n<div style=\"border-top: 3px dashed #95a5a6; margin: 20px 0;\"></div>\n\n<div style=\"margin-bottom: 25px;\">\n<span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">ENCODING BYPASS TRICKS</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"color: #e74c3c;\">../</span>             Direct dot-dot-slash\n  <span style=\"color: #e74c3c;\">%2e%2e%2f</span>      URL-encoded ../\n  <span style=\"color: #e74c3c;\">%252e%252e%252f</span> Double URL-encoded\n  <span style=\"color: #e74c3c;\">..%c0%af</span>       Unicode encoded /\n  <span style=\"color: #e74c3c;\">..\\</span>            Backslash (Windows)\n  <span style=\"color: #e74c3c;\">....//</span>         Nested (bypasses single removal)\n  <span style=\"color: #e74c3c;\">..%00/</span>         Null byte injection\n\n  <span style=\"color: #95a5a6;\">ALL of these resolve to the same thing: go up one directory!</span>\n  <span style=\"color: #2ecc71;\">FIX: Don't try to block them. Validate the CANONICAL result.</span>\n</pre>\n</div>\n\n<div style=\"border-top: 3px dashed #95a5a6; margin: 20px 0;\"></div>\n\n<div style=\"margin-bottom: 25px;\">\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">3 LAYERS OF DEFENCE</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"background: #2ecc71; color: white; padding: 2px 6px;\">Layer 1</span> WHITELIST VALIDATION\n    filename.matches(\"[a-zA-Z0-9._-]+\")\n    Blocks: <span style=\"color: #e74c3c;\">../</span> (contains /) <span style=\"color: #e74c3c;\">%2e</span> (contains %) <span style=\"color: #e74c3c;\">..\\\\</span> (contains \\\\)\n    <span style=\"color: #2ecc71;\">Simple, fast, catches most attacks</span>\n\n  <span style=\"background: #2ecc71; color: white; padding: 2px 6px;\">Layer 2</span> CANONICAL PATH CHECK\n    String canon = file.getCanonicalPath();\n    if (!canon.startsWith(baseDir + \"/\")) BLOCK!\n    <span style=\"color: #2ecc71;\">Catches ALL encoding bypasses and symlinks</span>\n    ⚠️ Remember trailing / on base directory!\n\n  <span style=\"background: #2ecc71; color: white; padding: 2px 6px;\">Layer 3</span> OS-LEVEL LEAST PRIVILEGE\n    Run web app as limited user (not root)\n    chmod 750 /var/www/uploads/\n    <span style=\"color: #2ecc71;\">Even if traversal works, OS blocks file access</span>\n</pre>\n</div>\n\n<div style=\"border-top: 3px dashed #95a5a6; margin: 20px 0;\"></div>\n\n<div style=\"margin-bottom: 25px;\">\n<span style=\"background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;\">CANONICAL PATH CORNER CASES</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"color: #e74c3c;\">Corner Case 1: Missing trailing /</span>\n  Base: \"/safedir\"  (no trailing slash)\n  Attack: \"../safedirEVIL\"\n  Canonical: \"/safedirEVIL\"\n  \"/safedirEVIL\".startsWith(\"/safedir\") = <span style=\"color: #e74c3c;\">TRUE! BYPASSED!</span>\n  <span style=\"color: #2ecc71;\">Fix: Always use \"/safedir/\" with trailing slash</span>\n\n  <span style=\"color: #e74c3c;\">Corner Case 2: Directory itself</span>\n  Attack: \"../safedir/ /\" (space + slash)\n  Canonical: \"/safedir/\" which starts with \"/safedir/\"\n  <span style=\"color: #e74c3c;\">Passes the check! Can delete the directory!</span>\n  <span style=\"color: #2ecc71;\">Fix: Check canonical length > base length + 1</span>\n</pre>\n</div>\n\n<div style=\"border-top: 3px dashed #95a5a6; margin: 20px 0;\"></div>\n\n<div style=\"margin-bottom: 25px;\">\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">8 SALTZER & SCHROEDER DESIGN PRINCIPLES</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"color: #3498db;\">1. Economy of Mechanism</span>     Keep security SIMPLE\n  <span style=\"color: #3498db;\">2. Fail-Safe Defaults</span>      Default = DENY access\n  <span style=\"color: #3498db;\">3. Complete Mediation</span>      Check EVERY access, EVERY time\n  <span style=\"color: #3498db;\">4. Open Design</span>             Security works even if code is public\n  <span style=\"color: #3498db;\">5. Separation of Privilege</span> Multiple checks required\n  <span style=\"color: #3498db;\">6. Least Privilege</span>         Minimum permissions needed\n  <span style=\"color: #3498db;\">7. Least Common Mechanism</span>  Don't share between privilege levels\n  <span style=\"color: #3498db;\">8. Psychological Acceptability</span> Security must be usable\n</pre>\n</div>\n\n<div style=\"background: #eafaf1; padding: 15px; border-radius: 8px; border-left: 5px solid #2ecc71;\">\n<span style=\"color: #2ecc71; font-weight: bold; font-size: 16px;\">REMEMBER - PATH TRAVERSAL DEFENCE</span>\n<pre style=\"margin-top: 8px;\">\n  <span style=\"color: #2ecc71;\">1.</span> Whitelist filename characters: [a-zA-Z0-9._-]+\n  <span style=\"color: #2ecc71;\">2.</span> Canonical path check with trailing / on base\n  <span style=\"color: #2ecc71;\">3.</span> Run app with least privilege (not root)\n  <span style=\"color: #2ecc71;\">4.</span> Validate EVERY request (complete mediation)\n  <span style=\"color: #2ecc71;\">5.</span> Fail safe: errors = DENY access\n</pre>\n</div>\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Trace Path Resolution",
+          "description": "Given a starting directory and relative path, determine the absolute resolved path.",
+          "difficulty": "beginner",
+          "category": "File System Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding file paths is the foundation for path traversal!",
+          "starter_code": "// Starting directory: /var/www/uploads/\n// Resolve each relative path:\n//\n// 1. ./photo.jpg      resolves to: _____\n// 2. ../config.txt     resolves to: _____\n// 3. ../../secret.key  resolves to: _____\n// 4. ../../../etc/passwd resolves to: _____\n// 5. images/cat.png    resolves to: _____\n// 6. ./images/../photo.jpg resolves to: _____",
+          "expected_output": "1. /var/www/uploads/photo.jpg\n2. /var/www/config.txt\n3. /var/secret.key\n4. /etc/passwd\n5. /var/www/uploads/images/cat.png\n6. /var/www/uploads/photo.jpg (../ cancels images/)",
+          "hints": [
+            {
+              "message": "./ means current directory, ../ means go up one level."
+            },
+            {
+              "message": "Each ../ removes the last directory component."
+            },
+            {
+              "message": "From /var/www/uploads/: one ../ = /var/www/, two = /var/, three = / (root)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Count the Dot-Dot-Slashes",
+          "description": "How many ../ sequences needed to reach root from various directories?",
+          "difficulty": "beginner",
+          "category": "File System Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding file paths is the foundation for path traversal!",
+          "starter_code": "// How many ../ to reach / (root) from each directory?\n//\n// 1. /var/www/uploads/    -> _____ ../\n// 2. /home/user/documents/ -> _____ ../\n// 3. /opt/app/data/temp/   -> _____ ../\n// 4. /usr/share/           -> _____ ../\n// 5. /a/b/c/d/e/           -> _____ ../",
+          "expected_output": "1. 3 (uploads->www->var->root)\n2. 3 (documents->user->home->root)\n3. 4 (temp->data->app->opt->root)\n4. 2 (share->usr->root)\n5. 5 (e->d->c->b->a->root)",
+          "hints": [
+            {
+              "message": "Count the directory levels between your position and root."
+            },
+            {
+              "message": "Each directory separator (/) represents one level."
+            },
+            {
+              "message": "1:3, 2:3, 3:4, 4:2, 5:5"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Absolute vs Relative Paths",
+          "description": "Identify whether paths are absolute or relative and what they resolve to.",
+          "difficulty": "beginner",
+          "category": "File System Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding file paths is the foundation for path traversal!",
+          "starter_code": "// For each path, answer: ABSOLUTE or RELATIVE?\n// If relative, what directory context is needed to resolve it?\n//\n// 1. /etc/passwd           -> _____\n// 2. ../../../etc/passwd   -> _____\n// 3. C:\\Windows\\System32   -> _____\n// 4. ./config.ini          -> _____\n// 5. images/logo.png       -> _____\n// 6. /var/www/index.html   -> _____",
+          "expected_output": "1. ABSOLUTE (starts with /)\n2. RELATIVE (starts with .., needs current dir context)\n3. ABSOLUTE (starts with C:\\)\n4. RELATIVE (starts with ./)\n5. RELATIVE (no leading / or .)\n6. ABSOLUTE (starts with /)",
+          "hints": [
+            {
+              "message": "Absolute paths start with / (Linux) or drive letter (Windows)."
+            },
+            {
+              "message": "Relative paths start with ./, ../, or just a name."
+            },
+            {
+              "message": "1:ABS, 2:REL, 3:ABS, 4:REL, 5:REL, 6:ABS"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Canonical Path Quiz",
+          "description": "Convert paths with ../ to their canonical (resolved) form.",
+          "difficulty": "beginner",
+          "category": "File System Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding file paths is the foundation for path traversal!",
+          "starter_code": "// Write the canonical path for each:\n//\n// 1. /var/www/uploads/../config.txt      -> _____\n// 2. /home/user/./documents/./file.txt   -> _____\n// 3. /opt/app/data/../../etc/hosts       -> _____\n// 4. /a/b/c/d/../../../../etc/passwd     -> _____\n// 5. /var/www/uploads/../../../tmp/evil  -> _____",
+          "expected_output": "1. /var/www/config.txt\n2. /home/user/documents/file.txt (./ removed)\n3. /opt/etc/hosts (up from data, up from app)\n4. /etc/passwd (up 4 from d,c,b,a)\n5. /tmp/evil (up from uploads, www, var)",
+          "hints": [
+            {
+              "message": "Process each ../ by removing the preceding directory."
+            },
+            {
+              "message": "./ simply means 'current directory' and can be removed."
+            },
+            {
+              "message": "1:/var/www/config.txt, 2:/home/user/documents/file.txt, 3:/opt/etc/hosts, 4:/etc/passwd, 5:/tmp/evil"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Identify User Input in File Code",
+          "description": "Find where user input enters file system operations.",
+          "difficulty": "beginner",
+          "category": "File System Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding file paths is the foundation for path traversal!",
+          "starter_code": "// Mark every line where user input reaches the file system:\n\nString filename = req.getParameter(\"file\");        // Line 1\nString dir = req.getParameter(\"dir\");              // Line 2\nString ext = \".pdf\";                                // Line 3\n\nFile f1 = new File(\"/uploads/\" + filename);         // Line 4\nFile f2 = new File(\"/uploads/\" + dir + \"/\" + filename); // Line 5\nFile f3 = new File(\"/uploads/\", \"report\" + ext);    // Line 6\n\n// Which lines have path traversal risk? _____\n// Which line is safe? _____\n// Why? _____",
+          "expected_output": "Lines 4 and 5 have path traversal risk (user input in path).\nLine 6 is safe (no user input, ext is hardcoded).",
+          "hints": [
+            {
+              "message": "Look for where getParameter() values end up in new File()."
+            },
+            {
+              "message": "Line 4: filename from user. Line 5: both dir AND filename from user (double risk!)."
+            },
+            {
+              "message": "Lines 4,5 vulnerable. Line 6 safe: ext is hardcoded \".pdf\", no user input."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: File Separator Differences",
+          "description": "Understand platform-specific path separators and their security implications.",
+          "difficulty": "beginner",
+          "category": "File System Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding file paths is the foundation for path traversal!",
+          "starter_code": "// Answer for each:\n// 1. Linux path separator: _____\n// 2. Windows path separator: _____\n// 3. Does Windows accept / as separator? _____\n// 4. Java File.separator on Linux: _____\n// 5. Java File.separator on Windows: _____\n// 6. A filter checks for / only. Can it be bypassed on Windows? _____\n// 7. A filter checks for File.separator. On Windows, can ../ bypass it? _____",
+          "expected_output": "1. /\n2. \\\n3. YES (Windows accepts both / and \\)\n4. /\n5. \\\n6. YES (use \\ instead)\n7. YES (File.separator is \\ but / also works!)",
+          "hints": [
+            {
+              "message": "Windows is unusual: it accepts both / and \\ as separators."
+            },
+            {
+              "message": "File.separator only returns ONE separator, but both work on Windows."
+            },
+            {
+              "message": "Always check for BOTH / and \\ or use a whitelist."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Write getCanonicalPath Code",
+          "description": "Write Java code to get the canonical path of a file and print it.",
+          "difficulty": "beginner",
+          "category": "File System Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding file paths is the foundation for path traversal!",
+          "starter_code": "import java.io.File;\n\npublic class CanonicalDemo {\n    public static void main(String[] args) throws Exception {\n        // TODO: Create a File with path \"/uploads/../../../etc/passwd\"\n        // TODO: Print the regular path\n        // TODO: Print the canonical path\n        // TODO: Are they the same? Why or why not?\n    }\n}",
+          "expected_output": "File f = new File(\"/uploads/../../../etc/passwd\");\nSystem.out.println(f.getPath());          // /uploads/../../../etc/passwd\nSystem.out.println(f.getCanonicalPath()); // /etc/passwd\nThey differ because canonical resolves ../",
+          "hints": [
+            {
+              "message": "new File(path) stores the path as-is. getCanonicalPath() resolves it."
+            },
+            {
+              "message": "getCanonicalPath() removes all ../ and resolves symlinks."
+            },
+            {
+              "message": "File f = new File(\"/uploads/../../../etc/passwd\"); f.getCanonicalPath() returns \"/etc/passwd\""
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: String startsWith vs Path startsWith",
+          "description": "Understand why Path.startsWith is safer than String.startsWith.",
+          "difficulty": "intermediate",
+          "category": "File System Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding file paths is the foundation for path traversal!",
+          "starter_code": "import java.nio.file.*;\n\npublic class StartsWithComparison {\n    public static void main(String[] args) {\n        // String comparison:\n        String s = \"/safedirEVIL/file.txt\";\n        System.out.println(s.startsWith(\"/safedir\")); // _____\n        \n        // Path comparison:\n        Path p = Paths.get(\"/safedirEVIL/file.txt\");\n        System.out.println(p.startsWith(Paths.get(\"/safedir\"))); // _____\n        \n        // Explain the difference: _____\n        // Which is safer for security? _____\n    }\n}",
+          "expected_output": "String: true (character-by-character match)\nPath: false (component-by-component match)\nPath.startsWith compares DIRECTORY NAMES, not characters.\nPath is safer — immune to the /safedirEVIL trick.",
+          "hints": [
+            {
+              "message": "String.startsWith checks if characters match from the beginning."
+            },
+            {
+              "message": "Path.startsWith checks if path COMPONENTS (directory names) match."
+            },
+            {
+              "message": "String: TRUE (safedirEVIL starts with safedir as characters). Path: FALSE (safedirEVIL is a different component than safedir)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: URL Decoding Before Validation",
+          "description": "Demonstrate why input must be URL-decoded before path validation.",
+          "difficulty": "intermediate",
+          "category": "File System Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding file paths is the foundation for path traversal!",
+          "starter_code": "import java.net.URLDecoder;\n\n// Input from URL: %2e%2e%2f%2e%2e%2fetc%2fpasswd\nString raw = \"%2e%2e%2f%2e%2e%2fetc%2fpasswd\";\n\n// Check BEFORE decoding:\nboolean containsTraversal = raw.contains(\"../\");\nSystem.out.println(\"Before decode, contains ../: \" + containsTraversal); // _____\n\n// Decode:\nString decoded = URLDecoder.decode(raw, \"UTF-8\");\nSystem.out.println(\"Decoded: \" + decoded); // _____\n\n// Check AFTER decoding:\ncontainsTraversal = decoded.contains(\"../\");\nSystem.out.println(\"After decode, contains ../: \" + containsTraversal); // _____\n\n// Which check is correct? _____",
+          "expected_output": "Before: false (%2e%2e%2f doesn't contain ../)\nDecoded: ../../etc/passwd\nAfter: true (now contains ../)\nAlways decode FIRST, then validate!",
+          "hints": [
+            {
+              "message": "%2e is URL-encoded dot (.), %2f is URL-encoded slash (/)."
+            },
+            {
+              "message": "The raw string has no literal ../ characters — they are encoded."
+            },
+            {
+              "message": "Before: false, Decoded: ../../etc/passwd, After: true. Always decode before validating!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Build a Complete Path Validator",
+          "description": "Write a reusable method that combines whitelist + canonical path + existence check.",
+          "difficulty": "intermediate",
+          "category": "File System Basics",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding file paths is the foundation for path traversal!",
+          "starter_code": "import java.io.*;\n\npublic class PathValidator {\n    private static final String BASE = \"/var/www/uploads/\";\n    \n    public static File validatePath(String filename) throws SecurityException {\n        // TODO: Step 1 - null check\n        // TODO: Step 2 - whitelist regex [a-zA-Z0-9._-]+\n        // TODO: Step 3 - canonical path check with trailing /\n        // TODO: Step 4 - file exists check\n        // TODO: Step 5 - return validated File\n        // If ANY check fails, throw SecurityException\n    }\n}",
+          "expected_output": "null check -> whitelist regex -> build File -> canonical startsWith(base + /) -> exists check -> return File. Any failure = SecurityException.",
+          "hints": [
+            {
+              "message": "Start with null/empty check, then whitelist, then canonical."
+            },
+            {
+              "message": "String canon = new File(BASE, filename).getCanonicalPath(); if (!canon.startsWith(BASE)) throw..."
+            },
+            {
+              "message": "Complete: null check, regex match, canonical path startsWith BASE, file.exists(), return file. All failures throw SecurityException."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Craft a Path Traversal Payload",
+          "description": "Write path traversal payloads for different targets.",
+          "difficulty": "beginner",
+          "category": "Path Traversal Attacks",
+          "estimated_minutes": 5,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// Server: File f = new File(\"/var/www/uploads/\", filename);\n//\n// Write payloads to read each target file:\n//\n// 1. /etc/passwd:       filename = _____\n// 2. /etc/hosts:        filename = _____\n// 3. /var/log/auth.log: filename = _____\n// 4. /home/admin/.ssh/id_rsa: filename = _____\n// 5. The uploads directory itself: filename = _____",
+          "expected_output": "1. ../../../etc/passwd\n2. ../../../etc/hosts\n3. ../../log/auth.log\n4. ../../../home/admin/.ssh/id_rsa\n5. . (current directory listing if served)",
+          "hints": [
+            {
+              "message": "From /var/www/uploads/, three ../ takes you to root /."
+            },
+            {
+              "message": "For /var/log/, you only need two ../ (up from uploads, up from www, into log)."
+            },
+            {
+              "message": "1: ../../../etc/passwd, 2: ../../../etc/hosts, 3: ../../log/auth.log, 4: ../../../home/admin/.ssh/id_rsa"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: URL-Encode a Traversal Payload",
+          "description": "Convert ../ sequences to URL-encoded form.",
+          "difficulty": "beginner",
+          "category": "Path Traversal Attacks",
+          "estimated_minutes": 5,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// URL-encode each character:\n// . = %2e\n// / = %2f\n// \\ = %5c\n//\n// Write URL-encoded versions:\n// 1. ../           -> _____\n// 2. ../../../     -> _____\n// 3. ..\\           -> _____\n// 4. ..\\..\\..\\    -> _____\n//\n// Double-encode (encode the % too, %25 = %):\n// 5. ../           -> _____",
+          "expected_output": "1. %2e%2e%2f\n2. %2e%2e%2f%2e%2e%2f%2e%2e%2f\n3. %2e%2e%5c\n4. %2e%2e%5c%2e%2e%5c%2e%2e%5c\n5. %252e%252e%252f",
+          "hints": [
+            {
+              "message": "Each character maps to %HH where HH is the hex ASCII code."
+            },
+            {
+              "message": ". is hex 2e, / is hex 2f, \\ is hex 5c."
+            },
+            {
+              "message": "1: %2e%2e%2f, double: %252e%252e%252f (the % itself becomes %25)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Bypass a Simple Filter",
+          "description": "Craft payloads that bypass a filter removing ../.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal Attacks",
+          "estimated_minutes": 5,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// Filter: input = input.replace(\"../\", \"\");\n//\n// Write payloads that produce ../ AFTER filtering:\n//\n// 1. Nested ../: _____\n//    After filter: _____\n//\n// 2. Using backslash: _____\n//    After filter: _____\n//\n// 3. Double nested: _____\n//    After filter: _____",
+          "expected_output": "1. ....// -> filter removes inner ../ leaving ../\n2. ..\\ -> filter only removes ../ not ..\\\n3. ....//....//....// -> ../../../",
+          "hints": [
+            {
+              "message": "If the filter removes ../ once, nesting it means the removal creates a new ../."
+            },
+            {
+              "message": "....// : remove the middle ../ and you get ../"
+            },
+            {
+              "message": "....// -> ../ (inner removed). ..\\ bypasses (different separator). ....//....//....// -> ../../../"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Trace a Full Path Traversal Attack",
+          "description": "Step through every phase of a path traversal exploitation.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal Attacks",
+          "estimated_minutes": 5,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// Vulnerable code:\n// String filename = req.getParameter(\"file\");\n// File f = new File(\"/var/www/app/uploads/\", filename);\n// serve(f);\n//\n// Attacker sends: GET /download?file=../../../../etc/shadow\n//\n// Trace each step:\n// Step 1: getParameter returns: _____\n// Step 2: new File builds path: _____\n// Step 3: OS resolves to: _____\n// Step 4: Server opens file: _____\n// Step 5: What data does attacker get? _____\n// Step 6: What can attacker do with it? _____",
+          "expected_output": "Step 1: ../../../../etc/shadow\nStep 2: /var/www/app/uploads/../../../../etc/shadow\nStep 3: /etc/shadow\nStep 4: Opens /etc/shadow\nStep 5: Password hashes for all users\nStep 6: Crack passwords offline -> full system access",
+          "hints": [
+            {
+              "message": "Each ../ removes one directory from the path."
+            },
+            {
+              "message": "4 levels: uploads->app->www->var->root, then into etc/shadow."
+            },
+            {
+              "message": "/etc/shadow contains hashed passwords. Attacker can use hashcat/john to crack them."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Path Traversal in File Upload",
+          "description": "Find the vulnerability in a file upload that uses the original filename.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal Attacks",
+          "estimated_minutes": 5,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// File upload servlet:\nPart filePart = req.getPart(\"upload\");\nString origName = filePart.getSubmittedFileName();\n// VULNERABLE: using original filename!\nFile dest = new File(\"/var/www/uploads/\", origName);\nfilePart.write(dest.getAbsolutePath());\n\n// What if origName = \"../../../var/www/html/shell.jsp\"?\n// Where does the file get written? _____\n// What can the attacker do? _____\n// How to fix? _____",
+          "expected_output": "File written to: /var/www/html/shell.jsp (web root!)\nAttacker can execute the JSP shell via browser\nFix: whitelist filename chars, use UUID instead of original name",
+          "hints": [
+            {
+              "message": "The original filename from the upload is attacker-controlled."
+            },
+            {
+              "message": "Writing to the web root means the JSP file is accessible via browser and executes as code."
+            },
+            {
+              "message": "Fix: never use original filename. Generate a UUID: String safeName = UUID.randomUUID() + \".pdf\";"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Symlink Attack Scenario",
+          "description": "Explain how symbolic links can bypass path validation.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal Attacks",
+          "estimated_minutes": 5,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// Scenario:\n// /var/www/uploads/photo.jpg is a real file\n// Attacker creates symlink: photo.jpg -> /etc/passwd\n//\n// Code uses whitelist validation:\n// filename.matches(\"[a-zA-Z0-9._-]+\") -> passes for 'photo.jpg'\n// new File(BASE, \"photo.jpg\") -> /var/www/uploads/photo.jpg\n// getCanonicalPath() -> what does it return? _____\n// Does startsWith(BASE) pass? _____\n// What does the server serve? _____\n// How to prevent this? _____",
+          "expected_output": "getCanonicalPath() returns /etc/passwd (resolves symlink)\nstartsWith(BASE) = FALSE -> BLOCKED!\nCanonical path check catches symlink escapes.\nAlternative: use toRealPath() which also resolves symlinks.",
+          "hints": [
+            {
+              "message": "getCanonicalPath() resolves symbolic links to their real target."
+            },
+            {
+              "message": "After resolving, /etc/passwd does not start with /var/www/uploads/."
+            },
+            {
+              "message": "Canonical path catches it! That's why canonical > simple string comparison."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Null Byte Injection",
+          "description": "Explain the null byte (%00) bypass technique.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal Attacks",
+          "estimated_minutes": 5,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// In older Java (pre-7u40) and PHP:\n// String filename = \"allowed.jpg%00../../../etc/passwd\";\n//\n// What happens:\n// Validation sees: _____\n// File system sees: _____\n// Why? _____\n//\n// Is modern Java vulnerable? _____\n// What about PHP < 5.3.4? _____",
+          "expected_output": "Validation sees: allowed.jpg%00../../../etc/passwd (whole string)\nFile system sees: allowed.jpg (null byte terminates string in C)\nModern Java: NOT vulnerable (checks for null bytes since 7u40)\nOld PHP: VULNERABLE (uses C string functions)",
+          "hints": [
+            {
+              "message": "The null byte (%00, \\0) terminates strings in C."
+            },
+            {
+              "message": "Java strings are NOT null-terminated, but file system calls may use C functions."
+            },
+            {
+              "message": "Modern Java rejects null bytes. Old PHP and old Java are vulnerable."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Zip Slip Payload",
+          "description": "Design a malicious zip file that exploits Zip Slip.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal Attacks",
+          "estimated_minutes": 5,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// You want to write a web shell to /var/www/html/\n// The extraction directory is /var/www/uploads/\n//\n// What zip entry name would you create? _____\n//\n// Trace:\n// Extraction dir: /var/www/uploads/\n// Entry name: _____\n// Combined: /var/www/uploads/ + entry = _____\n// Resolved: _____\n// File written to: _____",
+          "expected_output": "Entry: ../../html/shell.jsp\nCombined: /var/www/uploads/../../html/shell.jsp\nResolved: /var/www/html/shell.jsp\nWeb shell accessible at: http://site.com/shell.jsp",
+          "hints": [
+            {
+              "message": "The zip entry name can contain ../ sequences."
+            },
+            {
+              "message": "From /var/www/uploads/, two ../ takes you to /var/www/, then into html/."
+            },
+            {
+              "message": "Entry: ../../html/shell.jsp -> writes to /var/www/html/shell.jsp"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Windows-Specific Traversal",
+          "description": "Craft path traversal payloads specific to Windows systems.",
+          "difficulty": "advanced",
+          "category": "Path Traversal Attacks",
+          "estimated_minutes": 8,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// Windows web server: C:\\inetpub\\wwwroot\\uploads\\\n//\n// Write payloads for:\n// 1. C:\\Windows\\win.ini using backslash: _____\n// 2. C:\\Windows\\win.ini using forward slash: _____\n// 3. Using URL encoding: _____\n// 4. Windows also has drive letters. What payload reads D:\\secret.txt? _____",
+          "expected_output": "1. ..\\..\\..\\Windows\\win.ini\n2. ../../../Windows/win.ini (/ works on Windows!)\n3. %2e%2e%5c%2e%2e%5cWindows%5cwin.ini\n4. Absolute path bypass: if code uses path as-is, try D:\\secret.txt or D:/secret.txt",
+          "hints": [
+            {
+              "message": "Windows accepts both / and \\ as path separators."
+            },
+            {
+              "message": "URL encoding of \\ is %5c."
+            },
+            {
+              "message": "Both / and \\ work. Drive letters (D:\\) are absolute paths that ignore the base directory."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Full Attack Chain: Traversal to RCE",
+          "description": "Trace a complete path traversal attack that leads to remote code execution.",
+          "difficulty": "advanced",
+          "category": "Path Traversal Attacks",
+          "estimated_minutes": 8,
+          "ai_intro": "Understanding attacks is the first step to building defences!",
+          "starter_code": "// The application allows file uploads AND has path traversal.\n//\n// Attack chain:\n// Step 1: Upload malicious.jsp (a web shell)\n// Step 2: Use path traversal to determine the web root\n//   GET /files?file=../../../etc/apache2/sites-enabled/000-default.conf\n//   This reveals: DocumentRoot _____\n//\n// Step 3: Use upload + traversal to write shell to web root:\n//   Upload filename: _____\n//\n// Step 4: Access the shell:\n//   URL: _____\n//\n// Step 5: Execute commands:\n//   http://target/shell.jsp?cmd=_____",
+          "expected_output": "Step 2: DocumentRoot /var/www/html\nStep 3: filename=../../html/shell.jsp (writes to web root)\nStep 4: http://target/shell.jsp\nStep 5: cmd=whoami or cmd=cat /etc/passwd",
+          "hints": [
+            {
+              "message": "Step 1: read the Apache config to find the DocumentRoot."
+            },
+            {
+              "message": "Step 2: upload with traversal to write into the web root."
+            },
+            {
+              "message": "Full chain: read config -> find root -> upload shell -> execute commands = RCE."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Write Whitelist Regex",
+          "description": "Write regex patterns to validate filenames.",
+          "difficulty": "beginner",
+          "category": "Path Traversal Defences",
+          "estimated_minutes": 6,
+          "ai_intro": "Now you build the defences!",
+          "starter_code": "// Write regex that allows:\n// 1. Only lowercase letters and digits: _____\n// 2. Letters, digits, dot, hyphen: _____\n// 3. Letters, digits, dot, hyphen, underscore: _____\n// 4. Filenames with one extension: [a-zA-Z0-9_-]+\\\\.[a-zA-Z0-9]+\n// 5. Subdirectories (allow /): [a-zA-Z0-9._/-]+\n//\n// Test pattern 3 against:\n// \"photo.jpg\"      -> _____\n// \"../etc/passwd\"  -> _____\n// \"file name.txt\"  -> _____\n// \"report-v2.pdf\"  -> _____",
+          "expected_output": "1. [a-z0-9]+\n2. [a-zA-Z0-9.-]+\n3. [a-zA-Z0-9._-]+\nTests: photo.jpg=PASS, ../etc/passwd=FAIL(/), file name.txt=FAIL(space), report-v2.pdf=PASS",
+          "hints": [
+            {
+              "message": "Regex [abc] means allow characters a, b, or c. + means one or more."
+            },
+            {
+              "message": "Dots, hyphens, underscores are safe for filenames. Slashes are NOT."
+            },
+            {
+              "message": "[a-zA-Z0-9._-]+ allows safe chars only. Any / or \\ or .. fails."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Implement Canonical Path Check",
+          "description": "Write the canonical path validation in Java.",
+          "difficulty": "beginner",
+          "category": "Path Traversal Defences",
+          "estimated_minutes": 6,
+          "ai_intro": "Now you build the defences!",
+          "starter_code": "// Complete this method:\npublic boolean isPathSafe(String filename) {\n    final String BASE = \"/var/www/uploads/\";\n    try {\n        File base = new File(BASE);\n        File requested = new File(base, filename);\n        String canonPath = // TODO: get canonical path\n        String canonBase = // TODO: get canonical base + separator\n        return // TODO: check canonPath starts with canonBase\n    } catch (Exception e) {\n        return // TODO: fail safe!\n    }\n}",
+          "expected_output": "canonPath = requested.getCanonicalPath();\ncanonBase = base.getCanonicalPath() + File.separator;\nreturn canonPath.startsWith(canonBase);\ncatch: return false (fail safe)",
+          "hints": [
+            {
+              "message": "getCanonicalPath() resolves all ../ and symlinks."
+            },
+            {
+              "message": "Add File.separator after the base to prevent the /safedirEVIL bypass."
+            },
+            {
+              "message": "canon starts with base+separator, catch returns false."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Fix a Vulnerable File Servlet",
+          "description": "Rewrite a vulnerable servlet with all defences.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal Defences",
+          "estimated_minutes": 6,
+          "ai_intro": "Now you build the defences!",
+          "starter_code": "// VULNERABLE:\nString file = req.getParameter(\"file\");\nFileInputStream fis = new FileInputStream(\"/uploads/\" + file);\n// Serve the file...\n\n// Rewrite with:\n// 1. Null check\n// 2. Whitelist validation\n// 3. Canonical path check\n// 4. Existence check\n// 5. Fail-safe error handling",
+          "expected_output": "if (file==null) sendError(400); if (!file.matches regex) sendError(400); canonical check with trailing /; if (!exists) sendError(404); try/catch returns 500.",
+          "hints": [
+            {
+              "message": "Start with null check, then whitelist, then canonical."
+            },
+            {
+              "message": "Wrap everything in try-catch that returns 500 (fail-safe)."
+            },
+            {
+              "message": "null -> whitelist -> canonical startsWith -> exists -> serve. Any failure = error response."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Fix Zip Extraction",
+          "description": "Add path traversal validation to ZIP extraction code.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal Defences",
+          "estimated_minutes": 6,
+          "ai_intro": "Now you build the defences!",
+          "starter_code": "// VULNERABLE:\nwhile ((entry = zis.getNextEntry()) != null) {\n    File outFile = new File(destDir, entry.getName());\n    // extract...\n}\n\n// Add validation BEFORE extraction:\n// What check do you add? _____\n// What do you compare? _____\n// What if it fails? _____",
+          "expected_output": "Check: outFile.getCanonicalPath().startsWith(destDir.getCanonicalPath() + File.separator)\nCompare: canonical output path vs canonical destination + separator\nFail: throw SecurityException, do NOT extract the entry",
+          "hints": [
+            {
+              "message": "Validate each entry's destination path before writing it."
+            },
+            {
+              "message": "Use canonical paths for both the output file and the destination directory."
+            },
+            {
+              "message": "if (!outFile.getCanonicalPath().startsWith(dest.getCanonicalPath() + File.separator)) throw new SecurityException(...)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Defence in Depth: Combine All Checks",
+          "description": "Build a method that uses whitelist + canonical + NIO + file permissions.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal Defences",
+          "estimated_minutes": 6,
+          "ai_intro": "Now you build the defences!",
+          "starter_code": "// Write a method that combines ALL defences:\npublic File secureAccess(String filename) throws SecurityException {\n    // Layer 1: _____ (whitelist)\n    // Layer 2: _____ (canonical path)\n    // Layer 3: _____ (file exists + readable)\n    // Layer 4: _____ (file size limit)\n    // All layers must pass, any failure = SecurityException\n}",
+          "expected_output": "Layer 1: regex match [a-zA-Z0-9._-]+\nLayer 2: canonical startsWith(base + separator)\nLayer 3: file.exists() && file.canRead()\nLayer 4: file.length() < MAX_SIZE",
+          "hints": [
+            {
+              "message": "Each layer catches what the others might miss."
+            },
+            {
+              "message": "Whitelist catches invalid chars. Canonical catches encoded bypasses. Existence prevents errors."
+            },
+            {
+              "message": "4 layers: regex, canonical path, exists+readable, size limit. All must pass."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Secure File Upload Handler",
+          "description": "Write a complete secure file upload that prevents traversal.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal Defences",
+          "estimated_minutes": 6,
+          "ai_intro": "Now you build the defences!",
+          "starter_code": "// Requirements:\n// - Accept file uploads\n// - Store in /var/www/uploads/\n// - NEVER use the original filename\n// - Validate file type\n// - Limit file size\n//\n// Write the doPost method:\n// _____",
+          "expected_output": "Generate UUID filename, validate content type, check size, store with generated name only. Never use getSubmittedFileName() for the storage path.",
+          "hints": [
+            {
+              "message": "Generate a random filename: UUID.randomUUID() + extension."
+            },
+            {
+              "message": "Check content type against a whitelist (image/jpeg, image/png, etc.)."
+            },
+            {
+              "message": "String safeName = UUID.randomUUID() + getExtension(contentType); new File(UPLOAD_DIR, safeName);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: OS-Level Least Privilege Setup",
+          "description": "Write Linux commands to configure least privilege for a web app.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal Defences",
+          "estimated_minutes": 6,
+          "ai_intro": "Now you build the defences!",
+          "starter_code": "// Write the Linux commands to:\n//\n// 1. Create a 'webapp' system user (no login shell):\n// $ _____\n//\n// 2. Set uploads dir owned by webapp:\n// $ _____\n//\n// 3. Set permissions (owner read/write, group read, others nothing):\n// $ _____\n//\n// 4. Run the app as webapp user:\n// $ _____\n//\n// 5. Verify webapp cannot read /etc/shadow:\n// $ _____",
+          "expected_output": "1. sudo useradd -r -s /bin/false webapp\n2. sudo chown -R webapp:webapp /var/www/uploads/\n3. sudo chmod 750 /var/www/uploads/\n4. sudo -u webapp java -jar app.jar\n5. sudo -u webapp cat /etc/shadow -> Permission denied",
+          "hints": [
+            {
+              "message": "useradd -r creates a system user, -s /bin/false prevents login."
+            },
+            {
+              "message": "chown sets ownership, chmod sets permissions (7=rwx, 5=rx, 0=none)."
+            },
+            {
+              "message": "750 means: owner can read/write/execute, group can read/execute, others nothing."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Content-Type Validation",
+          "description": "Validate that uploaded files match their claimed type.",
+          "difficulty": "intermediate",
+          "category": "Path Traversal Defences",
+          "estimated_minutes": 6,
+          "ai_intro": "Now you build the defences!",
+          "starter_code": "// An attacker uploads shell.jsp but names it shell.jpg\n// Or renames /etc/passwd to passwd.pdf\n//\n// How to detect fake file types:\n// Method 1: Check file extension: _____\n// Method 2: Check Content-Type header: _____  (reliable? _____)\n// Method 3: Check magic bytes: _____  (reliable? _____)\n//\n// Which combination is best? _____",
+          "expected_output": "Method 1: extract extension, whitelist check (easily faked by renaming)\nMethod 2: MIME type from header (not reliable, attacker controls it)\nMethod 3: Read first bytes, compare to known signatures (most reliable)\nBest: magic bytes + extension whitelist",
+          "hints": [
+            {
+              "message": "File extensions can be changed by the attacker."
+            },
+            {
+              "message": "Content-Type headers are sent by the client — attacker-controlled."
+            },
+            {
+              "message": "Magic bytes (file signatures) are in the file content — hardest to fake. Combine with extension whitelist."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Chroot and Sandbox",
+          "description": "Explain how chroot isolation limits path traversal damage.",
+          "difficulty": "advanced",
+          "category": "Path Traversal Defences",
+          "estimated_minutes": 10,
+          "ai_intro": "Now you build the defences!",
+          "starter_code": "// A chroot changes the root directory for a process.\n// If app is chrooted to /var/www/:\n//\n// Inside chroot, / = _____\n// Path traversal ../../../../etc/passwd resolves to: _____\n// Can the app access real /etc/passwd? _____\n//\n// Limitations of chroot: _____\n// Modern alternative: _____",
+          "expected_output": "Inside chroot, / = /var/www/ (on the real filesystem)\nTraversal resolves to /var/www/etc/passwd (trapped in chroot!)\nCannot access real /etc/passwd (root is changed)\nLimitations: root user can escape chroot. Modern: Docker containers, seccomp, AppArmor.",
+          "hints": [
+            {
+              "message": "chroot changes what / means for a process."
+            },
+            {
+              "message": "Even ../ up to root only reaches /var/www/ because that IS root inside the chroot."
+            },
+            {
+              "message": "Chroot + least privilege = strong containment. Docker is the modern equivalent."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Write a Security Audit for File Access Code",
+          "description": "Audit code for ALL path traversal vulnerabilities and recommend fixes.",
+          "difficulty": "advanced",
+          "category": "Path Traversal Defences",
+          "estimated_minutes": 10,
+          "ai_intro": "Now you build the defences!",
+          "starter_code": "// Audit this code. Find EVERY issue:\n\npublic void handleRequest(HttpServletRequest req, HttpServletResponse resp) {\n    String dir = req.getParameter(\"dir\");            // Line 1\n    String file = req.getParameter(\"file\");           // Line 2\n    String path = \"/data/\" + dir + \"/\" + file;        // Line 3\n    File f = new File(path);                          // Line 4\n    if (f.exists()) {                                 // Line 5\n        FileInputStream fis = new FileInputStream(f); // Line 6\n        // serve file...                              // Line 7\n    } else {\n        resp.sendError(404, \"Not found: \" + path);   // Line 8\n    }\n}\n\n// Issues found (there are 5+):\n// _____",
+          "expected_output": "1. Line 1-2: No input validation (dir AND file from user)\n2. Line 3: Direct concatenation (both dir and file can traverse)\n3. Line 4: No canonical path check\n4. Line 5: Only checks existence, not location\n5. Line 8: Information disclosure (path in error message)\n6. No file type/size validation\n7. No error handling (fail-safe missing)",
+          "hints": [
+            {
+              "message": "Both dir AND file parameters are user-controlled."
+            },
+            {
+              "message": "Line 8 leaks the full file path in the error message — information disclosure!"
+            },
+            {
+              "message": "5+ issues: no validation on 2 params, no canonical check, info disclosure in error, no type/size check, no try-catch."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Match Principles to Definitions",
+          "description": "Match each Saltzer & Schroeder principle to its definition.",
+          "difficulty": "beginner",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Design principles are the foundation of ALL security!",
+          "starter_code": "// Match each principle (1-8) to its definition (A-H):\n//\n// 1. Economy of Mechanism    -> _____\n// 2. Fail-Safe Defaults      -> _____\n// 3. Complete Mediation       -> _____\n// 4. Open Design              -> _____\n// 5. Separation of Privilege  -> _____\n// 6. Least Privilege          -> _____\n// 7. Least Common Mechanism   -> _____\n// 8. Psychological Acceptability -> _____\n//\n// A. Default to deny access\n// B. Don't share mechanisms between privilege levels\n// C. Keep security simple\n// D. Security must be usable\n// E. Check every access every time\n// F. Security works even if code is public\n// G. Require multiple conditions\n// H. Minimum permissions needed",
+          "expected_output": "1-C, 2-A, 3-E, 4-F, 5-G, 6-H, 7-B, 8-D",
+          "hints": [
+            {
+              "message": "Economy = simple. Fail-safe = deny by default."
+            },
+            {
+              "message": "Complete mediation = check everything. Open design = no secret algorithms."
+            },
+            {
+              "message": "1-C, 2-A, 3-E, 4-F, 5-G, 6-H, 7-B, 8-D"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Identify Principle Violations",
+          "description": "For each code snippet, identify which design principle is violated.",
+          "difficulty": "beginner",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Design principles are the foundation of ALL security!",
+          "starter_code": "// Which principle is violated?\n//\n// 1. Running the web server as root: _____\n// 2. Caching security decisions: _____\n// 3. Complex 500-line sanitisation function: _____\n// 4. Security depends on secret algorithm: _____\n// 5. Errors cause the system to allow access: _____\n// 6. Single password for full admin access: _____\n// 7. Security so annoying users find workarounds: _____\n// 8. Admin and guest sharing the same session handler: _____",
+          "expected_output": "1. Least Privilege\n2. Complete Mediation\n3. Economy of Mechanism\n4. Open Design\n5. Fail-Safe Defaults\n6. Separation of Privilege\n7. Psychological Acceptability\n8. Least Common Mechanism",
+          "hints": [
+            {
+              "message": "Root access = too many permissions = Least Privilege."
+            },
+            {
+              "message": "Caching = not checking every time = Complete Mediation."
+            },
+            {
+              "message": "All 8: LP, CM, EoM, OD, FSD, SoP, PA, LCM."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Apply Economy of Mechanism",
+          "description": "Simplify a complex security function.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Design principles are the foundation of ALL security!",
+          "starter_code": "// This is too complex. Simplify it:\npublic String sanitize(String input) {\n    input = input.replace(\"../\", \"\");\n    input = input.replace(\"..\\\\\" , \"\");\n    input = input.replace(\"%2e\", \".\");\n    input = input.replace(\"%2f\", \"/\");\n    input = input.replace(\"%5c\", \"\\\\\");\n    input = URLDecoder.decode(input, \"UTF-8\");\n    input = input.replace(\"../\", \"\");\n    input = input.replace(\"..\\\\\", \"\");\n    if (input.contains(\"..\")) input = \"\";\n    return input;\n}\n\n// Simpler version (Economy of Mechanism):\n// _____",
+          "expected_output": "return input.matches(\"[a-zA-Z0-9._-]+\") ? input : null;\nOR: validate canonical path (2 lines instead of 10+)",
+          "hints": [
+            {
+              "message": "The complex version tries to block every possible encoding — and probably misses some."
+            },
+            {
+              "message": "A whitelist regex is 1 line and blocks everything not explicitly allowed."
+            },
+            {
+              "message": "Simple whitelist or canonical path check. 1-2 lines instead of 10+."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Design a Fail-Safe Login",
+          "description": "Fix a login that fails open.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Design principles are the foundation of ALL security!",
+          "starter_code": "// FAIL-OPEN login (DANGEROUS):\npublic boolean authenticate(String user, String pass) {\n    try {\n        User u = database.findUser(user);\n        return u.checkPassword(pass);\n    } catch (DatabaseException e) {\n        // Database is down... let them in anyway?\n        return true;  // FAIL-OPEN!\n    }\n}\n\n// Rewrite as FAIL-SAFE:\n// _____",
+          "expected_output": "catch (DatabaseException e) { return false; }\nFail-safe: if ANYTHING goes wrong, deny access.\nLog the error for investigation.",
+          "hints": [
+            {
+              "message": "Fail-safe means errors = deny access."
+            },
+            {
+              "message": "return true in the catch block means database errors grant access!"
+            },
+            {
+              "message": "Change to return false. Also add logging: log.severe(\"Auth DB error: \" + e);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Apply Complete Mediation to API",
+          "description": "Add per-request validation to a REST API.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Design principles are the foundation of ALL security!",
+          "starter_code": "// This API caches user permissions at login:\nMap<String, Set<String>> permCache = new HashMap<>();\n\npublic void onLogin(String userId) {\n    permCache.put(userId, loadPermissions(userId));\n}\n\npublic boolean checkAccess(String userId, String resource) {\n    return permCache.getOrDefault(userId, Set.of()).contains(resource);\n}\n\n// Problem: if permissions change after login, _____\n// Fix (Complete Mediation): _____",
+          "expected_output": "Problem: cached permissions don't reflect changes (user still has old permissions).\nFix: check permissions on EVERY request from the database, not from cache.\nOr: set a short TTL on the cache (e.g., 5 minutes).",
+          "hints": [
+            {
+              "message": "If an admin revokes a user's permissions, the cache still has the old permissions."
+            },
+            {
+              "message": "Complete Mediation: check every access, every time. No caching of security decisions."
+            },
+            {
+              "message": "Load permissions from DB on each request. Cache with short TTL if performance is needed."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Design with Open Design in Mind",
+          "description": "Explain why security through obscurity fails.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Design principles are the foundation of ALL security!",
+          "starter_code": "// Company X hides their API key validation:\n// The 'secret' is that keys must have exactly 32 chars\n// and start with 'X_' — no other validation.\n//\n// Is this secure if the code is leaked? _____\n// Is this Open Design? _____\n// How would Open Design improve this? _____",
+          "expected_output": "Not secure if leaked — anyone can generate valid keys (X_ + 30 chars).\nNot Open Design — security depends on the algorithm being secret.\nFix: use cryptographic key generation (random bytes + HMAC). Works even if algorithm is known.",
+          "hints": [
+            {
+              "message": "If the attacker reads the code, can they bypass the security?"
+            },
+            {
+              "message": "Open Design means the security works even when the attacker knows everything except the key."
+            },
+            {
+              "message": "Cryptographic keys: even knowing the algorithm, you need the key to forge valid tokens."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Separation of Privilege: Two-Factor",
+          "description": "Design a system that requires multiple factors.",
+          "difficulty": "intermediate",
+          "category": "Design Principles",
+          "estimated_minutes": 5,
+          "ai_intro": "Design principles are the foundation of ALL security!",
+          "starter_code": "// Single-factor (violates Separation of Privilege):\n// Password only -> full admin access\n//\n// Design two-factor for admin actions:\n// Factor 1: _____\n// Factor 2: _____\n//\n// For file deletion (critical action):\n// Check 1: _____\n// Check 2: _____\n// Check 3: _____",
+          "expected_output": "Factor 1: Password authentication\nFactor 2: TOTP code (authenticator app)\nFile deletion: 1. Authenticated session, 2. Confirmation prompt, 3. Audit log entry before deletion.",
+          "hints": [
+            {
+              "message": "Separation of Privilege: no single factor should grant access to critical operations."
+            },
+            {
+              "message": "Two-factor: something you know (password) + something you have (authenticator)."
+            },
+            {
+              "message": "For destructive operations: auth + confirmation + logging."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Least Common Mechanism in Microservices",
+          "description": "Explain why shared components between privilege levels are dangerous.",
+          "difficulty": "advanced",
+          "category": "Design Principles",
+          "estimated_minutes": 9,
+          "ai_intro": "Design principles are the foundation of ALL security!",
+          "starter_code": "// Architecture 1 (shared, violates LCM):\n// Admin dashboard and user dashboard share:\n// - Same session handler\n// - Same database connection pool\n// - Same file storage\n//\n// Risk: _____\n//\n// Architecture 2 (separated, follows LCM):\n// Admin: separate session handler, separate DB pool, separate storage\n// User: their own session handler, their own DB pool, their own storage\n//\n// Benefit: _____",
+          "expected_output": "Risk: vulnerability in user component can escalate to admin (shared mechanisms).\nBenefit: compromise of user component cannot affect admin (isolation).",
+          "hints": [
+            {
+              "message": "Shared mechanisms create paths for privilege escalation."
+            },
+            {
+              "message": "If admin and user share a session handler, a session bug affects both."
+            },
+            {
+              "message": "Separation limits blast radius. User compromise stays contained."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Psychological Acceptability: Usable Security",
+          "description": "Design security that users actually use instead of bypassing.",
+          "difficulty": "advanced",
+          "category": "Design Principles",
+          "estimated_minutes": 9,
+          "ai_intro": "Design principles are the foundation of ALL security!",
+          "starter_code": "// BAD: Password policy so strict users write passwords on sticky notes:\n// - 20+ characters\n// - Must change every 2 weeks\n// - No reuse of last 50 passwords\n// - Lock after 2 failed attempts\n//\n// Why this fails Psychological Acceptability: _____\n// Better design: _____",
+          "expected_output": "Fails because users can't comply -> sticky notes, simple patterns, password resets.\nBetter: passphrase-based (4+ random words), change only when compromised, lockout with unlock mechanism, MFA reduces password complexity needs.",
+          "hints": [
+            {
+              "message": "Security that's too hard to use gets bypassed by the users."
+            },
+            {
+              "message": "NIST 800-63 now recommends AGAINST forced password rotation."
+            },
+            {
+              "message": "Usable security: passphrases, MFA, reasonable lockout. Users comply because it's not painful."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Apply ALL 8 Principles to One System",
+          "description": "Design a file sharing system applying every principle.",
+          "difficulty": "advanced",
+          "category": "Design Principles",
+          "estimated_minutes": 9,
+          "ai_intro": "Design principles are the foundation of ALL security!",
+          "starter_code": "// Design a secure file sharing system.\n// For each principle, write ONE specific requirement:\n//\n// 1. Economy of Mechanism: _____\n// 2. Fail-Safe Defaults: _____\n// 3. Complete Mediation: _____\n// 4. Open Design: _____\n// 5. Separation of Privilege: _____\n// 6. Least Privilege: _____\n// 7. Least Common Mechanism: _____\n// 8. Psychological Acceptability: _____",
+          "expected_output": "1. Simple whitelist validation, no complex filters\n2. Default = no sharing, must explicitly grant\n3. Check permissions on every download\n4. Use standard crypto (AES), not custom\n5. Upload requires auth + email verification\n6. Read-only access unless write explicitly granted\n7. Separate storage for public and private files\n8. One-click sharing with clear permission indicators",
+          "hints": [
+            {
+              "message": "Think about how each principle applies to file sharing."
+            },
+            {
+              "message": "Fail-safe: files are private by default, sharing is opt-in."
+            },
+            {
+              "message": "All 8: simple validation, default deny, per-request checks, standard crypto, multi-factor for sensitive ops, minimum permissions, separate storage, usable interface."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Find Path Traversal in Servlet",
+          "description": "Identify path traversal vulnerabilities in servlet code.",
+          "difficulty": "beginner",
+          "category": "Code Review & Security Audit",
+          "estimated_minutes": 6,
+          "ai_intro": "Security auditing is a critical professional skill!",
+          "starter_code": "// Find ALL vulnerabilities:\nString img = req.getParameter(\"img\");         // Line 1\nString dir = \"images\";                         // Line 2\nFile f = new File(\"/var/www/\" + dir + \"/\" + img); // Line 3\nif (f.exists() && f.isFile()) {               // Line 4\n    resp.setContentType(\"image/jpeg\");          // Line 5\n    Files.copy(f.toPath(), resp.getOutputStream()); // Line 6\n}\n\n// Vulnerable line(s): _____\n// Why: _____\n// Fix: _____",
+          "expected_output": "Line 3: img from user concatenated into path without validation.\nAttacker: img=../../../etc/passwd\nFix: whitelist regex + canonical path check.",
+          "hints": [
+            {
+              "message": "Line 1 takes user input. Line 3 puts it in a file path."
+            },
+            {
+              "message": "No validation between getParameter and new File."
+            },
+            {
+              "message": "Line 3 vulnerable. Fix: validate img with regex + canonical check."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Find Traversal in Download Handler",
+          "description": "Audit a file download method for all issues.",
+          "difficulty": "intermediate",
+          "category": "Code Review & Security Audit",
+          "estimated_minutes": 6,
+          "ai_intro": "Security auditing is a critical professional skill!",
+          "starter_code": "public void download(HttpServletRequest req, HttpServletResponse resp) {\n    try {\n        String name = req.getParameter(\"name\");\n        String type = req.getParameter(\"type\");\n        File f = new File(\"/files/\" + type + \"/\" + name);\n        resp.setHeader(\"Content-Disposition\", \"attachment; filename=\" + name);\n        Files.copy(f.toPath(), resp.getOutputStream());\n    } catch (Exception e) {\n        resp.setStatus(200); // Always return 200\n        resp.getWriter().write(\"File: \" + req.getParameter(\"name\") + \" error: \" + e.getMessage());\n    }\n}\n\n// Issues (there are 5+): _____",
+          "expected_output": "1. name not validated (traversal in filename)\n2. type not validated (traversal in directory)\n3. No canonical path check\n4. Content-Disposition header injection\n5. Error returns 200 instead of error code\n6. Error message exposes filename and exception details\n7. No file type/size validation",
+          "hints": [
+            {
+              "message": "Both name AND type are user-controlled and go into the file path."
+            },
+            {
+              "message": "The catch block returns 200 OK and leaks error details — multiple issues."
+            },
+            {
+              "message": "5+ issues: both params unvalidated, no canonical check, header injection, wrong status code, info disclosure."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Fix a File API Endpoint",
+          "description": "Rewrite a vulnerable REST API endpoint to be secure.",
+          "difficulty": "intermediate",
+          "category": "Code Review & Security Audit",
+          "estimated_minutes": 6,
+          "ai_intro": "Security auditing is a critical professional skill!",
+          "starter_code": "// VULNERABLE:\n@GetMapping(\"/api/files/{filename}\")\npublic ResponseEntity<Resource> getFile(@PathVariable String filename) {\n    Path path = Paths.get(\"/data/files/\").resolve(filename);\n    Resource resource = new UrlResource(path.toUri());\n    return ResponseEntity.ok().body(resource);\n}\n\n// Secure version:\n// _____",
+          "expected_output": "Add: whitelist validation, normalize + startsWith check, existence check, try-catch with 403/404 responses.",
+          "hints": [
+            {
+              "message": "The @PathVariable filename goes directly into path resolution."
+            },
+            {
+              "message": "Even in Spring, you need manual path traversal validation."
+            },
+            {
+              "message": "Validate regex, normalize path, check startsWith(baseDir), catch exceptions -> 403."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Review ZIP Upload Handler",
+          "description": "Find Zip Slip vulnerability in upload processing code.",
+          "difficulty": "intermediate",
+          "category": "Code Review & Security Audit",
+          "estimated_minutes": 6,
+          "ai_intro": "Security auditing is a critical professional skill!",
+          "starter_code": "public void processUpload(MultipartFile upload) throws Exception {\n    File destDir = new File(\"/uploads/extracted/\");\n    ZipInputStream zis = new ZipInputStream(upload.getInputStream());\n    ZipEntry entry;\n    while ((entry = zis.getNextEntry()) != null) {\n        File out = new File(destDir, entry.getName());\n        out.getParentFile().mkdirs();\n        FileOutputStream fos = new FileOutputStream(out);\n        IOUtils.copy(zis, fos);\n        fos.close();\n    }\n}\n\n// Issue: _____\n// Fix: _____",
+          "expected_output": "Issue: No validation of entry.getName() — Zip Slip vulnerability.\nFix: Check out.getCanonicalPath().startsWith(destDir.getCanonicalPath() + File.separator) for every entry.",
+          "hints": [
+            {
+              "message": "entry.getName() can contain ../../../ path traversal."
+            },
+            {
+              "message": "Every zip entry must be validated before extraction."
+            },
+            {
+              "message": "Add canonical path check before mkdirs() and FileOutputStream."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Spot All Issues in Config Reader",
+          "description": "Audit configuration file loading code.",
+          "difficulty": "advanced",
+          "category": "Code Review & Security Audit",
+          "estimated_minutes": 11,
+          "ai_intro": "Security auditing is a critical professional skill!",
+          "starter_code": "public Properties loadConfig(String configName) {\n    try {\n        String path = System.getProperty(\"config.dir\", \"/etc/app/\") + configName;\n        FileInputStream fis = new FileInputStream(path);\n        Properties props = new Properties();\n        props.load(fis);\n        fis.close();\n        return props;\n    } catch (Exception e) {\n        System.out.println(\"Failed to load: \" + path + \" Error: \" + e);\n        return new Properties(); // Return empty config\n    }\n}\n\n// Issues (4+): _____",
+          "expected_output": "1. configName not validated (path traversal)\n2. System property could be attacker-controlled\n3. Error leaks full path and exception\n4. Empty Properties returned on error may cause downstream issues\n5. No canonical path validation\n6. fis not in try-with-resources (resource leak on error)",
+          "hints": [
+            {
+              "message": "configName goes straight into the file path."
+            },
+            {
+              "message": "The error message prints the full path AND the exception."
+            },
+            {
+              "message": "4+ issues: no validation, info disclosure, fail-open (empty config instead of failing), resource leak."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Review Path Validation Code",
+          "description": "Find the bug in a path validation implementation.",
+          "difficulty": "advanced",
+          "category": "Code Review & Security Audit",
+          "estimated_minutes": 11,
+          "ai_intro": "Security auditing is a critical professional skill!",
+          "starter_code": "// This validation has a subtle bug. Find it:\npublic boolean isSecurePath(String filename) {\n    String base = \"/var/www/uploads\";\n    File file = new File(base, filename);\n    try {\n        return file.getCanonicalPath().startsWith(base);\n    } catch (IOException e) {\n        return false;\n    }\n}\n\n// The bug: _____\n// Attack that bypasses: _____\n// Fix: _____",
+          "expected_output": "Bug: base has no trailing slash!\nAttack: filename = ../uploadsEVIL/file.txt\nCanonical: /var/www/uploadsEVIL/file.txt\nstartsWith(\"/var/www/uploads\") = TRUE!\nFix: base = \"/var/www/uploads/\" (add trailing slash)",
+          "hints": [
+            {
+              "message": "Look at the base directory string. What's missing?"
+            },
+            {
+              "message": "Without trailing /, uploadsEVIL starts with uploads."
+            },
+            {
+              "message": "Missing trailing /. Fix: \"/var/www/uploads/\" or use Path.startsWith(Path) which is component-based."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Fix Insecure File Deletion",
+          "description": "Secure a file deletion endpoint against path traversal.",
+          "difficulty": "advanced",
+          "category": "Code Review & Security Audit",
+          "estimated_minutes": 11,
+          "ai_intro": "Security auditing is a critical professional skill!",
+          "starter_code": "// VULNERABLE:\n@DeleteMapping(\"/api/files/{name}\")\npublic ResponseEntity<?> deleteFile(@PathVariable String name) {\n    File f = new File(\"/uploads/\" + name);\n    if (f.delete()) {\n        return ResponseEntity.ok(\"Deleted\");\n    }\n    return ResponseEntity.notFound().build();\n}\n\n// Attack: DELETE /api/files/../../../etc/important.conf\n// What happens? _____\n// How critical is this? _____\n// Write secure version: _____",
+          "expected_output": "Attack deletes /etc/important.conf — server misconfiguration!\nCritical: attacker can delete ANY file the app user can write to.\nFix: whitelist regex + canonical path check + confirm file is in /uploads/.",
+          "hints": [
+            {
+              "message": "DELETE is even more dangerous than READ — data destruction."
+            },
+            {
+              "message": "Path traversal + delete = attacker can remove config files, logs, other users' data."
+            },
+            {
+              "message": "Validate, canonical check, audit log every deletion."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Complete Security Audit Report",
+          "description": "Perform a full security audit of a file management class.",
+          "difficulty": "advanced",
+          "category": "Code Review & Security Audit",
+          "estimated_minutes": 11,
+          "ai_intro": "Security auditing is a critical professional skill!",
+          "starter_code": "// Audit this complete class. Write a security report:\npublic class FileManager {\n    String baseDir;\n    public FileManager(String dir) { this.baseDir = dir; }\n    \n    public byte[] read(String name) throws Exception {\n        return Files.readAllBytes(Paths.get(baseDir + \"/\" + name));\n    }\n    public void write(String name, byte[] data) throws Exception {\n        Files.write(Paths.get(baseDir + \"/\" + name), data);\n    }\n    public void delete(String name) throws Exception {\n        Files.delete(Paths.get(baseDir + \"/\" + name));\n    }\n    public List<String> list(String dir) throws Exception {\n        return Files.list(Paths.get(baseDir + \"/\" + dir))\n            .map(p -> p.toString()).collect(Collectors.toList());\n    }\n}\n// Issues: _____",
+          "expected_output": "ALL 4 methods have path traversal (read, write, delete, list).\nNo input validation anywhere.\nNo canonical path checks.\nwrite allows overwriting any file.\ndelete allows deleting any file.\nlist allows directory listing anywhere.\nNo file size limits.\nNo error handling (exceptions propagate).",
+          "hints": [
+            {
+              "message": "Every method takes a user string and puts it directly in a path."
+            },
+            {
+              "message": "4 methods x path traversal = 4 vulnerabilities minimum."
+            },
+            {
+              "message": "Every method needs: validation, canonical check, error handling. write/delete need extra authorization."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Production Hardening Checklist",
+          "description": "Write a complete checklist for hardening a file-serving application.",
+          "difficulty": "advanced",
+          "category": "Code Review & Security Audit",
+          "estimated_minutes": 11,
+          "ai_intro": "Security auditing is a critical professional skill!",
+          "starter_code": "// Write a security hardening checklist:\n//\n// Code level:\n// 1. _____\n// 2. _____\n// 3. _____\n//\n// Server level:\n// 4. _____\n// 5. _____\n//\n// Monitoring:\n// 6. _____\n// 7. _____",
+          "expected_output": "Code: 1.Whitelist input validation 2.Canonical path check 3.File type/size limits\nServer: 4.Run as limited user 5.Restrict directory permissions\nMonitoring: 6.Log all file access attempts 7.Alert on path traversal patterns",
+          "hints": [
+            {
+              "message": "Think about code defences, OS defences, and detection."
+            },
+            {
+              "message": "Multiple layers: validation, path check, permissions, logging."
+            },
+            {
+              "message": "7 items: input validation, canonical check, type/size limits, limited user, chmod, logging, alerting."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Incident Response: Path Traversal Detected",
+          "description": "Plan response to a detected path traversal attack.",
+          "difficulty": "advanced",
+          "category": "Code Review & Security Audit",
+          "estimated_minutes": 11,
+          "ai_intro": "Security auditing is a critical professional skill!",
+          "starter_code": "// Your WAF logs show:\n// GET /download?file=../../../etc/passwd  -> 200 OK\n// GET /download?file=../../../etc/shadow  -> 403 Forbidden\n// GET /download?file=../../app/config/db.properties -> 200 OK\n//\n// Incident response:\n// 1. Immediate action: _____\n// 2. What was compromised? _____\n// 3. What was NOT compromised? _____\n// 4. Root cause: _____\n// 5. Remediation: _____\n// 6. Prevention: _____",
+          "expected_output": "1. Block the attacking IP, take endpoint offline\n2. /etc/passwd exposed (user list), db.properties exposed (DB credentials!)\n3. /etc/shadow blocked (OS permissions saved us — least privilege!)\n4. No input validation on 'file' parameter\n5. Rotate DB credentials immediately, patch the endpoint\n6. Add whitelist + canonical check + WAF rules + monitoring",
+          "hints": [
+            {
+              "message": "200 OK means the file was served. 403 means it was blocked."
+            },
+            {
+              "message": "db.properties likely contains database username and password!"
+            },
+            {
+              "message": "Immediate: block + offline. DB creds compromised. Rotate immediately. Patch code."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Apache CVE-2021-41773",
+          "description": "Analyse the Apache path traversal CVE.",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "These scenarios prepare you for real security work!",
+          "starter_code": "// CVE-2021-41773:\n// 1. What Apache version was affected? _____\n// 2. What was the root cause? _____\n// 3. What payload was used? _____\n// 4. Why did the initial fix fail (CVE-2021-42013)? _____\n// 5. What is the correct fix? _____",
+          "expected_output": "1. Apache 2.4.49\n2. Path check ran before URL decoding\n3. /icons/%2e%2e/%2e%2e/etc/passwd\n4. Double encoding bypassed: %252e%252e\n5. Canonical path check (decode first, then validate)",
+          "hints": [
+            {
+              "message": "The URL was decoded AFTER the security check."
+            },
+            {
+              "message": "The fix for 41773 only added single-decoding, so double-encoding bypassed it."
+            },
+            {
+              "message": "Decode -> check -> canonical path. Order matters!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Zip Slip Across Languages",
+          "description": "Compare Zip Slip impact across Java, Python, and JS.",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "These scenarios prepare you for real security work!",
+          "starter_code": "// Zip Slip affected thousands of projects.\n// For each language, is the default extraction safe?\n//\n// Java (ZipInputStream): _____\n// Python (zipfile): _____\n// Go (archive/zip): _____\n// Node.js (various): _____\n//\n// The universal fix: _____",
+          "expected_output": "Java: UNSAFE (no built-in path check)\nPython: UNSAFE (extractall follows paths as-is)\nGo: UNSAFE (archive/zip doesn't validate)\nNode.js: UNSAFE (most libs don't check)\nFix: Validate canonical path of every entry before extraction.",
+          "hints": [
+            {
+              "message": "Most archive libraries in most languages do NOT validate paths."
+            },
+            {
+              "message": "The developer must add the check — it's not automatic."
+            },
+            {
+              "message": "NONE are safe by default. Every language needs manual canonical path validation."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Design a Secure File Storage Service",
+          "description": "Architecture for a file storage service immune to traversal.",
+          "difficulty": "intermediate",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "These scenarios prepare you for real security work!",
+          "starter_code": "// Design requirements:\n// - Users upload files\n// - Users download their own files\n// - Admin can access all files\n//\n// Your design:\n// File naming strategy: _____\n// Storage structure: _____\n// Access control: _____\n// Path traversal prevention: _____",
+          "expected_output": "Naming: UUID-based (never use original names)\nStorage: /data/{user_id}/{uuid}.{ext}\nAccess: verify user_id matches session user (or admin)\nTraversal: whitelist UUID format + canonical check + user isolation",
+          "hints": [
+            {
+              "message": "Never use original filenames for storage — generate UUIDs."
+            },
+            {
+              "message": "Isolate users in separate directories: /data/{user_id}/."
+            },
+            {
+              "message": "UUID names, user isolation, canonical checks, admin-only cross-user access."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Penetration Test Plan for Path Traversal",
+          "description": "Write a pen test checklist for path traversal.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios prepare you for real security work!",
+          "starter_code": "// Write a penetration test plan:\n//\n// Test 1: Basic traversal\n//   Payloads: _____\n//   Expected secure response: _____\n//\n// Test 2: Encoding bypasses\n//   Payloads: _____\n//\n// Test 3: Platform-specific\n//   Payloads: _____\n//\n// Test 4: Zip Slip\n//   Method: _____\n//\n// Test 5: Symlink attack\n//   Method: _____",
+          "expected_output": "Test 1: ../../../etc/passwd -> 400/403\nTest 2: %2e%2e%2f, %252e, %c0%af -> 400/403\nTest 3: ..\\..\\windows\\win.ini -> 400/403\nTest 4: Upload ZIP with ../../../ entries -> extraction blocked\nTest 5: Create symlink pointing outside dir -> access blocked",
+          "hints": [
+            {
+              "message": "Test all attack variants: direct, encoded, platform-specific."
+            },
+            {
+              "message": "Zip Slip needs a crafted ZIP file with malicious entry names."
+            },
+            {
+              "message": "5 test categories covering all known bypass techniques."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Fortinet VPN CVE-2018-13379",
+          "description": "Analyse the Fortinet path traversal that exposed VPN credentials.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios prepare you for real security work!",
+          "starter_code": "// CVE-2018-13379:\n// 1. What product? _____\n// 2. What was the attack? _____\n// 3. What file was stolen? _____\n// 4. What data was in the file? _____\n// 5. Real-world impact: _____\n// 6. Why was it so severe? _____",
+          "expected_output": "1. Fortinet FortiOS SSL VPN\n2. Path traversal in web portal\n3. VPN session/credential files\n4. Usernames and plaintext passwords for VPN users\n5. Used to attack government agencies, hospitals, critical infrastructure\n6. VPN credentials = direct network access, bypassing all other security",
+          "hints": [
+            {
+              "message": "The vulnerability exposed VPN login credentials."
+            },
+            {
+              "message": "VPN credentials give attackers direct access to internal networks."
+            },
+            {
+              "message": "Fortinet VPN traversal -> credentials stolen -> used against governments and hospitals. Patch management critical!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Build vs Buy: Path Validation Library",
+          "description": "Evaluate whether to build custom validation or use a library.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios prepare you for real security work!",
+          "starter_code": "// Option A: Build custom validation\n// Pros: _____\n// Cons: _____\n//\n// Option B: Use Apache Commons IO FilenameUtils\n// Pros: _____\n// Cons: _____\n//\n// Option C: Use OWASP ESAPI\n// Pros: _____\n// Cons: _____\n//\n// Recommendation: _____",
+          "expected_output": "A: Pros=full control. Cons=easy to miss edge cases, maintenance burden.\nB: Pros=well-tested, widely used. Cons=may not cover all cases.\nC: Pros=security-focused, comprehensive. Cons=heavy dependency.\nRecommend: Library (B or C) + canonical path check as backup.",
+          "hints": [
+            {
+              "message": "Custom code means custom bugs. Libraries have been tested by thousands."
+            },
+            {
+              "message": "Economy of Mechanism: simpler to use a tested library."
+            },
+            {
+              "message": "Use a library + canonical path check. Defence in depth!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Security Header Audit for File Server",
+          "description": "Check all security headers for a file-serving application.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios prepare you for real security work!",
+          "starter_code": "// Which security headers should a file-serving app have?\n// For each, write the recommended value:\n//\n// 1. Content-Security-Policy: _____\n// 2. X-Content-Type-Options: _____\n// 3. Content-Disposition: _____\n// 4. X-Frame-Options: _____\n// 5. Cache-Control: _____\n// 6. Content-Type: _____",
+          "expected_output": "1. default-src 'none' (file downloads need no scripts)\n2. nosniff (prevent MIME sniffing)\n3. attachment; filename=\"safe_name\" (force download)\n4. DENY (prevent framing)\n5. no-store, no-cache (prevent caching sensitive files)\n6. application/octet-stream (force binary download)",
+          "hints": [
+            {
+              "message": "File downloads should force download (attachment) not render in browser."
+            },
+            {
+              "message": "nosniff prevents the browser from guessing content types."
+            },
+            {
+              "message": "All 6 headers work together to prevent XSS-through-download, MIME sniffing, and caching attacks."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Capstone: Complete Secure File Service",
+          "description": "Design and implement a complete secure file service.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios prepare you for real security work!",
+          "starter_code": "// Capstone: Build a file service with ALL defences:\n//\n// Upload: _____\n// Download: _____\n// Delete: _____\n// List: _____\n//\n// Defences applied:\n// 1. Input validation: _____\n// 2. Path validation: _____\n// 3. Access control: _____\n// 4. Error handling: _____\n// 5. Logging: _____\n// 6. Headers: _____\n// 7. OS permissions: _____\n// 8. Design principles applied: _____",
+          "expected_output": "Upload: UUID naming, type validation, size limit, scan for malware\nDownload: whitelist + canonical + user ownership check\nDelete: admin only, audit log, soft delete first\nList: user's own files only, no path parameter\nAll 8 design principles applied throughout.",
+          "hints": [
+            {
+              "message": "Every operation needs its own set of defences."
+            },
+            {
+              "message": "Upload is write, download is read, delete is destructive — each has different risks."
+            },
+            {
+              "message": "Complete service with all 8 principles, all defence layers, proper logging and headers."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Path Traversal CTF Challenge",
+          "description": "Solve a capture-the-flag style path traversal challenge.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios prepare you for real security work!",
+          "starter_code": "// The flag is in /opt/secret/flag.txt\n// You can access: http://target/api/read?path=documents/readme.txt\n// The server code is:\n//   base = \"/opt/app/public/\"\n//   file = new File(base + path)\n//   if (!path.contains(\"../\")) serve(file)\n//\n// Craft a payload that reads the flag:\n// Attempt 1 (direct): _____  Works? _____\n// Attempt 2 (encoded): _____ Works? _____\n// Attempt 3 (nested): _____  Works? _____",
+          "expected_output": "Attempt 1: ../../secret/flag.txt -> BLOCKED (contains ../)\nAttempt 2: %2e%2e/%2e%2e/secret/flag.txt -> WORKS (filter checks literal ../ not encoded)\nAttempt 3: ....//....//secret/flag.txt -> WORKS if filter removes ../ once",
+          "hints": [
+            {
+              "message": "The filter only checks for literal ../ characters."
+            },
+            {
+              "message": "URL encoding means the filter sees %2e%2e/ not ../."
+            },
+            {
+              "message": "Encoded and nested both bypass the literal check. From /opt/app/public/ need 2x ../ to reach /opt/."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Compliance: CWE-22 Remediation Report",
+          "description": "Write a formal remediation report for a discovered path traversal.",
+          "difficulty": "advanced",
+          "category": "Real-World Scenarios",
+          "estimated_minutes": 12,
+          "ai_intro": "These scenarios prepare you for real security work!",
+          "starter_code": "// You discovered CWE-22 in production. Write the report:\n//\n// Vulnerability ID: _____\n// CWE: _____\n// CVSS Score Estimate: _____\n// Description: _____\n// Impact: _____\n// Root Cause: _____\n// Immediate Mitigation: _____\n// Long-Term Fix: _____\n// Testing: _____\n// Timeline: _____",
+          "expected_output": "CWE-22, CVSS ~7.5 (High)\nDescription: User input in file path without validation\nImpact: Arbitrary file read, potential credential exposure\nRoot cause: Missing input validation and canonical path check\nImmediate: WAF rule to block ../ patterns\nLong-term: Whitelist + canonical path + least privilege\nTest: Pen test with all encoding variants\nTimeline: WAF now, code fix within 48hrs, full audit within 2 weeks",
+          "hints": [
+            {
+              "message": "CVSS 7.5 is High severity for arbitrary file read."
+            },
+            {
+              "message": "Immediate mitigation = WAF rule. Long-term = code fix."
+            },
+            {
+              "message": "Complete report: ID, CWE, CVSS, description, impact, root cause, immediate fix, long-term fix, testing, timeline."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

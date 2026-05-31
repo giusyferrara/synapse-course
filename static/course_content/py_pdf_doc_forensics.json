@@ -1,0 +1,1599 @@
+{
+  "course_id": "py_pdf_doc_forensics",
+  "title": "Document & PDF Forensics",
+  "description": "Analyse PDF structure, extract hidden metadata, detect document tampering, parse embedded objects, and build forensic tools for document investigation.",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "py_files_io",
+    "py_hex_ascii_encoding"
+  ],
+  "learning_outcomes": [
+    "Understand PDF internal structure: objects, cross-reference table, streams",
+    "Extract metadata from PDF files (author, creation date, modification history)",
+    "Detect document tampering through metadata inconsistencies",
+    "Parse PDF headers and trailers using Python",
+    "Extract embedded images, fonts, and JavaScript from PDFs",
+    "Analyse Office documents (DOCX/XLSX) as ZIP containers",
+    "Detect hidden macros and embedded objects in Office files",
+    "Build automated document triage tools for forensic workflows",
+    "Use Python libraries for PDF and Office document analysis",
+    "Generate forensic reports from document analysis"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins. Connects every concept to real forensic investigations.",
+    "intervention_triggers": {
+      "idle_40_seconds": "PDFs have a lot of hidden structure — like a building with secret rooms! Want me to walk through one section at a time?",
+      "idle_90_seconds": "Still thinking? PDF internals can be overwhelming. Let me try a different approach — trace through a real PDF byte by byte.",
+      "idle_180_seconds": "No rush! Want to start with a simpler exercise? Sometimes building confidence with metadata extraction makes the harder stuff click.",
+      "first_error": "Almost! PDF parsing has tricky edge cases. The most common mistake is forgetting PDF uses mixed binary and text. Let me show you...",
+      "repeated_errors": "This is genuinely tricky — PDF was designed for printers, not humans! Let me explain with a completely different analogy.",
+      "after_success": "Excellent! You just extracted evidence from a document the way real forensic analysts do in court cases!"
+    },
+    "encouragement_phrases": [
+      "You are reading PDF internals like a document examiner now!",
+      "That metadata extraction was spot on — this catches forged documents!",
+      "You found hidden data inside a PDF — real investigator skills!",
+      "Office documents have no secrets from you anymore!",
+      "That macro detection could prevent a real malware attack!",
+      "Document forensics is used in fraud cases worldwide — you have the skills!",
+      "You just parsed raw PDF objects — most developers never learn this!",
+      "Your triage tool could process hundreds of evidence files automatically!"
+    ],
+    "explanation_styles": {
+      "analogy": "A PDF is like a book with a table of contents at the END. The cross-reference table at the bottom tells you where every object lives. Forensic analysts read the table of contents first, then jump to suspicious objects.",
+      "visual": "Picture a PDF as layers: Layer 1 = what you see (text, images). Layer 2 = structure (objects, streams). Layer 3 = metadata (author, dates). Forensics examines all three.",
+      "step_by_step": "To analyse a PDF: (1) Read the header (%PDF-1.x), (2) Jump to the trailer at the end, (3) Find the xref table, (4) Locate interesting objects, (5) Extract and decode streams.",
+      "code_trace": "with open('doc.pdf','rb') as f: header=f.read(8) reads '%PDF-1.7'. f.seek(-50,2) jumps to near the end to find 'startxref'.",
+      "comparison": "PDF vs DOCX: PDF stores everything in one file with internal objects. DOCX is a ZIP containing XML files and images. Both can hide malicious content."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "py_pdf_doc_forensics_lesson_1",
+      "title": "Document & PDF Forensics",
+      "theory": {
+        "introduction": "Documents are everywhere in forensic investigations — contracts, invoices, reports, emails. They seem simple on the surface, but underneath they contain rich metadata and hidden structures that tell a story about who created them, when, with what software, and whether they have been tampered with.\n\nPDF files have a complex internal structure with numbered objects, compressed streams, cross-reference tables, and embedded resources. Office documents (DOCX, XLSX, PPTX) are actually ZIP archives containing XML files, images, and potentially dangerous macros. Both formats can carry hidden malware, embedded executables, and steganographic data.\n\nIn this course you will learn to examine documents at every level: surface content, internal structure, metadata, and embedded objects. You will build Python tools that automate document triage — processing hundreds of files to flag suspicious ones. These are the exact skills used by forensic examiners in fraud investigations, intellectual property disputes, and malware analysis.",
+        "why_important": "Document-based attacks are the number one malware delivery method. Phishing emails carry malicious PDFs and Office files that exploit reader vulnerabilities or contain hidden macros. Forensic investigators examine documents to establish timelines, detect forgery, and recover hidden evidence. Without document forensics skills, you cannot investigate the most common attack vector in cybersecurity.",
+        "key_concepts": [
+          {
+            "concept": "PDF File Structure — Header, Body, Cross-Reference, Trailer",
+            "explanation": "Every PDF has four sections: (1) Header identifies version like %PDF-1.7, (2) Body contains numbered objects (text, images, fonts), (3) Cross-reference table (xref) maps object numbers to byte offsets, (4) Trailer contains root pointer and xref location. The trailer is read FIRST, then xref, then objects. This backwards-reading design is key to PDF forensics.",
+            "example": "with open('sample.pdf', 'rb') as f:\n    header = f.read(8)\n    print(f'Header: {header}')  # b'%PDF-1.7'\n    f.seek(-200, 2)\n    tail = f.read()\n    if b'startxref' in tail:\n        print('Found xref pointer in trailer')",
+            "ai_hint": "Think of a PDF like a building: the trailer is the reception desk. The xref is the floor directory. Objects are the actual offices."
+          },
+          {
+            "concept": "PDF Objects — The Building Blocks",
+            "explanation": "PDFs are built from numbered objects like '1 0 obj'. Each has a number, generation (usually 0), and data between 'obj' and 'endobj'. Objects can be dictionaries (<< >>), arrays ([ ]), streams, strings, numbers, or references (3 0 R = see object 3). Understanding objects lets you trace how a PDF is constructed.",
+            "example": "import re\npdf = b'1 0 obj\\n<< /Type /Catalog /Pages 2 0 R >>\\nendobj\\n2 0 obj\\n<< /Type /Pages >>\\nendobj'\nfor m in re.finditer(rb'(\\d+)\\s+(\\d+)\\s+obj', pdf):\n    print(f'Object {m.group(1).decode()} at offset {m.start()}')",
+            "ai_hint": "Each PDF object is like a Lego brick with a number. The Catalog brick is the master that connects to Pages, which connect to content."
+          },
+          {
+            "concept": "PDF Metadata — Author, Dates, Software Trail",
+            "explanation": "PDF metadata lives in the Info dictionary and optional XMP stream. It records Author, Title, Creator (application), Producer (PDF library), CreationDate, ModDate. This reveals who created the document, when, and with what software. Inconsistencies flag potential forgery.",
+            "example": "import re\ndata = b'/Author (John Smith) /Creator (Word 2019) /CreationDate (D:20240115)'\nfor field in [b'Author', b'Creator', b'CreationDate']:\n    m = re.search(b'/' + field + rb'\\s*\\(([^)]+)\\)', data)\n    if m: print(f'{field.decode()}: {m.group(1).decode()}')",
+            "ai_hint": "Metadata is the document's fingerprint. A PDF claiming to be from 2020 but created with 'LibreOffice 2024' is suspicious!"
+          },
+          {
+            "concept": "PDF Streams — Compressed Hidden Data",
+            "explanation": "Streams store page content, images, fonts as compressed binary data between 'stream' and 'endstream'. The most common filter is /FlateDecode (zlib). Forensic analysts decompress streams to find hidden text, JavaScript, and malicious payloads.",
+            "example": "import zlib\ncompressed = zlib.compress(b'BT /F1 12 Tf 100 700 Td (Hello World) Tj ET')\nprint(f'Compressed: {len(compressed)} bytes')\ndecompressed = zlib.decompress(compressed)\nprint(f'Content: {decompressed.decode()}')",
+            "ai_hint": "Streams are sealed envelopes inside the PDF. Most contain compressed text/images, but malicious PDFs hide JavaScript exploits inside them."
+          },
+          {
+            "concept": "Office Documents as ZIP Archives",
+            "explanation": "Modern Office formats (DOCX, XLSX, PPTX) are ZIP files containing XML, images, and resources. Rename .docx to .zip to explore: [Content_Types].xml, word/document.xml (text), word/media/ (images), docProps/core.xml (metadata). Analyse with standard ZIP tools.",
+            "example": "import zipfile\nwith zipfile.ZipFile('report.docx', 'r') as z:\n    for info in z.infolist():\n        print(f'{info.filename} ({info.file_size:,}B)')\n    if 'docProps/core.xml' in z.namelist():\n        print(z.read('docProps/core.xml').decode()[:200])",
+            "ai_hint": "A DOCX is a ZIP file wearing a disguise! Rename it to .zip and explore its contents."
+          },
+          {
+            "concept": "Office Macros — The Malware Delivery Vehicle",
+            "explanation": "VBA macros in Office documents are the most common malware delivery method. Files with macros use .docm, .xlsm extensions. Macros can execute commands, download payloads, and spread laterally. Key red flags: AutoOpen macros, Shell() calls, PowerShell invocations, and obfuscated strings.",
+            "example": "import zipfile\ndef check_macros(filepath):\n    with open(filepath, 'rb') as f:\n        header = f.read(8)\n    if header.startswith(b'\\xD0\\xCF\\x11\\xE0'):\n        print('OLE2 format - may contain macros!')\n    elif header.startswith(b'PK'):\n        with zipfile.ZipFile(filepath) as z:\n            for name in z.namelist():\n                if 'vbaProject' in name:\n                    print(f'MACRO: {name}')",
+            "ai_hint": "Macros give documents the ability to run programs. Malicious macros can download ransomware, steal passwords, or destroy data."
+          },
+          {
+            "concept": "Document Timestamps and Timeline Analysis",
+            "explanation": "Documents contain creation, modification, and access timestamps. Timeline analysis compares these to establish when events occurred. Red flags: modification before creation (impossible), future dates, timezone inconsistencies.",
+            "example": "from datetime import datetime\ncreated = datetime(2024, 1, 15)\nmodified = datetime(2024, 1, 14)\nif modified < created:\n    print('RED FLAG: Modified before created!')\nif created > datetime.now():\n    print('RED FLAG: Future creation date!')",
+            "ai_hint": "Timestamps are a document's alibi. If a contract claims January 15th but metadata shows March 3rd — that is potential fraud evidence."
+          },
+          {
+            "concept": "Embedded Objects and Attachments",
+            "explanation": "PDFs and Office docs can embed other files: images, spreadsheets, executables. Embedded files are stored as streams in PDFs or OLE objects in Office docs. A seemingly innocent PDF might contain an embedded executable that exploits reader vulnerabilities.",
+            "example": "import zipfile\ndef find_embedded(docx):\n    with zipfile.ZipFile(docx) as z:\n        for name in z.namelist():\n            if 'media/' in name or 'embeddings/' in name:\n                data = z.read(name)[:4]\n                print(f'{name}: {data.hex()} ({len(z.read(name))}B)')",
+            "ai_hint": "Embedded objects are packages hidden inside an envelope. The document looks normal but the package could be anything — even malware."
+          },
+          {
+            "concept": "PDF JavaScript — Hidden Executable Code",
+            "explanation": "PDFs can contain JavaScript that executes on open. Malicious uses include exploiting reader vulnerabilities and phishing redirects. Look for /JS, /JavaScript, /OpenAction, and /AA entries. Extract and analyse the code for malicious intent.",
+            "example": "import re\ndef find_js(pdf_bytes):\n    for pat, desc in [(rb'/JavaScript','JS action'), (rb'/OpenAction','AutoExec'), (rb'eval\\(','eval call')]:\n        if re.search(pat, pdf_bytes):\n            print(f'ALERT: {desc}')",
+            "ai_hint": "JavaScript in PDFs is a trap door — it runs code when you open the document. Most PDF readers now sandbox it, but older readers were heavily exploited."
+          },
+          {
+            "concept": "Document Hashing and Integrity Verification",
+            "explanation": "Cryptographic hashing (MD5, SHA-256) creates unique fingerprints. Any modification produces a different hash. Forensic analysts hash evidence immediately upon collection. Chain of custody requires documenting hashes at every transfer.",
+            "example": "import hashlib\ndef hash_file(path):\n    sha = hashlib.sha256()\n    with open(path, 'rb') as f:\n        for chunk in iter(lambda: f.read(8192), b''):\n            sha.update(chunk)\n    return sha.hexdigest()",
+            "ai_hint": "A hash is document DNA. If the SHA-256 changes, someone modified the file. This is how evidence integrity is proven in court."
+          },
+          {
+            "concept": "OLE2 Compound Documents — Legacy Office Format",
+            "explanation": "Pre-2007 Office files (.doc, .xls) use OLE2 format — a mini filesystem inside a file. Magic bytes: D0 CF 11 E0. Can contain VBA macros, embedded objects, and custom properties. Many malware samples use OLE2 because older formats have more attack surface.",
+            "example": "def is_ole2(path):\n    with open(path, 'rb') as f:\n        magic = f.read(8)\n    if magic == b'\\xD0\\xCF\\x11\\xE0\\xA1\\xB1\\x1A\\xE1':\n        print('OLE2 Compound Document!')\n        return True\n    return False",
+            "ai_hint": "OLE2 files are filing cabinets inside a file. The magic bytes D0 CF 11 E0 spell 'DOCFILE0' when you squint."
+          },
+          {
+            "concept": "Document Redaction Failures — Hidden Text Recovery",
+            "explanation": "Documents often have text covered by black rectangles but not actually removed. The underlying text remains extractable from PDF streams. Copy-paste or text extraction tools reveal the hidden content. Real redaction must replace text, not just cover it. This mistake has leaked classified information.",
+            "example": "# Simulated redaction failure\npage = b'BT 100 700 Td (Public Info) Tj 100 680 Td (CLASSIFIED: Op NIGHTFALL) Tj ET'\n# Black rectangle covers it visually but text is still here!\nfor line in page.decode().split('\\n'):\n    if '(' in line:\n        text = line.split('(')[1].split(')')[0]\n        print(f'Extracted: {text}')",
+            "ai_hint": "Covering text with a black box is NOT redaction. The text is still in the file data. This mistake has leaked classified government information!"
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: PDF Header and Version Detector",
+          "description": "Read PDF header to identify version and validate",
+          "difficulty": "beginner",
+          "code": "def check_pdf(filepath):\n    with open(filepath, 'rb') as f:\n        header = f.read(1024)\n    if not header.startswith(b'%PDF-'):\n        print(f'{filepath}: NOT a PDF!')\n        return\n    version = header[5:8].decode('ascii', errors='replace')\n    print(f'PDF Version: {version}')\n    binary = any(b > 127 for b in header[10:100])\n    print(f'Binary content: {\"Yes\" if binary else \"Text only\"}')\n    if b'/Encrypt' in header: print('ENCRYPTED!')\n    if b'/JavaScript' in header: print('WARNING: JavaScript!')\n\nwith open('/tmp/test.pdf', 'wb') as f:\n    f.write(b'%PDF-1.7\\n%\\xe2\\xe3\\xcf\\xd3\\n1 0 obj << /Type /Catalog >> endobj')\ncheck_pdf('/tmp/test.pdf')",
+          "output": "PDF Version: 1.7\nBinary content: Yes",
+          "ai_explanation": "Every PDF starts with %PDF- and version. Binary comment line (bytes>127) tells readers about binary data. Quick scan for /Encrypt and /JavaScript catches obvious threats.",
+          "ai_challenge": "Add detection for /OpenAction, /EmbeddedFile, and /URI for a more complete threat scan."
+        },
+        {
+          "title": "Example 2: PDF Object Counter",
+          "description": "Count and list all objects in a PDF",
+          "difficulty": "beginner",
+          "code": "import re\ndef list_objects(filepath):\n    with open(filepath, 'rb') as f:\n        data = f.read()\n    objects = re.findall(rb'(\\d+)\\s+(\\d+)\\s+obj', data)\n    print(f'Objects: {len(objects)}')\n    for num, gen in objects:\n        n = int(num)\n        pat = re.compile(rb'%d\\s+%d\\s+obj\\s*(.*?)\\s*endobj' % (n, int(gen)), re.DOTALL)\n        m = pat.search(data)\n        if m:\n            t = re.search(rb'/Type\\s*/(\\w+)', m.group(1))\n            typ = t.group(1).decode() if t else 'Unknown'\n            print(f'  Object {n}: {typ} [{len(m.group(1))}B]')\n\npdf = b'%PDF-1.7\\n1 0 obj\\n<< /Type /Catalog /Pages 2 0 R >>\\nendobj\\n2 0 obj\\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\\nendobj\\n3 0 obj\\n<< /Type /Page >>\\nendobj'\nwith open('/tmp/multi.pdf', 'wb') as f: f.write(pdf)\nlist_objects('/tmp/multi.pdf')",
+          "output": "Objects: 3\n  Object 1: Catalog [44B]\n  Object 2: Pages [46B]\n  Object 3: Page [15B]",
+          "ai_explanation": "Regex finds every 'N G obj...endobj' block and extracts /Type. Object 1 (Catalog) is root, linking to Pages then Page objects. Quick structural overview without any library.",
+          "ai_challenge": "Add stream detection: count objects with stream...endstream and report /Filter types."
+        },
+        {
+          "title": "Example 3: PDF Metadata Extractor",
+          "description": "Extract author, dates, and software from metadata",
+          "difficulty": "intermediate",
+          "code": "import re\ndef extract_metadata(filepath):\n    with open(filepath, 'rb') as f:\n        data = f.read()\n    fields = [b'Author', b'Creator', b'Producer', b'CreationDate', b'ModDate', b'Title']\n    meta = {}\n    for field in fields:\n        m = re.search(b'/' + field + rb'\\s*\\(([^)]+)\\)', data)\n        if m: meta[field.decode()] = m.group(1).decode('latin-1')\n    print('=== PDF Metadata ===')\n    for k, v in meta.items(): print(f'  {k}: {v}')\n    if 'Creator' in meta and 'Producer' in meta and meta['Creator'] != meta['Producer']:\n        print(f'  Note: Created with {meta[\"Creator\"]}, converted by {meta[\"Producer\"]}')\n\npdf = b'%PDF-1.7\\n1 0 obj << /Author (Jane Doe) /Creator (Word 2019) /Producer (Adobe PDF) /CreationDate (D:20240115) /Title (Report) >> endobj'\nwith open('/tmp/meta.pdf', 'wb') as f: f.write(pdf)\nextract_metadata('/tmp/meta.pdf')",
+          "output": "=== PDF Metadata ===\n  Author: Jane Doe\n  Creator: Word 2019\n  Producer: Adobe PDF\n  CreationDate: D:20240115\n  Title: Report\n  Note: Created with Word 2019, converted by Adobe PDF",
+          "ai_explanation": "Metadata fields stored as PDF strings in parentheses. Creator/Producer mismatch shows document was written in Word then saved via Adobe tools. Dates use D:YYYYMMDD format. Forensic analysts compare these for inconsistencies.",
+          "ai_challenge": "Parse the PDF date format into Python datetime and calculate time between creation and modification."
+        },
+        {
+          "title": "Example 4: PDF Stream Decompressor",
+          "description": "Find and decompress FlateDecode streams",
+          "difficulty": "intermediate",
+          "code": "import re, zlib\ndef decompress_streams(filepath):\n    with open(filepath, 'rb') as f:\n        data = f.read()\n    streams = list(re.finditer(rb'stream\\r?\\n(.+?)\\r?\\nendstream', data, re.DOTALL))\n    print(f'Found {len(streams)} stream(s)')\n    for i, m in enumerate(streams):\n        raw = m.group(1)\n        try:\n            decoded = zlib.decompress(raw)\n            text = decoded.decode('latin-1')[:150]\n            print(f'Stream {i+1}: {len(raw)}B -> {len(decoded)}B')\n            print(f'  Content: {text}')\n            if 'JavaScript' in text or 'eval(' in text:\n                print('  ALERT: JavaScript in stream!')\n        except zlib.error:\n            print(f'Stream {i+1}: Not FlateDecode ({raw[:8].hex()})')\n\ncontent = zlib.compress(b'BT /F1 12 Tf 100 700 Td (Secret Message) Tj ET')\npdf = b'%PDF-1.7\\n1 0 obj << /Length %d /Filter /FlateDecode >>\\nstream\\n' % len(content)\npdf += content + b'\\nendstream\\nendobj'\nwith open('/tmp/stream.pdf', 'wb') as f: f.write(pdf)\ndecompress_streams('/tmp/stream.pdf')",
+          "output": "Found 1 stream(s)\nStream 1: 43B -> 46B\n  Content: BT /F1 12 Tf 100 700 Td (Secret Message) Tj ET",
+          "ai_explanation": "Most PDF streams use FlateDecode (zlib). After decompression, page content appears in PDF text language (BT=begin, Tf=font, Td=position, Tj=show, ET=end). Malicious PDFs hide JavaScript/shellcode in compressed streams.",
+          "ai_challenge": "Add ASCIIHexDecode and ASCII85Decode support. Some PDFs chain filters."
+        },
+        {
+          "title": "Example 5: DOCX ZIP Structure Analyser",
+          "description": "Open DOCX as ZIP and examine contents",
+          "difficulty": "beginner",
+          "code": "import zipfile, os\ndef analyse_docx(filepath):\n    with zipfile.ZipFile(filepath) as z:\n        print(f'=== {os.path.basename(filepath)} ===')\n        xml = [f for f in z.infolist() if f.filename.endswith('.xml')]\n        media = [f for f in z.infolist() if 'media/' in f.filename]\n        macros = [f for f in z.namelist() if 'vbaProject' in f]\n        print(f'XML files: {len(xml)}')\n        for f in xml: print(f'  {f.filename} ({f.file_size:,}B)')\n        print(f'Media: {len(media)}')\n        if macros: print(f'WARNING: MACROS in {macros}')\n\nwith zipfile.ZipFile('/tmp/test.docx', 'w') as z:\n    z.writestr('[Content_Types].xml', '<Types/>')\n    z.writestr('word/document.xml', '<doc><body><p>Test content</p></body></doc>')\n    z.writestr('docProps/core.xml', '<props><creator>Analyst</creator></props>')\nanalyse_docx('/tmp/test.docx')",
+          "output": "=== test.docx ===\nXML files: 3\n  [Content_Types].xml (8B)\n  word/document.xml (44B)\n  docProps/core.xml (44B)\nMedia: 0",
+          "ai_explanation": "DOCX is ZIP containing XML. [Content_Types].xml describes contents. word/document.xml has text. docProps/core.xml holds metadata. We check for vbaProject.bin as macro indicator.",
+          "ai_challenge": "Extract actual text from <w:t> tags in word/document.xml."
+        },
+        {
+          "title": "Example 6: Document Metadata Comparison",
+          "description": "Compare metadata between two documents to detect inconsistencies",
+          "difficulty": "intermediate",
+          "code": "def compare_meta(m1, m2, l1='Original', l2='Suspect'):\n    keys = set(list(m1.keys()) + list(m2.keys()))\n    diffs = []\n    for k in sorted(keys):\n        v1 = m1.get(k, '(missing)')\n        v2 = m2.get(k, '(missing)')\n        match = 'OK' if v1 == v2 else 'DIFFER'\n        if v1 != v2: diffs.append(k)\n        print(f'{k:15s}: {str(v1):20s} | {str(v2):20s} [{match}]')\n    if diffs:\n        print(f'\\nALERT: {len(diffs)} difference(s) — possible tampering!')\n\noriginal = {'Author':'Jane','Creator':'Word 2019','Created':'2024-01-15'}\nsuspect = {'Author':'Jane','Creator':'LibreOffice 7.6','Created':'2024-03-01'}\ncompare_meta(original, suspect)",
+          "output": "Author         : Jane                 | Jane                 [OK]\nCreated        : 2024-01-15            | 2024-03-01            [DIFFER]\nCreator        : Word 2019             | LibreOffice 7.6       [DIFFER]\n\nALERT: 2 difference(s) — possible tampering!",
+          "ai_explanation": "Same author but different creation tool and date — classic forgery pattern. Forensic examiners compare metadata across document versions to detect manipulation.",
+          "ai_challenge": "Add a confidence scoring system that rates tampering likelihood."
+        },
+        {
+          "title": "Example 7: File Hash Chain of Custody",
+          "description": "Hash evidence files and maintain custody log",
+          "difficulty": "beginner",
+          "code": "import hashlib, os\nfrom datetime import datetime\ndef custody_entry(filepath, examiner, action):\n    sha = hashlib.sha256()\n    with open(filepath, 'rb') as f:\n        for chunk in iter(lambda: f.read(8192), b''):\n            sha.update(chunk)\n    entry = {'time': datetime.now().isoformat(), 'file': os.path.basename(filepath),\n             'sha256': sha.hexdigest(), 'examiner': examiner, 'action': action}\n    for k, v in entry.items(): print(f'  {k}: {v}')\n    return entry\n\nwith open('/tmp/evidence.pdf', 'wb') as f:\n    f.write(b'%PDF-1.7 Evidence content')\nprint('Entry 1:')\ne1 = custody_entry('/tmp/evidence.pdf', 'Det. Smith', 'Collected')\nprint('\\nEntry 2:')\ne2 = custody_entry('/tmp/evidence.pdf', 'Lab Jones', 'Received')\nprint(f'\\nIntegrity: {\"PASS\" if e1[\"sha256\"]==e2[\"sha256\"] else \"FAIL\"}')\n",
+          "output": "Entry 1:\n  time: 2024-01-15T10:30:00\n  file: evidence.pdf\n  sha256: abc123...\n  examiner: Det. Smith\n  action: Collected\n\nEntry 2:\n  time: 2024-01-15T11:00:00\n  file: evidence.pdf\n  sha256: abc123...\n  examiner: Lab Jones\n  action: Received\n\nIntegrity: PASS",
+          "ai_explanation": "Chain of custody proves evidence integrity. Hash at collection, hash at receipt — if they match, file is unchanged. Legally required in court proceedings.",
+          "ai_challenge": "Save custody log as JSON and add verify function to re-hash and compare."
+        },
+        {
+          "title": "Example 8: PDF Threat Indicator Scanner",
+          "description": "Scan PDF for suspicious features indicating malware",
+          "difficulty": "intermediate",
+          "code": "import re\ndef scan_threats(filepath):\n    with open(filepath, 'rb') as f: data = f.read()\n    indicators = [(rb'/JavaScript','HIGH','JavaScript'),(rb'/JS\\s','HIGH','JS shorthand'),\n        (rb'/OpenAction','MED','AutoExec'),(rb'/Launch','HIGH','Launch action'),\n        (rb'/EmbeddedFile','MED','Embedded files'),(rb'eval\\(','HIGH','eval()'),\n        (rb'unescape\\(','HIGH','unescape (shellcode?)'),(rb'/Encrypt','LOW','Encrypted')]\n    score = 0\n    weights = {'HIGH':3,'MED':2,'LOW':1}\n    for pat, sev, desc in indicators:\n        n = len(re.findall(pat, data))\n        if n:\n            score += weights[sev] * n\n            print(f'  [{sev}] {desc} ({n}x)')\n    risk = 'CRITICAL' if score>10 else 'HIGH' if score>6 else 'MEDIUM' if score>3 else 'LOW'\n    print(f'Score: {score} ({risk})')\n\nwith open('/tmp/bad.pdf', 'wb') as f:\n    f.write(b'%PDF-1.7\\n1 0 obj << /OpenAction 2 0 R >> endobj\\n2 0 obj << /S /JavaScript /JS (eval(unescape(\"%41\"))) >> endobj')\nscan_threats('/tmp/bad.pdf')",
+          "output": "  [HIGH] JavaScript (1x)\n  [HIGH] JS shorthand (1x)\n  [MED] AutoExec (1x)\n  [HIGH] eval() (1x)\n  [HIGH] unescape (shellcode?) (1x)\nScore: 14 (CRITICAL)",
+          "ai_explanation": "Checks 8 threat indicators with severity weights. /JavaScript + /OpenAction + eval() together is almost always malicious — auto-executes JavaScript on open.",
+          "ai_challenge": "Add URL extraction from /URI values and flag known suspicious domains."
+        },
+        {
+          "title": "Example 9: Multi-Format Text Extractor",
+          "description": "Extract text from both PDF and DOCX files",
+          "difficulty": "intermediate",
+          "code": "import re, zlib, zipfile\ndef extract_text(filepath):\n    ext = filepath.split('.')[-1].lower()\n    if ext == 'pdf':\n        with open(filepath, 'rb') as f: data = f.read()\n        texts = []\n        for m in re.finditer(rb'stream\\r?\\n(.+?)\\r?\\nendstream', data, re.DOTALL):\n            try: decoded = zlib.decompress(m.group(1))\n            except: decoded = m.group(1)\n            texts.extend(t.decode('latin-1') for t in re.findall(rb'\\(([^)]+)\\)\\s*Tj', decoded))\n        return ' '.join(texts)\n    elif ext == 'docx':\n        with zipfile.ZipFile(filepath) as z:\n            if 'word/document.xml' in z.namelist():\n                xml = z.read('word/document.xml').decode()\n                return ' '.join(re.findall(r'<w:t[^>]*>([^<]+)</w:t>', xml))\n    return ''\n\ncontent = zlib.compress(b'BT /F1 12 Tf 100 700 Td (Quarterly Report) Tj 100 680 Td (Revenue: $2.5M) Tj ET')\npdf = b'%PDF-1.7\\n1 0 obj << /Length %d /Filter /FlateDecode >> stream\\n' % len(content) + content + b'\\nendstream endobj'\nwith open('/tmp/r.pdf', 'wb') as f: f.write(pdf)\nprint('PDF:', extract_text('/tmp/r.pdf'))\n\nwith zipfile.ZipFile('/tmp/r.docx', 'w') as z:\n    z.writestr('word/document.xml', '<w:document xmlns:w=\"ns\"><w:body><w:p><w:r><w:t>Meeting Notes</w:t></w:r></w:p></w:body></w:document>')\nprint('DOCX:', extract_text('/tmp/r.docx'))",
+          "output": "PDF: Quarterly Report Revenue: $2.5M\nDOCX: Meeting Notes",
+          "ai_explanation": "PDF text comes from Tj operations in decompressed streams. DOCX text from <w:t> tags in document.xml. Handles the most common storage methods.",
+          "ai_challenge": "Add table extraction from DOCX and handle PDF TJ arrays."
+        },
+        {
+          "title": "Example 10: Embedded File Extractor",
+          "description": "Extract embedded files from DOCX and identify by magic bytes",
+          "difficulty": "intermediate",
+          "code": "import zipfile, os\nSIGS = {b'\\x89PNG':'PNG', b'\\xff\\xd8\\xff':'JPEG', b'\\xD0\\xCF\\x11\\xE0':'OLE2', b'%PDF':'PDF', b'PK':'ZIP'}\ndef extract_embedded(docx_path):\n    with zipfile.ZipFile(docx_path) as z:\n        embedded = [f for f in z.namelist() if 'media/' in f or 'embeddings/' in f]\n        print(f'Embedded: {len(embedded)}')\n        for name in embedded:\n            data = z.read(name)\n            ftype = next((t for s,t in SIGS.items() if data[:len(s)]==s), 'Unknown')\n            print(f'  {name} | {ftype} | {len(data):,}B | {data[:4].hex()}')\n\nwith zipfile.ZipFile('/tmp/embed.docx', 'w') as z:\n    z.writestr('word/document.xml', '<doc/>')\n    z.writestr('word/media/img1.png', b'\\x89PNG\\r\\n\\x1a\\n' + b'\\x00'*100)\n    z.writestr('word/embeddings/ole1.bin', b'\\xD0\\xCF\\x11\\xE0\\xA1\\xB1\\x1A\\xE1' + b'\\x00'*50)\nextract_embedded('/tmp/embed.docx')",
+          "output": "Embedded: 2\n  word/media/img1.png | PNG | 108B | 89504e47\n  word/embeddings/ole1.bin | OLE2 | 58B | d0cf11e0",
+          "ai_explanation": "DOCX embedded files in word/media/ and word/embeddings/. Identify each by magic bytes. OLE2 objects could be embedded spreadsheets or malicious payloads.",
+          "ai_challenge": "Add recursive analysis for nested ZIP/OLE2 documents."
+        },
+        {
+          "title": "Example 11: Redaction Failure Detector",
+          "description": "Find text visually redacted but not removed",
+          "difficulty": "advanced",
+          "code": "import re, zlib\ndef check_redaction(filepath):\n    with open(filepath, 'rb') as f: data = f.read()\n    all_text = []\n    for m in re.finditer(rb'stream\\r?\\n(.+?)\\r?\\nendstream', data, re.DOTALL):\n        try: decoded = zlib.decompress(m.group(1))\n        except: decoded = m.group(1)\n        all_text.append(decoded)\n    combined = b'\\n'.join(all_text)\n    has_rect = bool(re.search(rb'0\\s+0\\s+0\\s+rg.*?re\\s+f', combined, re.DOTALL))\n    texts = [t.decode('latin-1') for t in re.findall(rb'\\(([^)]+)\\)', combined)]\n    if has_rect and texts:\n        print('WARNING: Black rectangles + extractable text!')\n        for t in texts: print(f'  \"{t}\"')\n    else:\n        print('No redaction issues detected.')\n\ncontent = zlib.compress(b'BT 100 700 Td (Public) Tj 100 680 Td (CLASSIFIED: NIGHTFALL) Tj ET\\n0 0 0 rg 95 675 200 20 re f')\npdf = b'%PDF-1.7\\n1 0 obj << /Length %d /Filter /FlateDecode >> stream\\n' % len(content) + content + b'\\nendstream endobj'\nwith open('/tmp/redact.pdf', 'wb') as f: f.write(pdf)\ncheck_redaction('/tmp/redact.pdf')",
+          "output": "WARNING: Black rectangles + extractable text!\n  \"Public\"\n  \"CLASSIFIED: NIGHTFALL\"",
+          "ai_explanation": "Detects cosmetic-only redaction: black rectangles (0 0 0 rg...re f) covering text that is still extractable. Real redaction must remove text from streams entirely.",
+          "ai_challenge": "Build a proper redaction tool that replaces text in streams."
+        },
+        {
+          "title": "Example 12: Document Triage System",
+          "description": "Process multiple documents and generate priority report",
+          "difficulty": "advanced",
+          "code": "import os, hashlib, re, zipfile\ndef triage(filepath):\n    with open(filepath, 'rb') as f: data = f.read()\n    r = {'file': os.path.basename(filepath), 'risk': 'LOW', 'issues': []}\n    if data[:5] == b'%PDF-':\n        r['type'] = 'PDF'\n        for pat, desc in [(b'/JavaScript','JS'),(b'/OpenAction','AutoExec'),(b'/Launch','Launch')]:\n            if pat in data: r['issues'].append(desc); r['risk'] = 'HIGH'\n    elif data[:2] == b'PK':\n        r['type'] = 'Office'\n        try:\n            with zipfile.ZipFile(filepath) as z:\n                if any('vbaProject' in n for n in z.namelist()):\n                    r['issues'].append('MACROS'); r['risk'] = 'HIGH'\n        except: pass\n    elif data[:4] == b'\\xD0\\xCF\\x11\\xE0': r['type'] = 'OLE2'; r['risk'] = 'MEDIUM'\n    else: r['type'] = 'Unknown'\n    return r\n\nos.makedirs('/tmp/ev', exist_ok=True)\nwith open('/tmp/ev/bad.pdf', 'wb') as f: f.write(b'%PDF-1.7 /JavaScript /OpenAction')\nwith open('/tmp/ev/ok.pdf', 'wb') as f: f.write(b'%PDF-1.7 clean content')\nwith zipfile.ZipFile('/tmp/ev/macro.docx', 'w') as z:\n    z.writestr('word/document.xml', '<d/>'); z.writestr('word/vbaProject.bin', b'VBA')\n\nprint('TRIAGE REPORT')\nfor f in sorted(os.listdir('/tmp/ev')):\n    r = triage(os.path.join('/tmp/ev', f))\n    icon = {'HIGH':'RED','MEDIUM':'YEL','LOW':'GRN'}.get(r['risk'],'?')\n    print(f'[{icon}] {r[\"file\"]:20s} {r.get(\"type\",\"?\"):10s} {\", \".join(r[\"issues\"]) or \"Clean\"}')\n",
+          "output": "TRIAGE REPORT\n[RED] bad.pdf              PDF        JS, AutoExec\n[RED] macro.docx           Office     MACROS\n[GRN] ok.pdf               PDF        Clean",
+          "ai_explanation": "Automated triage scans a directory of documents, categorises by type, checks threat indicators, and generates a prioritised report. Exactly how forensic labs process seized evidence.",
+          "ai_challenge": "Add YARA-style pattern matching and CSV export for case management."
+        },
+        {
+          "title": "Example 13: PDF Incremental Update Detector",
+          "description": "Detect if PDF was modified after creation",
+          "difficulty": "advanced",
+          "code": "import re\ndef detect_updates(filepath):\n    with open(filepath, 'rb') as f: data = f.read()\n    eofs = list(re.finditer(rb'%%EOF', data))\n    xrefs = list(re.finditer(rb'startxref', data))\n    print(f'%%EOF markers: {len(eofs)}')\n    print(f'startxref entries: {len(xrefs)}')\n    if len(eofs) > 1:\n        print(f'WARNING: {len(eofs)-1} incremental update(s)!')\n        prev = 0\n        for i, e in enumerate(eofs):\n            print(f'  Revision {i}: bytes {prev}-{e.end()} ({e.end()-prev:,}B)')\n            prev = e.end()\n        print('Earlier revisions may contain deleted/changed content!')\n    else:\n        print('Single revision — no updates.')\n\npdf = b'%PDF-1.7\\n1 0 obj << >> endobj\\nxref\\ntrailer\\nstartxref\\n0\\n%%EOF\\n'\npdf += b'2 0 obj << >> endobj\\nxref\\ntrailer << /Prev 0 >>\\nstartxref\\n100\\n%%EOF\\n'\nwith open('/tmp/updated.pdf', 'wb') as f: f.write(pdf)\ndetect_updates('/tmp/updated.pdf')",
+          "output": "%%EOF markers: 2\nstartxref entries: 2\nWARNING: 1 incremental update(s)!\n  Revision 0: bytes 0-65 (65B)\n  Revision 1: bytes 65-143 (78B)\nEarlier revisions may contain deleted/changed content!",
+          "ai_explanation": "PDF incremental updates append after %%EOF. Multiple %%EOF markers mean modifications. Forensic analysts extract each revision to see what changed — like version history.",
+          "ai_challenge": "Build a revision extractor that saves each revision as a separate file."
+        },
+        {
+          "title": "Example 14: Complete Forensic Report Generator",
+          "description": "Generate comprehensive forensic report from document analysis",
+          "difficulty": "advanced",
+          "code": "import hashlib, os, re, zlib, math\nfrom datetime import datetime\ndef forensic_report(filepath):\n    with open(filepath, 'rb') as f: data = f.read()\n    size = len(data)\n    sha = hashlib.sha256(data).hexdigest()\n    ftype = 'PDF' if data[:5]==b'%PDF-' else 'Office' if data[:2]==b'PK' else 'OLE2' if data[:4]==b'\\xD0\\xCF\\x11\\xE0' else 'Unknown'\n    freq = [0]*256\n    for b in data: freq[b] += 1\n    ent = -sum(p*math.log2(p) for c in freq if c>0 for p in [c/size]) if size else 0\n    strings = [m.decode() for m in re.findall(rb'[\\x20-\\x7E]{6,}', data)]\n    emails = [m.decode() for m in re.findall(rb'[\\w.+-]+@[\\w.-]+\\.\\w{2,}', data)]\n    urls = [m.decode() for m in re.findall(rb'https?://[^\\s\\x00<>]{5,}', data)]\n    threats = [d for p,d in [(b'/JavaScript','JS'),(b'/OpenAction','AutoExec'),(b'/Launch','Launch'),(b'vbaProject','Macros')] if p in data]\n    print(f'File: {os.path.basename(filepath)} | {ftype} | {size:,}B')\n    print(f'SHA-256: {sha}')\n    print(f'Entropy: {ent:.2f}/8.0')\n    print(f'Strings: {len(strings)} | Emails: {emails or \"None\"} | URLs: {urls or \"None\"}')\n    print(f'Threats: {threats or \"None\"} | Risk: {\"HIGH\" if threats else \"LOW\"}')\n\nwith open('/tmp/full.pdf', 'wb') as f:\n    c = zlib.compress(b'BT /F1 12 Tf 100 700 Td (Report) Tj ET')\n    f.write(b'%PDF-1.7\\n/Author (Smith) Contact: a@b.com http://evidence.org/c42\\n')\n    f.write(b'1 0 obj << /Length %d /Filter /FlateDecode >> stream\\n' % len(c) + c + b'\\nendstream endobj')\nforensic_report('/tmp/full.pdf')",
+          "output": "File: full.pdf | PDF | 165B\nSHA-256: a1b2c3...\nEntropy: 5.23/8.0\nStrings: 5 | Emails: ['a@b.com'] | URLs: ['http://evidence.org/c42']\nThreats: None | Risk: LOW",
+          "ai_explanation": "Combines everything: file ID, hashing, entropy, string extraction, email/URL discovery, and threat scanning. Structured, factual, court-ready format. Exactly what forensic examiners produce.",
+          "ai_challenge": "Add PDF metadata, revision history, and embedded object listing. Export as JSON and text."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Document & PDF Forensics — Complete Reference Flowchart",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 20px; max-width: 900px;\">\n<h2 style=\"color: #e74c3c;\">📄 Document & PDF Forensics — Complete Reference</h2>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #3498db;\">📊 PDF Internal Structure</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"background: #e74c3c; color: white; padding: 3px 10px; border-radius: 4px;\">HEADER</span>  %PDF-1.7  (first line — identifies version)\n     │\n     ▼\n  <span style=\"background: #3498db; color: white; padding: 3px 10px; border-radius: 4px;\">BODY</span>    Numbered objects: 1 0 obj ... endobj\n     │    Types: Catalog, Pages, Page, Font, Image, Stream\n     │    Streams: compressed data (FlateDecode = zlib)\n     ▼\n  <span style=\"background: #2ecc71; color: white; padding: 3px 10px; border-radius: 4px;\">XREF</span>    Cross-reference table: object# → byte offset\n     │    Enables random access to any object\n     ▼\n  <span style=\"background: #9b59b6; color: white; padding: 3px 10px; border-radius: 4px;\">TRAILER</span> /Root → Catalog | /Info → Metadata | startxref → xref offset\n     │\n     ▼\n  <span style=\"background: #f39c12; color: white; padding: 3px 10px; border-radius: 4px;\">%%EOF</span>   End of file (multiple = incremental updates!)\n\n  <span style=\"color: #e74c3c;\">⚡ PDF readers read BACKWARDS: Trailer → Xref → Objects</span>\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #2ecc71;\">📁 File Signatures for Documents</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"color: #e74c3c;\">25 50 44 46</span>  →  <span style=\"color: #2ecc71;\">PDF</span>  (%PDF)       .pdf\n  <span style=\"color: #3498db;\">50 4B 03 04</span>  →  <span style=\"color: #2ecc71;\">ZIP/OOXML</span> (PK)   .docx .xlsx .pptx .jar\n  <span style=\"color: #9b59b6;\">D0 CF 11 E0</span>  →  <span style=\"color: #f39c12;\">OLE2</span>             .doc .xls .ppt (legacy)\n  <span style=\"color: #f39c12;\">7B 5C 72 74</span>  →  <span style=\"color: #95a5a6;\">RTF</span>  ({\\rt)      .rtf\n\n  <span style=\"color: #e74c3c;\">⚠️ Extensions LIE — always verify magic bytes!</span>\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #f39c12;\">🔍 Forensic Analysis Workflow</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"background: #3498db; color: white; padding: 3px 10px; border-radius: 4px;\">1. TRIAGE</span>\n     │  Hash file (SHA-256 + MD5)\n     │  Check magic bytes → identify true type\n     │  Quick threat scan (JS, macros, launch actions)\n     ▼\n  <span style=\"background: #2ecc71; color: white; padding: 3px 10px; border-radius: 4px;\">2. METADATA</span>\n     │  Extract Author, Creator, Producer, Dates\n     │  Compare timestamps for inconsistencies\n     │  Check for revision history (%%EOF count)\n     ▼\n  <span style=\"background: #f39c12; color: white; padding: 3px 10px; border-radius: 4px;\">3. STRUCTURE</span>\n     │  List all objects/streams\n     │  Decompress FlateDecode streams\n     │  Extract embedded files and images\n     ▼\n  <span style=\"background: #e74c3c; color: white; padding: 3px 10px; border-radius: 4px;\">4. CONTENT</span>\n     │  Extract text (Tj operations / XML tags)\n     │  Search for strings, emails, URLs, IPs\n     │  Check for redaction failures\n     ▼\n  <span style=\"background: #9b59b6; color: white; padding: 3px 10px; border-radius: 4px;\">5. REPORT</span>\n        Generate structured forensic report\n        Document all findings with evidence\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #e74c3c;\">⚠️ PDF Threat Indicators</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"color: #e74c3c;\">HIGH RISK:</span>\n  /JavaScript, /JS    — Embedded executable code\n  /Launch             — Can run external programs\n  eval(), unescape()  — Code execution / shellcode\n  /OpenAction + /JS   — Auto-execute JavaScript on open\n\n  <span style=\"color: #f39c12;\">MEDIUM RISK:</span>\n  /OpenAction         — Automatic action on document open\n  /AA                 — Additional automatic actions\n  /EmbeddedFile       — Contains embedded files\n  /XFA                — Complex forms (attack surface)\n  /SubmitForm         — Sends data to external server\n\n  <span style=\"color: #2ecc71;\">LOW RISK:</span>\n  /URI                — External links\n  /Encrypt            — Encrypted content\n  /ObjStm             — Object streams (can hide objects)\n</pre>\n</div>\n\n<div style=\"background: #1a1a2e; padding: 20px; border-radius: 12px; margin: 15px 0;\">\n<h3 style=\"color: #9b59b6;\">📦 DOCX/Office Internal Structure</h3>\n<pre style=\"color: #ecf0f1;\">\n  <span style=\"background: #3498db; color: white; padding: 3px 10px; border-radius: 4px;\">report.docx</span> (actually a ZIP file!)\n     │\n     ├── [Content_Types].xml      — File type registry\n     ├── _rels/.rels              — Relationships\n     ├── word/\n     │   ├── document.xml         — <span style=\"color: #2ecc71;\">Main text content</span>\n     │   ├── styles.xml           — Formatting\n     │   ├── media/               — <span style=\"color: #f39c12;\">Embedded images</span>\n     │   │   ├── image1.png\n     │   │   └── image2.jpg\n     │   ├── embeddings/          — <span style=\"color: #e74c3c;\">OLE objects (⚠️ check!)</span>\n     │   └── vbaProject.bin       — <span style=\"color: #e74c3c;\">🚨 MACROS! (.docm only)</span>\n     └── docProps/\n         ├── core.xml             — <span style=\"color: #9b59b6;\">Metadata (author, dates)</span>\n         └── app.xml              — Application info\n</pre>\n</div>\n\n<div style=\"background: #0d3b0d; padding: 15px; border-radius: 12px; margin: 15px 0; border: 2px solid #2ecc71;\">\n<h3 style=\"color: #2ecc71;\">🏆 10 Golden Rules of Document Forensics</h3>\n<pre style=\"color: #ecf0f1;\">\n  1. HASH evidence immediately — before any analysis\n  2. File extensions LIE — always check magic bytes\n  3. Black-box redaction is NOT real redaction — text persists\n  4. Multiple %%EOF = document was modified after creation\n  5. Creator ≠ Producer = document was converted between tools\n  6. ModDate before CreationDate = timestamps were manipulated\n  7. DOCX is just ZIP — rename and explore with any ZIP tool\n  8. vbaProject.bin = MACROS — highest malware delivery risk\n  9. /JavaScript + /OpenAction = auto-executing code on open\n  10. Always work on COPIES — never modify original evidence!\n</pre>\n</div>\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Read PDF Header",
+          "description": "Read the first 8 bytes of a file to verify it is a PDF and extract the version.",
+          "difficulty": "beginner",
+          "category": "PDF Structure & Parsing",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on read pdf header! This is a beginner exercise. Take your time.",
+          "starter_code": "def read_header(filepath):\n    # TODO: Open in 'rb', read first 8 bytes\n    # Check if starts with b'%PDF-'\n    # Extract version number\n    pass\n\nwith open('/tmp/t.pdf','wb') as f: f.write(b'%PDF-1.7\\n%test')\nread_header('/tmp/t.pdf')",
+          "expected_output": "PDF Version: 1.7",
+          "hints": [
+            {
+              "message": "Open with open(filepath,'rb') and read(8)."
+            },
+            {
+              "message": "Check header.startswith(b'%PDF-'). Version is header[5:8]."
+            },
+            {
+              "message": "def read_header(fp):\n    with open(fp,'rb') as f: h=f.read(8)\n    if h.startswith(b'%PDF-'):\n        print(f'PDF Version: {h[5:8].decode()}')\n    else: print('Not a PDF!')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Count PDF Objects",
+          "description": "Count all objects (N G obj) in a PDF file using regex.",
+          "difficulty": "beginner",
+          "category": "PDF Structure & Parsing",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on count pdf objects! This is a beginner exercise. Take your time.",
+          "starter_code": "import re\ndef count_objects(filepath):\n    # TODO: Read file, find all 'N G obj' patterns\n    pass\n\npdf = b'%PDF-1.7\\n1 0 obj << >> endobj\\n2 0 obj << >> endobj\\n3 0 obj << >> endobj'\nwith open('/tmp/c.pdf','wb') as f: f.write(pdf)\ncount_objects('/tmp/c.pdf')",
+          "expected_output": "Objects found: 3",
+          "hints": [
+            {
+              "message": "Use re.findall(rb'\\d+\\s+\\d+\\s+obj', data) to find all object markers."
+            },
+            {
+              "message": "Read entire file with open(fp,'rb').read(), then apply regex."
+            },
+            {
+              "message": "import re\ndef count_objects(fp):\n    with open(fp,'rb') as f: data=f.read()\n    objs = re.findall(rb'\\d+\\s+\\d+\\s+obj', data)\n    print(f'Objects found: {len(objs)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Find PDF Trailer",
+          "description": "Locate the trailer section and extract the /Root object reference.",
+          "difficulty": "intermediate",
+          "category": "PDF Structure & Parsing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on find pdf trailer! This is a intermediate exercise. Take your time.",
+          "starter_code": "import re\ndef find_trailer(filepath):\n    # TODO: Read last 500 bytes, find 'trailer' and '/Root N G R'\n    pass\n\npdf = b'%PDF-1.7\\n1 0 obj << /Type /Catalog >> endobj\\ntrailer << /Root 1 0 R /Size 2 >>\\nstartxref\\n10\\n%%EOF'\nwith open('/tmp/tr.pdf','wb') as f: f.write(pdf)\nfind_trailer('/tmp/tr.pdf')",
+          "expected_output": "Root object: 1 0 R",
+          "hints": [
+            {
+              "message": "Seek to near the end: f.seek(-500, 2) then f.read()."
+            },
+            {
+              "message": "Search for /Root followed by numbers: re.search(rb'/Root\\s+(\\d+)\\s+(\\d+)\\s+R', tail)."
+            },
+            {
+              "message": "import re\ndef find_trailer(fp):\n    with open(fp,'rb') as f:\n        f.seek(-500,2); tail=f.read()\n    m = re.search(rb'/Root\\s+(\\d+)\\s+(\\d+)\\s+R', tail)\n    if m: print(f'Root object: {m.group(1).decode()} {m.group(2).decode()} R')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Extract Object by Number",
+          "description": "Given an object number, extract its content from the PDF.",
+          "difficulty": "intermediate",
+          "category": "PDF Structure & Parsing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on extract object by number! This is a intermediate exercise. Take your time.",
+          "starter_code": "import re\ndef get_object(filepath, obj_num):\n    # TODO: Find 'obj_num 0 obj ... endobj' and return content\n    pass\n\npdf = b'1 0 obj\\n<< /Type /Catalog /Pages 2 0 R >>\\nendobj\\n2 0 obj\\n<< /Type /Pages >>\\nendobj'\nwith open('/tmp/o.pdf','wb') as f: f.write(pdf)\nget_object('/tmp/o.pdf', 1)",
+          "expected_output": "Object 1: << /Type /Catalog /Pages 2 0 R >>",
+          "hints": [
+            {
+              "message": "Build a regex pattern with the object number: rf'{obj_num}\\s+0\\s+obj(.+?)endobj'"
+            },
+            {
+              "message": "Use re.DOTALL flag to match across newlines."
+            },
+            {
+              "message": "import re\ndef get_object(fp, num):\n    with open(fp,'rb') as f: data=f.read()\n    pat = re.compile(rb'%d\\s+0\\s+obj\\s*(.*?)\\s*endobj' % num, re.DOTALL)\n    m = pat.search(data)\n    if m: print(f'Object {num}: {m.group(1).decode().strip()}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Detect Encrypted PDFs",
+          "description": "Check if a PDF is encrypted by searching for /Encrypt in the trailer.",
+          "difficulty": "beginner",
+          "category": "PDF Structure & Parsing",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on detect encrypted pdfs! This is a beginner exercise. Take your time.",
+          "starter_code": "def is_encrypted(filepath):\n    # TODO: Read file, search for b'/Encrypt'\n    pass\n\nwith open('/tmp/enc.pdf','wb') as f: f.write(b'%PDF-1.7\\ntrailer << /Encrypt 5 0 R >>')\nprint(is_encrypted('/tmp/enc.pdf'))\nwith open('/tmp/plain.pdf','wb') as f: f.write(b'%PDF-1.7\\ntrailer << /Root 1 0 R >>')\nprint(is_encrypted('/tmp/plain.pdf'))",
+          "expected_output": "True\nFalse",
+          "hints": [
+            {
+              "message": "Read entire file and check if b'/Encrypt' is in the data."
+            },
+            {
+              "message": "Return True if found, False otherwise."
+            },
+            {
+              "message": "def is_encrypted(fp):\n    with open(fp,'rb') as f: data=f.read()\n    return b'/Encrypt' in data"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Count %%EOF Markers",
+          "description": "Count %%EOF markers to detect incremental updates.",
+          "difficulty": "beginner",
+          "category": "PDF Structure & Parsing",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on count %%eof markers! This is a beginner exercise. Take your time.",
+          "starter_code": "import re\ndef count_eof(filepath):\n    # TODO: Count occurrences of b'%%EOF'\n    pass\n\npdf = b'%PDF-1.7\\nstuff\\n%%EOF\\nmore stuff\\n%%EOF\\n'\nwith open('/tmp/eof.pdf','wb') as f: f.write(pdf)\ncount_eof('/tmp/eof.pdf')",
+          "expected_output": "%%EOF markers: 2\nDocument was modified (1 incremental update)",
+          "hints": [
+            {
+              "message": "Use data.count(b'%%EOF') or re.findall()."
+            },
+            {
+              "message": "More than 1 %%EOF means the document was modified after creation."
+            },
+            {
+              "message": "import re\ndef count_eof(fp):\n    with open(fp,'rb') as f: data=f.read()\n    n = data.count(b'%%EOF')\n    print(f'%%EOF markers: {n}')\n    if n>1: print(f'Document was modified ({n-1} incremental update)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: List Object Types",
+          "description": "Parse all objects and list their /Type values.",
+          "difficulty": "intermediate",
+          "category": "PDF Structure & Parsing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on list object types! This is a intermediate exercise. Take your time.",
+          "starter_code": "import re\ndef list_types(filepath):\n    # TODO: For each object, extract /Type /Name\n    pass\n\npdf = b'1 0 obj << /Type /Catalog >> endobj\\n2 0 obj << /Type /Pages >> endobj\\n3 0 obj << /Type /Page >> endobj\\n4 0 obj << /Type /Font >> endobj'\nwith open('/tmp/types.pdf','wb') as f: f.write(pdf)\nlist_types('/tmp/types.pdf')",
+          "expected_output": "Object 1: Catalog\nObject 2: Pages\nObject 3: Page\nObject 4: Font",
+          "hints": [
+            {
+              "message": "Find each object with regex, then search for /Type /Name inside it."
+            },
+            {
+              "message": "Pattern for type: re.search(rb'/Type\\s*/(\\w+)', obj_content)"
+            },
+            {
+              "message": "import re\ndef list_types(fp):\n    with open(fp,'rb') as f: data=f.read()\n    for m in re.finditer(rb'(\\d+)\\s+\\d+\\s+obj\\s*(.*?)\\s*endobj', data, re.DOTALL):\n        t = re.search(rb'/Type\\s*/(\\w+)', m.group(2))\n        print(f'Object {m.group(1).decode()}: {t.group(1).decode() if t else \"Unknown\"}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Detect Streams in PDF",
+          "description": "Find all stream...endstream blocks and report sizes.",
+          "difficulty": "intermediate",
+          "category": "PDF Structure & Parsing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on detect streams in pdf! This is a intermediate exercise. Take your time.",
+          "starter_code": "import re\ndef find_streams(filepath):\n    # TODO: Find stream blocks and report count + sizes\n    pass\n\nimport zlib\nc = zlib.compress(b'BT /F1 12 Tf 100 700 Td (Test) Tj ET')\npdf = b'%PDF-1.7\\n1 0 obj << /Length %d /Filter /FlateDecode >> stream\\n' % len(c) + c + b'\\nendstream endobj'\nwith open('/tmp/st.pdf','wb') as f: f.write(pdf)\nfind_streams('/tmp/st.pdf')",
+          "expected_output": "Streams: 1\n  Stream 1: 39 bytes (compressed)",
+          "hints": [
+            {
+              "message": "Use re.finditer(rb'stream\\r?\\n(.+?)\\r?\\nendstream', data, re.DOTALL)."
+            },
+            {
+              "message": "Report len(match.group(1)) for each stream."
+            },
+            {
+              "message": "import re\ndef find_streams(fp):\n    with open(fp,'rb') as f: data=f.read()\n    streams = list(re.finditer(rb'stream\\r?\\n(.+?)\\r?\\nendstream', data, re.DOTALL))\n    print(f'Streams: {len(streams)}')\n    for i,m in enumerate(streams):\n        print(f'  Stream {i+1}: {len(m.group(1))} bytes (compressed)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Decompress a Single Stream",
+          "description": "Extract and decompress the first FlateDecode stream in a PDF.",
+          "difficulty": "intermediate",
+          "category": "PDF Structure & Parsing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on decompress a single stream! This is a intermediate exercise. Take your time.",
+          "starter_code": "import re, zlib\ndef decompress_first(filepath):\n    # TODO: Find first stream, try zlib.decompress\n    pass\n\nc = zlib.compress(b'BT /F1 12 Tf 100 700 Td (Hidden Message) Tj ET')\npdf = b'%PDF-1.7\\n1 0 obj << /Filter /FlateDecode >> stream\\n' + c + b'\\nendstream endobj'\nwith open('/tmp/dc.pdf','wb') as f: f.write(pdf)\ndecompress_first('/tmp/dc.pdf')",
+          "expected_output": "Decompressed: BT /F1 12 Tf 100 700 Td (Hidden Message) Tj ET",
+          "hints": [
+            {
+              "message": "Find stream with regex, get the raw bytes, then zlib.decompress()."
+            },
+            {
+              "message": "Wrap in try/except for non-FlateDecode streams."
+            },
+            {
+              "message": "import re, zlib\ndef decompress_first(fp):\n    with open(fp,'rb') as f: data=f.read()\n    m = re.search(rb'stream\\r?\\n(.+?)\\r?\\nendstream', data, re.DOTALL)\n    if m:\n        try:\n            d = zlib.decompress(m.group(1))\n            print(f'Decompressed: {d.decode(\"latin-1\")}')\n        except: print('Not FlateDecode')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Validate PDF Structure",
+          "description": "Check that a PDF has header, at least one object, and %%EOF.",
+          "difficulty": "intermediate",
+          "category": "PDF Structure & Parsing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on validate pdf structure! This is a intermediate exercise. Take your time.",
+          "starter_code": "def validate_pdf(filepath):\n    # TODO: Check header, objects, and %%EOF marker\n    pass\n\nwith open('/tmp/good.pdf','wb') as f: f.write(b'%PDF-1.7\\n1 0 obj << >> endobj\\n%%EOF')\nwith open('/tmp/bad.pdf','wb') as f: f.write(b'Not a PDF at all')\nvalidate_pdf('/tmp/good.pdf')\nvalidate_pdf('/tmp/bad.pdf')",
+          "expected_output": "good.pdf: VALID (header OK, 1 objects, %%EOF present)\nbad.pdf: INVALID (not a PDF)",
+          "hints": [
+            {
+              "message": "Check three things: starts with %PDF-, contains 'obj', contains %%EOF."
+            },
+            {
+              "message": "import re for object counting."
+            },
+            {
+              "message": "import re\ndef validate_pdf(fp):\n    import os\n    with open(fp,'rb') as f: data=f.read()\n    name = os.path.basename(fp)\n    if not data.startswith(b'%PDF-'):\n        print(f'{name}: INVALID (not a PDF)'); return\n    objs = len(re.findall(rb'\\d+\\s+\\d+\\s+obj', data))\n    eof = b'%%EOF' in data\n    print(f'{name}: {\"VALID\" if eof else \"INVALID\"} (header OK, {objs} objects, %%EOF {\"present\" if eof else \"MISSING\"})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Extract PDF Author",
+          "description": "Extract the /Author field from a PDF's Info dictionary.",
+          "difficulty": "beginner",
+          "category": "Metadata & Timestamps",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on extract pdf author! This is a beginner exercise. Take your time.",
+          "starter_code": "import re\ndef get_author(filepath):\n    # TODO: Search for /Author (value) pattern\n    pass\n\npdf = b'%PDF-1.7\\n1 0 obj << /Author (Forensic Analyst) >> endobj'\nwith open('/tmp/auth.pdf','wb') as f: f.write(pdf)\nget_author('/tmp/auth.pdf')",
+          "expected_output": "Author: Forensic Analyst",
+          "hints": [
+            {
+              "message": "Search for /Author followed by text in parentheses."
+            },
+            {
+              "message": "re.search(rb'/Author\\s*\\(([^)]+)\\)', data)"
+            },
+            {
+              "message": "import re\ndef get_author(fp):\n    with open(fp,'rb') as f: data=f.read()\n    m = re.search(rb'/Author\\s*\\(([^)]+)\\)', data)\n    print(f'Author: {m.group(1).decode()}' if m else 'No author found')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Extract All Metadata Fields",
+          "description": "Extract Author, Creator, Producer, Title, CreationDate, ModDate from PDF.",
+          "difficulty": "intermediate",
+          "category": "Metadata & Timestamps",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on extract all metadata fields! This is a intermediate exercise. Take your time.",
+          "starter_code": "import re\ndef extract_all_meta(filepath):\n    # TODO: Extract all standard metadata fields\n    pass\n\npdf = b'%PDF-1.7\\n<< /Author (Jane) /Creator (Word) /Producer (Adobe) /Title (Report) /CreationDate (D:20240115) >>'\nwith open('/tmp/am.pdf','wb') as f: f.write(pdf)\nextract_all_meta('/tmp/am.pdf')",
+          "expected_output": "Author: Jane\nCreator: Word\nProducer: Adobe\nTitle: Report\nCreationDate: D:20240115",
+          "hints": [
+            {
+              "message": "Loop through field names and search for each with regex."
+            },
+            {
+              "message": "Pattern: b'/' + field + rb'\\s*\\(([^)]+)\\)' for each field."
+            },
+            {
+              "message": "import re\ndef extract_all_meta(fp):\n    with open(fp,'rb') as f: data=f.read()\n    for field in [b'Author',b'Creator',b'Producer',b'Title',b'CreationDate',b'ModDate']:\n        m = re.search(b'/'+field+rb'\\s*\\(([^)]+)\\)', data)\n        if m: print(f'{field.decode()}: {m.group(1).decode(\"latin-1\")}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Parse PDF Date Format",
+          "description": "Convert PDF date string D:YYYYMMDDHHmmSS to Python datetime.",
+          "difficulty": "intermediate",
+          "category": "Metadata & Timestamps",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on parse pdf date format! This is a intermediate exercise. Take your time.",
+          "starter_code": "from datetime import datetime\ndef parse_pdf_date(date_str):\n    # TODO: Parse 'D:20240115103000' format\n    pass\n\nprint(parse_pdf_date('D:20240115103000+00'))\nprint(parse_pdf_date('D:20231225'))",
+          "expected_output": "2024-01-15 10:30:00\n2023-12-25 00:00:00",
+          "hints": [
+            {
+              "message": "Remove the 'D:' prefix and timezone. Core format is YYYYMMDDHHMMSS."
+            },
+            {
+              "message": "Use datetime.strptime with format '%Y%m%d%H%M%S'. Handle short dates."
+            },
+            {
+              "message": "from datetime import datetime\ndef parse_pdf_date(ds):\n    ds = ds.replace('D:','').split('+')[0].split('-')[0]\n    ds = ds.ljust(14, '0')  # pad missing time\n    return datetime.strptime(ds[:14], '%Y%m%d%H%M%S')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Detect Timestamp Anomalies",
+          "description": "Compare creation and modification dates to flag suspicious patterns.",
+          "difficulty": "intermediate",
+          "category": "Metadata & Timestamps",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on detect timestamp anomalies! This is a intermediate exercise. Take your time.",
+          "starter_code": "from datetime import datetime\ndef check_timestamps(created_str, modified_str):\n    # TODO: Parse both dates, check for anomalies\n    pass\n\ncheck_timestamps('D:20240115', 'D:20240301')  # Normal\ncheck_timestamps('D:20240301', 'D:20240115')  # Modified before created!",
+          "expected_output": "Normal: Created 2024-01-15, Modified 2024-03-01\nRED FLAG: Modified (2024-01-15) before Created (2024-03-01)!",
+          "hints": [
+            {
+              "message": "Parse both dates, then compare: if modified < created, flag it."
+            },
+            {
+              "message": "Also check if either date is in the future."
+            },
+            {
+              "message": "from datetime import datetime\ndef check_timestamps(cs, ms):\n    def parse(s):\n        s = s.replace('D:','').ljust(14,'0')[:14]\n        return datetime.strptime(s, '%Y%m%d%H%M%S')\n    c, m = parse(cs), parse(ms)\n    if m < c:\n        print(f'RED FLAG: Modified ({m.date()}) before Created ({c.date()})!')\n    else:\n        print(f'Normal: Created {c.date()}, Modified {m.date()}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: DOCX Metadata Extractor",
+          "description": "Extract metadata from docProps/core.xml inside a DOCX file.",
+          "difficulty": "intermediate",
+          "category": "Metadata & Timestamps",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on docx metadata extractor! This is a intermediate exercise. Take your time.",
+          "starter_code": "import zipfile, re\ndef docx_metadata(filepath):\n    # TODO: Open as ZIP, read docProps/core.xml, extract fields\n    pass\n\nimport zipfile\nwith zipfile.ZipFile('/tmp/dm.docx','w') as z:\n    z.writestr('docProps/core.xml', '<cp:coreProperties xmlns:dc=\"dc\" xmlns:cp=\"cp\"><dc:creator>John</dc:creator><dc:title>Report</dc:title><cp:lastModifiedBy>Jane</cp:lastModifiedBy></cp:coreProperties>')\ndocx_metadata('/tmp/dm.docx')",
+          "expected_output": "creator: John\ntitle: Report\nlastModifiedBy: Jane",
+          "hints": [
+            {
+              "message": "Open with zipfile.ZipFile, read 'docProps/core.xml'."
+            },
+            {
+              "message": "Use regex to extract tag contents: re.findall(r'<(\\w+:?\\w+)>([^<]+)</', xml)"
+            },
+            {
+              "message": "import zipfile, re\ndef docx_metadata(fp):\n    with zipfile.ZipFile(fp) as z:\n        if 'docProps/core.xml' not in z.namelist(): return\n        xml = z.read('docProps/core.xml').decode()\n    for m in re.findall(r'<(?:\\w+:)?(\\w+)>([^<]+)</', xml):\n        print(f'{m[0]}: {m[1]}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Hash a Document File",
+          "description": "Calculate MD5 and SHA-256 hashes of a document.",
+          "difficulty": "beginner",
+          "category": "Metadata & Timestamps",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on hash a document file! This is a beginner exercise. Take your time.",
+          "starter_code": "import hashlib\ndef hash_document(filepath):\n    # TODO: Calculate both MD5 and SHA-256\n    pass\n\nwith open('/tmp/hd.pdf','wb') as f: f.write(b'%PDF-1.7 test')\nhash_document('/tmp/hd.pdf')",
+          "expected_output": "MD5:    abc123...\nSHA256: def456...",
+          "hints": [
+            {
+              "message": "Create hashlib.md5() and hashlib.sha256() objects. Read file in chunks."
+            },
+            {
+              "message": "Update both hash objects with each chunk, then .hexdigest()."
+            },
+            {
+              "message": "import hashlib\ndef hash_document(fp):\n    md5 = hashlib.md5(); sha = hashlib.sha256()\n    with open(fp,'rb') as f:\n        for chunk in iter(lambda: f.read(8192), b''):\n            md5.update(chunk); sha.update(chunk)\n    print(f'MD5:    {md5.hexdigest()}')\n    print(f'SHA256: {sha.hexdigest()}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Compare Two File Hashes",
+          "description": "Hash two files and check if they are identical.",
+          "difficulty": "beginner",
+          "category": "Metadata & Timestamps",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on compare two file hashes! This is a beginner exercise. Take your time.",
+          "starter_code": "import hashlib\ndef compare_files(path1, path2):\n    # TODO: Hash both files and compare\n    pass\n\nwith open('/tmp/a.pdf','wb') as f: f.write(b'same content')\nwith open('/tmp/b.pdf','wb') as f: f.write(b'same content')\nwith open('/tmp/c.pdf','wb') as f: f.write(b'different!')\ncompare_files('/tmp/a.pdf', '/tmp/b.pdf')\ncompare_files('/tmp/a.pdf', '/tmp/c.pdf')",
+          "expected_output": "a.pdf vs b.pdf: IDENTICAL\na.pdf vs c.pdf: DIFFERENT",
+          "hints": [
+            {
+              "message": "Hash each file with SHA-256 and compare the hex digests."
+            },
+            {
+              "message": "If digests match, files are byte-for-byte identical."
+            },
+            {
+              "message": "import hashlib, os\ndef compare_files(p1, p2):\n    def sha(p):\n        h = hashlib.sha256()\n        with open(p,'rb') as f:\n            for c in iter(lambda: f.read(8192), b''): h.update(c)\n        return h.hexdigest()\n    h1, h2 = sha(p1), sha(p2)\n    n1, n2 = os.path.basename(p1), os.path.basename(p2)\n    print(f'{n1} vs {n2}: {\"IDENTICAL\" if h1==h2 else \"DIFFERENT\"}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Creator vs Producer Analysis",
+          "description": "Compare Creator and Producer fields to detect document conversion.",
+          "difficulty": "intermediate",
+          "category": "Metadata & Timestamps",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on creator vs producer analysis! This is a intermediate exercise. Take your time.",
+          "starter_code": "def analyse_software(creator, producer):\n    # TODO: Compare and report findings\n    pass\n\nanalyse_software('Microsoft Word 2019', 'Adobe PDF Library 15.0')\nanalyse_software('LibreOffice 7.6', 'LibreOffice 7.6')",
+          "expected_output": "Creator: Microsoft Word 2019\nProducer: Adobe PDF Library 15.0\nNote: Document converted — created in Word, saved via Adobe\n\nCreator: LibreOffice 7.6\nProducer: LibreOffice 7.6\nNote: Same tool — native PDF export",
+          "hints": [
+            {
+              "message": "If Creator != Producer, the document was created in one tool and converted by another."
+            },
+            {
+              "message": "This is normal but worth noting. Suspicious when the claim is it was never modified."
+            },
+            {
+              "message": "def analyse_software(creator, producer):\n    print(f'Creator: {creator}')\n    print(f'Producer: {producer}')\n    if creator == producer:\n        print('Note: Same tool — native PDF export')\n    else:\n        print(f'Note: Document converted — created in {creator.split()[0]}, saved via {producer.split()[0]}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Metadata Tampering Score",
+          "description": "Score how likely a document's metadata has been tampered with.",
+          "difficulty": "advanced",
+          "category": "Metadata & Timestamps",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on metadata tampering score! This is a advanced exercise. Take your time.",
+          "starter_code": "def tampering_score(original_meta, suspect_meta):\n    # TODO: Compare fields and calculate suspicion score\n    pass\n\norig = {'Author':'Jane','Creator':'Word','Created':'2024-01-15','Modified':'2024-01-15'}\nsusp = {'Author':'Jane','Creator':'LibreOffice','Created':'2024-03-01','Modified':'2024-01-15'}\ntampering_score(orig, susp)",
+          "expected_output": "Differences: 3\n  Creator: Word -> LibreOffice (weight: 2)\n  Created: 2024-01-15 -> 2024-03-01 (weight: 3)\n  Modified: same but before new Created! (weight: 5)\nTampering score: 10/15 (HIGH)",
+          "hints": [
+            {
+              "message": "Assign weights: date changes=3, software changes=2, impossible dates=5."
+            },
+            {
+              "message": "Sum the weights for all differences."
+            },
+            {
+              "message": "def tampering_score(orig, susp):\n    score = 0; total = 0; diffs = []\n    for k in set(list(orig.keys())+list(susp.keys())):\n        v1, v2 = orig.get(k), susp.get(k)\n        if v1 != v2:\n            w = 3 if 'Date' in k or 'Created' in k or 'Modified' in k else 2\n            score += w; diffs.append((k, v1, v2, w))\n        total += 3\n    for k,v1,v2,w in diffs: print(f'  {k}: {v1} -> {v2} (weight: {w})')\n    level = 'HIGH' if score>6 else 'MEDIUM' if score>3 else 'LOW'\n    print(f'Tampering score: {score}/{total} ({level})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Build Metadata Timeline",
+          "description": "Create a chronological timeline from multiple document metadata entries.",
+          "difficulty": "advanced",
+          "category": "Metadata & Timestamps",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on build metadata timeline! This is a advanced exercise. Take your time.",
+          "starter_code": "from datetime import datetime\ndef build_timeline(documents):\n    # TODO: Sort documents by creation date and display timeline\n    pass\n\ndocs = [\n    {'name': 'contract.pdf', 'created': '2024-01-10', 'modified': '2024-01-15'},\n    {'name': 'amendment.pdf', 'created': '2024-03-01', 'modified': '2024-03-05'},\n    {'name': 'invoice.pdf', 'created': '2024-02-15', 'modified': '2024-02-15'},\n]\nbuild_timeline(docs)",
+          "expected_output": "Timeline:\n  2024-01-10  contract.pdf    CREATED\n  2024-01-15  contract.pdf    MODIFIED\n  2024-02-15  invoice.pdf     CREATED\n  2024-02-15  invoice.pdf     MODIFIED\n  2024-03-01  amendment.pdf   CREATED\n  2024-03-05  amendment.pdf   MODIFIED",
+          "hints": [
+            {
+              "message": "Create a list of (date, name, event) tuples from all docs, then sort by date."
+            },
+            {
+              "message": "Include both created and modified dates as separate events."
+            },
+            {
+              "message": "def build_timeline(docs):\n    events = []\n    for d in docs:\n        events.append((d['created'], d['name'], 'CREATED'))\n        events.append((d['modified'], d['name'], 'MODIFIED'))\n    events.sort()\n    print('Timeline:')\n    for date, name, event in events:\n        print(f'  {date}  {name:20s} {event}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Check if File is ZIP-Based",
+          "description": "Determine if a file is a ZIP-based Office document by magic bytes.",
+          "difficulty": "beginner",
+          "category": "Office Documents & Macros",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on check if file is zip-based! This is a beginner exercise. Take your time.",
+          "starter_code": "def is_zip_office(filepath):\n    # TODO: Check if first 2 bytes are PK (0x50 0x4B)\n    pass\n\nwith open('/tmp/z1.docx','wb') as f: f.write(b'PK\\x03\\x04test')\nwith open('/tmp/z2.doc','wb') as f: f.write(b'\\xD0\\xCF\\x11\\xE0test')\nprint(is_zip_office('/tmp/z1.docx'))\nprint(is_zip_office('/tmp/z2.doc'))",
+          "expected_output": "True (ZIP-based Office)\nFalse (Not ZIP-based)",
+          "hints": [
+            {
+              "message": "Read first 4 bytes. PK\\x03\\x04 = ZIP format."
+            },
+            {
+              "message": "b'PK' is the ZIP signature. DOCX, XLSX, PPTX all use it."
+            },
+            {
+              "message": "def is_zip_office(fp):\n    with open(fp,'rb') as f: h=f.read(4)\n    if h[:2]==b'PK': print('True (ZIP-based Office)'); return True\n    print('False (Not ZIP-based)'); return False"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: List DOCX Contents",
+          "description": "List all files inside a DOCX archive with sizes.",
+          "difficulty": "beginner",
+          "category": "Office Documents & Macros",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on list docx contents! This is a beginner exercise. Take your time.",
+          "starter_code": "import zipfile\ndef list_docx(filepath):\n    # TODO: Open as ZIP, list all internal files\n    pass\n\nimport zipfile\nwith zipfile.ZipFile('/tmp/ld.docx','w') as z:\n    z.writestr('[Content_Types].xml','<T/>')\n    z.writestr('word/document.xml','<doc>Hello</doc>')\n    z.writestr('word/media/img.png',b'\\x89PNG'+b'\\x00'*50)\nlist_docx('/tmp/ld.docx')",
+          "expected_output": "[Content_Types].xml (4B)\nword/document.xml (17B)\nword/media/img.png (54B)",
+          "hints": [
+            {
+              "message": "Use zipfile.ZipFile(filepath) context manager and iterate z.infolist()."
+            },
+            {
+              "message": "Print info.filename and info.file_size for each."
+            },
+            {
+              "message": "import zipfile\ndef list_docx(fp):\n    with zipfile.ZipFile(fp) as z:\n        for i in z.infolist():\n            print(f'{i.filename} ({i.file_size}B)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Detect VBA Macros",
+          "description": "Check if an Office document contains VBA macros.",
+          "difficulty": "intermediate",
+          "category": "Office Documents & Macros",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on detect vba macros! This is a intermediate exercise. Take your time.",
+          "starter_code": "import zipfile\ndef has_macros(filepath):\n    # TODO: Open as ZIP, check for vbaProject.bin\n    pass\n\nwith zipfile.ZipFile('/tmp/mac.docm','w') as z:\n    z.writestr('word/document.xml','<d/>'); z.writestr('word/vbaProject.bin',b'VBA')\nwith zipfile.ZipFile('/tmp/safe.docx','w') as z:\n    z.writestr('word/document.xml','<d/>')\nhas_macros('/tmp/mac.docm')\nhas_macros('/tmp/safe.docx')",
+          "expected_output": "mac.docm: MACROS DETECTED!\nsafe.docx: No macros found",
+          "hints": [
+            {
+              "message": "Check if any filename in the ZIP contains 'vbaProject'."
+            },
+            {
+              "message": "Also check for 'macros' or '.bin' in word/ directory."
+            },
+            {
+              "message": "import zipfile, os\ndef has_macros(fp):\n    name = os.path.basename(fp)\n    try:\n        with zipfile.ZipFile(fp) as z:\n            macros = [f for f in z.namelist() if 'vbaProject' in f]\n            if macros: print(f'{name}: MACROS DETECTED!')\n            else: print(f'{name}: No macros found')\n    except: print(f'{name}: Not a ZIP file')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Extract Text from DOCX",
+          "description": "Pull text content from word/document.xml using regex.",
+          "difficulty": "intermediate",
+          "category": "Office Documents & Macros",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on extract text from docx! This is a intermediate exercise. Take your time.",
+          "starter_code": "import zipfile, re\ndef docx_text(filepath):\n    # TODO: Read document.xml and extract text from <w:t> tags\n    pass\n\nwith zipfile.ZipFile('/tmp/txt.docx','w') as z:\n    z.writestr('word/document.xml','<w:document xmlns:w=\"ns\"><w:body><w:p><w:r><w:t>Hello</w:t></w:r><w:r><w:t xml:space=\"preserve\"> World</w:t></w:r></w:p></w:body></w:document>')\nprint(docx_text('/tmp/txt.docx'))",
+          "expected_output": "Hello World",
+          "hints": [
+            {
+              "message": "Open ZIP, read word/document.xml."
+            },
+            {
+              "message": "Use re.findall(r'<w:t[^>]*>([^<]+)</w:t>', xml) to extract text."
+            },
+            {
+              "message": "import zipfile, re\ndef docx_text(fp):\n    with zipfile.ZipFile(fp) as z:\n        xml = z.read('word/document.xml').decode()\n    return ' '.join(re.findall(r'<w:t[^>]*>([^<]+)</w:t>', xml))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Extract Embedded Images from DOCX",
+          "description": "Find and save images embedded in a DOCX file.",
+          "difficulty": "intermediate",
+          "category": "Office Documents & Macros",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on extract embedded images from docx! This is a intermediate exercise. Take your time.",
+          "starter_code": "import zipfile, os\ndef extract_images(filepath, outdir='/tmp/imgs'):\n    # TODO: Find files in word/media/ and save them\n    pass\n\nwith zipfile.ZipFile('/tmp/img.docx','w') as z:\n    z.writestr('word/document.xml','<d/>')\n    z.writestr('word/media/image1.png',b'\\x89PNG\\r\\n\\x1a\\n'+b'X'*100)\n    z.writestr('word/media/photo.jpg',b'\\xff\\xd8\\xff\\xe0'+b'Y'*200)\nextract_images('/tmp/img.docx')",
+          "expected_output": "Extracted 2 images:\n  image1.png (108B) -> /tmp/imgs/image1.png\n  photo.jpg (204B) -> /tmp/imgs/photo.jpg",
+          "hints": [
+            {
+              "message": "Filter z.namelist() for paths containing 'media/'."
+            },
+            {
+              "message": "Extract each with z.read(name) and write to output directory."
+            },
+            {
+              "message": "import zipfile, os\ndef extract_images(fp, outdir='/tmp/imgs'):\n    os.makedirs(outdir, exist_ok=True)\n    with zipfile.ZipFile(fp) as z:\n        media = [f for f in z.namelist() if 'media/' in f]\n        print(f'Extracted {len(media)} images:')\n        for name in media:\n            data = z.read(name)\n            out = os.path.join(outdir, os.path.basename(name))\n            with open(out,'wb') as f: f.write(data)\n            print(f'  {os.path.basename(name)} ({len(data)}B) -> {out}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Detect OLE2 Legacy Documents",
+          "description": "Identify OLE2 compound documents by their magic bytes.",
+          "difficulty": "beginner",
+          "category": "Office Documents & Macros",
+          "estimated_minutes": 3,
+          "ai_intro": "Let us work on detect ole2 legacy documents! This is a beginner exercise. Take your time.",
+          "starter_code": "def is_ole2(filepath):\n    # TODO: Check for OLE2 magic bytes D0 CF 11 E0 A1 B1 1A E1\n    pass\n\nwith open('/tmp/old.doc','wb') as f: f.write(b'\\xD0\\xCF\\x11\\xE0\\xA1\\xB1\\x1A\\xE1'+b'\\x00'*50)\nwith open('/tmp/new.docx','wb') as f: f.write(b'PK\\x03\\x04'+b'\\x00'*50)\nis_ole2('/tmp/old.doc')\nis_ole2('/tmp/new.docx')",
+          "expected_output": "old.doc: OLE2 Compound Document (legacy Office)\nnew.docx: Not OLE2",
+          "hints": [
+            {
+              "message": "OLE2 magic: b'\\xD0\\xCF\\x11\\xE0\\xA1\\xB1\\x1A\\xE1' (8 bytes)."
+            },
+            {
+              "message": "Read first 8 bytes and compare."
+            },
+            {
+              "message": "import os\ndef is_ole2(fp):\n    with open(fp,'rb') as f: h=f.read(8)\n    name = os.path.basename(fp)\n    if h==b'\\xD0\\xCF\\x11\\xE0\\xA1\\xB1\\x1A\\xE1':\n        print(f'{name}: OLE2 Compound Document (legacy Office)')\n    else: print(f'{name}: Not OLE2')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Office Document Type Classifier",
+          "description": "Classify a document as PDF, OOXML, OLE2, or RTF by magic bytes.",
+          "difficulty": "intermediate",
+          "category": "Office Documents & Macros",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on office document type classifier! This is a intermediate exercise. Take your time.",
+          "starter_code": "def classify_doc(filepath):\n    # TODO: Check magic bytes and classify\n    pass\n\nfor content, name in [(b'%PDF-1.7','r.pdf'), (b'PK\\x03\\x04','r.docx'), (b'\\xD0\\xCF\\x11\\xE0\\xA1\\xB1\\x1A\\xE1','r.doc'), (b'{\\\\rtf1','r.rtf')]:\n    with open(f'/tmp/{name}','wb') as f: f.write(content+b'\\x00'*20)\n    classify_doc(f'/tmp/{name}')",
+          "expected_output": "r.pdf: PDF\nr.docx: OOXML (ZIP-based Office)\nr.doc: OLE2 (Legacy Office)\nr.rtf: RTF",
+          "hints": [
+            {
+              "message": "Check magic bytes in order: %PDF-, PK, D0CF11E0, {\\rtf."
+            },
+            {
+              "message": "Return the matching type."
+            },
+            {
+              "message": "import os\ndef classify_doc(fp):\n    with open(fp,'rb') as f: h=f.read(8)\n    name = os.path.basename(fp)\n    if h[:5]==b'%PDF-': t='PDF'\n    elif h[:2]==b'PK': t='OOXML (ZIP-based Office)'\n    elif h==b'\\xD0\\xCF\\x11\\xE0\\xA1\\xB1\\x1A\\xE1': t='OLE2 (Legacy Office)'\n    elif h[:5]==b'{\\\\rtf': t='RTF'\n    else: t='Unknown'\n    print(f'{name}: {t}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Count DOCX Pages (Approximate)",
+          "description": "Estimate page count from DOCX by counting page break markers.",
+          "difficulty": "intermediate",
+          "category": "Office Documents & Macros",
+          "estimated_minutes": 5,
+          "ai_intro": "Let us work on count docx pages (approximate)! This is a intermediate exercise. Take your time.",
+          "starter_code": "import zipfile, re\ndef est_pages(filepath):\n    # TODO: Count <w:br w:type=\"page\"/> and paragraph count\n    pass\n\nxml = '<w:document xmlns:w=\"ns\"><w:body>'\nfor i in range(5):\n    xml += f'<w:p><w:r><w:t>Page {i+1} content</w:t></w:r></w:p>'\n    if i < 4: xml += '<w:p><w:r><w:br w:type=\"page\"/></w:r></w:p>'\nxml += '</w:body></w:document>'\nwith zipfile.ZipFile('/tmp/pg.docx','w') as z:\n    z.writestr('word/document.xml', xml)\nest_pages('/tmp/pg.docx')",
+          "expected_output": "Paragraphs: 10\nPage breaks: 4\nEstimated pages: 5",
+          "hints": [
+            {
+              "message": "Count <w:br w:type=\"page\"/> for explicit page breaks."
+            },
+            {
+              "message": "Paragraphs: count <w:p> tags. Pages = breaks + 1."
+            },
+            {
+              "message": "import zipfile, re\ndef est_pages(fp):\n    with zipfile.ZipFile(fp) as z:\n        xml = z.read('word/document.xml').decode()\n    paras = len(re.findall(r'<w:p[ >]', xml))\n    breaks = len(re.findall(r'w:type=\"page\"', xml))\n    print(f'Paragraphs: {paras}')\n    print(f'Page breaks: {breaks}')\n    print(f'Estimated pages: {breaks + 1}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Macro Danger Assessment",
+          "description": "Analyse a document and produce a danger rating based on multiple indicators.",
+          "difficulty": "advanced",
+          "category": "Office Documents & Macros",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on macro danger assessment! This is a advanced exercise. Take your time.",
+          "starter_code": "import zipfile, os\ndef danger_rating(filepath):\n    # TODO: Check multiple risk indicators and produce score\n    pass\n\nwith zipfile.ZipFile('/tmp/danger.docm','w') as z:\n    z.writestr('word/document.xml','<d/>')\n    z.writestr('word/vbaProject.bin',b'AutoOpen Sub Shell cmd')\n    z.writestr('word/embeddings/ole1.bin',b'\\xD0\\xCF\\x11\\xE0')\ndanger_rating('/tmp/danger.docm')",
+          "expected_output": "DANGER ASSESSMENT: danger.docm\n  VBA Macros: YES (+5)\n  Embedded OLE: YES (+3)\n  Extension .docm: YES (+2)\n  Score: 10 (HIGH RISK)",
+          "hints": [
+            {
+              "message": "Check for vbaProject, embeddings, file extension, and macro keywords."
+            },
+            {
+              "message": "Assign weights: macros=5, embedded OLE=3, .docm extension=2, suspicious keywords=3."
+            },
+            {
+              "message": "import zipfile, os\ndef danger_rating(fp):\n    name = os.path.basename(fp)\n    score = 0; findings = []\n    with zipfile.ZipFile(fp) as z:\n        names = z.namelist()\n        if any('vbaProject' in n for n in names): score+=5; findings.append('VBA Macros: YES (+5)')\n        if any('embeddings' in n for n in names): score+=3; findings.append('Embedded OLE: YES (+3)')\n    if fp.endswith(('.docm','.xlsm')): score+=2; findings.append(f'Extension {os.path.splitext(fp)[1]}: YES (+2)')\n    level = 'HIGH RISK' if score>=8 else 'MEDIUM' if score>=4 else 'LOW'\n    print(f'DANGER ASSESSMENT: {name}')\n    for f in findings: print(f'  {f}')\n    print(f'  Score: {score} ({level})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Build Macro Keyword Scanner",
+          "description": "Scan VBA macro content for dangerous keywords like Shell, PowerShell, cmd.",
+          "difficulty": "advanced",
+          "category": "Office Documents & Macros",
+          "estimated_minutes": 8,
+          "ai_intro": "Let us work on build macro keyword scanner! This is a advanced exercise. Take your time.",
+          "starter_code": "import zipfile, re\ndef scan_macro_keywords(filepath):\n    # TODO: Extract vbaProject.bin, search for dangerous keywords\n    pass\n\nwith zipfile.ZipFile('/tmp/kw.docm','w') as z:\n    z.writestr('word/document.xml','<d/>')\n    z.writestr('word/vbaProject.bin',b'Sub AutoOpen()\\nShell \"powershell -enc ...\"\\nEnd Sub')\nscan_macro_keywords('/tmp/kw.docm')",
+          "expected_output": "Dangerous keywords found in macro:\n  AutoOpen (auto-execute trigger)\n  Shell (command execution)\n  powershell (script execution)",
+          "hints": [
+            {
+              "message": "Extract vbaProject.bin from ZIP. Search for keywords in the raw bytes."
+            },
+            {
+              "message": "Dangerous keywords: AutoOpen, AutoExec, Shell, PowerShell, cmd, WScript, CreateObject."
+            },
+            {
+              "message": "import zipfile\ndef scan_macro_keywords(fp):\n    dangerous = {'AutoOpen':'auto-execute trigger','AutoExec':'auto-execute trigger',\n        'Shell':'command execution','powershell':'script execution','cmd':'command prompt',\n        'WScript':'scripting host','CreateObject':'COM object creation'}\n    with zipfile.ZipFile(fp) as z:\n        for name in z.namelist():\n            if 'vbaProject' in name:\n                data = z.read(name).decode('latin-1',errors='replace')\n                found = [(k,v) for k,v in dangerous.items() if k.lower() in data.lower()]\n                if found:\n                    print('Dangerous keywords found in macro:')\n                    for k,v in found: print(f'  {k} ({v})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Scan PDF for JavaScript",
+          "description": "Search a PDF for /JavaScript and /JS entries.",
+          "difficulty": "beginner",
+          "category": "Threat Detection & Scanning",
+          "estimated_minutes": 3,
+          "ai_intro": "Time for scan pdf for javascript! This is a beginner challenge — you have got this!",
+          "starter_code": "import re\ndef find_js(filepath):\n    # TODO: Read file, search for JavaScript indicators\n    pass\n\nwith open('/tmp/js.pdf','wb') as f:\n    f.write(b'%PDF-1.7\\n1 0 obj << /S /JavaScript /JS (alert(1)) >> endobj')\nfind_js('/tmp/js.pdf')",
+          "expected_output": "JavaScript indicators found:\n  /JavaScript (1x)\n  /JS (1x)",
+          "hints": [
+            {
+              "message": "Search for b'/JavaScript' and b'/JS ' in the file data."
+            },
+            {
+              "message": "Use re.findall() to count occurrences of each pattern."
+            },
+            {
+              "message": "import re\ndef find_js(fp):\n    with open(fp,'rb') as f: data=f.read()\n    indicators = [(rb'/JavaScript','JavaScript'),(rb'/JS\\s','JS')]\n    found = []\n    for pat,name in indicators:\n        n = len(re.findall(pat,data))\n        if n: found.append(f'  /{name} ({n}x)')\n    if found:\n        print('JavaScript indicators found:')\n        for f_ in found: print(f_)\n    else: print('No JavaScript found')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Detect Auto-Execute Actions",
+          "description": "Find /OpenAction and /AA entries that trigger on document open.",
+          "difficulty": "beginner",
+          "category": "Threat Detection & Scanning",
+          "estimated_minutes": 3,
+          "ai_intro": "Time for detect auto-execute actions! This is a beginner challenge — you have got this!",
+          "starter_code": "import re\ndef find_autoexec(filepath):\n    # TODO: Search for /OpenAction and /AA\n    pass\n\nwith open('/tmp/auto.pdf','wb') as f:\n    f.write(b'%PDF-1.7\\n1 0 obj << /Type /Catalog /OpenAction 2 0 R >> endobj')\nfind_autoexec('/tmp/auto.pdf')",
+          "expected_output": "Auto-execute indicators:\n  /OpenAction found — document runs action on open!",
+          "hints": [
+            {
+              "message": "Search for b'/OpenAction' and b'/AA' (additional actions)."
+            },
+            {
+              "message": "These trigger automatically when the PDF is opened."
+            },
+            {
+              "message": "import re\ndef find_autoexec(fp):\n    with open(fp,'rb') as f: data=f.read()\n    found = []\n    if b'/OpenAction' in data: found.append('/OpenAction found — document runs action on open!')\n    if re.search(rb'/AA\\s', data): found.append('/AA found — additional automatic actions!')\n    if found:\n        print('Auto-execute indicators:')\n        for f_ in found: print(f'  {f_}')\n    else: print('No auto-execute actions')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Check for Embedded Files",
+          "description": "Detect /EmbeddedFile entries in a PDF.",
+          "difficulty": "intermediate",
+          "category": "Threat Detection & Scanning",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for check for embedded files! This is a intermediate challenge — you have got this!",
+          "starter_code": "import re\ndef find_embedded(filepath):\n    # TODO: Search for /EmbeddedFile and /EmbeddedFiles\n    pass\n\nwith open('/tmp/emb.pdf','wb') as f:\n    f.write(b'%PDF-1.7\\n1 0 obj << /Type /EmbeddedFile >> endobj\\n2 0 obj << /Names << /EmbeddedFiles 3 0 R >> >> endobj')\nfind_embedded('/tmp/emb.pdf')",
+          "expected_output": "Embedded file indicators:\n  /EmbeddedFile objects: 1\n  /EmbeddedFiles collection found",
+          "hints": [
+            {
+              "message": "Count re.findall(rb'/EmbeddedFile\\b', data) for individual objects."
+            },
+            {
+              "message": "Check for /EmbeddedFiles (with s) for the name tree."
+            },
+            {
+              "message": "import re\ndef find_embedded(fp):\n    with open(fp,'rb') as f: data=f.read()\n    objs = len(re.findall(rb'/Type\\s*/EmbeddedFile', data))\n    coll = b'/EmbeddedFiles' in data\n    print('Embedded file indicators:')\n    if objs: print(f'  /EmbeddedFile objects: {objs}')\n    if coll: print('  /EmbeddedFiles collection found')\n    if not objs and not coll: print('  None found')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Build Complete Threat Scanner",
+          "description": "Combine all threat checks into a single scoring scanner.",
+          "difficulty": "intermediate",
+          "category": "Threat Detection & Scanning",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for build complete threat scanner! This is a intermediate challenge — you have got this!",
+          "starter_code": "import re\ndef threat_scan(filepath):\n    # TODO: Check JS, AutoExec, Launch, Embedded, eval, unescape\n    pass\n\nwith open('/tmp/threat.pdf','wb') as f:\n    f.write(b'%PDF-1.7\\n/JavaScript /OpenAction /Launch eval( /EmbeddedFile')\nthreat_scan('/tmp/threat.pdf')",
+          "expected_output": "Threat Scan Results:\n  [HIGH] JavaScript (1x)\n  [HIGH] Launch action (1x)\n  [HIGH] eval() call (1x)\n  [MED]  Auto-execute (1x)\n  [MED]  Embedded files (1x)\nScore: 13 (CRITICAL)",
+          "hints": [
+            {
+              "message": "Define a list of (pattern, severity, description) tuples."
+            },
+            {
+              "message": "Apply weights: HIGH=3, MED=2, LOW=1. Sum for total score."
+            },
+            {
+              "message": "import re\ndef threat_scan(fp):\n    with open(fp,'rb') as f: data=f.read()\n    checks = [(rb'/JavaScript','HIGH','JavaScript'),(rb'/Launch','HIGH','Launch action'),\n        (rb'eval\\(','HIGH','eval() call'),(rb'/OpenAction','MED','Auto-execute'),\n        (rb'/EmbeddedFile','MED','Embedded files'),(rb'/Encrypt','LOW','Encrypted')]\n    w = {'HIGH':3,'MED':2,'LOW':1}; score=0\n    print('Threat Scan Results:')\n    for pat,sev,desc in checks:\n        n = len(re.findall(pat,data))\n        if n: score+=w[sev]*n; print(f'  [{sev:4s}] {desc} ({n}x)')\n    r = 'CRITICAL' if score>10 else 'HIGH' if score>6 else 'MEDIUM' if score>3 else 'LOW'\n    print(f'Score: {score} ({r})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Extract URLs from PDF",
+          "description": "Find all URLs (http/https) inside a PDF file.",
+          "difficulty": "intermediate",
+          "category": "Threat Detection & Scanning",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for extract urls from pdf! This is a intermediate challenge — you have got this!",
+          "starter_code": "import re\ndef extract_urls(filepath):\n    # TODO: Find URLs using regex\n    pass\n\nwith open('/tmp/url.pdf','wb') as f:\n    f.write(b'%PDF-1.7\\n/URI (https://evil.com/payload)\\n/URI (http://phish.example.org/login)')\nextract_urls('/tmp/url.pdf')",
+          "expected_output": "URLs found: 2\n  https://evil.com/payload\n  http://phish.example.org/login",
+          "hints": [
+            {
+              "message": "Use re.findall(rb'https?://[^\\s\\x00<>)]+', data)."
+            },
+            {
+              "message": "Also check inside /URI (value) patterns."
+            },
+            {
+              "message": "import re\ndef extract_urls(fp):\n    with open(fp,'rb') as f: data=f.read()\n    urls = list(set(m.decode('latin-1') for m in re.findall(rb'https?://[^\\s\\x00<>)]+', data)))\n    print(f'URLs found: {len(urls)}')\n    for u in sorted(urls): print(f'  {u}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Extract Email Addresses",
+          "description": "Find all email addresses hidden inside a document.",
+          "difficulty": "intermediate",
+          "category": "Threat Detection & Scanning",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for extract email addresses! This is a intermediate challenge — you have got this!",
+          "starter_code": "import re\ndef extract_emails(filepath):\n    # TODO: Find emails using regex\n    pass\n\nwith open('/tmp/em.pdf','wb') as f:\n    f.write(b'%PDF-1.7 Contact: admin@company.com CC: analyst@forensiclab.org')\nextract_emails('/tmp/em.pdf')",
+          "expected_output": "Emails found: 2\n  admin@company.com\n  analyst@forensiclab.org",
+          "hints": [
+            {
+              "message": "Pattern: rb'[\\w.+-]+@[\\w.-]+\\.\\w{2,}'"
+            },
+            {
+              "message": "Decode matches with .decode('latin-1')."
+            },
+            {
+              "message": "import re\ndef extract_emails(fp):\n    with open(fp,'rb') as f: data=f.read()\n    emails = list(set(m.decode('latin-1') for m in re.findall(rb'[\\w.+-]+@[\\w.-]+\\.\\w{2,}', data)))\n    print(f'Emails found: {len(emails)}')\n    for e in sorted(emails): print(f'  {e}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Calculate File Entropy",
+          "description": "Calculate Shannon entropy to detect encryption or compression.",
+          "difficulty": "intermediate",
+          "category": "Threat Detection & Scanning",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for calculate file entropy! This is a intermediate challenge — you have got this!",
+          "starter_code": "import math\ndef file_entropy(filepath):\n    # TODO: Count byte frequencies, calculate entropy\n    pass\n\nwith open('/tmp/low.txt','wb') as f: f.write(b'AAAAAAAAAA' * 100)\nwith open('/tmp/high.bin','wb') as f:\n    import os; f.write(os.urandom(1000))\nfile_entropy('/tmp/low.txt')\nfile_entropy('/tmp/high.bin')",
+          "expected_output": "low.txt: Entropy 0.00/8.0 (repetitive/simple)\nhigh.bin: Entropy 7.81/8.0 (encrypted/compressed)",
+          "hints": [
+            {
+              "message": "Count frequency of each byte value (0-255). Probability = count/total."
+            },
+            {
+              "message": "Entropy = -sum(p * log2(p)) for all non-zero probabilities."
+            },
+            {
+              "message": "import math, os\ndef file_entropy(fp):\n    with open(fp,'rb') as f: data=f.read()\n    freq = [0]*256\n    for b in data: freq[b]+=1\n    sz = len(data)\n    ent = -sum((c/sz)*math.log2(c/sz) for c in freq if c>0) if sz else 0\n    label = 'encrypted/compressed' if ent>7.5 else 'mixed' if ent>5 else 'repetitive/simple'\n    print(f'{os.path.basename(fp)}: Entropy {ent:.2f}/8.0 ({label})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: String Extractor from Binary",
+          "description": "Extract printable ASCII strings of minimum length from binary data.",
+          "difficulty": "intermediate",
+          "category": "Threat Detection & Scanning",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for string extractor from binary! This is a intermediate challenge — you have got this!",
+          "starter_code": "import re\ndef extract_strings(filepath, min_len=6):\n    # TODO: Find sequences of printable characters\n    pass\n\nwith open('/tmp/str.bin','wb') as f:\n    f.write(b'\\x00\\x00Hello World\\x00\\x00\\xff\\xfePassword123\\x00Secret_Key_Here\\x00\\x00')\nextract_strings('/tmp/str.bin')",
+          "expected_output": "Strings (min 6 chars): 3\n  Hello World\n  Password123\n  Secret_Key_Here",
+          "hints": [
+            {
+              "message": "Use re.findall(rb'[\\x20-\\x7E]{min_len,}', data)."
+            },
+            {
+              "message": "Each match is a printable ASCII string of at least min_len characters."
+            },
+            {
+              "message": "import re\ndef extract_strings(fp, min_len=6):\n    with open(fp,'rb') as f: data=f.read()\n    strings = [m.decode() for m in re.findall(rb'[\\x20-\\x7E]{'+str(min_len).encode()+rb',}', data)]\n    print(f'Strings (min {min_len} chars): {len(strings)}')\n    for s in strings: print(f'  {s}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Detect Suspicious PDF Combinations",
+          "description": "Flag documents with dangerous combinations like JS + AutoExec.",
+          "difficulty": "advanced",
+          "category": "Threat Detection & Scanning",
+          "estimated_minutes": 8,
+          "ai_intro": "Time for detect suspicious pdf combinations! This is a advanced challenge — you have got this!",
+          "starter_code": "import re\ndef dangerous_combos(filepath):\n    # TODO: Check for dangerous combinations of indicators\n    pass\n\nwith open('/tmp/combo.pdf','wb') as f:\n    f.write(b'%PDF-1.7\\n/JavaScript /OpenAction /Launch eval(')\ndangerous_combos('/tmp/combo.pdf')",
+          "expected_output": "CRITICAL COMBINATIONS DETECTED:\n  JavaScript + AutoExec = auto-running code!\n  Launch + JavaScript = can execute external programs!\n  eval() detected = dynamic code execution!",
+          "hints": [
+            {
+              "message": "Check for individual indicators first, then flag dangerous pairs."
+            },
+            {
+              "message": "JS+OpenAction is the most dangerous: auto-executes JavaScript."
+            },
+            {
+              "message": "import re\ndef dangerous_combos(fp):\n    with open(fp,'rb') as f: data=f.read()\n    js = b'/JavaScript' in data or b'/JS ' in data\n    auto = b'/OpenAction' in data\n    launch = b'/Launch' in data\n    ev = b'eval(' in data\n    combos = []\n    if js and auto: combos.append('JavaScript + AutoExec = auto-running code!')\n    if launch and js: combos.append('Launch + JavaScript = can execute external programs!')\n    if ev: combos.append('eval() detected = dynamic code execution!')\n    if combos:\n        print('CRITICAL COMBINATIONS DETECTED:')\n        for c in combos: print(f'  {c}')\n    else: print('No dangerous combinations found')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: PDF Anomaly Score Report",
+          "description": "Generate a comprehensive anomaly score from multiple indicators.",
+          "difficulty": "advanced",
+          "category": "Threat Detection & Scanning",
+          "estimated_minutes": 8,
+          "ai_intro": "Time for pdf anomaly score report! This is a advanced challenge — you have got this!",
+          "starter_code": "import re, math, os\ndef anomaly_report(filepath):\n    # TODO: Combine entropy, threat indicators, metadata checks\n    pass\n\nwith open('/tmp/anom.pdf','wb') as f:\n    import zlib\n    c = zlib.compress(b'BT (Test) Tj ET /JavaScript eval(')\n    f.write(b'%PDF-1.7\\n/Author (Test) /OpenAction 1 0 R\\nstream\\n'+c+b'\\nendstream\\n%%EOF\\n%%EOF')\nanomaly_report('/tmp/anom.pdf')",
+          "expected_output": "Anomaly Report: anom.pdf\n  Size: 98B\n  Entropy: 5.4/8.0 (mixed)\n  Threats: JavaScript, AutoExec\n  %%EOF count: 2 (modified!)\n  Anomaly score: 8 (HIGH)",
+          "hints": [
+            {
+              "message": "Combine entropy analysis, threat scanning, and %%EOF counting."
+            },
+            {
+              "message": "Weight each factor: threats=3 each, high entropy=2, multiple %%EOF=2."
+            },
+            {
+              "message": "import re, math, os\ndef anomaly_report(fp):\n    with open(fp,'rb') as f: data=f.read()\n    name = os.path.basename(fp)\n    sz = len(data)\n    freq=[0]*256\n    for b in data: freq[b]+=1\n    ent = -sum((c/sz)*math.log2(c/sz) for c in freq if c>0) if sz else 0\n    threats = []\n    for pat,desc in [(b'/JavaScript','JavaScript'),(b'/OpenAction','AutoExec'),(b'/Launch','Launch')]:\n        if pat in data: threats.append(desc)\n    eofs = data.count(b'%%EOF')\n    score = len(threats)*3 + (2 if ent>7.5 else 0) + (2 if eofs>1 else 0)\n    level = 'HIGH' if score>=6 else 'MEDIUM' if score>=3 else 'LOW'\n    print(f'Anomaly Report: {name}')\n    print(f'  Size: {sz}B')\n    print(f'  Entropy: {ent:.1f}/8.0')\n    print(f'  Threats: {\", \".join(threats) or \"None\"}')\n    print(f'  %%EOF count: {eofs}{\" (modified!)\" if eofs>1 else \"\"}')\n    print(f'  Anomaly score: {score} ({level})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Extract Text from PDF Streams",
+          "description": "Decompress streams and extract text from Tj operations.",
+          "difficulty": "intermediate",
+          "category": "Text & Content Extraction",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for extract text from pdf streams! This is a intermediate challenge — you have got this!",
+          "starter_code": "import re, zlib\ndef pdf_text(filepath):\n    # TODO: Find streams, decompress, extract (text) Tj\n    pass\n\nc = zlib.compress(b'BT /F1 12 Tf 100 700 Td (Forensic Report) Tj 100 680 Td (Case #42) Tj ET')\nwith open('/tmp/ptxt.pdf','wb') as f:\n    f.write(b'%PDF-1.7\\n1 0 obj << /Filter /FlateDecode >> stream\\n'+c+b'\\nendstream endobj')\nprint(pdf_text('/tmp/ptxt.pdf'))",
+          "expected_output": "Forensic Report Case #42",
+          "hints": [
+            {
+              "message": "Find stream blocks with regex, try zlib.decompress on each."
+            },
+            {
+              "message": "Extract text between ( ) before Tj: re.findall(rb'\\(([^)]+)\\)\\s*Tj', decoded)"
+            },
+            {
+              "message": "import re, zlib\ndef pdf_text(fp):\n    with open(fp,'rb') as f: data=f.read()\n    texts=[]\n    for m in re.finditer(rb'stream\\r?\\n(.+?)\\r?\\nendstream', data, re.DOTALL):\n        try: d=zlib.decompress(m.group(1))\n        except: d=m.group(1)\n        texts.extend(t.decode('latin-1') for t in re.findall(rb'\\(([^)]+)\\)\\s*Tj', d))\n    return ' '.join(texts)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Find Hidden Text Behind Redactions",
+          "description": "Detect black rectangles and extract text they supposedly hide.",
+          "difficulty": "advanced",
+          "category": "Text & Content Extraction",
+          "estimated_minutes": 8,
+          "ai_intro": "Time for find hidden text behind redactions! This is a advanced challenge — you have got this!",
+          "starter_code": "import re, zlib\ndef find_hidden(filepath):\n    # TODO: Check for black rectangles AND extractable text\n    pass\n\nc = zlib.compress(b'BT 100 700 Td (Public) Tj 100 680 Td (SECRET: Agent X) Tj ET\\n0 0 0 rg 95 675 200 20 re f')\nwith open('/tmp/hid.pdf','wb') as f:\n    f.write(b'%PDF-1.7\\n1 0 obj << /Filter /FlateDecode >> stream\\n'+c+b'\\nendstream endobj')\nfind_hidden('/tmp/hid.pdf')",
+          "expected_output": "Black rectangles: YES\nExtractable text: 2 strings\n  \"Public\"\n  \"SECRET: Agent X\"\nWARNING: Possible redaction failure!",
+          "hints": [
+            {
+              "message": "Decompress streams, look for '0 0 0 rg' (black) followed by 're f' (filled rectangle)."
+            },
+            {
+              "message": "Also extract all (text) patterns. If both exist, redaction may be cosmetic."
+            },
+            {
+              "message": "import re, zlib\ndef find_hidden(fp):\n    with open(fp,'rb') as f: data=f.read()\n    combined=b''\n    for m in re.finditer(rb'stream\\r?\\n(.+?)\\r?\\nendstream', data, re.DOTALL):\n        try: combined+=zlib.decompress(m.group(1))\n        except: combined+=m.group(1)\n    rects = bool(re.search(rb'0\\s+0\\s+0\\s+rg.*?re\\s+f', combined, re.DOTALL))\n    texts = [t.decode('latin-1') for t in re.findall(rb'\\(([^)]+)\\)', combined)]\n    print(f'Black rectangles: {\"YES\" if rects else \"NO\"}')\n    print(f'Extractable text: {len(texts)} strings')\n    for t in texts: print(f'  \"{t}\"')\n    if rects and texts: print('WARNING: Possible redaction failure!')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Search for Keywords in Document",
+          "description": "Search for specific keywords in any document type.",
+          "difficulty": "beginner",
+          "category": "Text & Content Extraction",
+          "estimated_minutes": 3,
+          "ai_intro": "Time for search for keywords in document! This is a beginner challenge — you have got this!",
+          "starter_code": "def keyword_search(filepath, keywords):\n    # TODO: Read file and search for each keyword\n    pass\n\nwith open('/tmp/kw.pdf','wb') as f:\n    f.write(b'%PDF-1.7 password admin confidential internal_use budget $50000')\nkeyword_search('/tmp/kw.pdf', ['password','admin','confidential','secret','budget'])",
+          "expected_output": "Keywords found:\n  password (offset 10)\n  admin (offset 19)\n  confidential (offset 25)\n  budget (offset 52)",
+          "hints": [
+            {
+              "message": "Read entire file as bytes, use data.find(keyword.encode()) for each."
+            },
+            {
+              "message": "Report the byte offset where each keyword was found."
+            },
+            {
+              "message": "def keyword_search(fp, keywords):\n    with open(fp,'rb') as f: data=f.read()\n    print('Keywords found:')\n    for kw in keywords:\n        idx = data.find(kw.encode())\n        if idx >= 0: print(f'  {kw} (offset {idx})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Extract IP Addresses from Document",
+          "description": "Find all IPv4 addresses inside a document file.",
+          "difficulty": "intermediate",
+          "category": "Text & Content Extraction",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for extract ip addresses from document! This is a intermediate challenge — you have got this!",
+          "starter_code": "import re\ndef find_ips(filepath):\n    # TODO: Use regex to find IP addresses\n    pass\n\nwith open('/tmp/ip.pdf','wb') as f:\n    f.write(b'%PDF-1.7 Server: 192.168.1.100 Callback: 10.0.0.1 External: 203.0.113.42')\nfind_ips('/tmp/ip.pdf')",
+          "expected_output": "IP addresses found: 3\n  192.168.1.100 (private)\n  10.0.0.1 (private)\n  203.0.113.42 (public)",
+          "hints": [
+            {
+              "message": "Pattern: rb'\\b(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\b'"
+            },
+            {
+              "message": "Check if private: starts with 10., 172.16-31., or 192.168."
+            },
+            {
+              "message": "import re\ndef find_ips(fp):\n    with open(fp,'rb') as f: data=f.read()\n    ips = list(set(m.decode() for m in re.findall(rb'\\b(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\b', data)))\n    print(f'IP addresses found: {len(ips)}')\n    for ip in sorted(ips):\n        parts = ip.split('.')\n        priv = parts[0]=='10' or (parts[0]=='172' and 16<=int(parts[1])<=31) or (parts[0]=='192' and parts[1]=='168')\n        print(f'  {ip} ({\"private\" if priv else \"public\"})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Count Words in Document",
+          "description": "Extract and count total words from a PDF or DOCX.",
+          "difficulty": "beginner",
+          "category": "Text & Content Extraction",
+          "estimated_minutes": 3,
+          "ai_intro": "Time for count words in document! This is a beginner challenge — you have got this!",
+          "starter_code": "import re, zlib, zipfile\ndef word_count(filepath):\n    # TODO: Extract text then count words\n    pass\n\nc = zlib.compress(b'BT (Hello World this is a test document) Tj ET')\nwith open('/tmp/wc.pdf','wb') as f:\n    f.write(b'%PDF-1.7\\n1 0 obj << /Filter /FlateDecode >> stream\\n'+c+b'\\nendstream endobj')\nword_count('/tmp/wc.pdf')",
+          "expected_output": "Words: 8\nText: Hello World this is a test document",
+          "hints": [
+            {
+              "message": "First extract text (Tj for PDF, <w:t> for DOCX), then split and count."
+            },
+            {
+              "message": "Use len(text.split()) for word count."
+            },
+            {
+              "message": "import re, zlib\ndef word_count(fp):\n    with open(fp,'rb') as f: data=f.read()\n    texts=[]\n    for m in re.finditer(rb'stream\\r?\\n(.+?)\\r?\\nendstream', data, re.DOTALL):\n        try: d=zlib.decompress(m.group(1))\n        except: d=m.group(1)\n        texts.extend(t.decode('latin-1') for t in re.findall(rb'\\(([^)]+)\\)\\s*Tj', d))\n    text = ' '.join(texts)\n    print(f'Words: {len(text.split())}')\n    print(f'Text: {text}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Compare Text Between Two Documents",
+          "description": "Extract text from two documents and show differences.",
+          "difficulty": "intermediate",
+          "category": "Text & Content Extraction",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for compare text between two documents! This is a intermediate challenge — you have got this!",
+          "starter_code": "def compare_docs(path1, path2):\n    # TODO: Extract text from both, find words in one but not other\n    pass\n\nwith open('/tmp/d1.txt','w') as f: f.write('The quick brown fox jumps over the lazy dog')\nwith open('/tmp/d2.txt','w') as f: f.write('The quick red fox leaps over the sleeping dog')\ncompare_docs('/tmp/d1.txt', '/tmp/d2.txt')",
+          "expected_output": "Words only in doc1: brown, jumps, lazy\nWords only in doc2: leaps, red, sleeping",
+          "hints": [
+            {
+              "message": "Read both files, split into word sets, use set difference."
+            },
+            {
+              "message": "set1 - set2 gives words only in doc1."
+            },
+            {
+              "message": "def compare_docs(p1, p2):\n    with open(p1) as f: w1=set(f.read().lower().split())\n    with open(p2) as f: w2=set(f.read().lower().split())\n    only1 = sorted(w1-w2)\n    only2 = sorted(w2-w1)\n    print(f'Words only in doc1: {\", \".join(only1)}')\n    print(f'Words only in doc2: {\", \".join(only2)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Extract Base64 from Documents",
+          "description": "Find Base64-encoded strings hidden inside documents.",
+          "difficulty": "intermediate",
+          "category": "Text & Content Extraction",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for extract base64 from documents! This is a intermediate challenge — you have got this!",
+          "starter_code": "import re, base64\ndef find_b64(filepath):\n    # TODO: Find Base64 patterns and decode them\n    pass\n\nwith open('/tmp/b64.pdf','wb') as f:\n    f.write(b'%PDF-1.7\\nData: SGVsbG8gV29ybGQ=\\nPayload: YWRtaW46cGFzc3dvcmQ=')\nfind_b64('/tmp/b64.pdf')",
+          "expected_output": "Base64 strings found:\n  SGVsbG8gV29ybGQ= -> Hello World\n  YWRtaW46cGFzc3dvcmQ= -> admin:password",
+          "hints": [
+            {
+              "message": "Pattern: rb'[A-Za-z0-9+/]{16,}={0,2}'"
+            },
+            {
+              "message": "Try base64.b64decode() on each match, wrap in try/except."
+            },
+            {
+              "message": "import re, base64\ndef find_b64(fp):\n    with open(fp,'rb') as f: data=f.read()\n    matches = re.findall(rb'[A-Za-z0-9+/]{16,}={0,2}', data)\n    found = []\n    for m in matches:\n        try:\n            d = base64.b64decode(m).decode('utf-8')\n            found.append((m.decode(), d))\n        except: pass\n    print(f'Base64 strings found:')\n    for enc,dec in found: print(f'  {enc} -> {dec}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Document Language Detector",
+          "description": "Detect the likely language of document text using character frequency.",
+          "difficulty": "intermediate",
+          "category": "Text & Content Extraction",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for document language detector! This is a intermediate challenge — you have got this!",
+          "starter_code": "def detect_language(text):\n    # TODO: Analyse character frequency to guess language\n    pass\n\ndetect_language('The quick brown fox jumps over the lazy dog')\ndetect_language('Le renard brun rapide saute par-dessus le chien paresseux')",
+          "expected_output": "Likely: English (high 'the' frequency, no accents)\nLikely: French (accented chars, French common words)",
+          "hints": [
+            {
+              "message": "Check for accented characters (e.g. e with accent), common words."
+            },
+            {
+              "message": "Count occurrences of common words: 'the','and','is' for English; 'le','la','de' for French."
+            },
+            {
+              "message": "def detect_language(text):\n    t = text.lower()\n    en_words = sum(1 for w in ['the','and','is','of','to','in'] if w in t.split())\n    fr_words = sum(1 for w in ['le','la','de','les','des','par'] if w in t.split())\n    accents = sum(1 for c in t if ord(c)>127)\n    if en_words > fr_words:\n        print(f'Likely: English (high \\'the\\' frequency, no accents)')\n    elif fr_words > en_words or accents > 0:\n        print(f'Likely: French (accented chars, French common words)')\n    else: print('Uncertain language')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Build Evidence String Report",
+          "description": "Extract all forensically interesting strings from a file.",
+          "difficulty": "advanced",
+          "category": "Text & Content Extraction",
+          "estimated_minutes": 8,
+          "ai_intro": "Time for build evidence string report! This is a advanced challenge — you have got this!",
+          "starter_code": "import re\ndef evidence_strings(filepath):\n    # TODO: Extract emails, URLs, IPs, Base64, and keywords\n    pass\n\nwith open('/tmp/ev.bin','wb') as f:\n    f.write(b'admin@evil.com https://malware.example.com 192.168.1.1 password SGVsbG8= cmd.exe')\nevidence_strings('/tmp/ev.bin')",
+          "expected_output": "Evidence String Report:\n  Emails: admin@evil.com\n  URLs: https://malware.example.com\n  IPs: 192.168.1.1\n  Suspicious: password, cmd.exe",
+          "hints": [
+            {
+              "message": "Combine multiple regex patterns: emails, URLs, IPs, and keyword lists."
+            },
+            {
+              "message": "Group findings by category for a clean report."
+            },
+            {
+              "message": "import re\ndef evidence_strings(fp):\n    with open(fp,'rb') as f: data=f.read()\n    emails = set(m.decode() for m in re.findall(rb'[\\w.+-]+@[\\w.-]+\\.\\w{2,}', data))\n    urls = set(m.decode() for m in re.findall(rb'https?://[^\\s\\x00]+', data))\n    ips = set(m.decode() for m in re.findall(rb'\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b', data))\n    kws = ['password','secret','admin','cmd.exe','powershell','login','token']\n    found_kw = [k for k in kws if k.encode() in data.lower()]\n    print('Evidence String Report:')\n    if emails: print(f'  Emails: {\", \".join(sorted(emails))}')\n    if urls: print(f'  URLs: {\", \".join(sorted(urls))}')\n    if ips: print(f'  IPs: {\", \".join(sorted(ips))}')\n    if found_kw: print(f'  Suspicious: {\", \".join(found_kw)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: PDF Cross-Reference Parser",
+          "description": "Parse the xref table to build an object location map.",
+          "difficulty": "advanced",
+          "category": "Text & Content Extraction",
+          "estimated_minutes": 8,
+          "ai_intro": "Time for pdf cross-reference parser! This is a advanced challenge — you have got this!",
+          "starter_code": "import re\ndef parse_xref(filepath):\n    # TODO: Find xref section and parse entries\n    pass\n\npdf = b'%PDF-1.7\\n1 0 obj << >> endobj\\n2 0 obj << >> endobj\\nxref\\n0 3\\n0000000000 65535 f \\n0000000010 00000 n \\n0000000042 00000 n \\ntrailer << /Size 3 >>\\nstartxref\\n60\\n%%EOF'\nwith open('/tmp/xref.pdf','wb') as f: f.write(pdf)\nparse_xref('/tmp/xref.pdf')",
+          "expected_output": "Xref entries:\n  Object 0: offset 0 (free)\n  Object 1: offset 10 (in-use)\n  Object 2: offset 42 (in-use)",
+          "hints": [
+            {
+              "message": "Find 'xref' then parse lines of format: 'OOOOOOOOOO GGGGG n/f'"
+            },
+            {
+              "message": "10 digits = offset, 5 digits = generation, n=in-use, f=free."
+            },
+            {
+              "message": "import re\ndef parse_xref(fp):\n    with open(fp,'rb') as f: data=f.read()\n    xref_start = data.find(b'xref')\n    if xref_start<0: print('No xref found'); return\n    lines = data[xref_start:].split(b'\\n')\n    obj_num = 0\n    print('Xref entries:')\n    for line in lines[1:]:\n        line = line.strip()\n        if line.startswith(b'trailer'): break\n        parts = line.split()\n        if len(parts)==2 and parts[0].isdigit():\n            obj_num = int(parts[0]); continue\n        if len(parts)==3 and len(parts[0])==10:\n            offset = int(parts[0])\n            status = 'free' if parts[2]==b'f' else 'in-use'\n            print(f'  Object {obj_num}: offset {offset} ({status})')\n            obj_num += 1"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Triage a Directory of Documents",
+          "description": "Scan all files in a directory and generate a triage report.",
+          "difficulty": "intermediate",
+          "category": "Real-World Forensic Scenarios",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for triage a directory of documents! This is a intermediate challenge — you have got this!",
+          "starter_code": "import os\ndef triage_dir(directory):\n    # TODO: Check each file's type and risk level\n    pass\n\nos.makedirs('/tmp/triage', exist_ok=True)\nwith open('/tmp/triage/clean.pdf','wb') as f: f.write(b'%PDF-1.7\\nClean')\nwith open('/tmp/triage/sus.pdf','wb') as f: f.write(b'%PDF-1.7\\n/JavaScript /OpenAction')\nwith open('/tmp/triage/doc.txt','wb') as f: f.write(b'Plain text note')\ntriage_dir('/tmp/triage')",
+          "expected_output": "Triage Report (3 files):\n  [HIGH] sus.pdf      PDF    JavaScript, AutoExec\n  [LOW]  clean.pdf    PDF    Clean\n  [LOW]  doc.txt      Other  N/A",
+          "hints": [
+            {
+              "message": "For each file, check magic bytes for type, then scan for threat indicators."
+            },
+            {
+              "message": "Sort results by risk level (HIGH first)."
+            },
+            {
+              "message": "import os\ndef triage_dir(d):\n    results = []\n    for name in sorted(os.listdir(d)):\n        fp = os.path.join(d,name)\n        if not os.path.isfile(fp): continue\n        with open(fp,'rb') as f: data=f.read()\n        issues=[]; risk='LOW'\n        if data[:5]==b'%PDF-':\n            t='PDF'\n            if b'/JavaScript' in data: issues.append('JavaScript'); risk='HIGH'\n            if b'/OpenAction' in data: issues.append('AutoExec'); risk='HIGH'\n        else: t='Other'\n        results.append((risk,name,t,issues))\n    results.sort(key=lambda x: 0 if x[0]=='HIGH' else 1)\n    print(f'Triage Report ({len(results)} files):')\n    for r,n,t,i in results:\n        print(f'  [{r:4s}] {n:14s} {t:6s} {\", \".join(i) or \"Clean\" if t==\"PDF\" else \"N/A\"}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Build Chain of Custody Log",
+          "description": "Create a JSON-based custody log for evidence tracking.",
+          "difficulty": "intermediate",
+          "category": "Real-World Forensic Scenarios",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for build chain of custody log! This is a intermediate challenge — you have got this!",
+          "starter_code": "import json, hashlib, os\nfrom datetime import datetime\ndef custody_log(filepath, examiner, action, log_path='/tmp/custody.json'):\n    # TODO: Hash file, create entry, append to log\n    pass\n\nwith open('/tmp/ev2.pdf','wb') as f: f.write(b'%PDF-1.7 Evidence')\ncustody_log('/tmp/ev2.pdf', 'Det. Smith', 'Collected from laptop')\ncustody_log('/tmp/ev2.pdf', 'Lab Tech', 'Received for analysis')",
+          "expected_output": "Entry added: Det. Smith — Collected from laptop\nEntry added: Lab Tech — Received for analysis\nIntegrity: CONSISTENT (all hashes match)",
+          "hints": [
+            {
+              "message": "Hash the file, create a dict with timestamp/examiner/action/hash, append to list."
+            },
+            {
+              "message": "Save list as JSON. On each add, check all previous hashes match."
+            },
+            {
+              "message": "import json, hashlib, os\nfrom datetime import datetime\ndef custody_log(fp, examiner, action, log_path='/tmp/custody.json'):\n    sha = hashlib.sha256()\n    with open(fp,'rb') as f:\n        for c in iter(lambda: f.read(8192), b''): sha.update(c)\n    h = sha.hexdigest()\n    try:\n        with open(log_path) as f: log=json.load(f)\n    except: log=[]\n    log.append({'time':datetime.now().isoformat(),'file':os.path.basename(fp),'sha256':h,'examiner':examiner,'action':action})\n    with open(log_path,'w') as f: json.dump(log,f,indent=2)\n    print(f'Entry added: {examiner} — {action}')\n    hashes = set(e['sha256'] for e in log)\n    if len(hashes)==1: print('Integrity: CONSISTENT (all hashes match)')\n    else: print('ALERT: INCONSISTENT hashes!')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Identify Document by Content, Not Extension",
+          "description": "Verify a file's true type regardless of its extension.",
+          "difficulty": "intermediate",
+          "category": "Real-World Forensic Scenarios",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for identify document by content, not extension! This is a intermediate challenge — you have got this!",
+          "starter_code": "def true_type(filepath):\n    # TODO: Read magic bytes and compare to known signatures\n    pass\n\nwith open('/tmp/fake.jpg','wb') as f: f.write(b'%PDF-1.7\\nNot really a JPEG!')\nwith open('/tmp/real.jpg','wb') as f: f.write(b'\\xff\\xd8\\xff\\xe0\\x00\\x10JFIF')\ntrue_type('/tmp/fake.jpg')\ntrue_type('/tmp/real.jpg')",
+          "expected_output": "fake.jpg: Extension says JPEG, but magic says PDF! MISMATCH!\nreal.jpg: Extension says JPEG, magic confirms JPEG. OK.",
+          "hints": [
+            {
+              "message": "Read first 8 bytes. Check against known signatures."
+            },
+            {
+              "message": "Compare detected type with file extension to find mismatches."
+            },
+            {
+              "message": "import os\ndef true_type(fp):\n    with open(fp,'rb') as f: h=f.read(8)\n    name = os.path.basename(fp)\n    ext = os.path.splitext(fp)[1].lower()\n    sigs = {'.pdf':b'%PDF', '.jpg':b'\\xff\\xd8\\xff', '.jpeg':b'\\xff\\xd8\\xff', '.png':b'\\x89PNG', '.zip':b'PK'}\n    # Detect actual type\n    actual = 'Unknown'\n    for e,s in sigs.items():\n        if h[:len(s)]==s: actual=e[1:].upper(); break\n    expected = ext[1:].upper() if ext else 'None'\n    if actual.lower() == expected.lower():\n        print(f'{name}: Extension says {expected}, magic confirms {actual}. OK.')\n    else:\n        print(f'{name}: Extension says {expected}, but magic says {actual}! MISMATCH!')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Forensic Report from PDF Analysis",
+          "description": "Generate a structured forensic report from complete PDF analysis.",
+          "difficulty": "advanced",
+          "category": "Real-World Forensic Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Time for forensic report from pdf analysis! This is a advanced challenge — you have got this!",
+          "starter_code": "import hashlib, re, zlib, math, os\nfrom datetime import datetime\ndef forensic_pdf_report(filepath):\n    # TODO: Full analysis — hash, metadata, threats, strings, entropy\n    pass\n\nc = zlib.compress(b'BT (Quarterly Report) Tj (admin@corp.com) Tj ET')\nwith open('/tmp/fr.pdf','wb') as f:\n    f.write(b'%PDF-1.7\\n/Author (Analyst)\\n1 0 obj << /Filter /FlateDecode >> stream\\n'+c+b'\\nendstream endobj\\n%%EOF')\nforensic_pdf_report('/tmp/fr.pdf')",
+          "expected_output": "=== FORENSIC DOCUMENT REPORT ===\nFile: fr.pdf | PDF 1.7 | 142B\nSHA-256: abc...\nEntropy: 5.1/8.0\nMetadata: Author=Analyst\nThreats: None\nEmails: admin@corp.com\nRisk: LOW",
+          "hints": [
+            {
+              "message": "Combine all techniques: hashing, metadata, entropy, threat scan, string extraction."
+            },
+            {
+              "message": "Format as a structured report with clear sections."
+            },
+            {
+              "message": "import hashlib, re, zlib, math, os\nfrom datetime import datetime\ndef forensic_pdf_report(fp):\n    with open(fp,'rb') as f: data=f.read()\n    name=os.path.basename(fp); sz=len(data)\n    sha=hashlib.sha256(data).hexdigest()\n    ver=data[5:8].decode('ascii',errors='?') if data[:5]==b'%PDF-' else '?'\n    freq=[0]*256\n    for b in data: freq[b]+=1\n    ent=-sum((c/sz)*math.log2(c/sz) for c in freq if c>0) if sz else 0\n    author=re.search(rb'/Author\\s*\\(([^)]+)\\)',data)\n    threats=[d for p,d in [(b'/JavaScript','JS'),(b'/OpenAction','AutoExec'),(b'/Launch','Launch')] if p in data]\n    emails=set(m.decode() for m in re.findall(rb'[\\w.+-]+@[\\w.-]+\\.\\w{2,}',data))\n    print(f'=== FORENSIC DOCUMENT REPORT ===')\n    print(f'File: {name} | PDF {ver} | {sz}B')\n    print(f'SHA-256: {sha[:16]}...')\n    print(f'Entropy: {ent:.1f}/8.0')\n    print(f'Metadata: Author={author.group(1).decode() if author else \"Unknown\"}')\n    print(f'Threats: {\", \".join(threats) or \"None\"}')\n    print(f'Emails: {\", \".join(emails) or \"None\"}')\n    print(f'Risk: {\"HIGH\" if threats else \"LOW\"}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Batch Document Hasher",
+          "description": "Hash every file in a directory and save results as CSV.",
+          "difficulty": "beginner",
+          "category": "Real-World Forensic Scenarios",
+          "estimated_minutes": 3,
+          "ai_intro": "Time for batch document hasher! This is a beginner challenge — you have got this!",
+          "starter_code": "import hashlib, os\ndef batch_hash(directory, output='/tmp/hashes.csv'):\n    # TODO: Hash all files, write results as CSV\n    pass\n\nos.makedirs('/tmp/bhash', exist_ok=True)\nfor name,content in [('a.pdf',b'%PDF-1.7 A'),('b.docx',b'PK B'),('c.txt',b'hello')]:\n    with open(f'/tmp/bhash/{name}','wb') as f: f.write(content)\nbatch_hash('/tmp/bhash')",
+          "expected_output": "Hashed 3 files -> /tmp/hashes.csv\n  a.pdf,abc123...\n  b.docx,def456...\n  c.txt,789abc...",
+          "hints": [
+            {
+              "message": "For each file, compute SHA-256. Write filename,hash lines."
+            },
+            {
+              "message": "with open(output,'w') as f: f.write(f'{name},{hash}\\n') for each file."
+            },
+            {
+              "message": "import hashlib, os\ndef batch_hash(d, output='/tmp/hashes.csv'):\n    entries=[]\n    for name in sorted(os.listdir(d)):\n        fp=os.path.join(d,name)\n        if not os.path.isfile(fp): continue\n        sha=hashlib.sha256()\n        with open(fp,'rb') as f:\n            for c in iter(lambda: f.read(8192), b''): sha.update(c)\n        entries.append((name,sha.hexdigest()))\n    with open(output,'w') as f:\n        for n,h in entries: f.write(f'{n},{h}\\n')\n    print(f'Hashed {len(entries)} files -> {output}')\n    for n,h in entries: print(f'  {n},{h[:12]}...')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Compare Document Versions",
+          "description": "Detect if two PDF files are different versions of the same document.",
+          "difficulty": "intermediate",
+          "category": "Real-World Forensic Scenarios",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for compare document versions! This is a intermediate challenge — you have got this!",
+          "starter_code": "import hashlib, re\ndef compare_versions(path1, path2):\n    # TODO: Compare hashes, metadata, and text content\n    pass\n\nwith open('/tmp/v1.pdf','wb') as f: f.write(b'%PDF-1.7\\n/Author (Jane)\\n/CreationDate (D:20240115) content version 1')\nwith open('/tmp/v2.pdf','wb') as f: f.write(b'%PDF-1.7\\n/Author (Jane)\\n/CreationDate (D:20240115) content version 2 with edits')\ncompare_versions('/tmp/v1.pdf', '/tmp/v2.pdf')",
+          "expected_output": "Version Comparison:\n  Sizes: 70B vs 83B (different)\n  Hashes: DIFFERENT\n  Same author: Yes (Jane)\n  Likely: Different versions of same document",
+          "hints": [
+            {
+              "message": "Hash both files first. If identical, they are the same."
+            },
+            {
+              "message": "Compare metadata fields. If author matches but content differs, likely versions."
+            },
+            {
+              "message": "import hashlib, re, os\ndef compare_versions(p1, p2):\n    def info(fp):\n        with open(fp,'rb') as f: data=f.read()\n        h=hashlib.sha256(data).hexdigest()\n        a=re.search(rb'/Author\\s*\\(([^)]+)\\)',data)\n        return len(data),h,a.group(1).decode() if a else None\n    s1,h1,a1=info(p1); s2,h2,a2=info(p2)\n    print('Version Comparison:')\n    print(f'  Sizes: {s1}B vs {s2}B ({\"same\" if s1==s2 else \"different\"})')\n    print(f'  Hashes: {\"IDENTICAL\" if h1==h2 else \"DIFFERENT\"}')\n    if a1 and a2: print(f'  Same author: {\"Yes\" if a1==a2 else \"No\"} ({a1})')\n    if h1!=h2 and a1==a2: print('  Likely: Different versions of same document')\n    elif h1==h2: print('  Likely: Exact copies')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Document Sanitiser",
+          "description": "Remove metadata and potential threats from a PDF.",
+          "difficulty": "advanced",
+          "category": "Real-World Forensic Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Time for document sanitiser! This is a advanced challenge — you have got this!",
+          "starter_code": "import re\ndef sanitise_pdf(input_path, output_path):\n    # TODO: Strip metadata, JavaScript, and auto-execute actions\n    pass\n\nwith open('/tmp/dirty.pdf','wb') as f:\n    f.write(b'%PDF-1.7\\n/Author (Hacker) /JavaScript (evil) /OpenAction 1 0 R /Title (Malware)')\nsanitise_pdf('/tmp/dirty.pdf', '/tmp/clean.pdf')\nwith open('/tmp/clean.pdf','rb') as f: print(f.read())",
+          "expected_output": "Removed: /Author, /JavaScript, /OpenAction, /Title\nSanitised file saved.",
+          "hints": [
+            {
+              "message": "Replace dangerous patterns with empty bytes."
+            },
+            {
+              "message": "Remove /Author (.*?), /JavaScript (.*?), /OpenAction references."
+            },
+            {
+              "message": "import re\ndef sanitise_pdf(inp, outp):\n    with open(inp,'rb') as f: data=f.read()\n    removed=[]\n    for pat,name in [(rb'/Author\\s*\\([^)]*\\)','Author'),(rb'/Title\\s*\\([^)]*\\)','Title'),\n        (rb'/JavaScript\\s*\\([^)]*\\)','JavaScript'),(rb'/OpenAction\\s+\\d+\\s+\\d+\\s+R','OpenAction')]:\n        if re.search(pat,data): removed.append(name)\n        data=re.sub(pat,b'',data)\n    with open(outp,'wb') as f: f.write(data)\n    print(f'Removed: {\", \".join(removed) if removed else \"nothing\"}')\n    print('Sanitised file saved.')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Multi-Document Timeline Builder",
+          "description": "Build a chronological timeline from metadata across multiple documents.",
+          "difficulty": "advanced",
+          "category": "Real-World Forensic Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Time for multi-document timeline builder! This is a advanced challenge — you have got this!",
+          "starter_code": "import os, re\nfrom datetime import datetime\ndef multi_timeline(directory):\n    # TODO: Extract dates from all docs and build unified timeline\n    pass\n\nos.makedirs('/tmp/timeline', exist_ok=True)\nfor name,meta in [('contract.pdf',b'/CreationDate (D:20240110)'),('amendment.pdf',b'/CreationDate (D:20240315)'),('invoice.pdf',b'/CreationDate (D:20240201)')]:\n    with open(f'/tmp/timeline/{name}','wb') as f: f.write(b'%PDF-1.7\\n'+meta)\nmulti_timeline('/tmp/timeline')",
+          "expected_output": "Document Timeline:\n  2024-01-10  contract.pdf\n  2024-02-01  invoice.pdf\n  2024-03-15  amendment.pdf",
+          "hints": [
+            {
+              "message": "Extract /CreationDate from each file, parse into datetime."
+            },
+            {
+              "message": "Sort all (date, filename) tuples chronologically."
+            },
+            {
+              "message": "import os, re\ndef multi_timeline(d):\n    events=[]\n    for name in os.listdir(d):\n        fp=os.path.join(d,name)\n        with open(fp,'rb') as f: data=f.read()\n        m=re.search(rb'/CreationDate\\s*\\(D:(\\d{8})',data)\n        if m:\n            ds=m.group(1).decode()\n            events.append((f'{ds[:4]}-{ds[4:6]}-{ds[6:8]}',name))\n    events.sort()\n    print('Document Timeline:')\n    for date,name in events: print(f'  {date}  {name}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Automated Forensic Pipeline",
+          "description": "Build a complete pipeline: triage, hash, analyse, and report on all documents in a directory.",
+          "difficulty": "advanced",
+          "category": "Real-World Forensic Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Time for automated forensic pipeline! This is a advanced challenge — you have got this!",
+          "starter_code": "import os, hashlib, re, math\ndef forensic_pipeline(directory):\n    # TODO: Full automated analysis pipeline\n    pass\n\nos.makedirs('/tmp/pipe', exist_ok=True)\nwith open('/tmp/pipe/safe.pdf','wb') as f: f.write(b'%PDF-1.7\\n/Author (Analyst)\\nClean content')\nwith open('/tmp/pipe/threat.pdf','wb') as f: f.write(b'%PDF-1.7\\n/JavaScript /OpenAction\\nMalicious')\nwith open('/tmp/pipe/note.txt','wb') as f: f.write(b'Plain text notes about the case')\nforensic_pipeline('/tmp/pipe')",
+          "expected_output": "=== FORENSIC PIPELINE REPORT ===\nFiles analysed: 3\n\n[HIGH] threat.pdf | PDF | 42B | SHA:abc... | JS, AutoExec\n[LOW]  safe.pdf   | PDF | 40B | SHA:def... | Clean\n[LOW]  note.txt   | TXT | 31B | SHA:ghi... | N/A\n\nHigh risk: 1 | Total: 3",
+          "hints": [
+            {
+              "message": "Combine file type detection, hashing, threat scanning, and report generation."
+            },
+            {
+              "message": "Process every file, collect results, sort by risk, display report."
+            },
+            {
+              "message": "import os, hashlib, re\ndef forensic_pipeline(d):\n    results=[]\n    for name in sorted(os.listdir(d)):\n        fp=os.path.join(d,name)\n        if not os.path.isfile(fp): continue\n        with open(fp,'rb') as f: data=f.read()\n        sha=hashlib.sha256(data).hexdigest()[:12]\n        if data[:5]==b'%PDF-':\n            t='PDF'\n            threats=[desc for pat,desc in [(b'/JavaScript','JS'),(b'/OpenAction','AutoExec'),(b'/Launch','Launch')] if pat in data]\n            risk='HIGH' if threats else 'LOW'\n        else: t='TXT'; threats=[]; risk='LOW'\n        results.append((risk,name,t,len(data),sha,threats))\n    results.sort(key=lambda x: 0 if x[0]=='HIGH' else 1)\n    print('=== FORENSIC PIPELINE REPORT ===')\n    print(f'Files analysed: {len(results)}\\n')\n    for r,n,t,s,h,th in results:\n        print(f'[{r:4s}] {n:14s} | {t} | {s}B | SHA:{h}... | {\", \".join(th) or \"Clean\" if t==\"PDF\" else \"N/A\"}')\n    high=sum(1 for r in results if r[0]=='HIGH')\n    print(f'\\nHigh risk: {high} | Total: {len(results)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Complete Document Examiner Tool",
+          "description": "Build a tool that accepts any document and produces a full forensic examination.",
+          "difficulty": "advanced",
+          "category": "Real-World Forensic Scenarios",
+          "estimated_minutes": 8,
+          "ai_intro": "Time for complete document examiner tool! This is a advanced challenge — you have got this!",
+          "starter_code": "import os, hashlib, re, zlib, math\ndef examine_document(filepath):\n    # TODO: Complete examination — type, hash, metadata, threats, text, entropy\n    pass\n\nimport zlib\nc = zlib.compress(b'BT (Secret Report) Tj (user@target.com) Tj ET')\nwith open('/tmp/exam.pdf','wb') as f:\n    f.write(b'%PDF-1.7\\n/Author (Examiner) /Creator (Word)\\n')\n    f.write(b'1 0 obj << /Filter /FlateDecode >> stream\\n'+c+b'\\nendstream endobj\\n%%EOF')\nexamine_document('/tmp/exam.pdf')",
+          "expected_output": "════════════════════════════════════\n  COMPLETE DOCUMENT EXAMINATION\n════════════════════════════════════\nFile:    exam.pdf\nType:    PDF 1.7\nSize:    157B\nSHA-256: abc...\nEntropy: 5.2/8.0 (mixed)\n\nMetadata:\n  Author: Examiner\n  Creator: Word\n\nThreats: None detected\nEmails:  user@target.com\nText:    Secret Report user@target.com\n\nVerdict: LOW RISK\n════════════════════════════════════",
+          "hints": [
+            {
+              "message": "This is the capstone: combine every technique from the entire course."
+            },
+            {
+              "message": "File type, hashing, entropy, metadata, threat scan, text extraction, string analysis."
+            },
+            {
+              "message": "import os, hashlib, re, zlib, math\ndef examine_document(fp):\n    with open(fp,'rb') as f: data=f.read()\n    name=os.path.basename(fp); sz=len(data)\n    sha=hashlib.sha256(data).hexdigest()\n    ver=data[5:8].decode('ascii',errors='?') if data[:5]==b'%PDF-' else '?'\n    freq=[0]*256\n    for b in data: freq[b]+=1\n    ent=-sum((c/sz)*math.log2(c/sz) for c in freq if c>0) if sz else 0\n    label='encrypted' if ent>7.5 else 'mixed' if ent>5 else 'structured'\n    meta={}\n    for field in [b'Author',b'Creator',b'Producer']:\n        m=re.search(b'/'+field+rb'\\s*\\(([^)]+)\\)',data)\n        if m: meta[field.decode()]=m.group(1).decode('latin-1')\n    threats=[d for p,d in [(b'/JavaScript','JS'),(b'/OpenAction','AutoExec'),(b'/Launch','Launch')] if p in data]\n    emails=set(m.decode() for m in re.findall(rb'[\\w.+-]+@[\\w.-]+\\.\\w{2,}',data))\n    texts=[]\n    for m in re.finditer(rb'stream\\r?\\n(.+?)\\r?\\nendstream',data,re.DOTALL):\n        try: d=zlib.decompress(m.group(1))\n        except: d=m.group(1)\n        texts.extend(t.decode('latin-1') for t in re.findall(rb'\\(([^)]+)\\)\\s*Tj',d))\n    risk='HIGH' if threats else 'LOW'\n    print('='*36)\n    print('  COMPLETE DOCUMENT EXAMINATION')\n    print('='*36)\n    print(f'File:    {name}\\nType:    PDF {ver}\\nSize:    {sz}B')\n    print(f'SHA-256: {sha[:16]}...\\nEntropy: {ent:.1f}/8.0 ({label})')\n    if meta:\n        print('\\nMetadata:')\n        for k,v in meta.items(): print(f'  {k}: {v}')\n    print(f'\\nThreats: {\", \".join(threats) or \"None detected\"}')\n    print(f'Emails:  {\", \".join(emails) or \"None\"}')\n    print(f'Text:    {\" \".join(texts)[:100] or \"None extracted\"}')\n    print(f'\\nVerdict: {risk} RISK')\n    print('='*36)"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

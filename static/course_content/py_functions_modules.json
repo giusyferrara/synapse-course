@@ -1,0 +1,1586 @@
+{
+  "course_id": "py_functions_modules",
+  "title": "Functions & Modules",
+  "description": "Build reusable forensic tools — functions are the building blocks of every professional script",
+  "difficulty": "BEGINNER",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "py_syntax_output",
+    "py_variables_datatypes",
+    "py_conditions_loops"
+  ],
+  "learning_outcomes": [
+    "Define functions with def and understand why reusable code matters",
+    "Use parameters and arguments to make flexible, configurable tools",
+    "Return values from functions to chain operations together",
+    "Set default parameter values for common forensic configurations",
+    "Use *args and **kwargs for flexible function signatures",
+    "Understand variable scope — local vs global and why it matters for evidence integrity",
+    "Write docstrings that document your forensic tools professionally",
+    "Import and use Python standard library modules (os, hashlib, datetime, random, math)",
+    "Create your own modules to organise forensic tools into reusable libraries",
+    "Use lambda functions for quick one-line operations",
+    "Apply functions to build real forensic utilities: hash calculators, file scanners, log parsers",
+    "Understand recursion basics and when to use it vs iteration"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging toolsmith mentor. Every function is a new tool in your forensic toolkit. You don't build a house with just a hammer — you need a full toolbox. Functions ARE that toolbox. Celebrates when students create their first reusable tool!",
+    "intervention_triggers": {
+      "idle_40_seconds": "Functions can feel abstract at first. Think of them like apps on your phone — each one does ONE specific job. You tap it (call it), it does its thing, and gives you a result. Want me to show you? 📱",
+      "idle_90_seconds": "Still thinking? Here is a simple way to see it: a function is like a vending machine. You put something IN (parameters), press a button (call the function), and get something OUT (return value). Want to try one? 🎰",
+      "idle_180_seconds": "Take your time! Functions are a MAJOR concept — once they click, you can build ANY tool you need. I will break it down into the smallest possible steps when you are ready. ☕",
+      "first_error": "Function errors are usually about: wrong number of arguments, indentation, or forgetting return. Let me check which one it is — these are quick fixes! 🔧",
+      "repeated_errors": "I see a pattern! Let me explain functions with a completely different analogy. Think of a recipe — ingredients go IN, a dish comes OUT, and you can make it again and again... 🍳",
+      "after_success": "You just built a reusable tool! 🎉 Every time you need that functionality again, you just CALL it — no rewriting. That is the power of functions. Your forensic toolkit is growing!"
+    },
+    "encouragement_phrases": [
+      "Every forensic tool — Nmap, Wireshark, Autopsy — is built from functions. You are learning to build like the pros! 🛠️",
+      "A function you write today can be reused in EVERY future script. That is serious efficiency! ♻️",
+      "def means DEFINE — you are literally defining new capabilities for Python! 🧙",
+      "Parameters make your tools flexible. One function, many uses — just like a real Swiss Army knife! 🔪",
+      "return is how your function gives back results. Think of it like a lab technician handing you the test results! 📋",
+      "Modules let you organise tools into kits. hashlib for hashing, os for files, datetime for timestamps. Your toolkit grows! 📦",
+      "Writing your own module? That is next-level! You are building a forensic library! 📚",
+      "Lambda functions are your quick one-liner tools — for when you need something fast and simple! ⚡",
+      "Good docstrings = good documentation. In forensics, undocumented tools are useless tools! 📝",
+      "Scope keeps your variables safe — like evidence bags that do not leak into each other! 🔒"
+    ],
+    "explanation_styles": {
+      "analogy": "A function is like a specialised forensic tool. A hash calculator ALWAYS takes a file and returns a hash. A port scanner ALWAYS takes an IP and returns open ports. You build the tool ONCE, then use it as many times as you need. def = build the tool. Calling it = use the tool.",
+      "visual": "Picture a factory assembly line: Raw materials go IN one end (parameters), the machine processes them (function body), and finished products come OUT the other end (return value). The factory can run as many times as you feed it materials.",
+      "step_by_step": "Step 1: def function_name(parameters): — define the tool and what it needs. Step 2: Write the code inside (indented). Step 3: return result — send the answer back. Step 4: Call it: result = function_name(arguments). Step 5: Use the result!",
+      "code_trace": "When Python sees calculate_hash('file.txt'): it (1) jumps to the def calculate_hash line, (2) assigns 'file.txt' to the filename parameter, (3) executes each line in the function body, (4) hits return and sends the value back, (5) jumps back to where it was called.",
+      "comparison": "Java: public static String hashFile(String filename) { ... return hash; }. Python: def hash_file(filename): ... return hash. Python is simpler — no type declarations, no public/static/void. Just def, code, return."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "py_functions_modules_lesson_1",
+      "title": "Functions & Modules — Building Your Forensic Toolkit",
+      "theory": {
+        "introduction": "In the first three topics, you learned to display output, store data, make decisions, and repeat tasks. But here is a problem: what if you need to do the same task in 10 different places in your script? Copy-paste the code 10 times? That is a nightmare to maintain — change one line and you have to change it in 10 places. Miss one? Bug.\n\nFunctions solve this. A function is a named, reusable block of code that performs a specific task. You DEFINE it once, then CALL it whenever you need it — from anywhere in your script, as many times as you want.\n\nThink of it like building forensic tools. Right now you are doing everything by hand — manually calculating hashes, manually parsing logs, manually checking file extensions. Functions let you build TOOLS: a hash calculator, a log parser, a file classifier. Build each tool once, then use it forever.\n\nEvery professional forensic script — every tool on Kali Linux — is built from functions. Nmap has functions for each scan type. Wireshark has functions for each protocol parser. Autopsy has functions for each analysis module. Today you learn to build like the professionals.\n\nModules take this further: they let you ORGANISE functions into libraries. Python comes with hundreds of built-in modules — hashlib for cryptographic hashing, os for file operations, datetime for timestamps, json for data parsing. You can also create YOUR OWN modules — building a personal forensic toolkit that grows with every script you write.\n\nVM TIP: On your Kali Linux VM, try: python3 -c \"import hashlib; print(hashlib.md5(b'test').hexdigest())\" — that is a one-liner using the hashlib MODULE and its md5 FUNCTION. By the end of this topic, you will build tools like that from scratch.",
+        "why_important": "Without functions, your forensic scripts would be: long, repetitive, hard to debug, impossible to maintain, and unreliable. With functions: each tool is tested once and works everywhere, changes propagate automatically, code is readable and auditable (critical for court evidence!), and you can share tools with your team. Every OWASP testing tool, every penetration testing framework, every digital forensics suite is built from thousands of small, focused functions. Modules let you import other people's tested, secure tools instead of reinventing the wheel. hashlib gives you military-grade hashing. os gives you safe file operations. Learning to use modules is like getting access to an entire forensic laboratory.",
+        "key_concepts": [
+          {
+            "concept": "Defining Functions — Building Your First Tool",
+            "explanation": "Use the def keyword followed by a name, parentheses, and a colon. The indented block below is the function body — the code that runs when you call it. Think of def as 'define a new tool'.\n\nNaming conventions: use snake_case (calculate_hash, scan_port, parse_log), make names descriptive (what does the function DO?), and start with a verb (get_, check_, parse_, validate_, calculate_).\n\nA function must be DEFINED before it is CALLED. Python reads top to bottom — if you call a function before defining it, you get NameError.",
+            "example": "# Defining a simple function\ndef greet_analyst():\n    print(\"Welcome to Synapse Forensics!\")\n    print(\"Your toolkit is ready.\")\n\n# Calling the function (runs the code inside)\ngreet_analyst()\ngreet_analyst()  # Reusable — call as many times as needed!",
+            "ai_hint": "def = DEFINE (build the tool). Calling it = USE the tool. You build once, use many times!"
+          },
+          {
+            "concept": "Parameters — Configurable Tools",
+            "explanation": "Parameters are variables listed in the function definition that receive values when the function is called. They make your functions FLEXIBLE — the same tool works with different inputs.\n\nThink of parameters like settings on a forensic tool: a hash calculator needs to know WHICH file to hash, a port scanner needs to know WHICH IP to scan. Without parameters, every function would do exactly one thing. With parameters, one function handles infinite cases.\n\nThe values you pass when calling are called ARGUMENTS. Parameter = the variable name in def. Argument = the actual value you pass when calling.",
+            "example": "# Parameters make functions flexible\ndef classify_port(port):\n    if port < 1024:\n        return \"Well-known\"\n    elif port < 49152:\n        return \"Registered\"\n    else:\n        return \"Dynamic\"\n\n# Same function, different arguments\nprint(classify_port(80))     # Well-known\nprint(classify_port(8080))   # Registered\nprint(classify_port(55000))  # Dynamic",
+            "ai_hint": "Parameters are like input slots on a machine. You define the slots (parameters), then fill them with values (arguments) each time you use the machine."
+          },
+          {
+            "concept": "return — Getting Results Back",
+            "explanation": "return sends a value BACK to whoever called the function. Without return, the function does its work but gives nothing back — like a lab technician who runs the test but never reports the results.\n\nA function can return any type: strings, numbers, booleans, lists, dictionaries, even other functions! It can also return multiple values as a tuple: return hash_value, file_size.\n\nIMPORTANT: return immediately EXITS the function. Any code after return does not run. If a function has no return statement, it returns None by default.",
+            "example": "# return sends results back to the caller\ndef calculate_file_size(bytes_val):\n    kb = bytes_val / 1024\n    mb = kb / 1024\n    gb = mb / 1024\n    return gb  # Send the result back!\n\n# Capture the returned value\nresult = calculate_file_size(5_368_709_120)\nprint(f\"Size: {result:.2f} GB\")\n\n# Return multiple values\ndef analyse_password(pwd):\n    length = len(pwd)\n    has_upper = any(c.isupper() for c in pwd)\n    has_digit = any(c.isdigit() for c in pwd)\n    return length, has_upper, has_digit\n\nln, up, dg = analyse_password(\"Forensics123\")\nprint(f\"Length: {ln}, Upper: {up}, Digit: {dg}\")",
+            "ai_hint": "return = hand the result back. Without return, the function returns None. Always capture the returned value: result = function(args)."
+          },
+          {
+            "concept": "Default Parameters — Sensible Defaults",
+            "explanation": "Default parameters have a preset value that is used if the caller does not provide one. They make functions easier to use by providing sensible defaults while still allowing customisation.\n\nThink of default parameters like a scanner with preset modes: by default it uses SHA-256, but you CAN specify MD5 if needed. The default handles 90%% of cases; the option handles the rest.\n\nRULE: Default parameters must come AFTER non-default parameters in the definition. def scan(target, port=80): is valid. def scan(port=80, target): is NOT.",
+            "example": "# Default parameters — sensible forensic defaults\ndef hash_text(text, algorithm=\"sha256\"):\n    import hashlib\n    if algorithm == \"md5\":\n        return hashlib.md5(text.encode()).hexdigest()\n    elif algorithm == \"sha256\":\n        return hashlib.sha256(text.encode()).hexdigest()\n    else:\n        return \"Unknown algorithm\"\n\n# Use default (sha256)\nprint(hash_text(\"evidence\"))\n\n# Override with md5\nprint(hash_text(\"evidence\", \"md5\"))\n\n# Named argument (clearer)\nprint(hash_text(\"evidence\", algorithm=\"md5\"))",
+            "ai_hint": "Defaults make functions user-friendly. 90% of the time the default works. For the other 10%, the user can override it."
+          },
+          {
+            "concept": "Variable Scope — Evidence Bag Isolation",
+            "explanation": "Variables created INSIDE a function are LOCAL — they only exist within that function and disappear when it returns. Variables created OUTSIDE functions are GLOBAL — they exist everywhere.\n\nThink of scope like evidence bag isolation: what is inside one evidence bag cannot leak into another. This is CRITICAL for forensic scripts — you do not want data from one analysis contaminating another.\n\nLOCAL variables are safe: each function call gets its own fresh copy. If you accidentally use the same variable name in two functions, they do not interfere — each lives in its own scope.",
+            "example": "# Scope — local vs global\ncase_id = \"GLOBAL-001\"  # Global variable\n\ndef process_evidence():\n    case_id = \"LOCAL-999\"  # Local — different variable!\n    evidence = \"laptop.img\"  # Local — only exists here\n    print(f\"Inside: case={case_id}, file={evidence}\")\n\nprocess_evidence()\nprint(f\"Outside: case={case_id}\")\n# print(evidence)  # NameError! evidence is local only\n\n# Output:\n# Inside: case=LOCAL-999, file=laptop.img\n# Outside: case=GLOBAL-001",
+            "ai_hint": "Local variables are SAFE — they cannot leak between functions. This is like evidence bag isolation: each bag is sealed independently."
+          },
+          {
+            "concept": "Docstrings — Documenting Your Tools",
+            "explanation": "A docstring is a string on the first line of a function that describes what it does. Use triple quotes. Docstrings are not just comments — Python stores them and you can access them with help(function) or function.__doc__.\n\nIn forensics, documentation is MANDATORY. An undocumented tool is an unusable tool — especially in court where every step of your analysis must be explained and justified. Good docstrings include: what the function does, what parameters it takes, what it returns, and any important notes.",
+            "example": "def validate_ip(ip_address):\n    \"\"\"Validate an IPv4 address format.\n    \n    Args:\n        ip_address (str): IP address to validate (e.g., '192.168.1.1')\n    \n    Returns:\n        bool: True if valid IPv4, False otherwise\n    \n    Example:\n        >>> validate_ip('192.168.1.1')\n        True\n        >>> validate_ip('999.999.999.999')\n        False\n    \"\"\"\n    parts = ip_address.split(\".\")\n    if len(parts) != 4:\n        return False\n    for part in parts:\n        try:\n            num = int(part)\n            if num < 0 or num > 255:\n                return False\n        except ValueError:\n            return False\n    return True\n\nprint(validate_ip(\"192.168.1.1\"))   # True\nprint(validate_ip(\"999.1.1.1\"))     # False\nprint(validate_ip.__doc__[:40])      # Access the docstring",
+            "ai_hint": "Docstrings are your tool's instruction manual. In forensics, undocumented analysis is inadmissible. Always document what, why, and how!"
+          },
+          {
+            "concept": "*args and **kwargs — Flexible Arguments",
+            "explanation": "*args lets a function accept ANY number of positional arguments — they arrive as a tuple. **kwargs lets it accept ANY number of keyword arguments — they arrive as a dictionary.\n\nThink of *args like a forensic tool that can process any number of evidence files: scan_files('a.jpg', 'b.pdf', 'c.exe') — however many you give it, it handles them all. **kwargs is like passing configuration options: scan(verbose=True, depth=3, format='hex').",
+            "example": "# *args — any number of positional arguments\ndef scan_files(*filenames):\n    print(f\"Scanning {len(filenames)} files:\")\n    for f in filenames:\n        print(f\"  Processing: {f}\")\n\nscan_files(\"a.jpg\", \"b.pdf\")\nscan_files(\"x.exe\", \"y.bat\", \"z.ps1\", \"w.doc\")\n\n# **kwargs — any number of keyword arguments\ndef generate_report(**options):\n    print(\"Report settings:\")\n    for key, value in options.items():\n        print(f\"  {key}: {value}\")\n\ngenerate_report(format=\"PDF\", verbose=True, author=\"Analyst\")",
+            "ai_hint": "*args = tuple of extra positional args. **kwargs = dict of extra keyword args. Use them when your function needs to be super flexible!"
+          },
+          {
+            "concept": "Lambda Functions — Quick One-Line Tools",
+            "explanation": "A lambda is an anonymous (unnamed) function in one line: lambda parameters: expression. It is a shortcut for simple functions that you only need once, typically for sorting, filtering, or mapping.\n\nThink of lambda like a disposable forensic swab — you use it once for a quick test, then move on. For complex analysis, you build a full function. For a quick check, lambda is perfect.\n\nCommon uses: sorted(files, key=lambda f: f.split('.')[-1]) sorts files by extension. filter(lambda x: x > 0, numbers) keeps only positive numbers.",
+            "example": "# Lambda — one-line functions\n\n# Sort files by extension\nfiles = [\"report.pdf\", \"data.csv\", \"image.jpg\", \"script.py\"]\nsorted_files = sorted(files, key=lambda f: f.split('.')[-1])\nprint(f\"By extension: {sorted_files}\")\n\n# Filter suspicious files\nall_files = [\"doc.txt\", \"hack.exe\", \"pic.jpg\", \"virus.bat\"]\nthreats = list(filter(lambda f: f.endswith(('.exe', '.bat')), all_files))\nprint(f\"Threats: {threats}\")\n\n# Quick calculations\nto_kb = lambda bytes_val: bytes_val / 1024\nprint(f\"1 MB in KB: {to_kb(1048576)}\")",
+            "ai_hint": "Lambda = quick disposable tool. Use for simple one-liners in sort/filter. For anything complex, use a proper def function."
+          },
+          {
+            "concept": "Importing Modules — Your Forensic Library",
+            "explanation": "Modules are files containing Python code (functions, classes, variables) that you can import and use. Python comes with hundreds of built-in modules — your instant forensic toolkit!\n\nKey forensic modules: hashlib (MD5, SHA hashing), os (file/directory operations), datetime (timestamps), json (data parsing), base64 (encoding/decoding), re (regular expressions), csv (spreadsheet data), collections (advanced data structures).\n\nImport styles: import hashlib (full module), from hashlib import md5 (specific function), import hashlib as hl (alias for shorter code). Each has its place.",
+            "example": "# Import styles\nimport hashlib                    # Full module\nfrom datetime import datetime     # Specific item\nimport os.path as osp             # Alias\n\n# hashlib — cryptographic hashing\ntext = \"evidence_file_001\"\nmd5_hash = hashlib.md5(text.encode()).hexdigest()\nsha256_hash = hashlib.sha256(text.encode()).hexdigest()\nprint(f\"MD5:    {md5_hash}\")\nprint(f\"SHA256: {sha256_hash[:32]}...\")\n\n# datetime — timestamps for forensic logs\nnow = datetime.now()\nprint(f\"\\nTimestamp: {now.strftime('%Y-%m-%d %H:%M:%S')}\")\n\n# os.path — file operations\nfilename = \"/evidence/case001/photo.jpg\"\nprint(f\"\\nBasename: {osp.basename(filename)}\")\nprint(f\"Extension: {osp.splitext(filename)[1]}\")\nprint(f\"Directory: {osp.dirname(filename)}\")",
+            "ai_hint": "Modules are pre-built forensic labs! hashlib = crypto lab, os = file lab, datetime = timeline lab. Import them and you have instant capabilities!"
+          },
+          {
+            "concept": "Creating Your Own Modules",
+            "explanation": "Any .py file IS a module! If you save functions in forensic_tools.py, you can import them in other scripts with: from forensic_tools import hash_file, classify_threat.\n\nThis is how professional forensic toolkits are built: common functions in shared modules, specific scripts importing what they need. Your hash function, your log parser, your IP validator — write them once in a module, use them in every future script.\n\nThe if __name__ == '__main__': pattern lets your module work both as an importable library AND as a standalone script.",
+            "example": "# === forensic_utils.py (your module) ===\n# (In a real project, this would be a separate file)\n\ndef is_valid_ip(ip):\n    \"\"\"Check if string is a valid IPv4 address.\"\"\"\n    parts = ip.split(\".\")\n    if len(parts) != 4:\n        return False\n    return all(p.isdigit() and 0 <= int(p) <= 255 for p in parts)\n\ndef classify_file(filename):\n    \"\"\"Classify file risk by extension.\"\"\"\n    high_risk = [\".exe\", \".bat\", \".ps1\", \".vbs\"]\n    ext = \".\" + filename.split(\".\")[-1] if \".\" in filename else \"\"\n    if ext in high_risk:\n        return \"HIGH\"\n    return \"SAFE\"\n\n# This only runs if the file is executed directly\nif __name__ == \"__main__\":\n    # Test the functions\n    print(is_valid_ip(\"192.168.1.1\"))  # True\n    print(classify_file(\"malware.exe\"))  # HIGH\n    print(\"Module self-test passed!\")",
+            "ai_hint": "Every .py file is a module! Save your best functions in reusable files. if __name__ == '__main__': lets you test the module directly."
+          },
+          {
+            "concept": "Recursion — Functions That Call Themselves",
+            "explanation": "A recursive function calls ITSELF to solve a smaller version of the same problem. Think of it like searching nested folders: open a folder, check each item — if it is a file, process it. If it is a folder, do the SAME THING inside that folder.\n\nEvery recursive function needs: a BASE CASE (when to stop) and a RECURSIVE CASE (when to go deeper). Without a base case, you get infinite recursion — Python stops after ~1000 levels with RecursionError.\n\nIn forensics, recursion is used for: directory traversal (scanning all nested folders), parsing tree-structured data (XML, JSON), and divide-and-conquer algorithms.",
+            "example": "# Recursion — searching nested evidence\ndef search_directory(path, depth=0):\n    \"\"\"Recursively list a directory structure.\"\"\"\n    indent = \"  \" * depth\n    # Simulated directory structure\n    structure = {\n        \"/evidence\": [\"case_001/\", \"case_002/\", \"readme.txt\"],\n        \"/evidence/case_001\": [\"photos/\", \"logs.txt\"],\n        \"/evidence/case_001/photos\": [\"img_001.jpg\", \"img_002.jpg\"],\n        \"/evidence/case_002\": [\"data.csv\", \"report.pdf\"],\n    }\n    \n    items = structure.get(path, [])\n    for item in items:\n        print(f\"{indent}{item}\")\n        if item.endswith(\"/\"):  # It is a directory\n            search_directory(path + \"/\" + item[:-1], depth + 1)\n\nprint(\"Evidence Directory:\")\nsearch_directory(\"/evidence\")",
+            "ai_hint": "Recursion = a function that calls itself on a smaller problem. Always have a BASE CASE (when to stop) or you get infinite recursion!"
+          },
+          {
+            "concept": "Error Handling in Functions — Defensive Forensic Tools",
+            "explanation": "Professional forensic functions handle errors gracefully. Bad input should not crash your entire script — it should return an error message or a safe default. Use try/except inside functions to catch problems.\n\nThink of it like a forensic lab testing evidence: if a sample is contaminated, the lab does not shut down — it reports 'sample unusable' and moves to the next one. Your functions should work the same way.\n\nCommon patterns: return None on failure (caller checks with 'if result is None'), raise exceptions for truly unexpected errors, and log errors for later review.",
+            "example": "# Defensive function design\ndef safe_convert_port(value):\n    \"\"\"Safely convert a value to a valid port number.\n    Returns the port as int, or None if invalid.\"\"\"\n    try:\n        port = int(value)\n        if 1 <= port <= 65535:\n            return port\n        return None  # Out of range\n    except (ValueError, TypeError):\n        return None  # Cannot convert\n\n# Test with various inputs\ntest_values = [\"443\", \"hello\", 80, -1, \"99999\", None, 8080]\nfor val in test_values:\n    result = safe_convert_port(val)\n    status = f\"Port {result}\" if result else \"INVALID\"\n    print(f\"  Input: {str(val):>8} -> {status}\")",
+            "ai_hint": "Defensive functions never crash — they return None or a safe default on bad input. The caller checks 'if result is not None' before using the value."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Your First Forensic Function",
+          "description": "Define, call, and reuse a simple forensic greeting function",
+          "difficulty": "beginner",
+          "code": "# Your first function — a forensic case header generator\n\ndef print_case_header(case_id, analyst, date):\n    \"\"\"Print a formatted case header.\"\"\"\n    width = 50\n    print(\"=\" * width)\n    print(f\"{'FORENSIC ANALYSIS REPORT':^{width}}\")\n    print(\"=\" * width)\n    print(f\"  Case ID:  {case_id}\")\n    print(f\"  Analyst:  {analyst}\")\n    print(f\"  Date:     {date}\")\n    print(\"=\" * width)\n\n# Use it for different cases!\nprint_case_header(\"FR-2025-001\", \"Alice\", \"2025-02-28\")\nprint()\nprint_case_header(\"FR-2025-002\", \"Bob\", \"2025-02-28\")\nprint()\nprint_case_header(\"FR-2025-003\", \"Charlie\", \"2025-02-28\")",
+          "output": "==================================================\n             FORENSIC ANALYSIS REPORT             \n==================================================\n  Case ID:  FR-2025-001\n  Analyst:  Alice\n  Date:     2025-02-28\n==================================================\n\n==================================================\n             FORENSIC ANALYSIS REPORT             \n==================================================\n  Case ID:  FR-2025-002\n  Analyst:  Bob\n  Date:     2025-02-28\n==================================================\n...",
+          "ai_explanation": "This shows the core power of functions:\n1. DEFINE once: def print_case_header(case_id, analyst, date) — 8 lines of code.\n2. CALL many times: three different cases, each with different data.\n3. Without functions, you would copy-paste those 8 lines THREE times = 24 lines.\n4. Need to change the format? Change it in ONE place — all three calls update automatically!\n\nThis is the DRY principle: Don't Repeat Yourself. Functions are the #1 tool for DRY code.",
+          "ai_challenge": "Add a 'severity' parameter with a default of 'MEDIUM'. Show it in the header with colour coding."
+        },
+        {
+          "title": "Example 2: Hash Calculator — Return Values in Action",
+          "description": "Build a real hash calculator function that returns results",
+          "difficulty": "beginner",
+          "code": "import hashlib\n\ndef calculate_hash(text, algorithm=\"sha256\"):\n    \"\"\"Calculate the hash of a text string.\n    \n    Args:\n        text: The string to hash\n        algorithm: 'md5', 'sha1', or 'sha256' (default)\n    \n    Returns:\n        str: The hexadecimal hash digest\n    \"\"\"\n    data = text.encode('utf-8')\n    \n    if algorithm == \"md5\":\n        return hashlib.md5(data).hexdigest()\n    elif algorithm == \"sha1\":\n        return hashlib.sha1(data).hexdigest()\n    elif algorithm == \"sha256\":\n        return hashlib.sha256(data).hexdigest()\n    else:\n        return None\n\n# Use with default (SHA-256)\nevidence = \"The suspect was seen at 14:30\"\nsha_hash = calculate_hash(evidence)\nprint(f\"Evidence: {evidence}\")\nprint(f\"SHA-256:  {sha_hash}\")\n\n# Use with MD5\nmd5_hash = calculate_hash(evidence, \"md5\")\nprint(f\"MD5:      {md5_hash}\")\n\n# Verify integrity — same input = same hash\nprint(f\"\\nVerification:\")\nhash1 = calculate_hash(\"test\")\nhash2 = calculate_hash(\"test\")\nhash3 = calculate_hash(\"Test\")  # Capital T = different!\nprint(f\"  hash('test') == hash('test'): {hash1 == hash2}\")\nprint(f\"  hash('test') == hash('Test'): {hash1 == hash3}\")\nprint(f\"  (Case matters! Different input = different hash)\")",
+          "output": "Evidence: The suspect was seen at 14:30\nSHA-256:  a7f8d3e... (64 chars)\nMD5:      b2c8f1a... (32 chars)\n\nVerification:\n  hash('test') == hash('test'): True\n  hash('test') == hash('Test'): False\n  (Case matters! Different input = different hash)",
+          "ai_explanation": "This is a REAL forensic tool you will use constantly:\n1. hashlib is Python's built-in cryptographic hashing module.\n2. .encode('utf-8') converts string to bytes (hashlib needs bytes, not strings).\n3. .hexdigest() returns the hash as a hexadecimal string.\n4. The function has a DEFAULT algorithm (sha256) — most common in forensics.\n5. return sends the hash back to the caller for further use.\n\nHash verification is fundamental to digital forensics — proving evidence has not been tampered with. Same input ALWAYS produces the same hash. Even one character change produces a completely different hash.\n\nOn Kali, try: echo -n 'test' | sha256sum",
+          "ai_challenge": "Add a 'compare_hashes' function that takes two texts and returns True if their hashes match. Test with identical and different inputs."
+        },
+        {
+          "title": "Example 3: Multi-Purpose File Classifier",
+          "description": "A function that classifies files by extension, size, and name patterns",
+          "difficulty": "intermediate",
+          "code": "def classify_file(filename, size_bytes=0, check_name=True):\n    \"\"\"Classify a file's threat level based on multiple criteria.\n    \n    Args:\n        filename: Name of the file\n        size_bytes: File size in bytes (optional)\n        check_name: Whether to check for suspicious name patterns\n    \n    Returns:\n        dict: Classification with level, reasons, and recommendation\n    \"\"\"\n    reasons = []\n    score = 0\n    \n    # Check extension\n    ext = filename.split(\".\")[-1].lower() if \".\" in filename else \"\"\n    high_risk_ext = [\"exe\", \"bat\", \"ps1\", \"vbs\", \"cmd\", \"scr\"]\n    medium_risk_ext = [\"zip\", \"rar\", \"7z\", \"xlsm\", \"docm\", \"py\"]\n    \n    if ext in high_risk_ext:\n        score += 3\n        reasons.append(f\"High-risk extension: .{ext}\")\n    elif ext in medium_risk_ext:\n        score += 2\n        reasons.append(f\"Medium-risk extension: .{ext}\")\n    \n    # Check size\n    if size_bytes > 50_000_000:  # > 50 MB\n        score += 1\n        reasons.append(f\"Large file: {size_bytes/1_000_000:.1f} MB\")\n    \n    # Check suspicious name patterns\n    if check_name:\n        suspicious = [\"hack\", \"crack\", \"keygen\", \"exploit\", \"payload\"]\n        name_lower = filename.lower()\n        for word in suspicious:\n            if word in name_lower:\n                score += 2\n                reasons.append(f\"Suspicious keyword: '{word}'\")\n                break\n    \n    # Determine level\n    if score >= 4:\n        level = \"CRITICAL\"\n        rec = \"Quarantine immediately\"\n    elif score >= 3:\n        level = \"HIGH\"\n        rec = \"Isolate and analyse\"\n    elif score >= 2:\n        level = \"MEDIUM\"\n        rec = \"Review manually\"\n    else:\n        level = \"LOW\"\n        rec = \"Routine processing\"\n    \n    return {\n        \"filename\": filename,\n        \"level\": level,\n        \"score\": score,\n        \"reasons\": reasons,\n        \"recommendation\": rec\n    }\n\n# Classify multiple files\nfiles = [\n    (\"report.pdf\", 524288),\n    (\"crack_tool.exe\", 1048576),\n    (\"photos.zip\", 104857600),\n    (\"notes.txt\", 1024),\n    (\"payload.ps1\", 2048),\n]\n\nprint(\"FILE CLASSIFICATION REPORT\")\nprint(\"=\" * 55)\nfor name, size in files:\n    result = classify_file(name, size)\n    icon = {\"CRITICAL\": \"X\", \"HIGH\": \"!\", \"MEDIUM\": \"?\", \"LOW\": \"-\"}[result[\"level\"]]\n    print(f\"[{icon}] {result['level']:<9} {name:<22} Score: {result['score']}\")\n    for reason in result[\"reasons\"]:\n        print(f\"    > {reason}\")\n    print(f\"    Rec: {result['recommendation']}\")",
+          "output": "FILE CLASSIFICATION REPORT\n=======================================================\n[-] LOW       report.pdf              Score: 0\n    Rec: Routine processing\n[X] CRITICAL  crack_tool.exe          Score: 5\n    > High-risk extension: .exe\n    > Suspicious keyword: 'crack'\n    Rec: Quarantine immediately\n[?] MEDIUM    photos.zip              Score: 3\n    > Medium-risk extension: .zip\n    > Large file: 104.9 MB\n    Rec: Review manually\n[-] LOW       notes.txt               Score: 0\n    Rec: Routine processing\n[X] CRITICAL  payload.ps1             Score: 5\n    > High-risk extension: .ps1\n    > Suspicious keyword: 'payload'\n    Rec: Quarantine immediately",
+          "ai_explanation": "This is a professional-grade classification function:\n1. MULTIPLE parameters: filename (required), size_bytes (default 0), check_name (default True).\n2. SCORING system: each risk factor adds to the score — this is how real threat scoring works.\n3. RETURNS a dictionary with all the analysis details — structured data the caller can use.\n4. REUSABLE: called in a loop for multiple files, each with different risk profiles.\n\nThis pattern (multi-criteria scoring with structured return) is used in real security tools like ClamAV, VirusTotal, and YARA rule engines.",
+          "ai_challenge": "Add a 'magic_bytes' parameter that accepts a list of hex bytes and checks against known file signatures. Return the true file type alongside the extension check."
+        },
+        {
+          "title": "Example 4: Log Parser with Multiple Helper Functions",
+          "description": "Break a complex task into small, focused functions that work together",
+          "difficulty": "intermediate",
+          "code": "# Breaking complex tasks into small functions\n# Each function does ONE job well\n\ndef parse_log_line(line):\n    \"\"\"Parse a single log line into structured data.\"\"\"\n    parts = line.split(\" \", 3)\n    if len(parts) < 4:\n        return None\n    return {\n        \"date\": parts[0],\n        \"time\": parts[1],\n        \"level\": parts[2],\n        \"message\": parts[3]\n    }\n\ndef is_threat(entry):\n    \"\"\"Check if a log entry indicates a threat.\"\"\"\n    if entry is None:\n        return False\n    threat_words = [\"FAILED\", \"ERROR\", \"DENIED\", \"BLOCKED\", \"ATTACK\"]\n    return any(word in entry[\"message\"].upper() for word in threat_words)\n\ndef get_severity(entry):\n    \"\"\"Determine severity from log level.\"\"\"\n    levels = {\"CRITICAL\": 4, \"ERROR\": 3, \"WARNING\": 2, \"INFO\": 1, \"DEBUG\": 0}\n    return levels.get(entry[\"level\"], 0)\n\ndef analyse_logs(log_lines):\n    \"\"\"Analyse a list of log lines and return a summary.\"\"\"\n    total = 0\n    threats = []\n    by_level = {}\n    \n    for line in log_lines:\n        entry = parse_log_line(line)\n        if entry is None:\n            continue\n        total += 1\n        by_level[entry[\"level\"]] = by_level.get(entry[\"level\"], 0) + 1\n        if is_threat(entry):\n            threats.append(entry)\n    \n    return {\"total\": total, \"threats\": len(threats), \"by_level\": by_level, \"threat_details\": threats}\n\n# Sample logs\nlogs = [\n    \"2025-02-28 08:00:01 INFO Server started successfully\",\n    \"2025-02-28 08:15:22 WARNING Login FAILED for user admin\",\n    \"2025-02-28 08:15:23 WARNING Login FAILED for user admin\",\n    \"2025-02-28 08:30:00 ERROR Connection DENIED from 10.0.0.99\",\n    \"2025-02-28 09:00:00 INFO Backup completed\",\n    \"2025-02-28 10:00:00 CRITICAL Possible ATTACK detected from 203.0.113.42\",\n    \"2025-02-28 11:00:00 INFO System health check OK\",\n]\n\nresult = analyse_logs(logs)\nprint(f\"Total entries: {result['total']}\")\nprint(f\"Threats found: {result['threats']}\")\nprint(f\"By level: {result['by_level']}\")\nprint(f\"\\nThreat details:\")\nfor t in result[\"threat_details\"]:\n    print(f\"  [{t['level']}] {t['time']} - {t['message']}\")",
+          "output": "Total entries: 7\nThreats found: 4\nBy level: {'INFO': 3, 'WARNING': 2, 'ERROR': 1, 'CRITICAL': 1}\n\nThreat details:\n  [WARNING] 08:15:22 - Login FAILED for user admin\n  [WARNING] 08:15:23 - Login FAILED for user admin\n  [ERROR] 08:30:00 - Connection DENIED from 10.0.0.99\n  [CRITICAL] 10:00:00 - Possible ATTACK detected from 203.0.113.42",
+          "ai_explanation": "This shows PROFESSIONAL function design:\n\n1. parse_log_line() — does ONE job: parse a string into a dictionary.\n2. is_threat() — does ONE job: check if an entry is a threat.\n3. get_severity() — does ONE job: convert level to a number.\n4. analyse_logs() — ORCHESTRATES the others: calls parse, check, classify.\n\nThis is called SEPARATION OF CONCERNS — each function handles one responsibility. If the log format changes, you only update parse_log_line(). If threat keywords change, you only update is_threat(). The rest stays untouched.\n\nThis is exactly how Splunk, ELK Stack, and other SIEM tools are built.",
+          "ai_challenge": "Add a time_range_filter(entries, start_time, end_time) function that only returns entries within a time window."
+        },
+        {
+          "title": "Example 5: Password Generator with Defaults and Kwargs",
+          "description": "Flexible function with default parameters and keyword arguments",
+          "difficulty": "intermediate",
+          "code": "import random\nimport string\n\ndef generate_password(length=16, uppercase=True, lowercase=True,\n                     digits=True, special=True, exclude=\"\"):\n    \"\"\"Generate a secure random password.\n    \n    Args:\n        length: Password length (default 16)\n        uppercase: Include A-Z (default True)\n        lowercase: Include a-z (default True)\n        digits: Include 0-9 (default True)\n        special: Include !@#$... (default True)\n        exclude: Characters to exclude (default \"\")\n    \n    Returns:\n        str: Generated password\n    \"\"\"\n    charset = \"\"\n    if uppercase: charset += string.ascii_uppercase\n    if lowercase: charset += string.ascii_lowercase\n    if digits: charset += string.digits\n    if special: charset += \"!@#$%^&*()_+-=\"\n    \n    # Remove excluded characters\n    charset = \"\".join(c for c in charset if c not in exclude)\n    \n    if not charset:\n        return \"Error: No characters available!\"\n    if length < 1:\n        return \"Error: Length must be at least 1!\"\n    \n    return \"\".join(random.choice(charset) for _ in range(length))\n\n# Default — full strength\nprint(f\"Default:     {generate_password()}\")\n\n# Custom length\nprint(f\"Short (8):   {generate_password(8)}\")\n\n# Numbers only (like a PIN)\nprint(f\"PIN (6):     {generate_password(6, uppercase=False, lowercase=False, special=False)}\")\n\n# Passphrase-friendly (no confusing chars)\nprint(f\"Clear (12):  {generate_password(12, exclude='0O1lI')}\")\n\n# Show password strength\nfor length in [4, 8, 12, 16, 24]:\n    pwd = generate_password(length)\n    chars = sum([1 for _ in set(pwd)])\n    print(f\"  Length {length:>2}: {pwd}  (unique chars: {chars})\")",
+          "output": "Default:     Kx#9pL&mQ2wR!n7T\nShort (8):   b3@Fm!qR\nPIN (6):     847291\nClear (12):  AaBbCc23def$\n  Length  4: k#2R  (unique chars: 4)\n  Length  8: b3@Fm!qR  (unique chars: 8)\n  ...",
+          "ai_explanation": "This demonstrates ADVANCED parameter design:\n1. ALL parameters have DEFAULTS — the function works with zero arguments.\n2. Named parameters (uppercase=False) make calls readable.\n3. The exclude parameter handles edge cases (remove confusing characters like 0/O, 1/l/I).\n4. Error handling for empty charset and invalid length.\n5. string module provides pre-built character sets.\n\nThis is how real password generators work! Tools like KeePass and LastPass use similar logic. The flexibility comes entirely from well-designed default parameters.",
+          "ai_challenge": "Add a 'strength_check' that returns the password AND its entropy score in bits. Entropy = log2(charset_size ^ length)."
+        },
+        {
+          "title": "Example 6: IP Address Toolkit — Multiple Related Functions",
+          "description": "Build a mini module with functions that work together",
+          "difficulty": "intermediate",
+          "code": "# IP Address Forensic Toolkit\n# A collection of related functions\n\ndef is_valid_ipv4(ip):\n    \"\"\"Check if a string is a valid IPv4 address.\"\"\"\n    parts = ip.split(\".\")\n    if len(parts) != 4:\n        return False\n    for part in parts:\n        if not part.isdigit():\n            return False\n        if not (0 <= int(part) <= 255):\n            return False\n        if len(part) > 1 and part[0] == \"0\":  # No leading zeros\n            return False\n    return True\n\ndef classify_ip(ip):\n    \"\"\"Classify an IP as private, loopback, or public.\"\"\"\n    if not is_valid_ipv4(ip):  # Reusing our validator!\n        return \"INVALID\"\n    first = int(ip.split(\".\")[0])\n    second = int(ip.split(\".\")[1])\n    if ip.startswith(\"127.\"):\n        return \"LOOPBACK\"\n    elif first == 10:\n        return \"PRIVATE (Class A)\"\n    elif first == 172 and 16 <= second <= 31:\n        return \"PRIVATE (Class B)\"\n    elif first == 192 and second == 168:\n        return \"PRIVATE (Class C)\"\n    else:\n        return \"PUBLIC\"\n\ndef ip_to_int(ip):\n    \"\"\"Convert IPv4 to 32-bit integer.\"\"\"\n    parts = [int(p) for p in ip.split(\".\")]\n    return (parts[0] << 24) + (parts[1] << 16) + (parts[2] << 8) + parts[3]\n\ndef ip_to_hex(ip):\n    \"\"\"Convert IPv4 to hex representation.\"\"\"\n    return \".\".join(f\"{int(p):02X}\" for p in ip.split(\".\"))\n\n# Test the toolkit\ntest_ips = [\n    \"192.168.1.1\", \"10.0.0.5\", \"8.8.8.8\", \"127.0.0.1\",\n    \"172.16.0.1\", \"256.1.1.1\", \"not_an_ip\"\n]\n\nprint(\"IP ADDRESS ANALYSIS\")\nprint(\"=\" * 65)\nfor ip in test_ips:\n    valid = is_valid_ipv4(ip)\n    if valid:\n        cls = classify_ip(ip)\n        hex_ip = ip_to_hex(ip)\n        int_ip = ip_to_int(ip)\n        print(f\"{ip:<18} {cls:<20} Hex: {hex_ip:<15} Int: {int_ip}\")\n    else:\n        print(f\"{ip:<18} INVALID\")\nprint(\"=\" * 65)",
+          "output": "IP ADDRESS ANALYSIS\n=================================================================\n192.168.1.1        PRIVATE (Class C)    Hex: C0.A8.01.01     Int: 3232235777\n10.0.0.5           PRIVATE (Class A)    Hex: 0A.00.00.05     Int: 167772165\n8.8.8.8            PUBLIC               Hex: 08.08.08.08     Int: 134744072\n127.0.0.1          LOOPBACK             Hex: 7F.00.00.01     Int: 2130706433\n172.16.0.1         PRIVATE (Class B)    Hex: AC.10.00.01     Int: 2886729729\n256.1.1.1          INVALID\nnot_an_ip          INVALID\n=================================================================",
+          "ai_explanation": "This is a MINI MODULE — a collection of related functions:\n\n1. is_valid_ipv4() — validates format (used by OTHER functions!)\n2. classify_ip() — CALLS is_valid_ipv4() first, then classifies\n3. ip_to_int() — converts for mathematical operations\n4. ip_to_hex() — converts for network analysis\n\nKey design pattern: functions REUSE each other. classify_ip calls is_valid_ipv4 instead of re-implementing validation. This is composition — building complex tools from simple ones.\n\nThe IP classification (RFC 1918 private ranges) is real networking knowledge used by every firewall and router.",
+          "ai_challenge": "Add is_in_subnet(ip, subnet_ip, mask) that checks if an IP belongs to a subnet. Example: is_in_subnet('192.168.1.5', '192.168.1.0', 24) = True."
+        },
+        {
+          "title": "Example 7: Lambda and Higher-Order Functions",
+          "description": "Quick one-liner functions for sorting, filtering, and mapping evidence",
+          "difficulty": "intermediate",
+          "code": "# Lambda functions — quick forensic tools\n\n# Evidence database\nevidence = [\n    {\"id\": \"E001\", \"type\": \"image\", \"size\": 5242880, \"priority\": 2},\n    {\"id\": \"E002\", \"type\": \"document\", \"size\": 102400, \"priority\": 5},\n    {\"id\": \"E003\", \"type\": \"executable\", \"size\": 1048576, \"priority\": 9},\n    {\"id\": \"E004\", \"type\": \"log\", \"size\": 524288, \"priority\": 7},\n    {\"id\": \"E005\", \"type\": \"image\", \"size\": 8388608, \"priority\": 1},\n]\n\n# Sort by priority (highest first)\nby_priority = sorted(evidence, key=lambda e: e[\"priority\"], reverse=True)\nprint(\"By priority:\")\nfor e in by_priority:\n    print(f\"  [{e['priority']}] {e['id']} - {e['type']}\")\n\n# Sort by size\nby_size = sorted(evidence, key=lambda e: e[\"size\"])  \nprint(f\"\\nSmallest: {by_size[0]['id']} ({by_size[0]['size']:,} bytes)\")\nprint(f\"Largest:  {by_size[-1]['id']} ({by_size[-1]['size']:,} bytes)\")\n\n# Filter: high priority only\nhigh_pri = list(filter(lambda e: e[\"priority\"] >= 7, evidence))\nprint(f\"\\nHigh priority ({len(high_pri)}):\")\nfor e in high_pri:\n    print(f\"  {e['id']}: {e['type']} (priority {e['priority']})\")\n\n# Map: extract just IDs\nids = list(map(lambda e: e[\"id\"], evidence))\nprint(f\"\\nAll IDs: {ids}\")\n\n# Quick size converter\nto_mb = lambda b: f\"{b/1048576:.1f} MB\"\nsizes = [to_mb(e[\"size\"]) for e in evidence]\nprint(f\"Sizes: {sizes}\")",
+          "output": "By priority:\n  [9] E003 - executable\n  [7] E004 - log\n  [5] E002 - document\n  [2] E001 - image\n  [1] E005 - image\n\nSmallest: E002 (102,400 bytes)\nLargest:  E005 (8,388,608 bytes)\n\nHigh priority (2):\n  E003: executable (priority 9)\n  E004: log (priority 7)\n\nAll IDs: ['E001', 'E002', 'E003', 'E004', 'E005']\nSizes: ['5.0 MB', '0.1 MB', '1.0 MB', '0.5 MB', '8.0 MB']",
+          "ai_explanation": "Lambda functions are ONE-LINE tools for quick operations:\n\nsorted(data, key=lambda e: e['priority']) — sorts by a specific field.\nfilter(lambda e: e['priority'] >= 7, data) — keeps only matching items.\nmap(lambda e: e['id'], data) — transforms each item.\n\nThese are HIGHER-ORDER FUNCTIONS — functions that take other functions as arguments. sorted() takes a key FUNCTION that tells it what to sort by.\n\nFor simple operations (sort key, filter condition), lambda is perfect. For anything complex, use a regular def function — readability matters!",
+          "ai_challenge": "Add a group_by function that groups evidence by type: {'image': [...], 'document': [...], ...}. Use lambda with sorted and groupby from itertools."
+        },
+        {
+          "title": "Example 8: Module Imports — The Standard Library",
+          "description": "Import and use essential Python modules for forensic work",
+          "difficulty": "intermediate",
+          "code": "# Essential module imports for forensic work\n\nimport hashlib\nimport os.path\nimport datetime\nimport base64\nimport math\n\n# === hashlib — Cryptographic Hashing ===\nprint(\"=== HASHING ===\")\nfor algo in [\"md5\", \"sha1\", \"sha256\"]:\n    h = hashlib.new(algo, b\"forensic evidence\").hexdigest()\n    print(f\"  {algo:>6}: {h[:40]}{'...' if len(h)>40 else ''}\")\n\n# === os.path — File Path Analysis ===\nprint(\"\\n=== PATH ANALYSIS ===\")\npath = \"/evidence/case_001/suspect_photo.jpg\"\nprint(f\"  Full path:  {path}\")\nprint(f\"  Directory:  {os.path.dirname(path)}\")\nprint(f\"  Filename:   {os.path.basename(path)}\")\nprint(f\"  Extension:  {os.path.splitext(path)[1]}\")\nprint(f\"  No ext:     {os.path.splitext(path)[0]}\")\n\n# === datetime — Forensic Timestamps ===\nprint(\"\\n=== TIMESTAMPS ===\")\nnow = datetime.datetime.now()\nprint(f\"  Now:        {now.strftime('%Y-%m-%d %H:%M:%S')}\")\nprint(f\"  ISO format: {now.isoformat()}\")\nepoch = int(now.timestamp())\nprint(f\"  Unix epoch: {epoch}\")\nback = datetime.datetime.fromtimestamp(epoch)\nprint(f\"  From epoch: {back.strftime('%Y-%m-%d %H:%M:%S')}\")\n\n# === base64 — Encoding/Decoding ===\nprint(\"\\n=== BASE64 ===\")\noriginal = \"Hidden forensic data\"\nencoded = base64.b64encode(original.encode()).decode()\ndecoded = base64.b64decode(encoded).decode()\nprint(f\"  Original: {original}\")\nprint(f\"  Encoded:  {encoded}\")\nprint(f\"  Decoded:  {decoded}\")\nprint(f\"  Match:    {original == decoded}\")\n\n# === math — Calculations ===\nprint(\"\\n=== ENTROPY ===\")\nimport collections\ntext = \"password123\"\nfreqs = collections.Counter(text)\nentropy = -sum((c/len(text)) * math.log2(c/len(text)) for c in freqs.values())\nprint(f\"  Text: '{text}'\")\nprint(f\"  Shannon entropy: {entropy:.2f} bits/char\")\nprint(f\"  Max possible: {math.log2(len(set(text))):.2f} bits/char\")",
+          "output": "=== HASHING ===\n    md5: 8f14e45fceea167a5a36dedd4bea2543...\n   sha1: 2aae6c35c94fcfb415dbe95f408b9ce91ee...\n sha256: 9f86d081884c7d659a2feaa0c55ad015a3bf4f...\n\n=== PATH ANALYSIS ===\n  Full path:  /evidence/case_001/suspect_photo.jpg\n  Directory:  /evidence/case_001\n  Filename:   suspect_photo.jpg\n  Extension:  .jpg\n...",
+          "ai_explanation": "Five ESSENTIAL modules for forensic work:\n\n1. hashlib — Verify evidence integrity. MD5 (fast but weak), SHA-256 (strong, industry standard).\n2. os.path — Parse file paths safely across operating systems. Never split paths manually!\n3. datetime — Create forensic timestamps, convert Unix epochs, calculate time differences.\n4. base64 — Encode/decode data. Used in email attachments, web tokens, and obfuscated malware.\n5. math + collections — Calculate Shannon entropy to measure password/data randomness.\n\nThese modules are PRE-INSTALLED — no pip install needed. They are your instant forensic laboratory.\n\nOn Kali, try: python3 -c \"import hashlib; print(dir(hashlib))\" to see all available hash algorithms.",
+          "ai_challenge": "Use the os module to list all files in a directory, calculate each file's hash, and save the results to a CSV using the csv module."
+        },
+        {
+          "title": "Example 9: Decorator Pattern — Adding Logging to Functions",
+          "description": "Advanced: use decorators to add automatic logging to any function",
+          "difficulty": "advanced",
+          "code": "import datetime\nimport functools\n\ndef forensic_log(func):\n    \"\"\"Decorator that logs function calls with timestamps.\"\"\"\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        timestamp = datetime.datetime.now().strftime(\"%H:%M:%S\")\n        print(f\"[{timestamp}] CALL: {func.__name__}({args}, {kwargs})\")\n        result = func(*args, **kwargs)\n        print(f\"[{timestamp}] DONE: {func.__name__} -> {result}\")\n        return result\n    return wrapper\n\n@forensic_log\ndef hash_text(text, algo=\"sha256\"):\n    \"\"\"Hash a text string.\"\"\"\n    import hashlib\n    return hashlib.new(algo, text.encode()).hexdigest()[:16]\n\n@forensic_log\ndef classify_risk(score):\n    \"\"\"Classify risk level.\"\"\"\n    if score >= 8: return \"CRITICAL\"\n    if score >= 5: return \"HIGH\"\n    return \"LOW\"\n\n# Use the decorated functions — logging is automatic!\nprint(\"=== Decorated Functions ===\\n\")\nh = hash_text(\"evidence\")\nprint(f\"Hash: {h}\\n\")\n\nr = classify_risk(7)\nprint(f\"Risk: {r}\\n\")\n\nh2 = hash_text(\"evidence\", algo=\"md5\")\nprint(f\"MD5: {h2}\")",
+          "output": "=== Decorated Functions ===\n\n[15:30:00] CALL: hash_text(('evidence',), {})\n[15:30:00] DONE: hash_text -> a1b2c3d4e5f67890\nHash: a1b2c3d4e5f67890\n\n[15:30:00] CALL: classify_risk((7,), {})\n[15:30:00] DONE: classify_risk -> HIGH\nRisk: HIGH\n\n[15:30:00] CALL: hash_text(('evidence',), {'algo': 'md5'})\n[15:30:00] DONE: hash_text -> b2c8f1a3d4e56789\nMD5: b2c8f1a3d4e56789",
+          "ai_explanation": "Decorators are ADVANCED but incredibly powerful:\n\n@forensic_log above a function WRAPS it — every call is automatically logged with timestamp, arguments, and return value. You never modify the original function!\n\nHow it works:\n1. forensic_log(func) receives the original function.\n2. wrapper(*args, **kwargs) creates a new function that logs before/after.\n3. @forensic_log is syntactic sugar for: hash_text = forensic_log(hash_text).\n4. functools.wraps preserves the original function's name and docstring.\n\nIn forensics, this creates an automatic AUDIT TRAIL — every function call is logged. This is critical for evidence admissibility: you need to prove exactly what analysis was performed and when.",
+          "ai_challenge": "Create a @retry(max_attempts=3) decorator that retries a function if it raises an exception, with exponential backoff between retries."
+        },
+        {
+          "title": "Example 10: Generator Functions — Memory-Efficient Evidence Processing",
+          "description": "Use yield to process large evidence files without loading everything into memory",
+          "difficulty": "advanced",
+          "code": "# Generator functions — process millions of items with minimal memory\n\ndef generate_log_entries(count):\n    \"\"\"Generate simulated log entries one at a time.\n    Uses yield instead of return — memory efficient!\"\"\"\n    import random\n    levels = [\"INFO\", \"WARNING\", \"ERROR\", \"CRITICAL\"]\n    actions = [\"LOGIN_SUCCESS\", \"LOGIN_FAILED\", \"FILE_ACCESS\", \"PORT_SCAN\"]\n    ips = [\"10.0.0.5\", \"203.0.113.42\", \"192.168.1.100\", \"198.51.100.1\"]\n    \n    for i in range(count):\n        level = random.choice(levels)\n        action = random.choice(actions)\n        ip = random.choice(ips)\n        yield f\"2025-02-28 {8+i//3600:02d}:{(i//60)%60:02d}:{i%60:02d} {level} {action} ip={ip}\"\n\n# Process entries ONE AT A TIME (constant memory!)\nprint(\"Processing 10 log entries:\")\nthreat_count = 0\nfor entry in generate_log_entries(10):\n    if \"FAILED\" in entry or \"CRITICAL\" in entry:\n        threat_count += 1\n        print(f\"  THREAT: {entry}\")\n\nprint(f\"\\nThreats found: {threat_count}\")\n\n# This could process MILLIONS of entries\n# without running out of memory!\nprint(f\"\\nMemory test: processing 1,000,000 entries...\")\ncount = 0\nfor entry in generate_log_entries(1_000_000):\n    if \"CRITICAL\" in entry:\n        count += 1\nprint(f\"Critical entries: {count:,} out of 1,000,000\")\nprint(\"Done! (Used barely any memory)\")",
+          "output": "Processing 10 log entries:\n  THREAT: 2025-02-28 08:00:03 WARNING LOGIN_FAILED ip=203.0.113.42\n  THREAT: 2025-02-28 08:00:07 CRITICAL FILE_ACCESS ip=198.51.100.1\n\nThreats found: 2\n\nMemory test: processing 1,000,000 entries...\nCritical entries: ~250,000 out of 1,000,000\nDone! (Used barely any memory)",
+          "ai_explanation": "Generator functions use yield instead of return:\n\n- return gives back ONE value and the function is DONE.\n- yield gives back ONE value but PAUSES — the function resumes where it left off on the next call.\n\nWhy this matters for forensics:\n- A 10 GB log file has millions of lines.\n- Loading ALL lines into a list = 10 GB of memory = crash!\n- A generator processes ONE LINE AT A TIME = constant memory.\n\nThe for loop automatically calls the generator, gets one entry, processes it, then asks for the next. Only ONE entry exists in memory at any time.\n\nThis is how tools like grep, awk, and Wireshark process massive files efficiently.",
+          "ai_challenge": "Create a generator that reads a real file line by line. Then create a pipeline: read_lines() | filter_threats() | extract_ips() — each a generator."
+        },
+        {
+          "title": "Example 11: Recursive Directory Scanner",
+          "description": "Use recursion to scan nested directory structures",
+          "difficulty": "advanced",
+          "code": "# Recursive directory scanner — searching nested evidence\n\n# Simulated filesystem (in real code, use os.walk)\nFILESYSTEM = {\n    \"/\": {\"type\": \"dir\", \"children\": [\"evidence\", \"tools\", \"readme.txt\"]},\n    \"/evidence\": {\"type\": \"dir\", \"children\": [\"case_001\", \"case_002\"]},\n    \"/evidence/case_001\": {\"type\": \"dir\", \"children\": [\"photos\", \"report.pdf\", \"logs.txt\"]},\n    \"/evidence/case_001/photos\": {\"type\": \"dir\", \"children\": [\"img001.jpg\", \"img002.png\", \"img003.jpg\"]},\n    \"/evidence/case_002\": {\"type\": \"dir\", \"children\": [\"malware.exe\", \"analysis.md\"]},\n    \"/tools\": {\"type\": \"dir\", \"children\": [\"scanner.py\", \"hasher.py\"]},\n}\n\ndef scan_directory(path, depth=0, extension_filter=None):\n    \"\"\"Recursively scan a directory, optionally filtering by extension.\n    \n    Returns: list of all files found\n    \"\"\"\n    found_files = []\n    indent = \"  \" * depth\n    \n    entry = FILESYSTEM.get(path)\n    if entry is None or entry[\"type\"] != \"dir\":\n        return found_files\n    \n    dir_name = path.split(\"/\")[-1] or \"/\"\n    print(f\"{indent}[DIR] {dir_name}/\")\n    \n    for item in entry[\"children\"]:\n        child_path = f\"{path}/{item}\" if path != \"/\" else f\"/{item}\"\n        \n        if child_path in FILESYSTEM:  # It is a directory\n            found_files += scan_directory(child_path, depth + 1, extension_filter)\n        else:  # It is a file\n            if extension_filter:\n                if not any(item.endswith(ext) for ext in extension_filter):\n                    continue\n            print(f\"{indent}  [FILE] {item}\")\n            found_files.append(child_path)\n    \n    return found_files\n\n# Scan everything\nprint(\"=== FULL SCAN ===\")\nall_files = scan_directory(\"/\")\nprint(f\"\\nTotal files: {len(all_files)}\")\n\n# Scan only images\nprint(f\"\\n=== IMAGE FILTER ===\")\nimages = scan_directory(\"/evidence\", extension_filter=[\".jpg\", \".png\"])\nprint(f\"\\nImages found: {len(images)}\")\nfor img in images:\n    print(f\"  {img}\")",
+          "output": "=== FULL SCAN ===\n[DIR] //\n  [DIR] evidence/\n    [DIR] case_001/\n      [DIR] photos/\n        [FILE] img001.jpg\n        [FILE] img002.png\n        [FILE] img003.jpg\n      [FILE] report.pdf\n      [FILE] logs.txt\n    [DIR] case_002/\n      [FILE] malware.exe\n      [FILE] analysis.md\n  [DIR] tools/\n    [FILE] scanner.py\n    [FILE] hasher.py\n  [FILE] readme.txt\n\nTotal files: 10\n\n=== IMAGE FILTER ===\n...\nImages found: 3",
+          "ai_explanation": "Recursion in action! The function calls ITSELF for each subdirectory:\n\n1. scan_directory('/') finds children: evidence, tools, readme.txt\n2. For 'evidence' (a directory), it calls scan_directory('/evidence')\n3. That finds case_001, case_002 — calls itself AGAIN for each\n4. This continues until it reaches files (base case: not a directory)\n\nBase case: if path is not in FILESYSTEM (it is a file), return empty list.\nRecursive case: if path IS a directory, scan each child.\n\nIn real Python: os.walk() does this automatically. But understanding recursion helps you write custom scanners with filtering, depth limits, and special handling.\n\nOn Kali: find /evidence -name '*.jpg' -type f uses the same recursive search logic.",
+          "ai_challenge": "Add a max_depth parameter that limits how deep the recursion goes. Also add a file_count limit that stops scanning after finding N files."
+        },
+        {
+          "title": "Example 12: Complete Forensic Toolkit Module",
+          "description": "Putting it ALL together — a professional-grade forensic utility module",
+          "difficulty": "advanced",
+          "code": "# === SYNAPSE FORENSIC TOOLKIT ===\n# A complete module demonstrating every function concept\n\nimport hashlib\nimport datetime\nimport os.path\n\n# === CONSTANTS ===\nVERSION = \"1.0.0\"\nSUPPORTED_HASHES = [\"md5\", \"sha1\", \"sha256\", \"sha512\"]\nHIGH_RISK_EXT = {\".exe\", \".bat\", \".ps1\", \".vbs\", \".cmd\", \".scr\"}\n\n# === CORE FUNCTIONS ===\n\ndef hash_string(text, algorithm=\"sha256\"):\n    \"\"\"Hash a text string with the specified algorithm.\"\"\"\n    if algorithm not in SUPPORTED_HASHES:\n        raise ValueError(f\"Unsupported: {algorithm}. Use: {SUPPORTED_HASHES}\")\n    return hashlib.new(algorithm, text.encode()).hexdigest()\n\ndef verify_integrity(text, expected_hash, algorithm=\"sha256\"):\n    \"\"\"Verify that text matches an expected hash.\"\"\"\n    actual = hash_string(text, algorithm)\n    return actual == expected_hash\n\ndef classify_threat(filename, size_bytes=0):\n    \"\"\"Classify file threat level. Returns (level, score, reasons).\"\"\"\n    reasons = []\n    score = 0\n    ext = os.path.splitext(filename)[1].lower()\n    \n    if ext in HIGH_RISK_EXT:\n        score += 3\n        reasons.append(f\"Dangerous extension: {ext}\")\n    if size_bytes > 50_000_000:\n        score += 1\n        reasons.append(f\"Large: {size_bytes/1e6:.1f}MB\")\n    \n    level = \"CRITICAL\" if score >= 3 else \"MEDIUM\" if score >= 1 else \"LOW\"\n    return level, score, reasons\n\ndef format_timestamp(dt=None, fmt=\"%Y-%m-%d %H:%M:%S\"):\n    \"\"\"Format a datetime for forensic logs.\"\"\"\n    if dt is None:\n        dt = datetime.datetime.now()\n    return dt.strftime(fmt)\n\ndef validate_ip(ip):\n    \"\"\"Validate IPv4 address.\"\"\"\n    parts = ip.split(\".\")\n    if len(parts) != 4:\n        return False\n    return all(p.isdigit() and 0 <= int(p) <= 255 for p in parts)\n\ndef generate_report(*evidence_items, analyst=\"Unknown\", case_id=\"N/A\"):\n    \"\"\"Generate a formatted forensic report from evidence items.\"\"\"\n    lines = []\n    lines.append(\"=\" * 50)\n    lines.append(f\"FORENSIC ANALYSIS REPORT v{VERSION}\")\n    lines.append(f\"Case: {case_id}  Analyst: {analyst}\")\n    lines.append(f\"Date: {format_timestamp()}\")\n    lines.append(\"=\" * 50)\n    \n    for i, item in enumerate(evidence_items, 1):\n        level, score, reasons = classify_threat(item[\"name\"], item.get(\"size\", 0))\n        item_hash = hash_string(item[\"name\"])\n        lines.append(f\"\\n[{i}] {item['name']}\")\n        lines.append(f\"    Threat: {level} (score: {score})\")\n        lines.append(f\"    Hash: {item_hash[:16]}...\")\n        for r in reasons:\n            lines.append(f\"    > {r}\")\n    \n    lines.append(\"\\n\" + \"=\" * 50)\n    lines.append(f\"Total items: {len(evidence_items)}\")\n    return \"\\n\".join(lines)\n\n# === MAIN — demonstrate the toolkit ===\nevidence = [\n    {\"name\": \"suspect_photo.jpg\", \"size\": 5242880},\n    {\"name\": \"keylogger.exe\", \"size\": 1048576},\n    {\"name\": \"financial_records.pdf\", \"size\": 2097152},\n    {\"name\": \"exfiltration.bat\", \"size\": 512},\n]\n\nreport = generate_report(\n    *evidence,\n    analyst=\"Synapse Student\",\n    case_id=\"FR-2025-042\"\n)\nprint(report)\n\n# Verify hash integrity\nprint(\"\\n=== INTEGRITY CHECK ===\")\ntest = \"critical evidence\"\nh = hash_string(test)\nprint(f\"Hash: {h[:32]}...\")\nprint(f\"Verified: {verify_integrity(test, h)}\")\nprint(f\"Tampered: {verify_integrity(test + '!', h)}\")",
+          "output": "==================================================\nFORENSIC ANALYSIS REPORT v1.0.0\nCase: FR-2025-042  Analyst: Synapse Student\nDate: 2025-02-28 15:30:00\n==================================================\n\n[1] suspect_photo.jpg\n    Threat: LOW (score: 0)\n    Hash: a7f8d3e1b2c45678...\n\n[2] keylogger.exe\n    Threat: CRITICAL (score: 3)\n    Hash: c9d0e1f2a3b45678...\n    > Dangerous extension: .exe\n\n[3] financial_records.pdf\n    Threat: LOW (score: 0)\n    Hash: e5f6a7b8c9d01234...\n\n[4] exfiltration.bat\n    Threat: CRITICAL (score: 3)\n    Hash: 1234567890abcdef...\n    > Dangerous extension: .bat\n\n==================================================\nTotal items: 4\n\n=== INTEGRITY CHECK ===\nHash: a1b2c3d4...\nVerified: True\nTampered: False",
+          "ai_explanation": "This is a COMPLETE forensic toolkit demonstrating EVERY concept:\n\n- CONSTANTS (VERSION, SUPPORTED_HASHES) — module-level configuration\n- BASIC FUNCTIONS (hash_string, validate_ip) — single-purpose tools\n- COMPOSITION (verify_integrity calls hash_string) — functions using functions\n- DEFAULT PARAMETERS (algorithm='sha256', dt=None) — sensible defaults\n- *args (evidence_items) and **kwargs (analyst, case_id) — flexible signatures\n- DOCSTRINGS — professional documentation throughout\n- ERROR HANDLING (raise ValueError) — defensive design\n- RETURN VALUES — tuples, strings, booleans\n\nThis is how real forensic tools are structured! Save this as forensic_toolkit.py and import it in all your future scripts: from forensic_toolkit import hash_string, classify_threat.",
+          "ai_challenge": "Add a save_report(report, filename) function that writes the report to a file. Then add a load_and_verify(filename, expected_hash) that reads a file and verifies its integrity."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Functions & Modules — Building Forensic Tools",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 10px;\"><div style=\"text-align: center; margin-bottom: 20px;\"><span style=\"background: #e74c3c; color: white; padding: 8px 20px; border-radius: 6px; font-size: 16px; font-weight: bold;\">🛠️ FUNCTIONS & MODULES — REFERENCE</span></div>\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">FUNCTION ANATOMY</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">def</span> <span style=\"color: #3498db; font-weight: bold;\">function_name</span>(<span style=\"color: #2ecc71;\">param1</span>, <span style=\"color: #2ecc71;\">param2</span>=<span style=\"color: #f39c12;\">default</span>):\n      <span style=\"color: #9b59b6;\">\"\"\"Docstring: what it does.\"\"\"</span>\n      <span style=\"color: #95a5a6;\"># Function body (indented)</span>\n      result = param1 + param2\n      <span style=\"color: #e74c3c; font-weight: bold;\">return</span> result\n\n  <span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">def</span> = Define (build the tool)\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">name</span> = snake_case, starts with verb\n  <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 3px;\">params</span> = Input slots (configurable)\n  <span style=\"background: #f39c12; color: white; padding: 2px 8px; border-radius: 3px;\">default</span> = Used if not provided\n  <span style=\"background: #9b59b6; color: white; padding: 2px 8px; border-radius: 3px;\">docstring</span> = Documentation (triple quotes)\n  <span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">return</span> = Send result back to caller\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">CALL FLOW</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n<div style=\"text-align: center;\"><span style=\"background: #3498db; color: white; padding: 4px 16px; border-radius: 4px;\">result = function(args)</span></div>\n<div style=\"text-align: center; color: #3498db;\">│</div>\n<div style=\"text-align: center; color: #3498db;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #2ecc71; color: white; padding: 4px 16px; border-radius: 4px;\">Python jumps to def</span></div>\n<div style=\"text-align: center; color: #2ecc71;\">│</div>\n<div style=\"text-align: center; color: #2ecc71;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #f39c12; color: white; padding: 4px 16px; border-radius: 4px;\">Args assigned to params</span></div>\n<div style=\"text-align: center; color: #f39c12;\">│</div>\n<div style=\"text-align: center; color: #f39c12;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #9b59b6; color: white; padding: 4px 16px; border-radius: 4px;\">Body executes line by line</span></div>\n<div style=\"text-align: center; color: #9b59b6;\">│</div>\n<div style=\"text-align: center; color: #9b59b6;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #e74c3c; color: white; padding: 4px 16px; border-radius: 4px;\">return sends value back</span></div>\n<div style=\"text-align: center; color: #e74c3c;\">│</div>\n<div style=\"text-align: center; color: #e74c3c;\">▼</div>\n<div style=\"text-align: center;\"><span style=\"background: #3498db; color: white; padding: 4px 16px; border-radius: 4px;\">result gets the returned value</span></div>\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">SCOPE RULES</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">LOCAL</span> Variables inside a function — ONLY exist there\n  <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 3px;\">GLOBAL</span> Variables outside functions — exist everywhere\n  <span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">Rule</span> Local SHADOWS global (same name = different variable)\n  <span style=\"background: #f39c12; color: white; padding: 2px 8px; border-radius: 3px;\">Tip</span> Avoid global variables — pass data through parameters!\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">IMPORT STYLES</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"color: #3498db;\">import hashlib</span>          → hashlib.md5(...)\n  <span style=\"color: #2ecc71;\">from hashlib import md5</span> → md5(...)  (specific)\n  <span style=\"color: #f39c12;\">import hashlib as hl</span>   → hl.md5(...)  (alias)\n  <span style=\"color: #e74c3c;\">from hashlib import *</span>  → AVOID! (pollutes namespace)\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">ESSENTIAL FORENSIC MODULES</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">hashlib</span> MD5, SHA hashing\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">os/os.path</span> File and path operations\n  <span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 3px;\">datetime</span> Timestamps and time maths\n  <span style=\"background: #f39c12; color: white; padding: 2px 8px; border-radius: 3px;\">base64</span> Encoding and decoding\n  <span style=\"background: #9b59b6; color: white; padding: 2px 8px; border-radius: 3px;\">json</span> Parse JSON data files\n  <span style=\"background: #95a5a6; color: white; padding: 2px 8px; border-radius: 3px;\">re</span> Regular expressions (pattern matching)\n  <span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">csv</span> Read/write CSV files\n  <span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">collections</span> Counter, defaultdict\n\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n<div style=\"text-align: center; font-weight: bold; color: #2c3e50;\">💡 REMEMBER</div>\n<div style=\"text-align: center; color: #95a5a6;\">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>\n\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> Functions = reusable tools. Build once, use forever.\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> Each function should do ONE thing well.\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> return sends results back. No return = None.\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> Default params: def f(x, algo=\"sha256\")\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> *args = extra positional. **kwargs = extra keyword.\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> Local variables are isolated — safe for evidence!\n  <span style=\"color: #2ecc71; font-weight: bold;\">✓</span> Always write docstrings — document your tools!\n  <span style=\"color: #e74c3c; font-weight: bold;\">✓</span> Lambda = quick one-liner. def = anything complex.\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Hello Function",
+          "description": "Create a function greet() that prints 'Hello, Forensic Analyst!'. Call it.",
+          "difficulty": "beginner",
+          "category": "Defining Functions",
+          "estimated_minutes": 3,
+          "ai_intro": "Build your first tools! Create a function greet() that prints 'Hello, Forensic Analyst!'. Call it.",
+          "starter_code": "def greet():\n    # TODO: Print greeting\n    pass\n\n# TODO: Call the function\n",
+          "expected_output": "Hello, Forensic Analyst!",
+          "hints": [
+            {
+              "message": "Replace pass with print() inside the function."
+            },
+            {
+              "message": "def greet():\\n    print(\"Hello, Forensic Analyst!\")\\ngreet()"
+            },
+            {
+              "message": "Solution:\\ndef greet():\\n    print(\"Hello, Forensic Analyst!\")\\n\\ngreet()"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Function with Parameter",
+          "description": "Create greet(name) that prints 'Hello, {name}!'. Call with 'Alice'.",
+          "difficulty": "beginner",
+          "category": "Defining Functions",
+          "estimated_minutes": 3,
+          "ai_intro": "Build your first tools! Create greet(name) that prints 'Hello, {name}!'. Call with 'Alice'.",
+          "starter_code": "# TODO: Define greet(name) and call it\n",
+          "expected_output": "Hello, Alice!",
+          "hints": [
+            {
+              "message": "def greet(name): then use f-string with name."
+            },
+            {
+              "message": "def greet(name):\\n    print(f\"Hello, {name}!\")"
+            },
+            {
+              "message": "Solution:\\ndef greet(name):\\n    print(f\"Hello, {name}!\")\\n\\ngreet(\"Alice\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Two Parameters",
+          "description": "Create add(a, b) that prints the sum. Call with 10 and 20.",
+          "difficulty": "beginner",
+          "category": "Defining Functions",
+          "estimated_minutes": 3,
+          "ai_intro": "Build your first tools! Create add(a, b) that prints the sum. Call with 10 and 20.",
+          "starter_code": "# TODO: Define add(a, b)\n",
+          "expected_output": "Sum: 30",
+          "hints": [
+            {
+              "message": "def add(a, b): then print(f\"Sum: {a + b}\")"
+            },
+            {
+              "message": "Two parameters separated by comma."
+            },
+            {
+              "message": "Solution:\\ndef add(a, b):\\n    print(f\"Sum: {a + b}\")\\n\\nadd(10, 20)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Return Value",
+          "description": "Create square(n) that RETURNS n*n. Print the result of square(7).",
+          "difficulty": "beginner",
+          "category": "Defining Functions",
+          "estimated_minutes": 3,
+          "ai_intro": "Build your first tools! Create square(n) that RETURNS n*n. Print the result of square(7).",
+          "starter_code": "# TODO: Define square(n) with return\n",
+          "expected_output": "49",
+          "hints": [
+            {
+              "message": "Use return n * n instead of print."
+            },
+            {
+              "message": "result = square(7) then print(result)"
+            },
+            {
+              "message": "Solution:\\ndef square(n):\\n    return n * n\\n\\nprint(square(7))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Return vs Print",
+          "description": "Create two versions: one that prints, one that returns. Show the difference.",
+          "difficulty": "beginner",
+          "category": "Defining Functions",
+          "estimated_minutes": 3,
+          "ai_intro": "Build your first tools! Create two versions: one that prints, one that returns. Show the difference.",
+          "starter_code": "# TODO: show_result prints, get_result returns\ndef show_result(x):\n    pass  # TODO: print\n\ndef get_result(x):\n    pass  # TODO: return\n",
+          "expected_output": "Printed: 25\nReturned: 25\nDouble: 50",
+          "hints": [
+            {
+              "message": "show_result uses print(). get_result uses return."
+            },
+            {
+              "message": "You can do maths with returned values but not printed ones!"
+            },
+            {
+              "message": "Solution:\\ndef show_result(x):\\n    print(f\"Printed: {x*x}\")\\n\\ndef get_result(x):\\n    return x * x\\n\\nshow_result(5)\\nr = get_result(5)\\nprint(f\"Returned: {r}\")\\nprint(f\"Double: {r * 2}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Default Parameter",
+          "description": "Create greet(name, role='Analyst') with default role. Test both ways.",
+          "difficulty": "beginner",
+          "category": "Defining Functions",
+          "estimated_minutes": 3,
+          "ai_intro": "Build your first tools! Create greet(name, role='Analyst') with default role. Test both ways.",
+          "starter_code": "# TODO: Function with default parameter\n",
+          "expected_output": "Hello, Alice (Analyst)\nHello, Bob (Manager)",
+          "hints": [
+            {
+              "message": "def greet(name, role=\"Analyst\"): — role has a default."
+            },
+            {
+              "message": "greet(\"Alice\") uses default. greet(\"Bob\", \"Manager\") overrides."
+            },
+            {
+              "message": "Solution:\\ndef greet(name, role=\"Analyst\"):\\n    print(f\"Hello, {name} ({role})\")\\n\\ngreet(\"Alice\")\\ngreet(\"Bob\", \"Manager\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Multiple Returns",
+          "description": "Create min_max(numbers) that returns BOTH the min and max as a tuple.",
+          "difficulty": "intermediate",
+          "category": "Defining Functions",
+          "estimated_minutes": 3,
+          "ai_intro": "Build your first tools! Create min_max(numbers) that returns BOTH the min and max as a tuple.",
+          "starter_code": "# TODO: Return multiple values\ndef min_max(numbers):\n    pass\n",
+          "expected_output": "Min: 3, Max: 99",
+          "hints": [
+            {
+              "message": "return min(numbers), max(numbers) — returns a tuple."
+            },
+            {
+              "message": "mn, mx = min_max(numbers) unpacks the tuple."
+            },
+            {
+              "message": "Solution:\\ndef min_max(numbers):\\n    return min(numbers), max(numbers)\\n\\nmn, mx = min_max([3, 42, 7, 99, 15])\\nprint(f\"Min: {mn}, Max: {mx}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Boolean Return",
+          "description": "Create is_even(n) that returns True if n is even, False otherwise.",
+          "difficulty": "beginner",
+          "category": "Defining Functions",
+          "estimated_minutes": 3,
+          "ai_intro": "Build your first tools! Create is_even(n) that returns True if n is even, False otherwise.",
+          "starter_code": "# TODO: Return True/False\n",
+          "expected_output": "4: True\n7: False",
+          "hints": [
+            {
+              "message": "return n % 2 == 0 — the comparison returns a boolean."
+            },
+            {
+              "message": "No need for if/else — the comparison IS the answer."
+            },
+            {
+              "message": "Solution:\\ndef is_even(n):\\n    return n % 2 == 0\\n\\nprint(f\"4: {is_even(4)}\")\\nprint(f\"7: {is_even(7)}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Docstring",
+          "description": "Add a proper docstring to a hash function and access it with .__doc__.",
+          "difficulty": "intermediate",
+          "category": "Defining Functions",
+          "estimated_minutes": 3,
+          "ai_intro": "Build your first tools! Add a proper docstring to a hash function and access it with .__doc__.",
+          "starter_code": "import hashlib\n\ndef quick_hash(text):\n    # TODO: Add docstring\n    return hashlib.sha256(text.encode()).hexdigest()[:16]\n\n# TODO: Print the docstring\n",
+          "expected_output": "Hash a text string...\nResult: a1b2c3d4...",
+          "hints": [
+            {
+              "message": "Add triple-quoted string as FIRST line inside the function."
+            },
+            {
+              "message": "\"\"\"Hash a text and return first 16 chars of SHA-256.\"\"\""
+            },
+            {
+              "message": "Solution:\\ndef quick_hash(text):\\n    \"\"\"Hash a text string using SHA-256. Returns first 16 hex chars.\"\"\"\\n    return hashlib.sha256(text.encode()).hexdigest()[:16]\\n\\nprint(quick_hash.__doc__)\\nprint(f\"Result: {quick_hash('test')}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Keyword Arguments",
+          "description": "Call a function using keyword arguments for clarity.",
+          "difficulty": "beginner",
+          "category": "Defining Functions",
+          "estimated_minutes": 3,
+          "ai_intro": "Build your first tools! Call a function using keyword arguments for clarity.",
+          "starter_code": "def create_alert(ip, port, severity):\n    print(f\"[{severity}] {ip}:{port}\")\n\n# TODO: Call using keyword arguments\n",
+          "expected_output": "[HIGH] 10.0.0.1:443",
+          "hints": [
+            {
+              "message": "create_alert(ip=\"10.0.0.1\", port=443, severity=\"HIGH\")"
+            },
+            {
+              "message": "Keyword args can be in any order!"
+            },
+            {
+              "message": "Solution:\\ncreate_alert(severity=\"HIGH\", ip=\"10.0.0.1\", port=443)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: None Return",
+          "description": "Show that a function without return gives None.",
+          "difficulty": "beginner",
+          "category": "Defining Functions",
+          "estimated_minutes": 3,
+          "ai_intro": "Build your first tools! Show that a function without return gives None.",
+          "starter_code": "def say_hello():\n    print(\"Hello!\")\n\n# TODO: Capture return value and show it is None\n",
+          "expected_output": "Hello!\nReturn value: None",
+          "hints": [
+            {
+              "message": "result = say_hello() then print(f\"Return value: {result}\")"
+            },
+            {
+              "message": "Functions without return automatically return None."
+            },
+            {
+              "message": "Solution:\\nresult = say_hello()\\nprint(f\"Return value: {result}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Early Return",
+          "description": "Create check_age(age) that returns 'MINOR' if <18, else 'ADULT'. Use early return.",
+          "difficulty": "intermediate",
+          "category": "Defining Functions",
+          "estimated_minutes": 3,
+          "ai_intro": "Build your first tools! Create check_age(age) that returns 'MINOR' if <18, else 'ADULT'. Use early return.",
+          "starter_code": "# TODO: Use early return pattern\n",
+          "expected_output": "15: MINOR\n21: ADULT",
+          "hints": [
+            {
+              "message": "if age < 18: return 'MINOR' — exits immediately. Then return 'ADULT' at the end."
+            },
+            {
+              "message": "Early return avoids nested if/else."
+            },
+            {
+              "message": "Solution:\\ndef check_age(age):\\n    if age < 18:\\n        return \"MINOR\"\\n    return \"ADULT\"\\n\\nprint(f\"15: {check_age(15)}\")\\nprint(f\"21: {check_age(21)}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: File Classifier",
+          "description": "Create classify(filename) returning 'HIGH'/'MEDIUM'/'LOW' based on extension.",
+          "difficulty": "intermediate",
+          "category": "Parameters & Arguments",
+          "estimated_minutes": 4,
+          "ai_intro": "Making tools flexible! Create classify(filename) returning 'HIGH'/'MEDIUM'/'LOW' based on extension.",
+          "starter_code": "# TODO: Classify by extension\ndef classify(filename):\n    pass\n\nprint(classify(\"malware.exe\"))\nprint(classify(\"data.csv\"))\n",
+          "expected_output": "HIGH\nLOW",
+          "hints": [
+            {
+              "message": "Check if filename ends with .exe/.bat → HIGH, .zip/.py → MEDIUM, else LOW."
+            },
+            {
+              "message": "Use endswith() with a tuple of extensions."
+            },
+            {
+              "message": "Solution:\\ndef classify(filename):\\n    if filename.endswith((\".exe\", \".bat\", \".ps1\")):\\n        return \"HIGH\"\\n    elif filename.endswith((\".zip\", \".py\")):\\n        return \"MEDIUM\"\\n    return \"LOW\""
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Temperature Converter",
+          "description": "Create celsius_to_fahrenheit(c) and its reverse. Test both.",
+          "difficulty": "beginner",
+          "category": "Parameters & Arguments",
+          "estimated_minutes": 4,
+          "ai_intro": "Making tools flexible! Create celsius_to_fahrenheit(c) and its reverse. Test both.",
+          "starter_code": "# TODO: Two converter functions\n",
+          "expected_output": "100C = 212.0F\n32F = 0.0C",
+          "hints": [
+            {
+              "message": "F = C * 9/5 + 32. C = (F - 32) * 5/9."
+            },
+            {
+              "message": "def celsius_to_fahrenheit(c): return c * 9/5 + 32"
+            },
+            {
+              "message": "Solution:\\ndef c_to_f(c): return c * 9/5 + 32\\ndef f_to_c(f): return (f - 32) * 5/9\\nprint(f\"100C = {c_to_f(100)}F\")\\nprint(f\"32F = {f_to_c(32)}C\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Bytes Formatter",
+          "description": "Create format_bytes(b) returning human-readable: 1024→'1.0 KB', 1048576→'1.0 MB'.",
+          "difficulty": "intermediate",
+          "category": "Parameters & Arguments",
+          "estimated_minutes": 4,
+          "ai_intro": "Making tools flexible! Create format_bytes(b) returning human-readable: 1024→'1.0 KB', 1048576→'1.0 MB'.",
+          "starter_code": "# TODO: Format bytes to human readable\ndef format_bytes(b):\n    pass\n",
+          "expected_output": "1.0 KB\n1.0 MB\n1.0 GB",
+          "hints": [
+            {
+              "message": "Check if >= 1GB first, then MB, then KB, else bytes."
+            },
+            {
+              "message": "if b >= 1024**3: return f\"{b/1024**3:.1f} GB\""
+            },
+            {
+              "message": "Solution:\\ndef format_bytes(b):\\n    if b >= 1024**3: return f\"{b/1024**3:.1f} GB\"\\n    if b >= 1024**2: return f\"{b/1024**2:.1f} MB\"\\n    if b >= 1024: return f\"{b/1024:.1f} KB\"\\n    return f\"{b} B\"\\n\\nprint(format_bytes(1024))\\nprint(format_bytes(1048576))\\nprint(format_bytes(1073741824))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: *args Counter",
+          "description": "Create count_threats(*files) that counts files ending in .exe or .bat.",
+          "difficulty": "intermediate",
+          "category": "Parameters & Arguments",
+          "estimated_minutes": 4,
+          "ai_intro": "Making tools flexible! Create count_threats(*files) that counts files ending in .exe or .bat.",
+          "starter_code": "# TODO: Use *args to accept any number of files\n",
+          "expected_output": "Threats: 3 out of 5",
+          "hints": [
+            {
+              "message": "def count_threats(*files): — files becomes a tuple."
+            },
+            {
+              "message": "Loop through files, count those ending with .exe or .bat."
+            },
+            {
+              "message": "Solution:\\ndef count_threats(*files):\\n    threats = sum(1 for f in files if f.endswith((\".exe\", \".bat\")))\\n    return threats, len(files)\\n\\nt, total = count_threats(\"a.exe\", \"b.txt\", \"c.bat\", \"d.pdf\", \"e.exe\")\\nprint(f\"Threats: {t} out of {total}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: **kwargs Config",
+          "description": "Create configure(**settings) that prints each setting as key: value.",
+          "difficulty": "intermediate",
+          "category": "Parameters & Arguments",
+          "estimated_minutes": 4,
+          "ai_intro": "Making tools flexible! Create configure(**settings) that prints each setting as key: value.",
+          "starter_code": "# TODO: Use **kwargs\n",
+          "expected_output": "algorithm: SHA-256\nverbose: True\noutput: report.pdf",
+          "hints": [
+            {
+              "message": "def configure(**settings): — settings becomes a dictionary."
+            },
+            {
+              "message": "for key, value in settings.items(): print(f\"{key}: {value}\")"
+            },
+            {
+              "message": "Solution:\\ndef configure(**settings):\\n    for key, value in settings.items():\\n        print(f\"{key}: {value}\")\\n\\nconfigure(algorithm=\"SHA-256\", verbose=True, output=\"report.pdf\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Port Scanner Function",
+          "description": "Create scan_port(ip, port, timeout=1) that returns 'OPEN' or 'CLOSED' (simulated).",
+          "difficulty": "intermediate",
+          "category": "Parameters & Arguments",
+          "estimated_minutes": 4,
+          "ai_intro": "Making tools flexible! Create scan_port(ip, port, timeout=1) that returns 'OPEN' or 'CLOSED' (simulated).",
+          "starter_code": "# TODO: Simulated port scanner with default timeout\nimport random\n",
+          "expected_output": "192.168.1.1:80 -> OPEN\n192.168.1.1:443 -> CLOSED",
+          "hints": [
+            {
+              "message": "def scan_port(ip, port, timeout=1): — simulate with random."
+            },
+            {
+              "message": "return \"OPEN\" if random.random() > 0.5 else \"CLOSED\""
+            },
+            {
+              "message": "Solution:\\ndef scan_port(ip, port, timeout=1):\\n    import random\\n    random.seed(port)\\n    return \"OPEN\" if random.random() > 0.5 else \"CLOSED\"\\n\\nfor p in [80, 443]:\\n    print(f\"192.168.1.1:{p} -> {scan_port('192.168.1.1', p)}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Validate and Convert",
+          "description": "Create safe_int(value, default=0) that converts to int or returns default.",
+          "difficulty": "intermediate",
+          "category": "Parameters & Arguments",
+          "estimated_minutes": 4,
+          "ai_intro": "Making tools flexible! Create safe_int(value, default=0) that converts to int or returns default.",
+          "starter_code": "# TODO: Safe conversion with default\n",
+          "expected_output": "443\n0\n-1",
+          "hints": [
+            {
+              "message": "try: return int(value) except ValueError: return default"
+            },
+            {
+              "message": "def safe_int(value, default=0):"
+            },
+            {
+              "message": "Solution:\\ndef safe_int(value, default=0):\\n    try:\\n        return int(value)\\n    except (ValueError, TypeError):\\n        return default\\n\\nprint(safe_int(\"443\"))\\nprint(safe_int(\"hello\"))\\nprint(safe_int(\"\", -1))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Chained Functions",
+          "description": "Create upper(s), strip_ext(s), add_prefix(s, p). Chain them together.",
+          "difficulty": "intermediate",
+          "category": "Parameters & Arguments",
+          "estimated_minutes": 4,
+          "ai_intro": "Making tools flexible! Create upper(s), strip_ext(s), add_prefix(s, p). Chain them together.",
+          "starter_code": "# TODO: Three small functions, chained\n",
+          "expected_output": "EVIDENCE_MALWARE",
+          "hints": [
+            {
+              "message": "Each function does ONE thing. Chain: add_prefix(upper(strip_ext(\"malware.exe\")), \"EVIDENCE_\")"
+            },
+            {
+              "message": "strip_ext removes .ext, upper uppercases, add_prefix adds text."
+            },
+            {
+              "message": "Solution:\\ndef strip_ext(s): return s.rsplit(\".\", 1)[0]\\ndef upper(s): return s.upper()\\ndef add_prefix(s, p): return p + s\\n\\nresult = add_prefix(upper(strip_ext(\"malware.exe\")), \"EVIDENCE_\")\\nprint(result)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Function as Argument",
+          "description": "Pass a function as an argument to another function (higher-order).",
+          "difficulty": "advanced",
+          "category": "Parameters & Arguments",
+          "estimated_minutes": 4,
+          "ai_intro": "Making tools flexible! Pass a function as an argument to another function (higher-order).",
+          "starter_code": "# TODO: Higher-order function\ndef apply_to_all(items, func):\n    pass\n",
+          "expected_output": "[1, 4, 9, 16, 25]",
+          "hints": [
+            {
+              "message": "apply_to_all takes a list AND a function, applies the function to each item."
+            },
+            {
+              "message": "return [func(item) for item in items]"
+            },
+            {
+              "message": "Solution:\\ndef apply_to_all(items, func):\\n    return [func(item) for item in items]\\n\\ndef square(n): return n ** 2\\nprint(apply_to_all([1, 2, 3, 4, 5], square))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Closure",
+          "description": "Create a make_multiplier(n) that returns a function that multiplies by n.",
+          "difficulty": "advanced",
+          "category": "Parameters & Arguments",
+          "estimated_minutes": 4,
+          "ai_intro": "Making tools flexible! Create a make_multiplier(n) that returns a function that multiplies by n.",
+          "starter_code": "# TODO: Function that returns a function\n",
+          "expected_output": "15\n20",
+          "hints": [
+            {
+              "message": "def make_multiplier(n): return lambda x: x * n"
+            },
+            {
+              "message": "triple = make_multiplier(3), then triple(5) = 15"
+            },
+            {
+              "message": "Solution:\\ndef make_multiplier(n):\\n    return lambda x: x * n\\n\\ntriple = make_multiplier(3)\\nquadruple = make_multiplier(4)\\nprint(triple(5))\\nprint(quadruple(5))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Local vs Global",
+          "description": "Demonstrate that a local variable does not affect the global one.",
+          "difficulty": "beginner",
+          "category": "Scope & Lambda",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding scope and lambdas! Demonstrate that a local variable does not affect the global one.",
+          "starter_code": "x = \"GLOBAL\"\ndef change_x():\n    x = \"LOCAL\"\n    print(f\"Inside: {x}\")\n\nchange_x()\nprint(f\"Outside: {x}\")\n",
+          "expected_output": "Inside: LOCAL\nOutside: GLOBAL",
+          "hints": [
+            {
+              "message": "The x inside the function is a DIFFERENT variable than the global x."
+            },
+            {
+              "message": "Local x = 'LOCAL' only exists inside change_x()."
+            },
+            {
+              "message": "The code already works! Run it and observe."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Lambda Basic",
+          "description": "Create a lambda that doubles a number. Apply it to 5.",
+          "difficulty": "beginner",
+          "category": "Scope & Lambda",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding scope and lambdas! Create a lambda that doubles a number. Apply it to 5.",
+          "starter_code": "# TODO: Create lambda\n",
+          "expected_output": "10",
+          "hints": [
+            {
+              "message": "double = lambda x: x * 2"
+            },
+            {
+              "message": "Then print(double(5))"
+            },
+            {
+              "message": "Solution:\\ndouble = lambda x: x * 2\\nprint(double(5))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Lambda Sort",
+          "description": "Sort a list of tuples by the second element using lambda.",
+          "difficulty": "intermediate",
+          "category": "Scope & Lambda",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding scope and lambdas! Sort a list of tuples by the second element using lambda.",
+          "starter_code": "data = [(\"a\", 3), (\"b\", 1), (\"c\", 2)]\n# TODO: Sort by second element\n",
+          "expected_output": "[('b', 1), ('c', 2), ('a', 3)]",
+          "hints": [
+            {
+              "message": "sorted(data, key=lambda x: x[1])"
+            },
+            {
+              "message": "The key function tells sorted WHAT to sort by."
+            },
+            {
+              "message": "Solution:\\nresult = sorted(data, key=lambda x: x[1])\\nprint(result)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Lambda Filter",
+          "description": "Filter a list to keep only even numbers using filter() and lambda.",
+          "difficulty": "intermediate",
+          "category": "Scope & Lambda",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding scope and lambdas! Filter a list to keep only even numbers using filter() and lambda.",
+          "starter_code": "numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\n# TODO: Filter evens\n",
+          "expected_output": "[2, 4, 6, 8, 10]",
+          "hints": [
+            {
+              "message": "list(filter(lambda x: x % 2 == 0, numbers))"
+            },
+            {
+              "message": "filter keeps items where the function returns True."
+            },
+            {
+              "message": "Solution:\\nevens = list(filter(lambda x: x % 2 == 0, numbers))\\nprint(evens)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Lambda Map",
+          "description": "Use map() to convert a list of strings to uppercase.",
+          "difficulty": "intermediate",
+          "category": "Scope & Lambda",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding scope and lambdas! Use map() to convert a list of strings to uppercase.",
+          "starter_code": "words = [\"forensics\", \"security\", \"python\"]\n# TODO: Map to uppercase\n",
+          "expected_output": "['FORENSICS', 'SECURITY', 'PYTHON']",
+          "hints": [
+            {
+              "message": "list(map(lambda w: w.upper(), words))"
+            },
+            {
+              "message": "map applies the function to each item."
+            },
+            {
+              "message": "Solution:\\nresult = list(map(lambda w: w.upper(), words))\\nprint(result)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Sort Dicts by Value",
+          "description": "Sort evidence items by their priority field, highest first.",
+          "difficulty": "intermediate",
+          "category": "Scope & Lambda",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding scope and lambdas! Sort evidence items by their priority field, highest first.",
+          "starter_code": "items = [\n    {\"name\": \"log.txt\", \"priority\": 3},\n    {\"name\": \"malware.exe\", \"priority\": 9},\n    {\"name\": \"photo.jpg\", \"priority\": 1},\n]\n# TODO: Sort by priority descending\n",
+          "expected_output": "malware.exe (9)\nlog.txt (3)\nphoto.jpg (1)",
+          "hints": [
+            {
+              "message": "sorted(items, key=lambda x: x['priority'], reverse=True)"
+            },
+            {
+              "message": "reverse=True gives highest first."
+            },
+            {
+              "message": "Solution:\\nfor item in sorted(items, key=lambda x: x['priority'], reverse=True):\\n    print(f\"{item['name']} ({item['priority']})\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Nested Function",
+          "description": "Define an inner helper function inside an outer function.",
+          "difficulty": "advanced",
+          "category": "Scope & Lambda",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding scope and lambdas! Define an inner helper function inside an outer function.",
+          "starter_code": "# TODO: Function with inner helper\ndef analyse(text):\n    pass\n",
+          "expected_output": "Text: Hello World\nWords: 2\nChars: 11",
+          "hints": [
+            {
+              "message": "Define a helper function INSIDE analyse: def count_words(t): return len(t.split())"
+            },
+            {
+              "message": "Inner functions can access outer function parameters."
+            },
+            {
+              "message": "Solution:\\ndef analyse(text):\\n    def count_words(t): return len(t.split())\\n    def count_chars(t): return len(t.replace(\" \", \"\"))\\n    print(f\"Text: {text}\")\\n    print(f\"Words: {count_words(text)}\")\\n    print(f\"Chars: {count_chars(text)}\")\\n\\nanalyse(\"Hello World\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Global Keyword",
+          "description": "Use the global keyword to modify a global variable from inside a function.",
+          "difficulty": "advanced",
+          "category": "Scope & Lambda",
+          "estimated_minutes": 4,
+          "ai_intro": "Understanding scope and lambdas! Use the global keyword to modify a global variable from inside a function.",
+          "starter_code": "counter = 0\ndef increment():\n    # TODO: Use global to modify counter\n    pass\n\nincrement()\nincrement()\nincrement()\nprint(f\"Counter: {counter}\")\n",
+          "expected_output": "Counter: 3",
+          "hints": [
+            {
+              "message": "Use: global counter inside the function, then counter += 1."
+            },
+            {
+              "message": "global tells Python to use the global variable, not create a local one."
+            },
+            {
+              "message": "Solution:\\ndef increment():\\n    global counter\\n    counter += 1\\n\\nincrement()\\nincrement()\\nincrement()\\nprint(f\"Counter: {counter}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Import hashlib",
+          "description": "Import hashlib and compute MD5 of 'test'.",
+          "difficulty": "beginner",
+          "category": "Modules & Imports",
+          "estimated_minutes": 4,
+          "ai_intro": "Using Python's built-in toolkit! Import hashlib and compute MD5 of 'test'.",
+          "starter_code": "# TODO: Import and hash\n",
+          "expected_output": "098f6bcd4621d373cade4e832627b4f6",
+          "hints": [
+            {
+              "message": "import hashlib, then hashlib.md5(b\"test\").hexdigest()"
+            },
+            {
+              "message": "b\"test\" is a bytes literal — hashlib needs bytes."
+            },
+            {
+              "message": "Solution:\\nimport hashlib\\nprint(hashlib.md5(b\"test\").hexdigest())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: from Import",
+          "description": "Import only datetime from the datetime module. Print today's date.",
+          "difficulty": "beginner",
+          "category": "Modules & Imports",
+          "estimated_minutes": 4,
+          "ai_intro": "Using Python's built-in toolkit! Import only datetime from the datetime module. Print today's date.",
+          "starter_code": "# TODO: from datetime import datetime\n",
+          "expected_output": "2025-02-28",
+          "hints": [
+            {
+              "message": "from datetime import datetime, then datetime.now().strftime(\"%Y-%m-%d\")"
+            },
+            {
+              "message": "This imports JUST the datetime class, not the whole module."
+            },
+            {
+              "message": "Solution:\\nfrom datetime import datetime\\nprint(datetime.now().strftime(\"%Y-%m-%d\"))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: os.path Basics",
+          "description": "Use os.path to get the extension of 'evidence/photo.jpg'.",
+          "difficulty": "beginner",
+          "category": "Modules & Imports",
+          "estimated_minutes": 4,
+          "ai_intro": "Using Python's built-in toolkit! Use os.path to get the extension of 'evidence/photo.jpg'.",
+          "starter_code": "import os.path\nfilepath = \"evidence/photo.jpg\"\n# TODO: Get extension\n",
+          "expected_output": ".jpg",
+          "hints": [
+            {
+              "message": "os.path.splitext(filepath)[1] gives the extension."
+            },
+            {
+              "message": "splitext returns (name, extension) as a tuple."
+            },
+            {
+              "message": "Solution:\\nimport os.path\\nprint(os.path.splitext(\"evidence/photo.jpg\")[1])"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Base64 Encode/Decode",
+          "description": "Encode 'secret data' to base64, then decode it back.",
+          "difficulty": "intermediate",
+          "category": "Modules & Imports",
+          "estimated_minutes": 4,
+          "ai_intro": "Using Python's built-in toolkit! Encode 'secret data' to base64, then decode it back.",
+          "starter_code": "import base64\noriginal = \"secret data\"\n# TODO: Encode then decode\n",
+          "expected_output": "Encoded: c2VjcmV0IGRhdGE=\nDecoded: secret data",
+          "hints": [
+            {
+              "message": "base64.b64encode(original.encode()).decode() for encoding."
+            },
+            {
+              "message": "b64decode() reverses it."
+            },
+            {
+              "message": "Solution:\\nencoded = base64.b64encode(original.encode()).decode()\\ndecoded = base64.b64decode(encoded).decode()\\nprint(f\"Encoded: {encoded}\")\\nprint(f\"Decoded: {decoded}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Random Module",
+          "description": "Generate a random 4-digit PIN using the random module.",
+          "difficulty": "beginner",
+          "category": "Modules & Imports",
+          "estimated_minutes": 4,
+          "ai_intro": "Using Python's built-in toolkit! Generate a random 4-digit PIN using the random module.",
+          "starter_code": "import random\n# TODO: Generate random 4-digit PIN\n",
+          "expected_output": "PIN: 4821",
+          "hints": [
+            {
+              "message": "random.randint(0, 9999) gives a random number. Format with :04d."
+            },
+            {
+              "message": "f\"{random.randint(0, 9999):04d}\" zero-pads to 4 digits."
+            },
+            {
+              "message": "Solution:\\nimport random\\npin = f\"{random.randint(0, 9999):04d}\"\\nprint(f\"PIN: {pin}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Math Module",
+          "description": "Calculate log2(256) and sqrt(144) using the math module.",
+          "difficulty": "beginner",
+          "category": "Modules & Imports",
+          "estimated_minutes": 4,
+          "ai_intro": "Using Python's built-in toolkit! Calculate log2(256) and sqrt(144) using the math module.",
+          "starter_code": "import math\n# TODO: Use math functions\n",
+          "expected_output": "log2(256) = 8.0\nsqrt(144) = 12.0",
+          "hints": [
+            {
+              "message": "math.log2(256) and math.sqrt(144)"
+            },
+            {
+              "message": "log2 tells you how many bits needed. 256 = 2^8 = 8 bits."
+            },
+            {
+              "message": "Solution:\\nimport math\\nprint(f\"log2(256) = {math.log2(256)}\")\\nprint(f\"sqrt(144) = {math.sqrt(144)}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Collections Counter",
+          "description": "Use Counter to find the most common extension in a file list.",
+          "difficulty": "intermediate",
+          "category": "Modules & Imports",
+          "estimated_minutes": 4,
+          "ai_intro": "Using Python's built-in toolkit! Use Counter to find the most common extension in a file list.",
+          "starter_code": "from collections import Counter\nfiles = [\"a.txt\", \"b.exe\", \"c.txt\", \"d.pdf\", \"e.txt\", \"f.exe\"]\n# TODO: Count extensions\n",
+          "expected_output": "Most common: .txt (3)",
+          "hints": [
+            {
+              "message": "Get extensions first, then Counter(extensions).most_common(1)"
+            },
+            {
+              "message": "exts = [\".\" + f.split(\".\")[-1] for f in files]"
+            },
+            {
+              "message": "Solution:\\nexts = [\".\" + f.split(\".\")[-1] for f in files]\\ncounts = Counter(exts)\\next, n = counts.most_common(1)[0]\\nprint(f\"Most common: {ext} ({n})\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: JSON Module",
+          "description": "Parse a JSON string and access nested data.",
+          "difficulty": "intermediate",
+          "category": "Modules & Imports",
+          "estimated_minutes": 4,
+          "ai_intro": "Using Python's built-in toolkit! Parse a JSON string and access nested data.",
+          "starter_code": "import json\ndata = '{\"ip\": \"10.0.0.1\", \"ports\": [22, 80, 443], \"active\": true}'\n# TODO: Parse and print\n",
+          "expected_output": "IP: 10.0.0.1\nFirst port: 22\nActive: True",
+          "hints": [
+            {
+              "message": "parsed = json.loads(data), then access keys."
+            },
+            {
+              "message": "parsed[\"ports\"][0] gets the first port."
+            },
+            {
+              "message": "Solution:\\nimport json\\nparsed = json.loads(data)\\nprint(f\"IP: {parsed['ip']}\")\\nprint(f\"First port: {parsed['ports'][0]}\")\\nprint(f\"Active: {parsed['active']}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: String Module",
+          "description": "Use string module to show all ASCII letters and digits.",
+          "difficulty": "beginner",
+          "category": "Modules & Imports",
+          "estimated_minutes": 4,
+          "ai_intro": "Using Python's built-in toolkit! Use string module to show all ASCII letters and digits.",
+          "starter_code": "import string\n# TODO: Print ascii_letters and digits\n",
+          "expected_output": "Letters: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\nDigits: 0123456789",
+          "hints": [
+            {
+              "message": "string.ascii_letters and string.digits"
+            },
+            {
+              "message": "These are pre-built character sets — useful for password generation!"
+            },
+            {
+              "message": "Solution:\\nimport string\\nprint(f\"Letters: {string.ascii_letters}\")\\nprint(f\"Digits: {string.digits}\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Multiple Hashes",
+          "description": "Compute MD5, SHA1, and SHA256 of the same text and compare lengths.",
+          "difficulty": "intermediate",
+          "category": "Modules & Imports",
+          "estimated_minutes": 4,
+          "ai_intro": "Using Python's built-in toolkit! Compute MD5, SHA1, and SHA256 of the same text and compare lengths.",
+          "starter_code": "import hashlib\ntext = b\"forensic evidence\"\n# TODO: Compute three hashes\n",
+          "expected_output": "MD5 (32): d41d8cd...\nSHA1 (40): da39a3e...\nSHA256 (64): e3b0c44...",
+          "hints": [
+            {
+              "message": "hashlib.md5(text).hexdigest() etc."
+            },
+            {
+              "message": "MD5=32 chars, SHA1=40 chars, SHA256=64 chars."
+            },
+            {
+              "message": "Solution:\\nfor algo in [\"md5\", \"sha1\", \"sha256\"]:\\n    h = hashlib.new(algo, text).hexdigest()\\n    print(f\"{algo.upper()} ({len(h)}): {h[:7]}...\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: No return",
+          "description": "def f(): print('hi')\\nx = f()\\nprint(x)",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Trace the code! def f(): print('hi')\\nx = f()\\nprint(x)",
+          "starter_code": "# PREDICT:\ndef f():\n    print(\"hi\")\n\nx = f()\nprint(x)\n",
+          "expected_output": "hi\nNone",
+          "hints": [
+            {
+              "message": "f() prints 'hi', but has no return so x gets None."
+            },
+            {
+              "message": "print(x) shows None."
+            },
+            {
+              "message": "Output: hi then None"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Early return",
+          "description": "def f(x): if x>0: return 'pos'\\n  return 'neg'\\nprint(f(5), f(-3))",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Trace the code! def f(x): if x>0: return 'pos'\\n  return 'neg'\\nprint(f(5), f(-3))",
+          "starter_code": "# PREDICT:\ndef f(x):\n    if x > 0:\n        return \"pos\"\n    return \"neg\"\n\nprint(f(5), f(-3))\n",
+          "expected_output": "pos neg",
+          "hints": [
+            {
+              "message": "f(5): 5>0 is True, returns 'pos'. f(-3): 5>0 False, falls through to 'neg'."
+            },
+            {
+              "message": "Early return exits immediately."
+            },
+            {
+              "message": "Output: pos neg"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Default used",
+          "description": "def f(a, b=10): return a+b\\nprint(f(5))",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Trace the code! def f(a, b=10): return a+b\\nprint(f(5))",
+          "starter_code": "# PREDICT:\ndef f(a, b=10):\n    return a + b\n\nprint(f(5))\n",
+          "expected_output": "15",
+          "hints": [
+            {
+              "message": "b defaults to 10 since only one argument given."
+            },
+            {
+              "message": "5 + 10 = 15"
+            },
+            {
+              "message": "Output: 15"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Default overridden",
+          "description": "def f(a, b=10): return a+b\\nprint(f(5, 20))",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Trace the code! def f(a, b=10): return a+b\\nprint(f(5, 20))",
+          "starter_code": "# PREDICT:\ndef f(a, b=10):\n    return a + b\n\nprint(f(5, 20))\n",
+          "expected_output": "25",
+          "hints": [
+            {
+              "message": "b=20 overrides the default of 10."
+            },
+            {
+              "message": "5 + 20 = 25"
+            },
+            {
+              "message": "Output: 25"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Scope puzzle",
+          "description": "x=1\\ndef f(): x=2\\nf()\\nprint(x)",
+          "difficulty": "intermediate",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Trace the code! x=1\\ndef f(): x=2\\nf()\\nprint(x)",
+          "starter_code": "# PREDICT:\nx = 1\ndef f():\n    x = 2\n\nf()\nprint(x)\n",
+          "expected_output": "1",
+          "hints": [
+            {
+              "message": "x=2 inside f() creates a LOCAL x. The global x stays 1."
+            },
+            {
+              "message": "Functions do not modify globals unless you use the global keyword."
+            },
+            {
+              "message": "Output: 1"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Mutable default TRAP",
+          "description": "def f(lst=[]): lst.append(1); return lst\\nprint(f()); print(f())",
+          "difficulty": "advanced",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Trace the code! def f(lst=[]): lst.append(1); return lst\\nprint(f()); print(f())",
+          "starter_code": "# PREDICT (tricky!):\ndef f(lst=[]):\n    lst.append(1)\n    return lst\n\nprint(f())\nprint(f())\n",
+          "expected_output": "[1]\n[1, 1]",
+          "hints": [
+            {
+              "message": "TRAP: The default [] is created ONCE and SHARED between calls!"
+            },
+            {
+              "message": "Second call uses the SAME list, which already has [1]."
+            },
+            {
+              "message": "Output: [1] then [1, 1] — this is a famous Python gotcha!"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Lambda value",
+          "description": "f = lambda x, y: x * y\\nprint(f(3, 4))",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Trace the code! f = lambda x, y: x * y\\nprint(f(3, 4))",
+          "starter_code": "# PREDICT:\nf = lambda x, y: x * y\nprint(f(3, 4))\n",
+          "expected_output": "12",
+          "hints": [
+            {
+              "message": "lambda x, y: x * y is the same as def f(x, y): return x * y"
+            },
+            {
+              "message": "3 * 4 = 12"
+            },
+            {
+              "message": "Output: 12"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: *args length",
+          "description": "def f(*args): return len(args)\\nprint(f(1,2,3,4,5))",
+          "difficulty": "intermediate",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Trace the code! def f(*args): return len(args)\\nprint(f(1,2,3,4,5))",
+          "starter_code": "# PREDICT:\ndef f(*args):\n    return len(args)\n\nprint(f(1, 2, 3, 4, 5))\n",
+          "expected_output": "5",
+          "hints": [
+            {
+              "message": "*args collects all arguments into a tuple: (1, 2, 3, 4, 5)."
+            },
+            {
+              "message": "len((1,2,3,4,5)) = 5"
+            },
+            {
+              "message": "Output: 5"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Chained calls",
+          "description": "def double(x): return x*2\\nprint(double(double(double(3))))",
+          "difficulty": "intermediate",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Trace the code! def double(x): return x*2\\nprint(double(double(double(3))))",
+          "starter_code": "# PREDICT:\ndef double(x):\n    return x * 2\n\nprint(double(double(double(3))))\n",
+          "expected_output": "24",
+          "hints": [
+            {
+              "message": "Inside out: double(3)=6, double(6)=12, double(12)=24."
+            },
+            {
+              "message": "Functions can be chained — output of one becomes input of next."
+            },
+            {
+              "message": "Output: 24"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Boolean function",
+          "description": "def f(x): return x > 0 and x < 10\\nprint(f(5), f(15))",
+          "difficulty": "beginner",
+          "category": "Predict the Output",
+          "estimated_minutes": 3,
+          "ai_intro": "Trace the code! def f(x): return x > 0 and x < 10\\nprint(f(5), f(15))",
+          "starter_code": "# PREDICT:\ndef f(x):\n    return x > 0 and x < 10\n\nprint(f(5), f(15))\n",
+          "expected_output": "True False",
+          "hints": [
+            {
+              "message": "f(5): 5>0 and 5<10 = True and True = True. f(15): 15<10 = False."
+            },
+            {
+              "message": "and requires BOTH to be True."
+            },
+            {
+              "message": "Output: True False"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Missing return",
+          "description": "Function calculates but never returns the result.",
+          "difficulty": "beginner",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug hunt! Function calculates but never returns the result.",
+          "starter_code": "# FIX: Function never returns!\ndef add(a, b):\n    result = a + b\n\nprint(add(3, 4))\n",
+          "expected_output": "7",
+          "hints": [
+            {
+              "message": "The function calculates result but never returns it!"
+            },
+            {
+              "message": "Add: return result"
+            },
+            {
+              "message": "Fix: Add return result inside the function."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Wrong argument count",
+          "description": "Function expects 2 args but called with 1.",
+          "difficulty": "beginner",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug hunt! Function expects 2 args but called with 1.",
+          "starter_code": "# FIX: TypeError!\ndef greet(first, last):\n    return f\"Hello, {first} {last}\"\n\nprint(greet(\"Alice\"))\n",
+          "expected_output": "Hello, Alice Unknown",
+          "hints": [
+            {
+              "message": "greet() expects 2 arguments but got 1."
+            },
+            {
+              "message": "Add a default: def greet(first, last=\"Unknown\"):"
+            },
+            {
+              "message": "Fix: def greet(first, last=\"Unknown\"):"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Indent error",
+          "description": "Code after return never executes.",
+          "difficulty": "intermediate",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug hunt! Code after return never executes.",
+          "starter_code": "# FIX: Unreachable code!\ndef process(x):\n    return x * 2\n    print(\"Processing done\")  # Never runs!\n\nprocess(5)\n",
+          "expected_output": "Processing done\n10",
+          "hints": [
+            {
+              "message": "return exits the function immediately! print() after return never runs."
+            },
+            {
+              "message": "Move print() BEFORE return, or remove it."
+            },
+            {
+              "message": "Fix: Move print before return, or put processing logic before return."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Default mutable",
+          "description": "Fix the mutable default argument bug.",
+          "difficulty": "advanced",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug hunt! Fix the mutable default argument bug.",
+          "starter_code": "# FIX: Shared mutable default!\ndef add_item(item, lst=[]):\n    lst.append(item)\n    return lst\n\nprint(add_item(\"a\"))\nprint(add_item(\"b\"))  # Should be [\"b\"] not [\"a\", \"b\"]!\n",
+          "expected_output": "['a']\n['b']",
+          "hints": [
+            {
+              "message": "Default [] is shared between calls! Use None instead."
+            },
+            {
+              "message": "def add_item(item, lst=None): if lst is None: lst = []"
+            },
+            {
+              "message": "Fix: def add_item(item, lst=None):\\n    if lst is None: lst = []\\n    lst.append(item)\\n    return lst"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Wrong import",
+          "description": "Import is wrong — module name mismatch.",
+          "difficulty": "beginner",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug hunt! Import is wrong — module name mismatch.",
+          "starter_code": "# FIX: ModuleNotFoundError!\nimport Hash_Lib\nprint(Hash_Lib.md5(b\"test\").hexdigest())\n",
+          "expected_output": "098f6bcd4621d373cade4e832627b4f6",
+          "hints": [
+            {
+              "message": "Python module names are lowercase! hashlib, not Hash_Lib."
+            },
+            {
+              "message": "import hashlib (lowercase, no underscore)."
+            },
+            {
+              "message": "Fix: import hashlib"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Global not declared",
+          "description": "Trying to modify global without global keyword.",
+          "difficulty": "intermediate",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug hunt! Trying to modify global without global keyword.",
+          "starter_code": "# FIX: UnboundLocalError!\ncount = 0\ndef increment():\n    count += 1\n\nincrement()\nprint(count)\n",
+          "expected_output": "1",
+          "hints": [
+            {
+              "message": "count += 1 inside a function tries to modify a local variable that does not exist yet."
+            },
+            {
+              "message": "Add: global count as the first line of the function."
+            },
+            {
+              "message": "Fix: Add global count inside increment()"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Recursive no base",
+          "description": "Recursion never stops!",
+          "difficulty": "intermediate",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug hunt! Recursion never stops!",
+          "starter_code": "# FIX: RecursionError!\ndef countdown(n):\n    print(n)\n    countdown(n - 1)\n\ncountdown(3)\n",
+          "expected_output": "3\n2\n1\n0",
+          "hints": [
+            {
+              "message": "There is no base case — the function calls itself forever!"
+            },
+            {
+              "message": "Add: if n < 0: return as the first line."
+            },
+            {
+              "message": "Fix: Add if n < 0: return at the start of the function."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Lambda syntax",
+          "description": "Fix the lambda syntax error.",
+          "difficulty": "beginner",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug hunt! Fix the lambda syntax error.",
+          "starter_code": "# FIX: SyntaxError!\n# result = lambda x: if x > 0: \"positive\" else \"negative\"\n# Uncomment and fix the line above\n",
+          "expected_output": "positive",
+          "hints": [
+            {
+              "message": "Lambda uses ternary expression, not if/else statement."
+            },
+            {
+              "message": "lambda x: \"positive\" if x > 0 else \"negative\""
+            },
+            {
+              "message": "Fix: result = lambda x: \"positive\" if x > 0 else \"negative\"\\nprint(result(5))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Scope in loop",
+          "description": "Fix: function returns wrong value because of scope confusion.",
+          "difficulty": "intermediate",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug hunt! Fix: function returns wrong value because of scope confusion.",
+          "starter_code": "# FIX: Always returns last file!\nfiles = [\"a.txt\", \"b.exe\", \"c.pdf\"]\n\ndef find_exe(file_list):\n    for f in file_list:\n        if f.endswith(\".exe\"):\n            result = f\n    return result  # What if no .exe found?\n\nprint(find_exe(files))\nprint(find_exe([\"a.txt\", \"b.pdf\"]))\n",
+          "expected_output": "b.exe\nNone",
+          "hints": [
+            {
+              "message": "If no .exe is found, result is never assigned — NameError!"
+            },
+            {
+              "message": "Initialize result = None before the loop."
+            },
+            {
+              "message": "Fix: Add result = None before the for loop. Or use: return None at the end."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Return in loop",
+          "description": "Fix: function only checks the first item, not all items.",
+          "difficulty": "intermediate",
+          "category": "Fix the Bug",
+          "estimated_minutes": 4,
+          "ai_intro": "Bug hunt! Fix: function only checks the first item, not all items.",
+          "starter_code": "# FIX: Only checks first file!\ndef has_threat(files):\n    for f in files:\n        if f.endswith(\".exe\"):\n            return True\n        else:\n            return False  # BUG: returns on first non-exe!\n\nprint(has_threat([\"a.txt\", \"b.exe\", \"c.pdf\"]))\n",
+          "expected_output": "True",
+          "hints": [
+            {
+              "message": "return False is inside the loop — it returns after the FIRST file!"
+            },
+            {
+              "message": "Move return False OUTSIDE the loop (after it)."
+            },
+            {
+              "message": "Fix: Remove the else: return False inside the loop. Put return False after the for loop ends."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

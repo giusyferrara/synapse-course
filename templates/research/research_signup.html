@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYNAPSE - Research Study Signup</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #1e293b;
+        }
+
+        .container { max-width: 750px; margin: 0 auto; }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 32px; color: #667eea; margin-bottom: 12px; }
+        .header .subtitle { font-size: 18px; color: #64748b; line-height: 1.6; }
+
+        .butterfly-logo { font-size: 60px; margin-bottom: 20px; animation: float 3s ease-in-out infinite; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .timer-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .study-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .group-badge {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+        .group-badge.a { background: #dbeafe; color: #1d4ed8; }
+        .group-badge.b { background: #fef3c7; color: #92400e; }
+
+        /* Progress */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+        .progress-label {
+            font-size: 13px;
+            color: #94a3b8;
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        /* Sections */
+        .form-section { display: none; animation: fadeIn 0.4s; }
+        .form-section.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 22px;
+            color: #1e293b;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .form-group { margin-bottom: 24px; }
+        .form-group label {
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 10px;
+        }
+        .form-group .hint { font-size: 13px; color: #94a3b8; margin-top: 6px; }
+
+        input[type="text"], input[type="email"] {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        .options-grid { display: flex; flex-direction: column; gap: 10px; }
+
+        .option-btn {
+            padding: 14px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            font-size: 15px;
+            text-align: left;
+            transition: all 0.2s;
+            color: #334155;
+            font-family: inherit;
+        }
+        .option-btn:hover { border-color: #667eea; background: #f8f9ff; }
+        .option-btn.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102,126,234,0.08), rgba(118,75,162,0.08));
+            color: #667eea;
+            font-weight: 600;
+        }
+        .option-btn.multi.selected {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.08);
+            color: #059669;
+        }
+
+        .button-group { display: flex; gap: 12px; margin-top: 32px; }
+        .btn {
+            flex: 1;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: #f1f5f9; color: #64748b; }
+        .btn-secondary:hover { background: #e2e8f0; }
+
+        .consent-box {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        .consent-box h3 { color: #92400e; margin-bottom: 12px; font-size: 18px; }
+        .consent-box p { color: #92400e; line-height: 1.7; font-size: 14px; margin-bottom: 8px; }
+        .consent-checkbox {
+            display: flex;
+            align-items: flex-start;
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+        .consent-checkbox input[type="checkbox"] {
+            width: 24px; height: 24px;
+            margin-right: 12px; margin-top: 2px;
+            cursor: pointer; flex-shrink: 0;
+        }
+        .consent-checkbox label { flex: 1; cursor: pointer; font-size: 15px; font-weight: 600; color: #92400e; }
+
+        .info-box {
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+        .info-box strong { color: #1e40af; display: block; margin-bottom: 8px; }
+        .info-box p { color: #1e40af; line-height: 1.6; font-size: 14px; }
+
+        /* Pre-test quiz */
+        .quiz-container { margin-top: 20px; }
+
+        .quiz-question {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 18px;
+            transition: border-color 0.3s;
+        }
+        .quiz-question.answered { border-color: #10b981; }
+
+        .quiz-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-right: 10px;
+        }
+        .quiz-bloom-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            float: right;
+        }
+        .bloom-remember { background: #dbeafe; color: #1d4ed8; }
+        .bloom-understand { background: #dcfce7; color: #166534; }
+        .bloom-apply { background: #fef3c7; color: #92400e; }
+        .bloom-analyse { background: #fce7f3; color: #9d174d; }
+
+        .quiz-text {
+            font-size: 15px;
+            color: #1e293b;
+            margin: 12px 0 14px;
+            line-height: 1.6;
+        }
+
+        .quiz-code {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 10px 0;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+        .quiz-option {
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: left;
+            transition: all 0.2s;
+            color: #334155;
+            font-family: inherit;
+        }
+        .quiz-option:hover { border-color: #667eea; background: #f8f9ff; }
+        .quiz-option.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1));
+            color: #4338ca;
+            font-weight: 600;
+        }
+
+        .quiz-progress {
+            background: #f1f5f9;
+            padding: 12px 18px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .card { padding: 30px 20px; }
+            .header h1 { font-size: 26px; }
+            .button-group { flex-direction: column; }
+            .quiz-question { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ============================================ -->
+    <!-- HEADER CARD                                  -->
+    <!-- ============================================ -->
+    <div class="card">
+        <div class="header">
+            <div class="butterfly-logo">
+                <img src="/icons/butterfly_logo_bright.svg" alt="Synapse" style="width:100px;height:100px;"
+                     onerror="this.outerHTML='<div style=&quot;font-size:80px;&quot;>&#129504;</div>'">
+            </div>
+            <span class="timer-badge">&#9201; About 10 minutes</span>
+            <h1>Welcome to SYNAPSE</h1>
+            <p class="subtitle">SYNAPSE Research Study</p>
+            <div style="margin-top:12px;">
+                <span class="study-badge">&#128274; AI-Powered Learning Study</span>
+                <span class="group-badge" id="groupBadge" style="display:none;"></span>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-label" id="progressLabel">Step 1 of 4</div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- FORM CARD                                    -->
+    <!-- ============================================ -->
+    <div class="card">
+        <form id="signupForm">
+
+            <!-- ======================================== -->
+            <!-- SECTION 1: Account + Demographics        -->
+            <!-- ======================================== -->
+            <div class="form-section active" id="section1">
+                <h2 class="section-title">&#128100; Create Your Account</h2>
+
+                <div class="form-group">
+                    <label for="nickname">Choose a username *</label>
+                    <div style="position:relative;">
+                        <input type="text" id="nickname" name="nickname"
+                               placeholder="e.g., CodeNinja, SecurityPro..."
+                               minlength="3" maxlength="20"
+                               pattern="[a-zA-Z0-9_]+"
+                               oninput="checkNicknameAvailability()"
+                               required>
+                        <span id="nicknameStatus" style="position:absolute;right:15px;top:50%;transform:translateY(-50%);font-size:20px;"></span>
+                    </div>
+                    <div class="hint" id="nicknameHint">This is your login. Letters, numbers, underscore only.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="emailField">Email (optional, for code recovery only)</label>
+                    <input type="email" id="emailField" name="email" placeholder="you@example.com">
+                    <div class="hint">We will never share your email. Only used if you forget your participant code.</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Age range *</label>
+                    <div class="options-grid" id="ageOptions">
+                        <button type="button" class="option-btn" data-field="age" data-value="18-21">18 &#8211; 21</button>
+                        <button type="button" class="option-btn" data-field="age" data-value="22-25">22 &#8211; 25</button>
+                        <button type="button" class="option-btn" data-field="age" data-value="26-30">26 &#8211; 30</button>
+                        <button type="button" class="option-btn" data-field="age" data-value="30+">30+</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Gender (optional)</label>
+                    <div class="options-grid" id="genderOptions">
+                        <button type="button" class="option-btn" data-field="gender" data-value="male">Male</button>
+                        <button type="button" class="option-btn" data-field="gender" data-value="female">Female</button>
+                        <button type="button" class="option-btn" data-field="gender" data-value="non_binary">Non-binary</button>
+                        <button type="button" class="option-btn" data-field="gender" data-value="prefer_not_say">Prefer not to say</button>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn btn-primary" onclick="nextSection(1)">Next &#8594;</button>
+                </div>
+            </div>
+
+            <!-- ======================================== -->
+            <!-- SECTION 2: Learning Profile + Experience -->
+            <!-- ======================================== -->
+            <div class="form-section" id="section2">
+                <h2 class="section-title">&#129504; Learning Profile</h2>
+
+                <div class="info-box">
+                    <strong>&#128172; Why we ask this:</strong>
+                    <p>We are researching how AI tutoring supports different learners. This helps us personalise your experience and measure effectiveness. All answers are confidential and anonymised.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Do you identify as neurodivergent? (select all that apply) *</label>
+                    <div class="options-grid" id="neuroOptions">
+                        <button type="button" class="option-btn multi" data-field="neurodivergent" data-value="adhd">ADHD</button>
+                        <button type="button" class="option-btn multi" data-field="neurodivergent" data-value="dyslexia">Dyslexia</button>
+                        <button type="button" class="option-btn multi" data-field="neurodivergent" data-value="autism">Autism</button>
+                        <button type="button" class="option-btn multi" data-field="neurodivergent" data-value="dyscalculia">Dyscalculia</button>
+                        <button type="button" class="option-btn multi" data-field="neurodivergent" data-value="other">Other</button>
+                        <button type="button" class="option-btn multi" data-field="neurodivergent" data-value="no">No</button>
+                        <button type="button" class="option-btn multi" data-field="neurodivergent" data-value="prefer_not_say">Prefer not to say</button>
+                    </div>
+                </div>
+
+                <div class="form-group" id="diagnosisGroup" style="display:none;">
+                    <label>Do you have a formal diagnosis?</label>
+                    <div class="options-grid" id="diagnosisOptions">
+                        <button type="button" class="option-btn" data-field="diagnosis" data-value="yes">Yes</button>
+                        <button type="button" class="option-btn" data-field="diagnosis" data-value="no">No</button>
+                        <button type="button" class="option-btn" data-field="diagnosis" data-value="prefer_not_say">Prefer not to say</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Programming experience *</label>
+                    <div class="options-grid" id="progExpOptions">
+                        <button type="button" class="option-btn" data-field="programming_experience" data-value="none">&#128308; None &#8211; I have never written code</button>
+                        <button type="button" class="option-btn" data-field="programming_experience" data-value="beginner">&#128993; Beginner &#8211; I have tried some tutorials</button>
+                        <button type="button" class="option-btn" data-field="programming_experience" data-value="intermediate">&#128994; Intermediate &#8211; I can build small projects</button>
+                        <button type="button" class="option-btn" data-field="programming_experience" data-value="advanced">&#128309; Advanced &#8211; I code regularly and know multiple languages</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Computer Security Awareness *</label>
+                    <div class="options-grid" id="secExpOptions">
+                        <button type="button" class="option-btn" data-field="security_experience" data-value="none">&#128308; None &#8211; I haven't thought much about online security</button>
+                        <button type="button" class="option-btn" data-field="security_experience" data-value="basic">&#128993; Basic &#8211; I know what strong passwords and phishing are</button>
+                        <button type="button" class="option-btn" data-field="security_experience" data-value="intermediate">&#128994; Intermediate &#8211; I understand common web threats and how to stay safe</button>
+                        <button type="button" class="option-btn" data-field="security_experience" data-value="advanced">&#128309; Advanced &#8211; I can identify and explain specific security vulnerabilities</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>How often do you use AI chatbots (ChatGPT, Claude, etc.)?</label>
+                    <div class="options-grid" id="aiExpOptions">
+                        <button type="button" class="option-btn" data-field="ai_chatbot_experience" data-value="never">Never used one</button>
+                        <button type="button" class="option-btn" data-field="ai_chatbot_experience" data-value="occasionally">Occasionally (a few times a month)</button>
+                        <button type="button" class="option-btn" data-field="ai_chatbot_experience" data-value="frequently">Frequently (several times a week or daily)</button>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn btn-secondary" onclick="prevSection(2)">&#8592; Back</button>
+                    <button type="button" class="btn btn-primary" onclick="nextSection(2)">Next &#8594;</button>
+                </div>
+            </div>
+
+            <!-- ======================================== -->
+            <!-- SECTION 3: AI Learning Experience       -->
+            <!-- ======================================== -->
+            <div class="form-section" id="section3">
+                <h2 class="section-title">&#127891; Your Learning Experience</h2>
+
+                <div class="info-box">
+                    <strong>&#128172; Why we ask this:</strong>
+                    <p>We want to understand your previous experience with AI tools and online learning. This helps us compare SYNAPSE with existing platforms and measure how different learners benefit. All answers are confidential.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Have you ever used AI (ChatGPT, Claude, Gemini, etc.) specifically to LEARN a new skill or subject? *</label>
+                    <div class="options-grid" id="aiLearnOptions">
+                        <button type="button" class="option-btn" data-field="ai_for_learning" data-value="never">Never</button>
+                        <button type="button" class="option-btn" data-field="ai_for_learning" data-value="tried_unhelpful">Tried but didn't find it helpful</button>
+                        <button type="button" class="option-btn" data-field="ai_for_learning" data-value="tried_helpful">Tried and found it helpful</button>
+                        <button type="button" class="option-btn" data-field="ai_for_learning" data-value="regularly">I use AI regularly to learn</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Have you used online learning platforms before? (Codecademy, TryHackMe, Khan Academy, Coursera, Udemy) *</label>
+                    <div class="options-grid" id="platformOptions">
+                        <button type="button" class="option-btn" data-field="platforms_used" data-value="never">Never used any</button>
+                        <button type="button" class="option-btn" data-field="platforms_used" data-value="tried_incomplete">Tried 1-2 but didn't finish</button>
+                        <button type="button" class="option-btn" data-field="platforms_used" data-value="completed">Completed at least one course</button>
+                        <button type="button" class="option-btn" data-field="platforms_used" data-value="regular">I use them regularly</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>When learning something new and you get stuck, what do you usually do? (select all that apply)</label>
+                    <div class="options-grid" id="stuckOptions">
+                        <button type="button" class="option-btn multi" data-field="when_stuck" data-value="give_up">Give up and move on</button>
+                        <button type="button" class="option-btn multi" data-field="when_stuck" data-value="search">Search Google / YouTube</button>
+                        <button type="button" class="option-btn multi" data-field="when_stuck" data-value="ask_person">Ask a friend or teacher</button>
+                        <button type="button" class="option-btn multi" data-field="when_stuck" data-value="ask_ai">Ask an AI chatbot</button>
+                        <button type="button" class="option-btn multi" data-field="when_stuck" data-value="try_different">Try different approaches</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>How do you prefer to learn? (select all that apply)</label>
+                    <div class="options-grid" id="learnStyleOptions">
+                        <button type="button" class="option-btn multi" data-field="learning_style" data-value="reading">Reading text / theory</button>
+                        <button type="button" class="option-btn multi" data-field="learning_style" data-value="videos">Watching videos</button>
+                        <button type="button" class="option-btn multi" data-field="learning_style" data-value="practice">Hands-on practice</button>
+                        <button type="button" class="option-btn multi" data-field="learning_style" data-value="interactive">Interactive tutorials with feedback</button>
+                        <button type="button" class="option-btn multi" data-field="learning_style" data-value="tutor">Talking to a tutor (human or AI)</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>How confident do you feel about learning a NEW technical topic on your own? *</label>
+                    <div class="options-grid" id="confidenceOptions">
+                        <button type="button" class="option-btn" data-field="self_confidence_pre" data-value="1">1 &#8211; Not confident at all</button>
+                        <button type="button" class="option-btn" data-field="self_confidence_pre" data-value="2">2 &#8211; Slightly confident</button>
+                        <button type="button" class="option-btn" data-field="self_confidence_pre" data-value="3">3 &#8211; Somewhat confident</button>
+                        <button type="button" class="option-btn" data-field="self_confidence_pre" data-value="4">4 &#8211; Fairly confident</button>
+                        <button type="button" class="option-btn" data-field="self_confidence_pre" data-value="5">5 &#8211; Very confident</button>
+                    </div>
+                </div>
+
+
+
+                <div class="button-group">
+                    <button type="button" class="btn btn-secondary" onclick="prevSection(3)">&#8592; Back</button>
+                    <button type="button" class="btn btn-primary" onclick="nextSection(3)" id="quizNextBtn">Next &#8594;</button>
+                </div>
+            </div>
+            <!-- ======================================== -->
+            <!-- SECTION 4: Research Consent              -->
+            <!-- ======================================== -->
+            <div class="form-section" id="section4">
+                <h2 class="section-title">&#128220; Research Consent</h2>
+
+                <div class="consent-box">
+                    <h3>&#128274; Your Privacy &amp; Data</h3>
+
+                    <p><strong>About this study:</strong></p>
+                    <p>You will use the SYNAPSE learning platform with an AI tutor. Depending on your chosen path, you will either explore a Java programming course or investigate security vulnerabilities in a practice web application. The session takes approximately <strong>20 minutes</strong>.</p>
+
+                    <p style="margin-top:12px;"><strong>What we collect:</strong></p>
+                    <p>&#8226; Your answers to the survey questions</p>
+                    <p>&#8226; How you interact with the platform (exercises completed, time spent, AI questions asked)</p>
+                    
+                    <p>&#8226; Your feedback after the session</p>
+
+                    <p style="margin-top:12px;"><strong>What we DON'T collect:</strong></p>
+                    <p>&#8226; Your real name or personal identity</p>
+                    <p>&#8226; Your location or IP address</p>
+
+                    <p style="margin-top:12px;"><strong>Your rights:</strong></p>
+                    <p>&#10004; Withdraw at any time, no questions asked</p>
+                    <p>&#10004; All data is anonymised and identified only by your participant code</p>
+                    <p>&#10004; Data is used only for academic research</p>
+                    <p>&#10004; You can request deletion of your data at any time</p>
+
+                    <div class="consent-checkbox">
+                        <input type="checkbox" id="consent" name="consent" required>
+                        <label for="consent">
+                            I understand and agree to participate. I am 18 or older and consent to having my anonymised data collected for research purposes.
+                        </label>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>&#128231; Questions or concerns?</strong>
+                    <p>Contact: <a href="mailto:synapse_4AI@outlook.com" style="font-weight:600;">synapse_4AI@outlook.com</a></p>
+                </div>
+
+                <div style="margin-top:24px;background:linear-gradient(135deg,rgba(102,126,234,0.08),rgba(118,75,162,0.08));border-radius:16px;padding:24px;border:2px solid rgba(102,126,234,0.3);">
+                    <h3 style="text-align:center;color:#667eea;margin-bottom:8px;">&#127919; Choose Your Path &amp; Start</h3>
+                    <p style="text-align:center;color:#64748b;margin-bottom:16px;">Select how you would like to experience SYNAPSE:</p>
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                        <button type="submit" class="btn btn-primary" id="btnBeginner" formnovalidate onclick="document.getElementById('chosenPathField').value='beginner'" style="flex:1;min-width:200px;padding:20px;font-size:16px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:14px;cursor:pointer;color:white;text-align:center;">&#9749; <strong>Learn with AI Tutor</strong><br><span style="font-size:12px;opacity:0.9;">I am new to programming. Let me try the Java course with AI help.</span></button>
+                        <button type="submit" class="btn btn-primary" id="btnExperienced" formnovalidate onclick="document.getElementById('chosenPathField').value='experienced'" style="flex:1;min-width:200px;padding:20px;font-size:16px;background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;border-radius:14px;cursor:pointer;color:white;text-align:center;">&#128272; <strong>Security Challenge</strong><br><span style="font-size:12px;opacity:0.9;">I have experience. Let me find real vulnerabilities in ShopSecure.</span></button>
+                    </div>
+                    <input type="hidden" id="chosenPathField" name="chosen_path" value="">
+                </div>
+                <div class="button-group" style="margin-top:16px;">
+                    <button type="button" class="btn btn-secondary" onclick="prevSection(4)">&#8592; Back</button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="footer">
+        <p>SYNAPSE by Giusy Ferrara</p>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const urlParams = new URLSearchParams(window.location.search);
+
+// Group assignment: from URL param, or random
+let groupAssignment = urlParams.get('group') || '';
+groupAssignment = 'A'; // All participants get AI tutor
+groupAssignment = groupAssignment.toUpperCase();
+
+const groupBadge = document.getElementById('groupBadge');
+// Don't show group to participant (blind design)
+// groupBadge.style.display = 'inline-block';
+// groupBadge.className = 'group-badge ' + groupAssignment.toLowerCase();
+// groupBadge.textContent = 'Group ' + groupAssignment;
+
+const formData = { group_assignment: groupAssignment };
+const totalSections = 4;
+let currentSection = 1;
+
+console.log('SYNAPSE Signup | Group:', groupAssignment);
+
+// ============================================================
+// PRE-TEST QUESTIONS (Bloom's Taxonomy mapped)
+// Anderson & Krathwohl (2001)
+// ============================================================
+const preTestQuestions = []; // Removed - now using experience-based pre-survey
+
+// ============================================================
+// BUILD QUIZ HTML
+// ============================================================
+const bloomLabels = {
+    'remember': '&#129504; Remember',
+    'understand': '&#128161; Understand',
+    'apply': '&#128295; Apply',
+    'analyse': '&#128270; Analyse'
+};
+const bloomClasses = {
+    'remember': 'bloom-remember',
+    'understand': 'bloom-understand',
+    'apply': 'bloom-apply',
+    'analyse': 'bloom-analyse'
+};
+
+// Quiz rendering removed - using button-based pre-survey instead
+
+const quizAnswers = {};
+let quizAnsweredCount = 0;
+
+function selectQuizAnswer(btn) {
+    const qId = btn.dataset.question;
+    const qDiv = document.getElementById('quiz_' + qId);
+
+    // Deselect others in this question
+    qDiv.querySelectorAll('.quiz-option').forEach(o => o.classList.remove('selected'));
+    btn.classList.add('selected');
+
+    if (!quizAnswers[qId]) quizAnsweredCount++;
+    quizAnswers[qId] = btn.dataset.value;
+    qDiv.classList.add('answered');
+
+    document.getElementById('quizProgress').textContent = `Answered ${quizAnsweredCount} of ${preTestQuestions.length} questions`;
+}
+
+// ============================================================
+// OPTION CLICKS (demographics)
+// ============================================================
+document.querySelectorAll('.option-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const field = this.dataset.field;
+        const value = this.dataset.value;
+        if (!field) return; // quiz buttons handled separately
+
+        if (this.classList.contains('multi')) {
+            this.classList.toggle('selected');
+
+            if (value === 'no' || value === 'prefer_not_say') {
+                this.parentElement.querySelectorAll('.option-btn').forEach(b => {
+                    if (b !== this) b.classList.remove('selected');
+                });
+            } else {
+                this.parentElement.querySelectorAll('.option-btn').forEach(b => {
+                    if (b.dataset.value === 'no' || b.dataset.value === 'prefer_not_say') {
+                        b.classList.remove('selected');
+                    }
+                });
+            }
+
+            const selected = Array.from(this.parentElement.querySelectorAll('.option-btn.selected'))
+                .map(b => b.dataset.value);
+            formData[field] = selected;
+
+            const hasCondition = selected.some(v => !['no', 'prefer_not_say'].includes(v));
+            const dg = document.getElementById('diagnosisGroup');
+            if (dg) dg.style.display = hasCondition ? 'block' : 'none';
+        } else {
+            this.parentElement.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+            this.classList.add('selected');
+            formData[field] = value;
+        }
+    });
+});
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function updateProgress() {
+    const pct = ((currentSection - 1) / totalSections) * 100;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = `Step ${currentSection} of ${totalSections}`;
+}
+
+function nextSection(from) {
+    if (!validateSection(from)) return;
+    document.getElementById('section' + from).classList.remove('active');
+    currentSection = from + 1;
+    document.getElementById('section' + currentSection).classList.add('active');
+    updateProgress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function prevSection(from) {
+    document.getElementById('section' + from).classList.remove('active');
+    currentSection = from - 1;
+    document.getElementById('section' + currentSection).classList.add('active');
+    updateProgress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function validateSection(section) {
+    if (section === 1) {
+        const nickname = document.getElementById('nickname').value.trim();
+        if (!nickname || nickname.length < 3) {
+            alert('Please choose a username (at least 3 characters)');
+            document.getElementById('nickname').focus();
+            return false;
+        }
+        formData.nickname = nickname;
+        formData.email = document.getElementById('emailField').value.trim();
+        if (!formData.age) {
+            alert('Please select your age range');
+            return false;
+        }
+    }
+    if (section === 2) {
+        if (!formData.neurodivergent || formData.neurodivergent.length === 0) {
+            alert('Please select at least one option for neurodivergent status');
+            return false;
+        }
+        if (!formData.programming_experience) {
+            alert('Please select your programming experience level');
+            return false;
+        }
+        if (!formData.security_experience) {
+            alert('Please select your security awareness level');
+            return false;
+        }
+    }
+    if (section === 3) {
+        // Allow partial answers (some "I don't know" is fine)
+        // But encourage completion
+        // Check required fields in section 3
+            const requiredS3 = ['ai_for_learning', 'platforms_used', 'self_confidence_pre'];
+            const missingS3 = requiredS3.filter(f => !formData[f]);
+            if (missingS3.length > 0) {
+                const skip = false;
+                alert('Please answer the required questions before continuing.');
+            if (!skip) return false;
+        }
+    }
+    return true;
+}
+
+// ============================================================
+// NICKNAME CHECK
+// ============================================================
+let nicknameCheckTimeout;
+
+async function checkNicknameAvailability() {
+    const nickname = document.getElementById('nickname').value.trim();
+    const statusEl = document.getElementById('nicknameStatus');
+    const hintEl = document.getElementById('nicknameHint');
+
+    if (nickname.length < 3) {
+        statusEl.textContent = '';
+        hintEl.textContent = 'This is your login. Letters, numbers, underscore only.';
+        hintEl.style.color = '#94a3b8';
+        return;
+    }
+
+    clearTimeout(nicknameCheckTimeout);
+    statusEl.textContent = '\u23F3';
+
+    nicknameCheckTimeout = setTimeout(async () => {
+        try {
+            const response = await fetch('/api/research/check_nickname', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nickname: nickname })
+            });
+            const result = await response.json();
+
+            if (result.available) {
+                statusEl.textContent = '\u2705';
+                hintEl.textContent = '\u2705 Available!';
+                hintEl.style.color = '#10b981';
+            } else {
+                statusEl.textContent = '\u274C';
+                hintEl.textContent = '\u274C Taken. Try: ' + nickname + '2 or ' + nickname + '_sec';
+                hintEl.style.color = '#ef4444';
+            }
+        } catch (error) {
+            statusEl.textContent = '\u26A0\uFE0F';
+            hintEl.textContent = '\u26A0\uFE0F Could not verify';
+            hintEl.style.color = '#f59e0b';
+        }
+    }, 500);
+}
+
+// ============================================================
+// SCORE PRE-TEST
+// ============================================================
+function scorePreTest() {
+    let total = 0, max = preTestQuestions.length;
+    let bloomScores = { remember: 0, understand: 0, apply: 0, analyse: 0 };
+    let bloomMax = { remember: 0, understand: 0, apply: 0, analyse: 0 };
+    let answers = {};
+
+    preTestQuestions.forEach(q => {
+        bloomMax[q.bloom]++;
+        const userAnswer = quizAnswers[q.id] || 'x'; // x = unanswered
+        answers[q.id] = userAnswer;
+        if (userAnswer === q.correct) {
+            total++;
+            bloomScores[q.bloom]++;
+        }
+    });
+
+    return {
+        answers: answers,
+        score: total,
+        max: max,
+        bloom_remember: bloomScores.remember,
+        bloom_understand: bloomScores.understand,
+        bloom_apply: bloomScores.apply,
+        bloom_analyse: bloomScores.analyse
+    };
+}
+
+// ============================================================
+// SUBMIT
+// ============================================================
+document.getElementById('signupForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    if (!document.getElementById('consent').checked) {
+        alert('Please accept the consent form to continue');
+        return;
+    }
+
+    const btnB = document.getElementById('btnBeginner');
+    const btnE = document.getElementById('btnExperienced');
+    if(btnB) btnB.disabled = true;
+    if(btnE) btnE.disabled = true;
+
+    const nickname = document.getElementById('nickname').value.trim();
+
+    // Final nickname check
+    try {
+        const checkResponse = await fetch('/api/research/check_nickname', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nickname: nickname })
+        });
+        const checkResult = await checkResponse.json();
+
+        if (!checkResult.available) {
+            alert('This username is already taken. Please choose another one.');
+            document.getElementById('section4').classList.remove('active');
+            document.getElementById('section1').classList.add('active');
+            currentSection = 1;
+            updateProgress();
+            document.getElementById('nickname').focus();
+            if(btnB)btnB.disabled=false;if(btnE)btnE.disabled=false;
+            
+            return;
+        }
+    } catch (error) {
+        console.error('Nickname check error:', error);
+    }
+
+    // Score pre-test
+    const preTest = {
+            score: parseInt(formData.self_confidence_pre || '0'),
+            total: 5,
+            percentage: (parseInt(formData.self_confidence_pre || '0') / 5 * 100).toFixed(0),
+            ai_for_learning: formData.ai_for_learning || 'not_answered',
+            platforms_used: formData.platforms_used || 'not_answered',
+            when_stuck: formData.when_stuck || [],
+            learning_style: formData.learning_style || [],
+            self_confidence_pre: formData.self_confidence_pre || 'not_answered'
+        };
+
+    // Determine ND status
+    const ndSelections = formData.neurodivergent || [];
+    const isND = ndSelections.some(v => !['no', 'prefer_not_say'].includes(v));
+
+    // Build submit payload
+    const submitData = {
+        nickname: nickname,
+        email: formData.email || '',
+        age: formData.age || '',
+        gender: formData.gender || 'prefer_not_say',
+        group_assignment: groupAssignment,
+
+        // ND Profile
+        neurodivergence: ndSelections,
+        diagnosis: formData.diagnosis || 'n/a',
+        is_neurodivergent: isND,
+
+        // Experience
+        programming_experience: formData.programming_experience || '',
+        security_experience: formData.security_experience || '',
+        ai_chatbot_experience: formData.ai_chatbot_experience || '',
+
+        // Pre-test
+        pre_test_answers: preTest.answers,
+        pre_test_score: preTest.score,
+        pre_test_max: preTest.max,
+        pre_test_bloom_remember: preTest.bloom_remember,
+        pre_test_bloom_understand: preTest.bloom_understand,
+        pre_test_bloom_apply: preTest.bloom_apply,
+        pre_test_bloom_analyse: preTest.bloom_analyse,
+
+        // New pre-survey fields
+        ai_for_learning: formData.ai_for_learning || '',
+        platforms_used: formData.platforms_used || '',
+        when_stuck: formData.when_stuck || [],
+        learning_style: formData.learning_style || [],
+        self_confidence_pre: formData.self_confidence_pre || '0',
+        // Path choice
+        chosen_path: document.getElementById('chosenPathField').value || 'beginner',
+
+        // Consent
+        consent: true,
+        timestamp: new Date().toISOString()
+    };
+
+    console.log('Submitting:', submitData);
+
+    try {
+        const response = await fetch('/api/research/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(submitData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Clear old session cookies for fresh start
+            document.cookie = 'synapse_user=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+            document.cookie = 'participant_code=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+            document.cookie = 'session=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+            sessionStorage.clear();
+            
+            // Store participant code
+            var code = result.participant_code;
+            var participantNickname = document.getElementById('nickname').value;
+            sessionStorage.setItem('ss_participant', code);
+            sessionStorage.setItem('ss_nickname', participantNickname);
+            
+            // Show code to participant
+            var path = document.getElementById('chosenPathField').value;
+            var dest = path === 'experienced' 
+                ? '/research/task?participant=' + code
+                : '/course/java-security?participant=' + code;
+            
+            // Show code popup before redirect
+            var popup = document.createElement('div');
+            popup.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:99999';
+            popup.innerHTML = '<div style="background:white;border-radius:20px;padding:40px;max-width:450px;text-align:center;color:#1e293b">'
+                + '<h2 style="color:#667eea;margin-bottom:12px">\u2705 Account Created!</h2>'
+                + '<p style="margin-bottom:16px">Your anonymous participant code is:</p>'
+                + '<div style="background:#f1f5f9;border:3px solid #667eea;border-radius:12px;padding:16px;font-size:28px;font-weight:800;letter-spacing:4px;color:#667eea;margin-bottom:16px">' + code + '</div>'
+                + '<p style="font-size:13px;color:#64748b;margin-bottom:20px">Save this code! You may need it to resume your session.</p>'
+                + '<button onclick="window.location.href=\'' + dest + '\'" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:14px 32px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">Continue \u27A1</button>'
+                + '</div>';
+            document.body.appendChild(popup);
+        } else {
+            alert('Error: ' + (result.error || 'Failed to sign up'));
+            if(btnB)btnB.disabled=false;if(btnE)btnE.disabled=false;
+            
+        }
+    } catch (error) {
+        console.error('Signup error:', error);
+        alert('Connection error. Please try again.');
+        if(btnB)btnB.disabled=false;if(btnE)btnE.disabled=false;
+        
+    }
+});
+
+updateProgress();
+</script>
+</body>
+</html>

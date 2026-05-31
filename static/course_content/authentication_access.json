@@ -1,0 +1,1609 @@
+{
+  "course_id": "authentication_access",
+  "title": "Authentication & Access Control",
+  "description": "Master authentication mechanisms, password security, session management, authorisation models, and access control — covering CWE-287 (Improper Authentication), CWE-862 (Missing Authorisation), CWE-798 (Hard-coded Credentials), CWE-306 (Missing Authentication for Critical Function), and CWE-269 (Improper Privilege Management).",
+  "difficulty": "ADVANCED",
+  "estimated_hours": 12,
+  "prerequisites": [
+    "java_classes_objects",
+    "java_strings_security"
+  ],
+  "learning_outcomes": [
+    "Explain the difference between authentication and authorisation",
+    "Implement secure password hashing with salts using Java",
+    "Identify and fix hard-coded credential vulnerabilities (CWE-798)",
+    "Build a role-based access control (RBAC) system",
+    "Implement secure session management",
+    "Detect and prevent brute-force login attacks",
+    "Apply the principle of least privilege in code",
+    "Implement multi-factor authentication concepts",
+    "Identify missing authorisation checks (CWE-862)",
+    "Build secure login, logout, and password reset flows",
+    "Understand Insecure Direct Object References (IDOR)",
+    "Implement account lockout and rate limiting"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins. Thinks of authentication like a bouncer at a club — checking your ID before letting you in!",
+    "intervention_triggers": {
+      "idle_40_seconds": "Authentication can feel like a lot of moving parts. Think of it like entering a building: first you PROVE who you are (authentication), then someone checks what rooms you can enter (authorisation). Want me to walk through it?",
+      "idle_90_seconds": "Still thinking? That is completely fine — security is layered! Let me simplify: Authentication = 'Who are you?' Authorisation = 'What are you allowed to do?' Two separate questions, two separate checks in your code.",
+      "idle_180_seconds": "No worries at all! Let us start fresh. Imagine a hotel: you show your ID at reception (authentication), they give you a keycard (session), and the keycard only opens YOUR room (authorisation). Every web app works the same way. Ready to try again?",
+      "first_error": "Good attempt! Authentication bugs are very common in real software. Let us check your logic together — usually it is a missing check or wrong comparison.",
+      "repeated_errors": "I can see you are working hard. Let me show you a minimal working example, then we will build up step by step.",
+      "after_success": "Brilliant! You just secured an authentication flow. Real-world breaches happen because developers skip these exact checks — you are ahead of the curve!"
+    },
+    "encouragement_phrases": [
+      "Authentication is the front door of every application. You are learning to build strong doors!",
+      "Every password you hash properly protects a real person's account!",
+      "Access control bugs are the #1 vulnerability in OWASP Top 10. You are tackling the biggest threat!",
+      "The difference between a secure app and a breached one is often just ONE missing check. You are learning to find them!",
+      "Hard-coded passwords have caused massive breaches. You now know how to avoid them!",
+      "Role-based access control is used in every enterprise application. These are career-level skills!",
+      "Session management is tricky but you are getting it. Every login flow uses what you are learning!",
+      "Brute-force protection saves millions of accounts from automated attacks. Great work!",
+      "Least privilege means giving minimum access needed. You are thinking like a security architect!",
+      "Multi-factor authentication stops 99% of account takeovers. You understand why!"
+    ],
+    "explanation_styles": {
+      "analogy": "Authentication is like a bouncer checking your ID at a nightclub. Authorisation is like the VIP wristband that lets you into the exclusive area. You need BOTH: the bouncer must verify you are who you say you are, AND the wristband controls where you can go.",
+      "visual": "Draw the flow: [User enters credentials] -> [Server checks hash] -> [Session created] -> [Each request: check session + check permissions] -> [Allow or Deny]. Every step is a security gate.",
+      "step_by_step": "Step 1: User sends username + password. Step 2: Server looks up stored hash for that username. Step 3: Server hashes the submitted password with the same salt. Step 4: Compare hashes — if match, create session. Step 5: On every subsequent request, check session is valid AND user has permission for that action.",
+      "code_trace": "Line 1: Get username and password from request. Line 2: Query database for user record. Line 3: Get stored salt and hash. Line 4: Hash submitted password with stored salt. Line 5: Compare computed hash with stored hash. Line 6: If match, create session token. Line 7: Store session with user ID and role.",
+      "comparison": "WITHOUT proper auth: anyone can access any page, any data, any function. WITH proper auth: each user is verified, each action is authorised, each session is tracked. The difference between chaos and order."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "authentication_access_lesson_1",
+      "title": "Authentication & Access Control: From Passwords to Permissions",
+      "theory": {
+        "introduction": "Every time you log into your email, bank, or social media, you go through authentication — the process of proving you are who you claim to be. But logging in is only half the story. After you are authenticated, the system must also decide what you are ALLOWED to do. Can you read other people's messages? Can you delete accounts? Can you access the admin panel? This is authorisation — controlling what authenticated users can access. Getting authentication wrong means attackers can pretend to be anyone. Getting authorisation wrong means a regular user can act like an administrator. Both are devastating. In the OWASP Top 10, Broken Access Control is the NUMBER ONE vulnerability, and Identification and Authentication Failures is in the top 10 as well. This course teaches you to build both correctly from scratch: secure password storage, session management, role-based access control, and all the common pitfalls that lead to real-world breaches. We cover CWE-287 (Improper Authentication), CWE-862 (Missing Authorisation), CWE-798 (Hard-coded Credentials), CWE-306 (Missing Authentication for Critical Function), and CWE-269 (Improper Privilege Management) — the most critical weaknesses in modern applications.",
+        "why_important": "Broken authentication and access control are behind the majority of data breaches. The 2017 Equifax breach exposed 147 million records partly due to authentication failures. Hard-coded credentials in IoT devices have enabled massive botnets. Missing authorisation checks let attackers access admin functions by simply changing a URL parameter. These are not theoretical — they happen every day. Understanding these vulnerabilities and their fixes is essential for anyone building or testing software.",
+        "key_concepts": [
+          {
+            "concept": "Authentication vs Authorisation",
+            "explanation": "Authentication answers 'WHO are you?' — verifying identity through credentials like passwords, biometrics, or tokens. Authorisation answers 'WHAT can you do?' — checking permissions after identity is confirmed. Think of a hotel: showing your passport at reception is authentication; your room keycard only opening YOUR room is authorisation. Many developers confuse these or implement one without the other. Both must be present and correct.",
+            "example": "// AUTHENTICATION: Verify who the user is\nboolean authenticate(String username, String password) {\n    User user = database.findByUsername(username);\n    if (user == null) return false;\n    String hashedInput = hash(password, user.getSalt());\n    return hashedInput.equals(user.getPasswordHash());\n}\n\n// AUTHORISATION: Check what the user can do\nboolean authorise(User user, String action) {\n    if (action.equals(\"DELETE_USER\") && !user.getRole().equals(\"ADMIN\")) {\n        return false; // Only admins can delete users\n    }\n    return true;\n}\n\n// BOTH must be checked on every request:\n// 1. Is the user authenticated? (valid session)\n// 2. Is the user authorised? (has permission for this action)",
+            "ai_hint": "Authentication = passport check. Authorisation = access badge. You need both. A valid passport does not mean you can enter the server room!"
+          },
+          {
+            "concept": "Password Hashing with Salts",
+            "explanation": "Never store passwords in plain text or even encrypted — store them HASHED. A hash is a one-way function: you can convert a password to a hash, but you cannot convert the hash back to the password. A salt is a random value added to the password before hashing, making each hash unique even for identical passwords. Without salt, attackers can use precomputed rainbow tables to crack thousands of passwords instantly. With salt, each password must be cracked individually.",
+            "example": "import java.security.SecureRandom;\nimport java.security.MessageDigest;\nimport java.util.Base64;\n\npublic class PasswordHasher {\n    public static byte[] generateSalt() {\n        byte[] salt = new byte[16];\n        new SecureRandom().nextBytes(salt);\n        return salt;\n    }\n    \n    public static String hash(String password, byte[] salt) {\n        MessageDigest md = MessageDigest.getInstance(\"SHA-256\");\n        md.update(salt);\n        byte[] hashed = md.digest(password.getBytes());\n        return Base64.getEncoder().encodeToString(hashed);\n    }\n    \n    // STORE: salt + hash (both needed for verification)\n    // VERIFY: hash(input + stored_salt) == stored_hash?\n}",
+            "ai_hint": "Think of salt as a unique ingredient added to each recipe. Even if two chefs make the same dish, adding different salts means the results taste completely different — attackers cannot use a master recipe book."
+          },
+          {
+            "concept": "Hard-coded Credentials (CWE-798)",
+            "explanation": "Hard-coded credentials are passwords, API keys, or cryptographic keys embedded directly in source code. This is extremely dangerous because: (1) anyone who reads the source code knows the password, (2) the password is the same for every installation, (3) it cannot be changed without modifying code, (4) it often ends up in version control (Git) where it persists forever. Real-world examples include IoT devices with default admin/admin credentials, and applications with backdoor passwords baked into the code.",
+            "example": "// VULNERABLE: Hard-coded password!\npublic class LoginService {\n    public boolean verifyAdmin(String password) {\n        if (password.equals(\"Mew!\")) {  // CWE-798!\n            return true;\n        }\n        return false;\n    }\n}\n\n// ALSO VULNERABLE: Hard-coded in connection string\nString dbUrl = \"jdbc:mysql://db.server.com:3306/app\";\nString dbUser = \"admin\";\nString dbPass = \"SuperSecret123\"; // CWE-798!\n\n// FIXED: Use environment variables or config files\nString dbPass = System.getenv(\"DB_PASSWORD\");\n// Or: Properties config loaded from external file",
+            "ai_hint": "Hard-coding a password is like writing the combination to your safe on the outside of the safe. Anyone who looks can get in, and you cannot change it without replacing the whole safe."
+          },
+          {
+            "concept": "Missing Authorisation (CWE-862)",
+            "explanation": "Missing authorisation means a function performs a sensitive action WITHOUT checking if the current user has permission. For example, a 'delete user' endpoint that checks if the user is logged in but NOT if they are an admin. Or an API that returns any user's data by ID without checking if the requester should see that data. This is different from authentication — the user IS logged in, but the system fails to check their PERMISSIONS.",
+            "example": "// VULNERABLE: Checks authentication but NOT authorisation!\nprotected void doPost(HttpServletRequest req, HttpServletResponse resp) {\n    HttpSession session = req.getSession(false);\n    if (session == null) {\n        resp.sendError(401, \"Not logged in\");\n        return;\n    }\n    // BUG: Any logged-in user can delete ANY user!\n    String targetId = req.getParameter(\"userId\");\n    database.deleteUser(targetId); // No permission check!\n}\n\n// FIXED: Check authorisation\nString role = (String) session.getAttribute(\"role\");\nif (!\"ADMIN\".equals(role)) {\n    resp.sendError(403, \"Not authorised\");\n    return;\n}\ndatabase.deleteUser(targetId);",
+            "ai_hint": "Authentication without authorisation is like letting everyone through the hotel entrance but not checking room keycards. You know WHO they are but not WHERE they should go."
+          },
+          {
+            "concept": "Improper Authentication (CWE-287)",
+            "explanation": "Improper authentication means the authentication mechanism can be bypassed or does not properly verify identity. Examples: accepting an empty password, checking username but not password, using client-side validation only, comparing passwords case-insensitively, or allowing authentication bypass through parameter manipulation. The core principle: authentication must be SERVER-SIDE, must check ALL required credentials, and must use secure comparison.",
+            "example": "// VULNERABLE EXAMPLES:\n\n// 1. Empty password accepted:\nif (username.equals(\"admin\")) return true; // Never checks password!\n\n// 2. Client-side only validation:\n// JavaScript: if(password === storedHash) login();\n// Attacker: just modify JavaScript or send direct request\n\n// 3. SQL in authentication (SQL Injection):\nString query = \"SELECT * FROM users WHERE username='\" + user\n    + \"' AND password='\" + pass + \"'\";\n// Input: user=\"admin' OR '1'='1\" bypasses authentication!\n\n// 4. Case-insensitive password:\nif (input.equalsIgnoreCase(storedPassword)) // Reduces keyspace!\n\n// FIXED:\n// - Server-side validation always\n// - Check ALL credentials\n// - Use parameterised queries\n// - Use hash comparison (case-sensitive by nature)",
+            "ai_hint": "Authentication must be airtight. One bypass and the entire security model collapses. Check everything on the server, never trust the client."
+          },
+          {
+            "concept": "Session Management",
+            "explanation": "After authentication, the server creates a session — a temporary identifier that links subsequent requests to the authenticated user. Sessions must be: random (unpredictable), unique (no collisions), time-limited (expire), invalidated on logout, and transmitted securely (HTTPS, HttpOnly cookies). Poor session management leads to session hijacking (stealing the session ID), session fixation (forcing a known session ID), and session replay (reusing old sessions).",
+            "example": "import java.security.SecureRandom;\nimport java.util.*;\n\npublic class SessionManager {\n    private Map<String, Session> activeSessions = new HashMap<>();\n    \n    public String createSession(String userId, String role) {\n        String sessionId = generateSecureId();\n        Session s = new Session(userId, role, System.currentTimeMillis());\n        activeSessions.put(sessionId, s);\n        return sessionId;\n        // Set as cookie: Set-Cookie: session=<id>; HttpOnly; Secure; SameSite=Lax\n    }\n    \n    public Session validateSession(String sessionId) {\n        Session s = activeSessions.get(sessionId);\n        if (s == null) return null; // Not found\n        if (System.currentTimeMillis() - s.created > 3600000) {\n            activeSessions.remove(sessionId); // Expired\n            return null;\n        }\n        return s; // Valid\n    }\n    \n    public void destroySession(String sessionId) {\n        activeSessions.remove(sessionId); // Logout\n    }\n}",
+            "ai_hint": "A session is like a wristband at a festival. It proves you already showed your ticket (authenticated). But it must expire, be hard to copy, and be collected when you leave."
+          },
+          {
+            "concept": "Role-Based Access Control (RBAC)",
+            "explanation": "RBAC assigns permissions based on roles (ADMIN, USER, MANAGER) rather than individual users. Each role has a set of allowed actions. When a user tries to do something, the system checks: (1) Is the user authenticated? (2) What role does the user have? (3) Does that role have permission for this action? RBAC simplifies permission management — instead of giving permissions to 1000 users individually, assign them to 3 roles and put users in roles.",
+            "example": "import java.util.*;\n\npublic class RBAC {\n    static Map<String, Set<String>> rolePermissions = new HashMap<>();\n    static {\n        rolePermissions.put(\"ADMIN\", new HashSet<>(Arrays.asList(\n            \"VIEW_USERS\", \"CREATE_USER\", \"DELETE_USER\", \"VIEW_REPORTS\", \"MANAGE_SETTINGS\"\n        )));\n        rolePermissions.put(\"MANAGER\", new HashSet<>(Arrays.asList(\n            \"VIEW_USERS\", \"VIEW_REPORTS\"\n        )));\n        rolePermissions.put(\"USER\", new HashSet<>(Arrays.asList(\n            \"VIEW_OWN_PROFILE\", \"EDIT_OWN_PROFILE\"\n        )));\n    }\n    \n    public static boolean hasPermission(String role, String action) {\n        Set<String> perms = rolePermissions.get(role);\n        return perms != null && perms.contains(action);\n    }\n}",
+            "ai_hint": "RBAC is like a hotel key system: guests open their room, staff open all rooms on their floor, and the manager opens everything. You define the key levels, not individual door access."
+          },
+          {
+            "concept": "Brute-Force Protection",
+            "explanation": "Brute-force attacks try thousands or millions of password combinations. Without protection, an attacker can guess common passwords quickly (dictionary attack) or try every combination (brute force). Defences include: account lockout after N failed attempts, progressive delays (1s, 2s, 4s, 8s...), CAPTCHA after failed attempts, rate limiting by IP address, and monitoring for unusual login patterns. Balance security with usability — permanent lockout can be used for denial-of-service.",
+            "example": "import java.util.*;\n\npublic class BruteForceProtection {\n    static Map<String, Integer> failedAttempts = new HashMap<>();\n    static Map<String, Long> lockoutUntil = new HashMap<>();\n    static final int MAX_ATTEMPTS = 5;\n    static final long LOCKOUT_MS = 300000; // 5 minutes\n    \n    public static String attemptLogin(String username, String password) {\n        // Check lockout\n        Long locked = lockoutUntil.get(username);\n        if (locked != null && System.currentTimeMillis() < locked) {\n            return \"LOCKED: Account locked. Try again later.\";\n        }\n        \n        // Verify credentials\n        if (verifyPassword(username, password)) {\n            failedAttempts.remove(username);\n            return \"SUCCESS\";\n        }\n        \n        // Track failures\n        int fails = failedAttempts.getOrDefault(username, 0) + 1;\n        failedAttempts.put(username, fails);\n        if (fails >= MAX_ATTEMPTS) {\n            lockoutUntil.put(username, System.currentTimeMillis() + LOCKOUT_MS);\n            return \"LOCKED: Too many attempts. Account locked for 5 minutes.\";\n        }\n        return \"FAILED: \" + (MAX_ATTEMPTS - fails) + \" attempts remaining.\";\n    }\n}",
+            "ai_hint": "Brute force is like trying every key on a keyring. Account lockout is like changing the lock after too many wrong keys. Rate limiting is like making the attacker wait longer between tries."
+          },
+          {
+            "concept": "Principle of Least Privilege",
+            "explanation": "Every user, program, and process should have only the minimum permissions needed to perform their function — nothing more. If a user only needs to read reports, do not give them write access. If a database connection only needs SELECT, do not grant DELETE. This limits the damage when an account is compromised. A compromised admin account is catastrophic; a compromised read-only account is a data leak but not data destruction.",
+            "example": "// BAD: Giving everyone admin access\npublic class UserService {\n    // Every user can do everything!\n    public void deleteUser(String userId) {\n        database.delete(userId); // No permission check\n    }\n}\n\n// GOOD: Least privilege\npublic class UserService {\n    public void deleteUser(String requesterId, String targetId) {\n        User requester = database.findById(requesterId);\n        if (!requester.getRole().equals(\"ADMIN\")) {\n            throw new SecurityException(\"Insufficient privileges\");\n        }\n        if (requesterId.equals(targetId)) {\n            throw new SecurityException(\"Cannot delete own account\");\n        }\n        database.delete(targetId);\n        auditLog.log(requesterId + \" deleted \" + targetId);\n    }\n}",
+            "ai_hint": "Least privilege is like giving hotel staff master keys only to the floors they work on, not the entire hotel. If their key is stolen, the damage is limited."
+          },
+          {
+            "concept": "Insecure Direct Object References (IDOR)",
+            "explanation": "IDOR happens when an application uses user-supplied input to access objects directly without checking authorisation. Example: /api/invoice?id=1001 shows invoice 1001. An attacker changes it to id=1002 and sees someone else's invoice. The fix: always check that the authenticated user is AUTHORISED to access the requested object. Never trust client-supplied IDs without server-side permission validation.",
+            "example": "// VULNERABLE: IDOR - any user can view any invoice\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp) {\n    String invoiceId = req.getParameter(\"id\");\n    Invoice inv = database.getInvoice(invoiceId);\n    resp.getWriter().println(inv.toJSON()); // No ownership check!\n}\n\n// FIXED: Check ownership\nprotected void doGet(HttpServletRequest req, HttpServletResponse resp) {\n    String invoiceId = req.getParameter(\"id\");\n    String userId = (String) req.getSession().getAttribute(\"userId\");\n    Invoice inv = database.getInvoice(invoiceId);\n    \n    if (!inv.getOwnerId().equals(userId)) {\n        resp.sendError(403, \"Not your invoice\");\n        return;\n    }\n    resp.getWriter().println(inv.toJSON());\n}",
+            "ai_hint": "IDOR is like an apartment building where changing the number on a mailbox lets you read anyone's mail. The fix: check if the person requesting the mail actually lives in that apartment."
+          },
+          {
+            "concept": "Multi-Factor Authentication (MFA)",
+            "explanation": "MFA requires two or more factors to authenticate: something you KNOW (password), something you HAVE (phone, hardware key), something you ARE (fingerprint, face). Even if an attacker steals your password, they cannot log in without the second factor. MFA stops 99.9%% of automated attacks. Common implementations: SMS codes, authenticator apps (TOTP), push notifications, hardware security keys (FIDO2/WebAuthn).",
+            "example": "import java.security.SecureRandom;\n\npublic class MFAService {\n    static final int CODE_LENGTH = 6;\n    static final long CODE_VALIDITY_MS = 300000; // 5 minutes\n    \n    public static String generateCode() {\n        SecureRandom sr = new SecureRandom();\n        int code = sr.nextInt(900000) + 100000; // 6-digit code\n        return String.valueOf(code);\n    }\n    \n    // Login flow:\n    // Step 1: Verify username + password (factor 1: knowledge)\n    // Step 2: Generate code, send to user's phone\n    // Step 3: User enters code (factor 2: possession)\n    // Step 4: Verify code matches and is not expired\n    // Step 5: Create session only after BOTH factors verified\n}",
+            "ai_hint": "MFA is like needing both your key AND your fingerprint to open a door. Losing one is not enough for an attacker to get in."
+          },
+          {
+            "concept": "Secure Password Reset",
+            "explanation": "Password reset is a critical flow that attackers target. A secure reset: (1) generates a cryptographically random token, (2) stores the token hashed (not plain text), (3) sends a link with the token to the verified email, (4) the token expires in 15-60 minutes, (5) the token is single-use, (6) requires setting a new strong password. Insecure resets: security questions (guessable), sending the password in email (visible), using predictable tokens, or not expiring tokens.",
+            "example": "import java.security.SecureRandom;\nimport java.util.*;\n\npublic class PasswordReset {\n    static Map<String, ResetToken> resetTokens = new HashMap<>();\n    \n    public static String initiateReset(String email) {\n        byte[] bytes = new byte[32];\n        new SecureRandom().nextBytes(bytes);\n        String token = Base64.getUrlEncoder().encodeToString(bytes);\n        \n        resetTokens.put(hashToken(token), new ResetToken(\n            email, System.currentTimeMillis() + 3600000 // 1 hour\n        ));\n        \n        // Send email with: https://app.com/reset?token=<token>\n        return token; // Only sent via email, never stored in plain text\n    }\n    \n    public static boolean completeReset(String token, String newPassword) {\n        String hashedToken = hashToken(token);\n        ResetToken rt = resetTokens.get(hashedToken);\n        if (rt == null) return false; // Invalid token\n        if (System.currentTimeMillis() > rt.expiry) return false; // Expired\n        \n        // Update password and invalidate token\n        updatePassword(rt.email, newPassword);\n        resetTokens.remove(hashedToken);\n        return true;\n    }\n}",
+            "ai_hint": "Password reset is like requesting a new house key from a locksmith. The locksmith sends a time-limited code to your verified address. You must use it quickly, and it only works once."
+          },
+          {
+            "concept": "Audit Logging for Authentication Events",
+            "explanation": "Every authentication event should be logged: successful logins, failed logins, logouts, password changes, role changes, and access denials. Logs must include: timestamp, user ID, IP address, action, and result. This enables: detecting brute-force attacks (many failed logins), identifying compromised accounts (login from unusual location), forensics after a breach, and compliance with security standards. Never log passwords or session tokens!",
+            "example": "import java.time.LocalDateTime;\n\npublic class AuthAuditLog {\n    public static void log(String event, String userId, String ip, \n                            String result, String details) {\n        String timestamp = LocalDateTime.now().toString();\n        String entry = String.format(\n            \"[%s] EVENT=%s USER=%s IP=%s RESULT=%s DETAILS=%s\",\n            timestamp, event, userId, ip, result, details\n        );\n        System.out.println(entry); // In production: write to secure log file\n    }\n    \n    // Usage:\n    // log(\"LOGIN\", \"alice\", \"192.168.1.1\", \"SUCCESS\", \"Normal login\");\n    // log(\"LOGIN\", \"alice\", \"45.33.22.11\", \"FAILED\", \"Wrong password (attempt 3)\");\n    // log(\"ROLE_CHANGE\", \"bob\", \"10.0.0.5\", \"SUCCESS\", \"USER -> ADMIN\");\n    // log(\"ACCESS_DENIED\", \"charlie\", \"10.0.0.8\", \"DENIED\", \"DELETE_USER without ADMIN\");\n    // NEVER: log(\"LOGIN\", \"alice\", ip, \"SUCCESS\", \"password=Secret123\"); // NEVER LOG PASSWORDS!\n}",
+            "ai_hint": "Audit logs are like security cameras for your code. They do not prevent break-ins, but they help you detect them and figure out what happened."
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Authentication vs Authorisation Visualised",
+          "description": "Clear demonstration of the two-step security check",
+          "difficulty": "beginner",
+          "code": "public class AuthVsAuthz {\n    public static void main(String[] args) {\n        System.out.println(\"=== AUTHENTICATION vs AUTHORISATION ===\");\n        System.out.println();\n        System.out.println(\"AUTHENTICATION (Who are you?)\");\n        System.out.println(\"  Input: username + password\");\n        System.out.println(\"  Check: credentials match stored record?\");\n        System.out.println(\"  Result: VERIFIED or REJECTED\");\n        System.out.println(\"  Analogy: Showing your passport at the border\");\n        System.out.println();\n        System.out.println(\"AUTHORISATION (What can you do?)\");\n        System.out.println(\"  Input: user's role + requested action\");\n        System.out.println(\"  Check: does this role have permission?\");\n        System.out.println(\"  Result: ALLOWED or DENIED\");\n        System.out.println(\"  Analogy: Your security clearance level\");\n        System.out.println();\n        \n        // Demonstrate the two-step check\n        String[][] tests = {\n            {\"alice\", \"pass123\", \"ADMIN\", \"DELETE_USER\"},\n            {\"bob\", \"pass456\", \"USER\", \"DELETE_USER\"},\n            {\"eve\", \"wrong\", \"?\", \"VIEW_PAGE\"}\n        };\n        \n        for (String[] t : tests) {\n            System.out.println(\"User: \" + t[0]);\n            boolean authn = !t[1].equals(\"wrong\");\n            System.out.println(\"  Authentication: \" + (authn ? \"PASS\" : \"FAIL\"));\n            if (authn) {\n                boolean authz = t[2].equals(\"ADMIN\") || !t[3].equals(\"DELETE_USER\");\n                System.out.println(\"  Authorisation for \" + t[3] + \": \" + (authz ? \"ALLOWED\" : \"DENIED\"));\n            } else {\n                System.out.println(\"  Authorisation: SKIPPED (not authenticated)\");\n            }\n            System.out.println();\n        }\n    }\n}",
+          "output": "=== AUTHENTICATION vs AUTHORISATION ===\n\nAUTHENTICATION (Who are you?)\n  Input: username + password\n  Check: credentials match stored record?\n  Result: VERIFIED or REJECTED\n  Analogy: Showing your passport at the border\n\nAUTHORISATION (What can you do?)\n  Input: user's role + requested action\n  Check: does this role have permission?\n  Result: ALLOWED or DENIED\n  Analogy: Your security clearance level\n\nUser: alice\n  Authentication: PASS\n  Authorisation for DELETE_USER: ALLOWED\n\nUser: bob\n  Authentication: PASS\n  Authorisation for DELETE_USER: DENIED\n\nUser: eve\n  Authentication: FAIL\n  Authorisation: SKIPPED (not authenticated)",
+          "ai_explanation": "Three scenarios: Alice is admin (passes both), Bob is regular user (passes authn but fails authz for admin action), Eve has wrong password (fails at authn, never reaches authz). Both checks are needed.",
+          "ai_challenge": "What happens if you check authorisation but skip authentication? Could an unauthenticated user with role 'ADMIN' in a forged cookie bypass security?"
+        },
+        {
+          "title": "Example 2: Password Hashing with Salt",
+          "description": "Complete implementation of secure password storage",
+          "difficulty": "intermediate",
+          "code": "import java.security.MessageDigest;\nimport java.security.SecureRandom;\nimport java.util.Base64;\n\npublic class SecurePasswordStorage {\n    \n    public static byte[] generateSalt() {\n        byte[] salt = new byte[16];\n        new SecureRandom().nextBytes(salt);\n        return salt;\n    }\n    \n    public static String hashPassword(String password, byte[] salt) throws Exception {\n        MessageDigest md = MessageDigest.getInstance(\"SHA-256\");\n        md.update(salt);\n        byte[] hashed = md.digest(password.getBytes(\"UTF-8\"));\n        return Base64.getEncoder().encodeToString(hashed);\n    }\n    \n    public static void main(String[] args) throws Exception {\n        String password = \"MySecurePass123!\";\n        \n        // Registration: generate salt, hash password, store both\n        byte[] salt = generateSalt();\n        String hash = hashPassword(password, salt);\n        String saltB64 = Base64.getEncoder().encodeToString(salt);\n        \n        System.out.println(\"=== REGISTRATION ===\");\n        System.out.println(\"Password: \" + password);\n        System.out.println(\"Salt (Base64): \" + saltB64);\n        System.out.println(\"Hash (Base64): \" + hash);\n        System.out.println(\"Store in DB: salt=\" + saltB64 + \", hash=\" + hash);\n        System.out.println();\n        \n        // Login: retrieve salt, hash input, compare\n        System.out.println(\"=== LOGIN VERIFICATION ===\");\n        String loginAttempt = \"MySecurePass123!\";\n        String loginHash = hashPassword(loginAttempt, salt);\n        System.out.println(\"Input: \" + loginAttempt);\n        System.out.println(\"Computed hash: \" + loginHash);\n        System.out.println(\"Match: \" + hash.equals(loginHash));\n        System.out.println();\n        \n        // Wrong password\n        String wrongAttempt = \"WrongPassword\";\n        String wrongHash = hashPassword(wrongAttempt, salt);\n        System.out.println(\"Wrong input: \" + wrongAttempt);\n        System.out.println(\"Computed hash: \" + wrongHash);\n        System.out.println(\"Match: \" + hash.equals(wrongHash));\n        System.out.println();\n        \n        // Same password, different salt = different hash\n        byte[] salt2 = generateSalt();\n        String hash2 = hashPassword(password, salt2);\n        System.out.println(\"=== WHY SALT MATTERS ===\");\n        System.out.println(\"Same password, salt 1: \" + hash);\n        System.out.println(\"Same password, salt 2: \" + hash2);\n        System.out.println(\"Different hashes: \" + !hash.equals(hash2));\n    }\n}",
+          "output": "=== REGISTRATION ===\nPassword: MySecurePass123!\nSalt (Base64): (random 24-char string)\nHash (Base64): (44-char hash string)\nStore in DB: salt=..., hash=...\n\n=== LOGIN VERIFICATION ===\nInput: MySecurePass123!\nComputed hash: (same 44-char hash)\nMatch: true\n\nWrong input: WrongPassword\nComputed hash: (different hash)\nMatch: false\n\n=== WHY SALT MATTERS ===\nSame password, salt 1: (hash A)\nSame password, salt 2: (hash B)\nDifferent hashes: true",
+          "ai_explanation": "Salt ensures that even identical passwords produce different hashes. Registration: generate salt, hash password+salt, store both. Login: retrieve stored salt, hash input+salt, compare with stored hash. The password is never stored or compared directly.",
+          "ai_challenge": "Why is SHA-256 alone not ideal for passwords? Research bcrypt or PBKDF2 and explain why they are better for password hashing."
+        },
+        {
+          "title": "Example 3: Hard-coded Credentials Detector",
+          "description": "Finding and fixing CWE-798 in Java source code",
+          "difficulty": "intermediate",
+          "code": "import java.util.regex.*;\nimport java.util.*;\n\npublic class HardcodedCredentialDetector {\n    \n    static final List<Pattern> PATTERNS = Arrays.asList(\n        Pattern.compile(\"password\\\\s*=\\\\s*\\\"[^\\\"]+\\\"\", Pattern.CASE_INSENSITIVE),\n        Pattern.compile(\"passwd\\\\s*=\\\\s*\\\"[^\\\"]+\\\"\", Pattern.CASE_INSENSITIVE),\n        Pattern.compile(\"apiKey\\\\s*=\\\\s*\\\"[^\\\"]+\\\"\", Pattern.CASE_INSENSITIVE),\n        Pattern.compile(\"secret\\\\s*=\\\\s*\\\"[^\\\"]+\\\"\", Pattern.CASE_INSENSITIVE),\n        Pattern.compile(\"\\\\.equals\\\\(\\\\s*\\\"[^\\\"]+\\\"\\\\s*\\\\)\", Pattern.CASE_INSENSITIVE)\n    );\n    \n    static void scanCode(String filename, String code) {\n        System.out.println(\"Scanning: \" + filename);\n        String[] lines = code.split(\"\\n\");\n        boolean found = false;\n        for (int i = 0; i < lines.length; i++) {\n            for (Pattern p : PATTERNS) {\n                Matcher m = p.matcher(lines[i]);\n                if (m.find()) {\n                    System.out.println(\"  LINE \" + (i+1) + \" [CWE-798]: \" + lines[i].trim());\n                    found = true;\n                }\n            }\n        }\n        if (!found) System.out.println(\"  No hard-coded credentials found.\");\n        System.out.println();\n    }\n    \n    public static void main(String[] args) {\n        scanCode(\"LoginService.java\",\n            \"public boolean verify(String pass) {\\n\" +\n            \"    if (pass.equals(\\\"Mew!\\\")) {\\n\" +\n            \"        return true;\\n\" +\n            \"    }\\n\" +\n            \"    return false;\\n\" +\n            \"}\");\n        \n        scanCode(\"DatabaseConfig.java\",\n            \"String host = System.getenv(\\\"DB_HOST\\\");\\n\" +\n            \"String password = \\\"SuperSecret123\\\";\\n\" +\n            \"String apiKey = \\\"sk-abc123def456\\\";\\n\");\n        \n        scanCode(\"SafeConfig.java\",\n            \"String host = System.getenv(\\\"DB_HOST\\\");\\n\" +\n            \"String password = System.getenv(\\\"DB_PASS\\\");\\n\" +\n            \"String apiKey = config.getProperty(\\\"api.key\\\");\\n\");\n    }\n}",
+          "output": "Scanning: LoginService.java\n  LINE 2 [CWE-798]:     if (pass.equals(\"Mew!\")) {\n\nScanning: DatabaseConfig.java\n  LINE 2 [CWE-798]: String password = \"SuperSecret123\";\n  LINE 3 [CWE-798]: String apiKey = \"sk-abc123def456\";\n\nScanning: SafeConfig.java\n  No hard-coded credentials found.",
+          "ai_explanation": "The detector uses regex patterns to find common hard-coded credential patterns: direct string assignments to password/secret variables, and .equals() comparisons with literal strings. Safe code uses environment variables or config files instead.",
+          "ai_challenge": "What other patterns might indicate hard-coded credentials? Think about Base64-encoded strings, hex values, and connection strings."
+        },
+        {
+          "title": "Example 4: Complete RBAC System",
+          "description": "Full role-based access control with permissions matrix",
+          "difficulty": "intermediate",
+          "code": "import java.util.*;\n\npublic class RBACSystem {\n    static Map<String, Set<String>> rolePermissions = new HashMap<>();\n    static Map<String, String> userRoles = new HashMap<>();\n    \n    static {\n        rolePermissions.put(\"ADMIN\", new HashSet<>(Arrays.asList(\n            \"VIEW_USERS\", \"CREATE_USER\", \"DELETE_USER\", \"EDIT_USER\",\n            \"VIEW_REPORTS\", \"EXPORT_REPORTS\", \"MANAGE_SETTINGS\", \"VIEW_AUDIT_LOG\"\n        )));\n        rolePermissions.put(\"MANAGER\", new HashSet<>(Arrays.asList(\n            \"VIEW_USERS\", \"EDIT_USER\", \"VIEW_REPORTS\", \"EXPORT_REPORTS\"\n        )));\n        rolePermissions.put(\"USER\", new HashSet<>(Arrays.asList(\n            \"VIEW_OWN_PROFILE\", \"EDIT_OWN_PROFILE\", \"VIEW_REPORTS\"\n        )));\n        rolePermissions.put(\"GUEST\", new HashSet<>(Arrays.asList(\n            \"VIEW_PUBLIC_PAGE\"\n        )));\n        \n        userRoles.put(\"alice\", \"ADMIN\");\n        userRoles.put(\"bob\", \"MANAGER\");\n        userRoles.put(\"charlie\", \"USER\");\n        userRoles.put(\"guest1\", \"GUEST\");\n    }\n    \n    static boolean checkAccess(String user, String action) {\n        String role = userRoles.get(user);\n        if (role == null) return false;\n        Set<String> perms = rolePermissions.get(role);\n        return perms != null && perms.contains(action);\n    }\n    \n    public static void main(String[] args) {\n        String[] users = {\"alice\", \"bob\", \"charlie\", \"guest1\", \"unknown\"};\n        String[] actions = {\"DELETE_USER\", \"VIEW_REPORTS\", \"EDIT_OWN_PROFILE\", \"VIEW_PUBLIC_PAGE\"};\n        \n        System.out.println(\"=== RBAC ACCESS MATRIX ===\");\n        System.out.printf(\"%-10s\", \"\");\n        for (String a : actions) System.out.printf(\"%-20s\", a);\n        System.out.println();\n        \n        for (String u : users) {\n            String role = userRoles.getOrDefault(u, \"NONE\");\n            System.out.printf(\"%-10s\", u + \"(\" + role.charAt(0) + \")\");\n            for (String a : actions) {\n                System.out.printf(\"%-20s\", checkAccess(u, a) ? \"ALLOWED\" : \"DENIED\");\n            }\n            System.out.println();\n        }\n    }\n}",
+          "output": "=== RBAC ACCESS MATRIX ===\n          DELETE_USER         VIEW_REPORTS        EDIT_OWN_PROFILE    VIEW_PUBLIC_PAGE    \nalice(A)  ALLOWED             ALLOWED             DENIED              DENIED              \nbob(M)    DENIED              ALLOWED             DENIED              DENIED              \ncharlie(U)DENIED              ALLOWED             ALLOWED             DENIED              \nguest1(G) DENIED              DENIED              DENIED              ALLOWED             \nunknown(N)DENIED              DENIED              DENIED              DENIED",
+          "ai_explanation": "The RBAC matrix shows exactly which roles can perform which actions. Admin has the most permissions, Guest the least. Unknown users have NO permissions. Each user is mapped to a role, and each role defines allowed actions.",
+          "ai_challenge": "Add a MODERATOR role that can VIEW_USERS and DELETE_USER but not MANAGE_SETTINGS. Where does it fit in the hierarchy?"
+        },
+        {
+          "title": "Example 5: Brute-Force Login Protection",
+          "description": "Account lockout with progressive delays",
+          "difficulty": "intermediate",
+          "code": "import java.util.*;\n\npublic class BruteForceProtection {\n    static Map<String, Integer> failCount = new HashMap<>();\n    static Map<String, Long> lockUntil = new HashMap<>();\n    static Map<String, String> users = new HashMap<>();\n    static final int MAX_FAILS = 3;\n    static final long LOCKOUT_MS = 30000; // 30 seconds for demo\n    \n    static { users.put(\"alice\", \"correctPassword\"); }\n    \n    static String login(String username, String password) {\n        // Check lockout\n        Long locked = lockUntil.get(username);\n        long now = System.currentTimeMillis();\n        if (locked != null && now < locked) {\n            long remaining = (locked - now) / 1000;\n            return \"LOCKED: Try again in \" + remaining + \" seconds\";\n        }\n        \n        // Verify\n        String stored = users.get(username);\n        if (stored != null && stored.equals(password)) {\n            failCount.remove(username);\n            lockUntil.remove(username);\n            return \"SUCCESS: Welcome \" + username;\n        }\n        \n        // Track failure\n        int fails = failCount.getOrDefault(username, 0) + 1;\n        failCount.put(username, fails);\n        \n        if (fails >= MAX_FAILS) {\n            lockUntil.put(username, now + LOCKOUT_MS);\n            return \"LOCKED: \" + fails + \" failed attempts. Account locked for 30 seconds.\";\n        }\n        return \"FAILED: \" + (MAX_FAILS - fails) + \" attempts remaining\";\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== BRUTE FORCE PROTECTION ===\");\n        System.out.println(login(\"alice\", \"wrong1\"));\n        System.out.println(login(\"alice\", \"wrong2\"));\n        System.out.println(login(\"alice\", \"wrong3\"));\n        System.out.println(login(\"alice\", \"correctPassword\")); // Locked!\n        System.out.println();\n        System.out.println(\"After lockout expires:\");\n        lockUntil.remove(\"alice\"); failCount.remove(\"alice\");\n        System.out.println(login(\"alice\", \"correctPassword\"));\n    }\n}",
+          "output": "=== BRUTE FORCE PROTECTION ===\nFAILED: 2 attempts remaining\nFAILED: 1 attempts remaining\nLOCKED: 3 failed attempts. Account locked for 30 seconds.\nLOCKED: Try again in 29 seconds\n\nAfter lockout expires:\nSUCCESS: Welcome alice",
+          "ai_explanation": "After 3 failed attempts, the account locks for 30 seconds. Even the correct password is rejected during lockout. After the lockout expires, normal login resumes. This stops automated brute-force attacks while allowing legitimate users to try again.",
+          "ai_challenge": "What if an attacker locks out everyone's account on purpose (denial of service)? How would you balance security with availability?"
+        },
+        {
+          "title": "Example 6: IDOR Vulnerability and Fix",
+          "description": "How changing an ID in a URL exposes other users' data",
+          "difficulty": "intermediate",
+          "code": "import java.util.*;\n\npublic class IDORExample {\n    static Map<String, Map<String, String>> invoices = new HashMap<>();\n    static {\n        invoices.put(\"INV-001\", Map.of(\"owner\", \"alice\", \"amount\", \"500\", \"item\", \"Laptop\"));\n        invoices.put(\"INV-002\", Map.of(\"owner\", \"bob\", \"amount\", \"1200\", \"item\", \"Server\"));\n        invoices.put(\"INV-003\", Map.of(\"owner\", \"alice\", \"amount\", \"50\", \"item\", \"Mouse\"));\n    }\n    \n    // VULNERABLE: No ownership check!\n    static String getInvoiceVulnerable(String invoiceId) {\n        Map<String, String> inv = invoices.get(invoiceId);\n        if (inv == null) return \"Not found\";\n        return \"Invoice \" + invoiceId + \": \" + inv.get(\"item\") + \" - $\" + inv.get(\"amount\");\n    }\n    \n    // FIXED: Checks ownership\n    static String getInvoiceSecure(String invoiceId, String currentUser) {\n        Map<String, String> inv = invoices.get(invoiceId);\n        if (inv == null) return \"Not found\";\n        if (!inv.get(\"owner\").equals(currentUser)) {\n            return \"ACCESS DENIED: This invoice belongs to \" + inv.get(\"owner\") + \", not \" + currentUser;\n        }\n        return \"Invoice \" + invoiceId + \": \" + inv.get(\"item\") + \" - $\" + inv.get(\"amount\");\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== IDOR VULNERABILITY ===\");\n        System.out.println(\"Alice requests her invoice:\");\n        System.out.println(\"  \" + getInvoiceVulnerable(\"INV-001\"));\n        System.out.println(\"Alice changes ID to see Bob's invoice:\");\n        System.out.println(\"  \" + getInvoiceVulnerable(\"INV-002\"));\n        System.out.println(\"  (BUG: Alice can see Bob's data!)\\n\");\n        \n        System.out.println(\"=== FIXED VERSION ===\");\n        System.out.println(\"Alice requests her invoice:\");\n        System.out.println(\"  \" + getInvoiceSecure(\"INV-001\", \"alice\"));\n        System.out.println(\"Alice tries Bob's invoice:\");\n        System.out.println(\"  \" + getInvoiceSecure(\"INV-002\", \"alice\"));\n    }\n}",
+          "output": "=== IDOR VULNERABILITY ===\nAlice requests her invoice:\n  Invoice INV-001: Laptop - $500\nAlice changes ID to see Bob's invoice:\n  Invoice INV-002: Server - $1200\n  (BUG: Alice can see Bob's data!)\n\n=== FIXED VERSION ===\nAlice requests her invoice:\n  Invoice INV-001: Laptop - $500\nAlice tries Bob's invoice:\n  ACCESS DENIED: This invoice belongs to bob, not alice",
+          "ai_explanation": "IDOR is one of the most common vulnerabilities. The fix is simple: always verify that the authenticated user OWNS or has PERMISSION to access the requested resource. Never trust client-supplied IDs without checking.",
+          "ai_challenge": "What if invoices can be shared? Design a permission model where the owner can grant read access to specific other users."
+        },
+        {
+          "title": "Example 7: Session Management Lifecycle",
+          "description": "Complete session creation, validation, and destruction",
+          "difficulty": "intermediate",
+          "code": "import java.security.SecureRandom;\nimport java.util.*;\n\npublic class SessionLifecycle {\n    static Map<String, Map<String, Object>> sessions = new HashMap<>();\n    \n    static String createSession(String userId, String role) {\n        byte[] bytes = new byte[32];\n        new SecureRandom().nextBytes(bytes);\n        String sessionId = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);\n        \n        Map<String, Object> data = new HashMap<>();\n        data.put(\"userId\", userId);\n        data.put(\"role\", role);\n        data.put(\"created\", System.currentTimeMillis());\n        data.put(\"lastAccess\", System.currentTimeMillis());\n        sessions.put(sessionId, data);\n        return sessionId;\n    }\n    \n    static Map<String, Object> validateSession(String sessionId) {\n        if (sessionId == null) return null;\n        Map<String, Object> s = sessions.get(sessionId);\n        if (s == null) return null;\n        \n        long now = System.currentTimeMillis();\n        long created = (Long) s.get(\"created\");\n        long lastAccess = (Long) s.get(\"lastAccess\");\n        \n        // Absolute timeout: 8 hours\n        if (now - created > 28800000) { sessions.remove(sessionId); return null; }\n        // Idle timeout: 30 minutes\n        if (now - lastAccess > 1800000) { sessions.remove(sessionId); return null; }\n        \n        s.put(\"lastAccess\", now);\n        return s;\n    }\n    \n    static void destroySession(String sessionId) {\n        sessions.remove(sessionId);\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== SESSION LIFECYCLE ===\");\n        String sid = createSession(\"alice\", \"ADMIN\");\n        System.out.println(\"Created: \" + sid.substring(0, 12) + \"...\");\n        \n        Map<String, Object> s = validateSession(sid);\n        System.out.println(\"Valid: \" + (s != null) + \" User: \" + s.get(\"userId\"));\n        \n        System.out.println(\"Invalid ID: \" + (validateSession(\"fake-id\") != null));\n        \n        destroySession(sid);\n        System.out.println(\"After logout: \" + (validateSession(sid) != null));\n        System.out.println(\"Active sessions: \" + sessions.size());\n    }\n}",
+          "output": "=== SESSION LIFECYCLE ===\nCreated: kX7vR2mP9qYt...\nValid: true User: alice\nInvalid ID: false\nAfter logout: false\nActive sessions: 0",
+          "ai_explanation": "Sessions have a complete lifecycle: create on login (with secure random ID), validate on each request (check timeout), destroy on logout. Two timeout types: absolute (max session age) and idle (inactivity). Both prevent session reuse after the user is done.",
+          "ai_challenge": "What is session fixation? How would you prevent an attacker from forcing a known session ID?"
+        },
+        {
+          "title": "Example 8: Secure Login Flow",
+          "description": "Complete login with hashing, brute-force protection, and session creation",
+          "difficulty": "advanced",
+          "code": "import java.security.*;\nimport java.util.*;\n\npublic class SecureLoginFlow {\n    static Map<String, String[]> users = new HashMap<>(); // username -> [salt, hash, role]\n    static Map<String, Integer> failCounts = new HashMap<>();\n    static Map<String, Long> lockouts = new HashMap<>();\n    static Map<String, Map<String, String>> sessions = new HashMap<>();\n    \n    static String hash(String pass, String salt) throws Exception {\n        MessageDigest md = MessageDigest.getInstance(\"SHA-256\");\n        md.update(Base64.getDecoder().decode(salt));\n        return Base64.getEncoder().encodeToString(md.digest(pass.getBytes()));\n    }\n    \n    static void register(String user, String pass, String role) throws Exception {\n        byte[] saltBytes = new byte[16];\n        new SecureRandom().nextBytes(saltBytes);\n        String salt = Base64.getEncoder().encodeToString(saltBytes);\n        String hashed = hash(pass, salt);\n        users.put(user, new String[]{salt, hashed, role});\n    }\n    \n    static String login(String user, String pass) throws Exception {\n        // 1. Check lockout\n        Long locked = lockouts.get(user);\n        if (locked != null && System.currentTimeMillis() < locked)\n            return \"LOCKED: Account temporarily locked\";\n        \n        // 2. Find user\n        String[] record = users.get(user);\n        \n        // 3. Verify (same response for bad user and bad password)\n        boolean valid = false;\n        if (record != null) {\n            String computed = hash(pass, record[0]);\n            valid = computed.equals(record[1]);\n        }\n        \n        if (!valid) {\n            int fails = failCounts.getOrDefault(user, 0) + 1;\n            failCounts.put(user, fails);\n            if (fails >= 5) {\n                lockouts.put(user, System.currentTimeMillis() + 300000);\n                return \"LOCKED: Too many failures\";\n            }\n            return \"FAILED: Invalid credentials\"; // Generic message!\n        }\n        \n        // 4. Success: create session\n        failCounts.remove(user);\n        byte[] sid = new byte[32];\n        new SecureRandom().nextBytes(sid);\n        String sessionId = Base64.getUrlEncoder().withoutPadding().encodeToString(sid);\n        sessions.put(sessionId, Map.of(\"user\", user, \"role\", record[2]));\n        return \"SUCCESS: Session=\" + sessionId.substring(0, 12) + \"...\";\n    }\n    \n    public static void main(String[] args) throws Exception {\n        register(\"alice\", \"StrongPass!23\", \"ADMIN\");\n        register(\"bob\", \"BobSecure456\", \"USER\");\n        \n        System.out.println(\"=== SECURE LOGIN FLOW ===\");\n        System.out.println(login(\"alice\", \"StrongPass!23\"));\n        System.out.println(login(\"alice\", \"wrong\"));\n        System.out.println(login(\"nonexistent\", \"pass\")); // Same error!\n        System.out.println(login(\"bob\", \"BobSecure456\"));\n    }\n}",
+          "output": "=== SECURE LOGIN FLOW ===\nSUCCESS: Session=kX7vR2mP9qYt...\nFAILED: Invalid credentials\nFAILED: Invalid credentials\nSUCCESS: Session=pQ8rT3nU6yWa...",
+          "ai_explanation": "This combines all secure login practices: password hashing with salt, generic error messages (same for bad username and bad password to prevent user enumeration), brute-force lockout, and secure session creation. Notice how 'nonexistent' and 'wrong password' give the SAME error.",
+          "ai_challenge": "Why is it important to give the same error for 'user not found' and 'wrong password'? What could an attacker learn from different messages?"
+        },
+        {
+          "title": "Example 9: Missing Authorisation Demo",
+          "description": "Showing CWE-862 in action and how to fix it",
+          "difficulty": "intermediate",
+          "code": "import java.util.*;\n\npublic class MissingAuthorisation {\n    static Map<String, String> userRoles = Map.of(\n        \"alice\", \"ADMIN\", \"bob\", \"USER\", \"charlie\", \"USER\"\n    );\n    static List<String> users = new ArrayList<>(Arrays.asList(\"alice\", \"bob\", \"charlie\", \"dave\"));\n    \n    // VULNERABLE: Only checks if logged in, not if ADMIN\n    static String deleteUserVulnerable(String requester, String target) {\n        if (!userRoles.containsKey(requester)) return \"ERROR: Not logged in\";\n        users.remove(target);\n        return \"DELETED: \" + target + \" (by \" + requester + \")\";\n    }\n    \n    // FIXED: Checks role\n    static String deleteUserSecure(String requester, String target) {\n        if (!userRoles.containsKey(requester)) return \"ERROR: Not logged in\";\n        if (!\"ADMIN\".equals(userRoles.get(requester))) {\n            return \"DENIED: \" + requester + \" is not an admin (role: \" + userRoles.get(requester) + \")\";\n        }\n        if (requester.equals(target)) return \"DENIED: Cannot delete yourself\";\n        users.remove(target);\n        return \"DELETED: \" + target + \" (by admin \" + requester + \")\";\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== CWE-862: MISSING AUTHORISATION ===\");\n        System.out.println();\n        System.out.println(\"VULNERABLE (any logged-in user can delete):\");\n        System.out.println(\"  \" + deleteUserVulnerable(\"bob\", \"dave\"));\n        users.add(\"dave\"); // restore\n        System.out.println();\n        System.out.println(\"FIXED (only admin can delete):\");\n        System.out.println(\"  \" + deleteUserSecure(\"bob\", \"dave\"));\n        System.out.println(\"  \" + deleteUserSecure(\"alice\", \"dave\"));\n        System.out.println(\"  \" + deleteUserSecure(\"alice\", \"alice\"));\n    }\n}",
+          "output": "=== CWE-862: MISSING AUTHORISATION ===\n\nVULNERABLE (any logged-in user can delete):\n  DELETED: dave (by bob)\n\nFIXED (only admin can delete):\n  DENIED: bob is not an admin (role: USER)\n  DELETED: dave (by admin alice)\n  DENIED: Cannot delete yourself",
+          "ai_explanation": "The vulnerable version checks IF the user is logged in but not WHAT they can do. Bob (a regular USER) can delete anyone. The fixed version checks the role AND prevents self-deletion. This is the essence of CWE-862.",
+          "ai_challenge": "What other sensitive actions commonly miss authorisation checks? Think about: viewing other users' data, changing settings, accessing admin panels."
+        },
+        {
+          "title": "Example 10: MFA Code Generation and Verification",
+          "description": "Implementing two-factor authentication with time-limited codes",
+          "difficulty": "advanced",
+          "code": "import java.security.SecureRandom;\nimport java.util.*;\n\npublic class MFADemo {\n    static Map<String, String> mfaCodes = new HashMap<>();\n    static Map<String, Long> codeExpiry = new HashMap<>();\n    static final long CODE_VALIDITY = 300000; // 5 minutes\n    \n    static String generateMFACode(String userId) {\n        int code = new SecureRandom().nextInt(900000) + 100000;\n        String codeStr = String.valueOf(code);\n        mfaCodes.put(userId, codeStr);\n        codeExpiry.put(userId, System.currentTimeMillis() + CODE_VALIDITY);\n        return codeStr;\n    }\n    \n    static String verifyMFACode(String userId, String inputCode) {\n        String stored = mfaCodes.get(userId);\n        Long expiry = codeExpiry.get(userId);\n        \n        if (stored == null) return \"INVALID: No code generated\";\n        if (System.currentTimeMillis() > expiry) {\n            mfaCodes.remove(userId);\n            return \"EXPIRED: Code has expired. Request new code.\";\n        }\n        if (!stored.equals(inputCode)) return \"WRONG: Incorrect code\";\n        \n        // Valid! Remove code (single use)\n        mfaCodes.remove(userId);\n        codeExpiry.remove(userId);\n        return \"VERIFIED: MFA complete\";\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== MULTI-FACTOR AUTHENTICATION ===\");\n        System.out.println();\n        \n        // Step 1: Password verified, now MFA\n        System.out.println(\"Step 1: Password verified for alice\");\n        String code = generateMFACode(\"alice\");\n        System.out.println(\"Step 2: MFA code sent to alice's phone: \" + code);\n        System.out.println();\n        \n        System.out.println(\"Step 3: Alice enters wrong code:\");\n        System.out.println(\"  \" + verifyMFACode(\"alice\", \"000000\"));\n        System.out.println();\n        \n        System.out.println(\"Step 4: Alice enters correct code:\");\n        System.out.println(\"  \" + verifyMFACode(\"alice\", code));\n        System.out.println();\n        \n        System.out.println(\"Step 5: Replay attack (reuse code):\");\n        System.out.println(\"  \" + verifyMFACode(\"alice\", code));\n    }\n}",
+          "output": "=== MULTI-FACTOR AUTHENTICATION ===\n\nStep 1: Password verified for alice\nStep 2: MFA code sent to alice's phone: 847293\n\nStep 3: Alice enters wrong code:\n  WRONG: Incorrect code\n\nStep 4: Alice enters correct code:\n  VERIFIED: MFA complete\n\nStep 5: Replay attack (reuse code):\n  INVALID: No code generated",
+          "ai_explanation": "MFA adds a second layer: after password verification, a one-time code is sent to the user's phone. The code expires after 5 minutes, is single-use (removed after verification), and must match exactly. Even if an attacker knows the password, they cannot complete login without the phone.",
+          "ai_challenge": "SMS-based MFA has weaknesses (SIM swapping). Research TOTP (Time-based One-Time Password) used by Google Authenticator. How is it more secure?"
+        },
+        {
+          "title": "Example 11: Password Strength Validator",
+          "description": "Enforcing strong password policies programmatically",
+          "difficulty": "beginner",
+          "code": "import java.util.regex.*;\n\npublic class PasswordStrength {\n    \n    static String[] validatePassword(String password) {\n        java.util.List<String> issues = new java.util.ArrayList<>();\n        \n        if (password == null || password.length() < 8)\n            issues.add(\"Too short (min 8 characters)\");\n        if (password != null && password.length() > 64)\n            issues.add(\"Too long (max 64 characters)\");\n        if (password == null || !password.matches(\".*[A-Z].*\"))\n            issues.add(\"Missing uppercase letter\");\n        if (password == null || !password.matches(\".*[a-z].*\"))\n            issues.add(\"Missing lowercase letter\");\n        if (password == null || !password.matches(\".*[0-9].*\"))\n            issues.add(\"Missing digit\");\n        if (password == null || !password.matches(\".*[!@#$%^&*()_+\\\\-=].*\"))\n            issues.add(\"Missing special character\");\n        \n        // Check common passwords\n        String[] common = {\"password\", \"123456\", \"qwerty\", \"admin\", \"letmein\"};\n        if (password != null) {\n            for (String c : common) {\n                if (password.toLowerCase().contains(c))\n                    issues.add(\"Contains common password: \" + c);\n            }\n        }\n        \n        return issues.toArray(new String[0]);\n    }\n    \n    public static void main(String[] args) {\n        String[] tests = {\"password123\", \"Short1!\", \"NoSpecial123\", \"Str0ng!Pass#2024\", \"admin\"};\n        for (String p : tests) {\n            String[] issues = validatePassword(p);\n            System.out.println(\"Password: \\\"\" + p + \"\\\"\");\n            if (issues.length == 0) System.out.println(\"  STRONG\");\n            else for (String i : issues) System.out.println(\"  FAIL: \" + i);\n            System.out.println();\n        }\n    }\n}",
+          "output": "Password: \"password123\"\n  FAIL: Missing uppercase letter\n  FAIL: Missing special character\n  FAIL: Contains common password: password\n\nPassword: \"Short1!\"\n  FAIL: Too short (min 8 characters)\n\nPassword: \"NoSpecial123\"\n  FAIL: Missing special character\n\nPassword: \"Str0ng!Pass#2024\"\n  STRONG\n\nPassword: \"admin\"\n  FAIL: Too short (min 8 characters)\n  FAIL: Missing uppercase letter\n  FAIL: Missing digit\n  FAIL: Missing special character\n  FAIL: Contains common password: admin",
+          "ai_explanation": "Password validation checks length, character types, and common passwords. Multiple checks run independently so the user sees ALL issues at once. Note: password strength rules alone are not enough — always combine with hashing, salting, and brute-force protection.",
+          "ai_challenge": "Research why some security experts now recommend LONG passphrases (like 'correct horse battery staple') over complex short passwords. Which is easier to remember AND harder to crack?"
+        },
+        {
+          "title": "Example 12: Audit Log Implementation",
+          "description": "Logging all authentication events for security monitoring",
+          "difficulty": "intermediate",
+          "code": "import java.time.LocalDateTime;\nimport java.util.*;\n\npublic class AuditLogger {\n    static List<String> auditLog = new ArrayList<>();\n    \n    static void log(String event, String user, String ip, String result, String detail) {\n        String entry = String.format(\"[%s] %s user=%s ip=%s result=%s detail=%s\",\n            LocalDateTime.now().toString().substring(0, 19), event, user, ip, result, detail);\n        auditLog.add(entry);\n        System.out.println(entry);\n    }\n    \n    static void detectAnomalies() {\n        Map<String, Integer> failsByUser = new HashMap<>();\n        Map<String, Integer> failsByIP = new HashMap<>();\n        for (String entry : auditLog) {\n            if (entry.contains(\"result=FAILED\")) {\n                String user = entry.replaceAll(\".*user=(\\\\S+).*\", \"$1\");\n                String ip = entry.replaceAll(\".*ip=(\\\\S+).*\", \"$1\");\n                failsByUser.merge(user, 1, Integer::sum);\n                failsByIP.merge(ip, 1, Integer::sum);\n            }\n        }\n        System.out.println(\"\\n=== ANOMALY DETECTION ===\");\n        failsByUser.forEach((u, c) -> {\n            if (c >= 3) System.out.println(\"ALERT: User '\" + u + \"' has \" + c + \" failed logins (brute force?)\");\n        });\n        failsByIP.forEach((ip, c) -> {\n            if (c >= 5) System.out.println(\"ALERT: IP \" + ip + \" has \" + c + \" failed logins (credential stuffing?)\");\n        });\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== AUTHENTICATION AUDIT LOG ===\");\n        log(\"LOGIN\", \"alice\", \"10.0.0.1\", \"SUCCESS\", \"normal\");\n        log(\"LOGIN\", \"bob\", \"45.33.22.1\", \"FAILED\", \"wrong_password\");\n        log(\"LOGIN\", \"bob\", \"45.33.22.1\", \"FAILED\", \"wrong_password\");\n        log(\"LOGIN\", \"bob\", \"45.33.22.1\", \"FAILED\", \"wrong_password\");\n        log(\"LOGIN\", \"admin\", \"45.33.22.1\", \"FAILED\", \"wrong_password\");\n        log(\"LOGIN\", \"root\", \"45.33.22.1\", \"FAILED\", \"wrong_password\");\n        log(\"ROLE_CHANGE\", \"alice\", \"10.0.0.1\", \"SUCCESS\", \"bob:USER->ADMIN\");\n        log(\"LOGOUT\", \"alice\", \"10.0.0.1\", \"SUCCESS\", \"normal\");\n        detectAnomalies();\n    }\n}",
+          "output": "=== AUTHENTICATION AUDIT LOG ===\n[2026-02-23T14:30:00] LOGIN user=alice ip=10.0.0.1 result=SUCCESS detail=normal\n[2026-02-23T14:30:01] LOGIN user=bob ip=45.33.22.1 result=FAILED detail=wrong_password\n[2026-02-23T14:30:02] LOGIN user=bob ip=45.33.22.1 result=FAILED detail=wrong_password\n[2026-02-23T14:30:03] LOGIN user=bob ip=45.33.22.1 result=FAILED detail=wrong_password\n[2026-02-23T14:30:04] LOGIN user=admin ip=45.33.22.1 result=FAILED detail=wrong_password\n[2026-02-23T14:30:05] LOGIN user=root ip=45.33.22.1 result=FAILED detail=wrong_password\n[2026-02-23T14:30:06] ROLE_CHANGE user=alice ip=10.0.0.1 result=SUCCESS detail=bob:USER->ADMIN\n[2026-02-23T14:30:07] LOGOUT user=alice ip=10.0.0.1 result=SUCCESS detail=normal\n\n=== ANOMALY DETECTION ===\nALERT: User 'bob' has 3 failed logins (brute force?)\nALERT: IP 45.33.22.1 has 5 failed logins (credential stuffing?)",
+          "ai_explanation": "The audit log records every authentication event. Anomaly detection spots: brute-force (many failures for one user) and credential stuffing (many failures from one IP across different users). Role changes are logged for accountability.",
+          "ai_challenge": "What should you NEVER log? Think about passwords, tokens, and personal data. What compliance regulations affect logging (GDPR, PCI-DSS)?"
+        },
+        {
+          "title": "Example 13: Privilege Escalation Prevention",
+          "description": "Preventing CWE-269 improper privilege management",
+          "difficulty": "advanced",
+          "code": "import java.util.*;\n\npublic class PrivilegeEscalation {\n    static Map<String, String> userRoles = new HashMap<>(Map.of(\n        \"alice\", \"ADMIN\", \"bob\", \"MANAGER\", \"charlie\", \"USER\"\n    ));\n    \n    static final Map<String, Integer> ROLE_LEVELS = Map.of(\n        \"USER\", 1, \"MANAGER\", 2, \"ADMIN\", 3\n    );\n    \n    // VULNERABLE: No check on who is changing roles!\n    static String changeRoleVulnerable(String targetUser, String newRole) {\n        userRoles.put(targetUser, newRole);\n        return \"Changed \" + targetUser + \" to \" + newRole;\n    }\n    \n    // FIXED: Proper privilege checks\n    static String changeRoleSecure(String requester, String target, String newRole) {\n        String reqRole = userRoles.get(requester);\n        if (reqRole == null) return \"ERROR: Requester not found\";\n        if (!\"ADMIN\".equals(reqRole)) return \"DENIED: Only admins can change roles\";\n        if (requester.equals(target)) return \"DENIED: Cannot change own role\";\n        \n        int newLevel = ROLE_LEVELS.getOrDefault(newRole, 0);\n        int reqLevel = ROLE_LEVELS.getOrDefault(reqRole, 0);\n        if (newLevel >= reqLevel) return \"DENIED: Cannot assign role equal to or above your own\";\n        \n        String oldRole = userRoles.get(target);\n        userRoles.put(target, newRole);\n        return \"SUCCESS: \" + target + \" changed from \" + oldRole + \" to \" + newRole + \" (by \" + requester + \")\";\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== PRIVILEGE ESCALATION PREVENTION ===\");\n        System.out.println();\n        System.out.println(\"VULNERABLE:\");\n        System.out.println(\"  \" + changeRoleVulnerable(\"charlie\", \"ADMIN\")); // Anyone can become admin!\n        userRoles.put(\"charlie\", \"USER\"); // reset\n        System.out.println();\n        System.out.println(\"SECURE:\");\n        System.out.println(\"  \" + changeRoleSecure(\"charlie\", \"charlie\", \"ADMIN\")); // User tries self-promote\n        System.out.println(\"  \" + changeRoleSecure(\"bob\", \"charlie\", \"ADMIN\")); // Manager tries\n        System.out.println(\"  \" + changeRoleSecure(\"alice\", \"charlie\", \"ADMIN\")); // Admin tries to make another admin\n        System.out.println(\"  \" + changeRoleSecure(\"alice\", \"charlie\", \"MANAGER\")); // Admin promotes to manager\n        System.out.println(\"  \" + changeRoleSecure(\"alice\", \"alice\", \"USER\")); // Admin tries self-demote\n    }\n}",
+          "output": "=== PRIVILEGE ESCALATION PREVENTION ===\n\nVULNERABLE:\n  Changed charlie to ADMIN\n\nSECURE:\n  DENIED: Only admins can change roles\n  DENIED: Only admins can change roles\n  DENIED: Cannot assign role equal to or above your own\n  SUCCESS: charlie changed from USER to MANAGER (by alice)\n  DENIED: Cannot change own role",
+          "ai_explanation": "Privilege escalation prevention requires: only admins change roles, cannot promote above your own level, cannot change your own role. The vulnerable version lets ANYONE change ANY role — charlie promotes himself to admin!",
+          "ai_challenge": "Design a system where role changes require approval from TWO admins (dual control). How would you implement this?"
+        },
+        {
+          "title": "Example 14: Complete Security Assessment Checklist",
+          "description": "Evaluating authentication and access control implementation",
+          "difficulty": "advanced",
+          "code": "public class SecurityAssessment {\n    static int score = 0;\n    static int total = 0;\n    \n    static void check(String item, boolean pass) {\n        total++;\n        String status = pass ? \"PASS\" : \"FAIL\";\n        if (pass) score++;\n        System.out.println(\"  [\" + status + \"] \" + item);\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== AUTHENTICATION & ACCESS CONTROL ASSESSMENT ===\");\n        System.out.println();\n        \n        System.out.println(\"AUTHENTICATION:\");\n        check(\"Passwords hashed with salt (not plain text)\", true);\n        check(\"Uses bcrypt/PBKDF2/Argon2 (not MD5/SHA1)\", true);\n        check(\"No hard-coded credentials in source\", true);\n        check(\"Generic error messages (no user enumeration)\", true);\n        check(\"Brute-force protection (lockout/rate limit)\", true);\n        check(\"MFA available for sensitive accounts\", false);\n        check(\"Secure password reset flow\", true);\n        check(\"Password strength requirements enforced\", true);\n        System.out.println();\n        \n        System.out.println(\"SESSION MANAGEMENT:\");\n        check(\"Session IDs cryptographically random\", true);\n        check(\"Session expires (absolute timeout)\", true);\n        check(\"Session expires (idle timeout)\", false);\n        check(\"Session destroyed on logout\", true);\n        check(\"New session ID after login (fixation prevention)\", true);\n        check(\"Cookie: HttpOnly, Secure, SameSite\", true);\n        System.out.println();\n        \n        System.out.println(\"ACCESS CONTROL:\");\n        check(\"Role-based access control implemented\", true);\n        check(\"Authorisation checked on every request\", true);\n        check(\"IDOR prevention (ownership checks)\", false);\n        check(\"Principle of least privilege\", true);\n        check(\"Admin functions protected\", true);\n        check(\"Privilege escalation prevented\", true);\n        System.out.println();\n        \n        System.out.println(\"AUDIT:\");\n        check(\"Login attempts logged\", true);\n        check(\"Access denials logged\", true);\n        check(\"Role changes logged\", false);\n        check(\"Passwords never logged\", true);\n        System.out.println();\n        \n        String rating = score >= 20 ? \"EXCELLENT\" : score >= 16 ? \"GOOD\" : score >= 12 ? \"FAIR\" : \"POOR\";\n        System.out.println(\"SCORE: \" + score + \"/\" + total + \" - \" + rating);\n    }\n}",
+          "output": "=== AUTHENTICATION & ACCESS CONTROL ASSESSMENT ===\n\nAUTHENTICATION:\n  [PASS] Passwords hashed with salt\n  [PASS] Uses bcrypt/PBKDF2/Argon2\n  [PASS] No hard-coded credentials\n  [PASS] Generic error messages\n  [PASS] Brute-force protection\n  [FAIL] MFA available\n  [PASS] Secure password reset\n  [PASS] Password strength requirements\n\nSESSION MANAGEMENT:\n  [PASS] Session IDs random\n  [PASS] Absolute timeout\n  [FAIL] Idle timeout\n  [PASS] Destroyed on logout\n  [PASS] New ID after login\n  [PASS] Cookie attributes\n\nACCESS CONTROL:\n  [PASS] RBAC implemented\n  [PASS] Authorisation every request\n  [FAIL] IDOR prevention\n  [PASS] Least privilege\n  [PASS] Admin protected\n  [PASS] Escalation prevented\n\nAUDIT:\n  [PASS] Logins logged\n  [PASS] Denials logged\n  [FAIL] Role changes logged\n  [PASS] Passwords not logged\n\nSCORE: 20/24 - EXCELLENT",
+          "ai_explanation": "This checklist covers all four pillars: authentication, session management, access control, and audit logging. A real security assessment would check each item with penetration testing. The 4 failures (MFA, idle timeout, IDOR, role change logging) represent common gaps.",
+          "ai_challenge": "Which of the 4 failures would you prioritise fixing first? Consider: IDOR directly exposes user data, missing MFA enables account takeover, missing idle timeout allows session reuse."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Authentication & Access Control: Complete Security Flow",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8;\"><span style=\"background: #e74c3c; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[AUTHENTICATION FLOW]</span>\n\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">STEP 1</span> User submits username + password\n        |\n        v\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">STEP 2</span> Server looks up user record in database\n  <span style=\"color: #e74c3c;\">User not found? -> Return generic error (no user enumeration!)</span>\n        |\n        v\n<span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">STEP 3</span> Hash submitted password with stored salt\n  <span style=\"color: #f39c12;\">password + salt -> SHA-256 -> computed hash</span>\n        |\n        v\n<span style=\"background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;\">STEP 4</span> Compare computed hash with stored hash\n  <span style=\"color: #2ecc71;\">Match? -> Create session, return session ID</span>\n  <span style=\"color: #e74c3c;\">No match? -> Increment fail count, check lockout</span>\n\n\n<span style=\"background: #2ecc71; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[AUTHORISATION CHECK (Every Request)]</span>\n\n<span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">CHECK 1</span> Is the session valid? (exists + not expired)\n  <span style=\"color: #e74c3c;\">Invalid -> 401 Unauthorised</span>\n        |\n        v\n<span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">CHECK 2</span> What role does this user have?\n  <span style=\"color: #2ecc71;\">Look up role from session: ADMIN / MANAGER / USER</span>\n        |\n        v\n<span style=\"background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;\">CHECK 3</span> Does this role have permission for this action?\n  <span style=\"color: #2ecc71;\">Yes -> Process request</span>\n  <span style=\"color: #e74c3c;\">No -> 403 Forbidden</span>\n        |\n        v\n<span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">CHECK 4</span> Resource ownership (IDOR prevention)\n  <span style=\"color: #2ecc71;\">User owns resource? -> Return data</span>\n  <span style=\"color: #e74c3c;\">Different owner? -> 403 Forbidden</span>\n\n\n<span style=\"background: #9b59b6; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[CWE MAPPING]</span>\n\n  <span style=\"background: #e74c3c; color: white; padding: 3px 8px; border-radius: 3px;\">CWE-287</span> <span style=\"color: #e74c3c;\">Improper Authentication</span> - login can be bypassed\n  <span style=\"background: #f39c12; color: white; padding: 3px 8px; border-radius: 3px;\">CWE-798</span> <span style=\"color: #f39c12;\">Hard-coded Credentials</span> - passwords in source code\n  <span style=\"background: #3498db; color: white; padding: 3px 8px; border-radius: 3px;\">CWE-862</span> <span style=\"color: #3498db;\">Missing Authorisation</span> - no permission check\n  <span style=\"background: #9b59b6; color: white; padding: 3px 8px; border-radius: 3px;\">CWE-306</span> <span style=\"color: #9b59b6;\">Missing Auth for Critical Function</span> - admin action unprotected\n  <span style=\"background: #2ecc71; color: white; padding: 3px 8px; border-radius: 3px;\">CWE-269</span> <span style=\"color: #2ecc71;\">Improper Privilege Management</span> - users can escalate roles\n\n\n<span style=\"background: #2c3e50; color: white; padding: 6px 16px; border-radius: 6px; font-weight: bold;\">[REMEMBER]</span>\n\n  <span style=\"color: #e74c3c; font-weight: bold;\">1.</span> Authentication = WHO are you? Authorisation = WHAT can you do?\n  <span style=\"color: #f39c12; font-weight: bold;\">2.</span> NEVER store plain text passwords. Hash + Salt always.\n  <span style=\"color: #2ecc71; font-weight: bold;\">3.</span> NEVER hard-code credentials. Use environment variables.\n  <span style=\"color: #3498db; font-weight: bold;\">4.</span> Check permissions on EVERY request, not just the UI.\n  <span style=\"color: #9b59b6; font-weight: bold;\">5.</span> Same error for bad username and bad password (no enumeration).\n  <span style=\"color: #e67e22; font-weight: bold;\">6.</span> Sessions: random IDs, timeouts, destroy on logout.\n  <span style=\"color: #1abc9c; font-weight: bold;\">7.</span> IDOR: always verify resource ownership.\n  <span style=\"color: #e74c3c; font-weight: bold;\">8.</span> Audit log everything. Never log passwords.\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Auth vs Authz Quiz",
+          "description": "Classify each scenario as authentication or authorisation.",
+          "difficulty": "beginner",
+          "category": "Understanding Authentication",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's build your foundation in authentication and access control!",
+          "starter_code": "// Write AUTH_N (authentication) or AUTH_Z (authorisation):\n// 1. Checking if password matches stored hash: ___\n// 2. Checking if user has ADMIN role: ___\n// 3. Verifying a session token is valid: ___\n// 4. Checking if user owns the requested document: ___\n// 5. Comparing fingerprint scan to stored template: ___\n// 6. Checking if user's role allows DELETE action: ___\n// 7. Verifying an API key is valid: ___\n// 8. Checking if user can access /admin page: ___\n// 9. Validating a JWT signature: ___\n// 10. Checking if user can edit another user's profile: ___",
+          "expected_output": "1. AUTH_N\n2. AUTH_Z\n3. AUTH_N\n4. AUTH_Z\n5. AUTH_N\n6. AUTH_Z\n7. AUTH_N\n8. AUTH_Z\n9. AUTH_N\n10. AUTH_Z",
+          "hints": [
+            {
+              "message": "Authentication verifies IDENTITY. Authorisation checks PERMISSIONS."
+            },
+            {
+              "message": "Passwords, tokens, fingerprints, API keys = identity verification = AUTH_N. Roles, ownership, actions = permission checks = AUTH_Z."
+            },
+            {
+              "message": "1.AUTH_N 2.AUTH_Z 3.AUTH_N 4.AUTH_Z 5.AUTH_N 6.AUTH_Z 7.AUTH_N 8.AUTH_Z 9.AUTH_N 10.AUTH_Z"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Spot the CWE",
+          "description": "Identify which CWE each vulnerability represents.",
+          "difficulty": "beginner",
+          "category": "Understanding Authentication",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's build your foundation in authentication and access control!",
+          "starter_code": "// Match each vulnerability to its CWE:\n// CWE-287, CWE-798, CWE-862, CWE-306, CWE-269\n//\n// 1. if(pass.equals(\"hardcoded123\")) -> CWE-___\n// 2. deleteUser() has no role check -> CWE-___\n// 3. Login accepts empty password -> CWE-___\n// 4. /admin page has no login check -> CWE-___\n// 5. Any user can promote to ADMIN -> CWE-___",
+          "expected_output": "1. CWE-798 (Hard-coded Credentials)\n2. CWE-862 (Missing Authorisation)\n3. CWE-287 (Improper Authentication)\n4. CWE-306 (Missing Auth for Critical Function)\n5. CWE-269 (Improper Privilege Management)",
+          "hints": [
+            {
+              "message": "798=hard-coded, 862=missing authz, 287=improper authn, 306=no auth on critical func, 269=privilege escalation."
+            },
+            {
+              "message": "Hard-coded password->798. No role check->862. Empty password accepted->287. Admin with no login->306. Self-promote->269."
+            },
+            {
+              "message": "1.798 2.862 3.287 4.306 5.269"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: HTTP Status Codes",
+          "description": "Match security responses to correct HTTP codes.",
+          "difficulty": "beginner",
+          "category": "Understanding Authentication",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's build your foundation in authentication and access control!",
+          "starter_code": "// Write the correct HTTP status code:\n// 200=OK, 401=Unauthorised, 403=Forbidden, 404=Not Found\n//\n// 1. User not logged in, tries to access profile: ___\n// 2. User logged in as USER, tries to delete another user: ___\n// 3. Admin successfully views user list: ___\n// 4. User tries to access another user's invoice: ___\n// 5. User requests a page that does not exist: ___",
+          "expected_output": "1. 401 (not authenticated)\n2. 403 (authenticated but not authorised)\n3. 200 (success)\n4. 403 (not authorised for this resource)\n5. 404 (not found)",
+          "hints": [
+            {
+              "message": "401 = not logged in at all. 403 = logged in but no permission."
+            },
+            {
+              "message": "401 is about identity. 403 is about permissions. Both are denials but for different reasons."
+            },
+            {
+              "message": "1.401 2.403 3.200 4.403 5.404"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Why Not Plain Text?",
+          "description": "Explain what happens when plain text passwords are stolen.",
+          "difficulty": "beginner",
+          "category": "Understanding Authentication",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's build your foundation in authentication and access control!",
+          "starter_code": "public class PlainTextRisk {\n    public static void main(String[] args) {\n        // Database stores plain text passwords:\n        // alice -> MyDog2024\n        // bob -> Summer!23\n        // charlie -> MyDog2024\n        \n        System.out.println(\"If attacker steals database:\");\n        System.out.println(\"  1. Every password visible immediately: ___ (yes/no)\");\n        System.out.println(\"  2. Users with same password identifiable: ___ (yes/no)\");\n        System.out.println(\"  3. Passwords usable on other sites: ___ (yes/no)\");\n        System.out.println(\"  4. Fix requires all users to change password: ___ (yes/no)\");\n    }\n}",
+          "expected_output": "If attacker steals database:\n  1. Every password visible immediately: yes\n  2. Users with same password identifiable: yes\n  3. Passwords usable on other sites: yes (password reuse)\n  4. Fix requires all users to change password: yes",
+          "hints": [
+            {
+              "message": "Plain text means the attacker sees exactly what users typed."
+            },
+            {
+              "message": "With hashing, attacker gets hashes (useless without cracking). With salt, even same passwords look different."
+            },
+            {
+              "message": "All answers are yes. Plain text = total compromise. Hash+salt = attacker must crack each individually."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Salt Purpose",
+          "description": "Explain why each salt scenario is secure or insecure.",
+          "difficulty": "beginner",
+          "category": "Understanding Authentication",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's build your foundation in authentication and access control!",
+          "starter_code": "// For each, write SECURE or INSECURE and why:\n// 1. Each user has a unique random 16-byte salt: ___\n// 2. All users share the same salt \"MYSALT\": ___\n// 3. Salt stored alongside hash in database: ___\n// 4. Using the username as the salt: ___\n// 5. No salt at all (just hash the password): ___",
+          "expected_output": "1. SECURE - unique salt means each hash is unique\n2. INSECURE - shared salt means same passwords = same hashes\n3. SECURE - salt is NOT secret, it just adds uniqueness\n4. INSECURE - predictable, enables targeted rainbow tables\n5. INSECURE - rainbow tables can crack common passwords instantly",
+          "hints": [
+            {
+              "message": "Salt must be: unique per user, random, stored with the hash. It does NOT need to be secret."
+            },
+            {
+              "message": "Shared salt = same passwords produce same hashes. No salt = rainbow tables work."
+            },
+            {
+              "message": "1.SECURE 2.INSECURE(shared) 3.SECURE(salt is public) 4.INSECURE(predictable) 5.INSECURE(rainbow tables)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: User Enumeration Risk",
+          "description": "Identify which error messages leak information.",
+          "difficulty": "beginner",
+          "category": "Understanding Authentication",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's build your foundation in authentication and access control!",
+          "starter_code": "// Which login error messages are SAFE vs UNSAFE?\n// 1. \"Invalid username or password\": ___\n// 2. \"User 'alice' not found\": ___\n// 3. \"Incorrect password for alice\": ___\n// 4. \"Authentication failed\": ___\n// 5. \"No account with that email exists\": ___\n// 6. \"Login failed. Please try again.\": ___",
+          "expected_output": "1. SAFE - generic, reveals nothing\n2. UNSAFE - confirms alice does not exist\n3. UNSAFE - confirms alice EXISTS but password is wrong\n4. SAFE - generic\n5. UNSAFE - confirms no account for that email\n6. SAFE - generic",
+          "hints": [
+            {
+              "message": "An attacker can use different error messages to discover which usernames exist."
+            },
+            {
+              "message": "Same message for 'user not found' and 'wrong password' prevents enumeration."
+            },
+            {
+              "message": "SAFE: 1,4,6 (generic). UNSAFE: 2,3,5 (reveal whether account exists)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Session Security Checklist",
+          "description": "Check each session property as SECURE or INSECURE.",
+          "difficulty": "beginner",
+          "category": "Understanding Authentication",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's build your foundation in authentication and access control!",
+          "starter_code": "// Mark SECURE or INSECURE:\n// 1. Session ID: 'user_alice_12345': ___\n// 2. Session ID: 'kX7vR2mP9qYtN5wB3jL8' (random): ___\n// 3. Session stored in URL: /profile?session=abc: ___\n// 4. Cookie: session=abc; HttpOnly; Secure: ___\n// 5. Session never expires: ___\n// 6. Same session ID before and after login: ___\n// 7. Session destroyed on logout: ___",
+          "expected_output": "1. INSECURE - predictable, contains username\n2. SECURE - random, unpredictable\n3. INSECURE - visible in URL, browser history, logs\n4. SECURE - HttpOnly prevents JS access, Secure requires HTTPS\n5. INSECURE - stolen sessions work forever\n6. INSECURE - session fixation vulnerability\n7. SECURE - prevents session reuse after logout",
+          "hints": [
+            {
+              "message": "Session IDs must be: random, in cookies (not URLs), with security attributes, expiring, destroyed on logout."
+            },
+            {
+              "message": "Predictable IDs can be guessed. URL sessions get logged. No expiry means stolen sessions last forever."
+            },
+            {
+              "message": "1.INSECURE 2.SECURE 3.INSECURE 4.SECURE 5.INSECURE 6.INSECURE 7.SECURE"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Least Privilege Scenarios",
+          "description": "Apply minimum permissions for each user type.",
+          "difficulty": "beginner",
+          "category": "Understanding Authentication",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's build your foundation in authentication and access control!",
+          "starter_code": "// What permissions should each role have? Write YES or NO:\n// Permissions: READ_OWN, WRITE_OWN, READ_ALL, WRITE_ALL, DELETE_ALL, MANAGE_ROLES\n//\n// VIEWER:  READ_OWN=___ WRITE_OWN=___ READ_ALL=___ WRITE_ALL=___ DELETE_ALL=___ MANAGE_ROLES=___\n// EDITOR:  READ_OWN=___ WRITE_OWN=___ READ_ALL=___ WRITE_ALL=___ DELETE_ALL=___ MANAGE_ROLES=___\n// ADMIN:   READ_OWN=___ WRITE_OWN=___ READ_ALL=___ WRITE_ALL=___ DELETE_ALL=___ MANAGE_ROLES=___",
+          "expected_output": "VIEWER:  YES NO  NO  NO  NO  NO\nEDITOR:  YES YES YES NO  NO  NO\nADMIN:   YES YES YES YES YES YES",
+          "hints": [
+            {
+              "message": "Least privilege: each role gets the MINIMUM it needs."
+            },
+            {
+              "message": "Viewers only read their own. Editors read all and write own. Admins get everything."
+            },
+            {
+              "message": "VIEWER: read own only. EDITOR: read all + write own. ADMIN: everything."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Trace the Login Flow",
+          "description": "Order the steps of a secure login process.",
+          "difficulty": "beginner",
+          "category": "Understanding Authentication",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's build your foundation in authentication and access control!",
+          "starter_code": "// Put in correct order (1-8):\n// ___ Server creates session with user ID and role\n// ___ User submits username and password\n// ___ Server hashes submitted password with stored salt\n// ___ Server looks up user record by username\n// ___ Server returns session ID as HttpOnly cookie\n// ___ Server compares computed hash with stored hash\n// ___ Server checks brute-force lockout status\n// ___ User is redirected to dashboard",
+          "expected_output": "1. User submits username and password\n2. Server checks brute-force lockout status\n3. Server looks up user record by username\n4. Server hashes submitted password with stored salt\n5. Server compares computed hash with stored hash\n6. Server creates session with user ID and role\n7. Server returns session ID as HttpOnly cookie\n8. User is redirected to dashboard",
+          "hints": [
+            {
+              "message": "Start with what the user does, then follow server-side steps."
+            },
+            {
+              "message": "Check lockout first (before any work), then lookup, hash, compare, create session, return cookie."
+            },
+            {
+              "message": "Order: submit -> lockout check -> lookup -> hash -> compare -> create session -> set cookie -> redirect"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: IDOR Identification",
+          "description": "Find the IDOR vulnerability in each code snippet.",
+          "difficulty": "beginner",
+          "category": "Understanding Authentication",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's build your foundation in authentication and access control!",
+          "starter_code": "// For each, identify if IDOR is present (YES/NO) and why:\n//\n// 1. /profile?id=42 -> returns user 42's data without checking who is asking\npublic class Q1 { /* IDOR: ___ */ }\n\n// 2. /profile -> returns data for the CURRENTLY LOGGED IN user (from session)\npublic class Q2 { /* IDOR: ___ */ }\n\n// 3. /invoice/download?id=100 -> checks invoice.ownerId == session.userId\npublic class Q3 { /* IDOR: ___ */ }\n\n// 4. /api/user/delete?userId=5 -> deletes user 5 if requester is logged in (any role)\npublic class Q4 { /* IDOR: ___ */ }",
+          "expected_output": "1. YES - no ownership check, any user can view any profile by changing the ID\n2. NO - uses session to determine user, not client-supplied ID\n3. NO - ownership check present (ownerId == userId)\n4. YES - any logged-in user can delete any other user (missing authz + IDOR)",
+          "hints": [
+            {
+              "message": "IDOR occurs when client-supplied IDs are used without verifying ownership."
+            },
+            {
+              "message": "Q1: id from URL, no check. Q2: id from session (safe). Q3: has check. Q4: id from URL, no role check."
+            },
+            {
+              "message": "1.YES(no check) 2.NO(from session) 3.NO(has check) 4.YES(no authz)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Generate a Salt",
+          "description": "Write a method that generates a cryptographically secure salt.",
+          "difficulty": "intermediate",
+          "category": "Password Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Password security is the first line of defence!",
+          "starter_code": "import java.security.SecureRandom;\nimport java.util.Base64;\n\npublic class SaltGen {\n    // TODO: Generate 16-byte random salt, return as Base64 string\n    static String generateSalt() {\n        return \"\";\n    }\n    public static void main(String[] args) {\n        String s1 = generateSalt();\n        String s2 = generateSalt();\n        System.out.println(\"Salt 1: \" + s1);\n        System.out.println(\"Salt 2: \" + s2);\n        System.out.println(\"Different: \" + !s1.equals(s2));\n        System.out.println(\"Length: \" + Base64.getDecoder().decode(s1).length + \" bytes\");\n    }\n}",
+          "expected_output": "Salt 1: (24-char Base64 string)\nSalt 2: (different 24-char string)\nDifferent: true\nLength: 16 bytes",
+          "hints": [
+            {
+              "message": "new SecureRandom().nextBytes(array) fills with random bytes."
+            },
+            {
+              "message": "byte[] salt = new byte[16]; new SecureRandom().nextBytes(salt); return Base64.getEncoder().encodeToString(salt);"
+            },
+            {
+              "message": "static String generateSalt(){byte[] s=new byte[16];new SecureRandom().nextBytes(s);return Base64.getEncoder().encodeToString(s);}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Hash a Password",
+          "description": "Implement SHA-256 hashing with salt.",
+          "difficulty": "intermediate",
+          "category": "Password Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Password security is the first line of defence!",
+          "starter_code": "import java.security.MessageDigest;\nimport java.util.Base64;\n\npublic class HashPassword {\n    static String hashWithSalt(String password, String saltB64) throws Exception {\n        // TODO: Decode salt, hash password+salt with SHA-256, return Base64\n        return \"\";\n    }\n    public static void main(String[] args) throws Exception {\n        String salt = \"dGVzdHNhbHQxMjM0NTY=\";\n        System.out.println(hashWithSalt(\"MyPassword\", salt));\n        System.out.println(hashWithSalt(\"MyPassword\", salt)); // Same\n        System.out.println(hashWithSalt(\"Different\", salt));   // Different\n    }\n}",
+          "expected_output": "(consistent hash for MyPassword)\n(same hash - deterministic)\n(different hash)",
+          "hints": [
+            {
+              "message": "MessageDigest.getInstance(\"SHA-256\"), then md.update(salt), then md.digest(password.getBytes())."
+            },
+            {
+              "message": "Decode salt from Base64, create MessageDigest, update with salt bytes, digest password bytes, encode result as Base64."
+            },
+            {
+              "message": "byte[] s=Base64.getDecoder().decode(saltB64); MessageDigest md=MessageDigest.getInstance(\"SHA-256\"); md.update(s); return Base64.getEncoder().encodeToString(md.digest(password.getBytes(\"UTF-8\")));"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Verify a Password",
+          "description": "Check a submitted password against stored hash and salt.",
+          "difficulty": "intermediate",
+          "category": "Password Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Password security is the first line of defence!",
+          "starter_code": "import java.security.MessageDigest;\nimport java.util.Base64;\n\npublic class VerifyPassword {\n    static boolean verify(String inputPassword, String storedSaltB64, String storedHashB64) throws Exception {\n        // TODO: Hash inputPassword with storedSalt, compare with storedHash\n        return false;\n    }\n    public static void main(String[] args) throws Exception {\n        String salt = \"dGVzdHNhbHQ=\";\n        String hash = \"someStoredHash\"; // pre-computed\n        // For demo, compute the correct hash first\n        MessageDigest md = MessageDigest.getInstance(\"SHA-256\");\n        md.update(Base64.getDecoder().decode(salt));\n        hash = Base64.getEncoder().encodeToString(md.digest(\"CorrectPass\".getBytes()));\n        \n        System.out.println(\"Correct: \" + verify(\"CorrectPass\", salt, hash));\n        System.out.println(\"Wrong: \" + verify(\"WrongPass\", salt, hash));\n    }\n}",
+          "expected_output": "Correct: true\nWrong: false",
+          "hints": [
+            {
+              "message": "Hash the input with the stored salt, then compare the result with the stored hash."
+            },
+            {
+              "message": "Same process as registration: decode salt, hash input+salt, compare with stored."
+            },
+            {
+              "message": "Hash input+salt, compare with storedHashB64 using .equals()."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Password Strength Checker",
+          "description": "Validate password meets minimum security requirements.",
+          "difficulty": "intermediate",
+          "category": "Password Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Password security is the first line of defence!",
+          "starter_code": "public class StrengthCheck {\n    static boolean isStrong(String password) {\n        // TODO: Check: min 8 chars, has upper, lower, digit, special char\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(isStrong(\"Str0ng!Pass\"));  // true\n        System.out.println(isStrong(\"short\"));          // false\n        System.out.println(isStrong(\"nouppercase1!\"));  // false\n        System.out.println(isStrong(\"NOLOWER1!\"));      // false\n        System.out.println(isStrong(\"NoDigits!!\"));     // false\n        System.out.println(isStrong(\"NoSpecial1\"));     // false\n    }\n}",
+          "expected_output": "true\nfalse\nfalse\nfalse\nfalse\nfalse",
+          "hints": [
+            {
+              "message": "Check each requirement with regex or character iteration."
+            },
+            {
+              "message": "password.length()>=8 && password.matches(\".*[A-Z].*\") && matches lower && matches digit && matches special."
+            },
+            {
+              "message": "return p!=null && p.length()>=8 && p.matches(\".*[A-Z].*\") && p.matches(\".*[a-z].*\") && p.matches(\".*[0-9].*\") && p.matches(\".*[!@#$%^&*].*\");"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Find Hard-coded Credentials",
+          "description": "Scan code for CWE-798 violations.",
+          "difficulty": "intermediate",
+          "category": "Password Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Password security is the first line of defence!",
+          "starter_code": "public class FindHardcoded {\n    public static void main(String[] args) {\n        String[] codeLines = {\n            \"String password = System.getenv(\\\"DB_PASS\\\");\",\n            \"if (input.equals(\\\"admin123\\\")) return true;\",\n            \"String apiKey = \\\"sk-live-abc123def456\\\";\",\n            \"String secret = config.getProperty(\\\"app.secret\\\");\",\n            \"conn = DriverManager.getConnection(url, \\\"root\\\", \\\"toor\\\");\"\n        };\n        // TODO: For each line, print SAFE or CWE-798\n        for (String line : codeLines) {\n            System.out.println(\"___: \" + line.substring(0, Math.min(50, line.length())) + \"...\");\n        }\n    }\n}",
+          "expected_output": "SAFE: String password = System.getenv(\"DB_PASS\")...\nCWE-798: if (input.equals(\"admin123\")) return true...\nCWE-798: String apiKey = \"sk-live-abc123def456\"...\nSAFE: String secret = config.getProperty(\"app.secret\")...\nCWE-798: conn = DriverManager.getConnection(url, \"root\"...",
+          "hints": [
+            {
+              "message": "Look for literal strings assigned to password/secret variables or used in .equals() comparisons."
+            },
+            {
+              "message": "Lines 2, 3, 5 have literal credentials. Lines 1, 4 use env vars / config files."
+            },
+            {
+              "message": "SAFE, CWE-798, CWE-798, SAFE, CWE-798"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Fix Hard-coded Password",
+          "description": "Refactor code to use environment variables.",
+          "difficulty": "intermediate",
+          "category": "Password Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Password security is the first line of defence!",
+          "starter_code": "public class FixHardcoded {\n    // VULNERABLE:\n    static boolean verifyAdmin(String password) {\n        return password.equals(\"Mew!\"); // CWE-798!\n    }\n    \n    // TODO: Write fixedVerifyAdmin using environment variable or config\n    static boolean fixedVerifyAdmin(String password) {\n        return false;\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"Vulnerable: \" + verifyAdmin(\"Mew!\"));\n        // Set env var for testing: export ADMIN_PASS=SecurePass\n        System.out.println(\"Fixed approach: read from System.getenv(\\\"ADMIN_PASS\\\")\");\n    }\n}",
+          "expected_output": "Vulnerable: true\nFixed approach: read from System.getenv(\"ADMIN_PASS\")",
+          "hints": [
+            {
+              "message": "Replace the literal string with System.getenv(\"ADMIN_PASS\")."
+            },
+            {
+              "message": "String stored = System.getenv(\"ADMIN_PASS\"); return stored != null && stored.equals(password);"
+            },
+            {
+              "message": "static boolean fixedVerifyAdmin(String p){String s=System.getenv(\"ADMIN_PASS\");return s!=null&&s.equals(p);}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Common Password Blacklist",
+          "description": "Reject passwords that appear in common password lists.",
+          "difficulty": "intermediate",
+          "category": "Password Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Password security is the first line of defence!",
+          "starter_code": "import java.util.*;\n\npublic class PasswordBlacklist {\n    static final Set<String> COMMON = new HashSet<>(Arrays.asList(\n        \"password\", \"123456\", \"qwerty\", \"admin\", \"letmein\",\n        \"welcome\", \"monkey\", \"dragon\", \"master\", \"iloveyou\"\n    ));\n    \n    static String checkPassword(String password) {\n        // TODO: Reject if password is in COMMON list (case-insensitive)\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(checkPassword(\"password\"));\n        System.out.println(checkPassword(\"ADMIN\"));\n        System.out.println(checkPassword(\"UniqueP@ss99\"));\n        System.out.println(checkPassword(\"Dragon\"));\n    }\n}",
+          "expected_output": "REJECTED: Common password\nREJECTED: Common password\nACCEPTED\nREJECTED: Common password",
+          "hints": [
+            {
+              "message": "Convert to lowercase before checking the set."
+            },
+            {
+              "message": "if(COMMON.contains(password.toLowerCase())) return \"REJECTED: Common password\";"
+            },
+            {
+              "message": "return COMMON.contains(password.toLowerCase()) ? \"REJECTED: Common password\" : \"ACCEPTED\";"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Registration Flow",
+          "description": "Build a complete user registration with validation.",
+          "difficulty": "intermediate",
+          "category": "Password Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Password security is the first line of defence!",
+          "starter_code": "import java.util.*;\nimport java.security.*;\n\npublic class Registration {\n    static Map<String, String[]> users = new HashMap<>(); // user -> [salt, hash]\n    \n    static String register(String username, String password) throws Exception {\n        // TODO: Validate username (not empty, not taken)\n        // Validate password strength\n        // Generate salt, hash password, store\n        return \"\";\n    }\n    public static void main(String[] args) throws Exception {\n        System.out.println(register(\"alice\", \"Str0ng!Pass\"));\n        System.out.println(register(\"alice\", \"Another1!\"));  // duplicate\n        System.out.println(register(\"bob\", \"weak\"));          // weak password\n        System.out.println(register(\"\", \"Str0ng!Pass\"));      // empty username\n    }\n}",
+          "expected_output": "SUCCESS: alice registered\nERROR: Username already taken\nERROR: Password too weak\nERROR: Username required",
+          "hints": [
+            {
+              "message": "Check username first (not empty, not in map), then password strength, then generate salt and hash."
+            },
+            {
+              "message": "if empty username -> error. if users.containsKey -> error. if weak password -> error. else generate salt, hash, store."
+            },
+            {
+              "message": "Check all validations before storing. Generate salt with SecureRandom, hash with SHA-256, store in map."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Timing-Safe Password Comparison",
+          "description": "Use constant-time comparison for password verification.",
+          "difficulty": "intermediate",
+          "category": "Password Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Password security is the first line of defence!",
+          "starter_code": "import java.security.MessageDigest;\n\npublic class TimingSafe {\n    // VULNERABLE: early return\n    static boolean unsafeCompare(String a, String b) {\n        return a.equals(b); // String.equals does early return!\n    }\n    \n    // TODO: Write timing-safe comparison\n    static boolean safeCompare(String a, String b) {\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(\"Safe (match): \" + safeCompare(\"abc123\", \"abc123\"));\n        System.out.println(\"Safe (differ): \" + safeCompare(\"abc123\", \"xyz789\"));\n    }\n}",
+          "expected_output": "Safe (match): true\nSafe (differ): false",
+          "hints": [
+            {
+              "message": "MessageDigest.isEqual(a.getBytes(), b.getBytes()) is constant-time."
+            },
+            {
+              "message": "Check for nulls first, then use MessageDigest.isEqual."
+            },
+            {
+              "message": "if(a==null||b==null) return false; return MessageDigest.isEqual(a.getBytes(), b.getBytes());"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Password Reset Token",
+          "description": "Generate and validate a secure password reset token.",
+          "difficulty": "intermediate",
+          "category": "Password Security",
+          "estimated_minutes": 5,
+          "ai_intro": "Password security is the first line of defence!",
+          "starter_code": "import java.security.SecureRandom;\nimport java.util.*;\n\npublic class ResetToken {\n    static Map<String, Long> tokens = new HashMap<>(); // token -> expiry\n    \n    static String generateResetToken() {\n        // TODO: Generate 32-byte random token, store with 1-hour expiry\n        return \"\";\n    }\n    static boolean validateToken(String token) {\n        // TODO: Check token exists and not expired\n        return false;\n    }\n    public static void main(String[] args) {\n        String t = generateResetToken();\n        System.out.println(\"Generated: \" + t.substring(0, 10) + \"...\");\n        System.out.println(\"Valid: \" + validateToken(t));\n        System.out.println(\"Fake: \" + validateToken(\"fake-token\"));\n    }\n}",
+          "expected_output": "Generated: kX7vR2mP9q...\nValid: true\nFake: false",
+          "hints": [
+            {
+              "message": "generateResetToken: SecureRandom 32 bytes, Base64 encode, store in map with expiry."
+            },
+            {
+              "message": "validateToken: check map contains token AND System.currentTimeMillis() < expiry."
+            },
+            {
+              "message": "Generate: byte[32], SecureRandom, Base64 URL encode, store with currentTimeMillis+3600000. Validate: get expiry, check not null and not expired."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Create a Secure Session ID",
+          "description": "Generate a cryptographically random session identifier.",
+          "difficulty": "intermediate",
+          "category": "Session Management",
+          "estimated_minutes": 5,
+          "ai_intro": "Sessions keep users logged in securely. Let's build robust session handling!",
+          "starter_code": "import java.security.SecureRandom;\nimport java.util.Base64;\n\npublic class SessionId {\n    static String createSessionId() {\n        // TODO: 32-byte random, Base64 URL-safe\n        return \"\";\n    }\n    public static void main(String[] args) {\n        String s1 = createSessionId();\n        String s2 = createSessionId();\n        System.out.println(\"Session 1: \" + s1);\n        System.out.println(\"Session 2: \" + s2);\n        System.out.println(\"Unique: \" + !s1.equals(s2));\n        System.out.println(\"Length: \" + s1.length());\n    }\n}",
+          "expected_output": "Session 1: (43-char random)\nSession 2: (different 43-char)\nUnique: true\nLength: 43",
+          "hints": [
+            {
+              "message": "Same pattern as CSRF tokens: SecureRandom + Base64 URL-safe."
+            },
+            {
+              "message": "byte[32], SecureRandom.nextBytes, Base64.getUrlEncoder().withoutPadding().encodeToString."
+            },
+            {
+              "message": "byte[] b=new byte[32]; new SecureRandom().nextBytes(b); return Base64.getUrlEncoder().withoutPadding().encodeToString(b);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Session Timeout Check",
+          "description": "Implement absolute and idle timeout validation.",
+          "difficulty": "intermediate",
+          "category": "Session Management",
+          "estimated_minutes": 5,
+          "ai_intro": "Sessions keep users logged in securely. Let's build robust session handling!",
+          "starter_code": "import java.util.*;\n\npublic class SessionTimeout {\n    static long createdAt, lastAccess;\n    static final long ABS_TIMEOUT = 28800000; // 8 hours\n    static final long IDLE_TIMEOUT = 1800000;  // 30 min\n    \n    static String checkTimeout(long now) {\n        // TODO: Check both timeouts, return status\n        return \"\";\n    }\n    public static void main(String[] args) {\n        long now = System.currentTimeMillis();\n        createdAt = now;\n        lastAccess = now;\n        System.out.println(checkTimeout(now)); // Valid\n        System.out.println(checkTimeout(now + 1800001)); // Idle expired\n        lastAccess = now + 1800001;\n        System.out.println(checkTimeout(now + 28800001)); // Absolute expired\n    }\n}",
+          "expected_output": "VALID\nEXPIRED: Idle timeout (30 min inactivity)\nEXPIRED: Absolute timeout (8 hour max)",
+          "hints": [
+            {
+              "message": "Check absolute first (now - createdAt > ABS), then idle (now - lastAccess > IDLE)."
+            },
+            {
+              "message": "if(now-createdAt > ABS_TIMEOUT) -> absolute expired. if(now-lastAccess > IDLE_TIMEOUT) -> idle expired. else valid."
+            },
+            {
+              "message": "if(now-createdAt>ABS_TIMEOUT) return \"EXPIRED: Absolute timeout (8 hour max)\"; if(now-lastAccess>IDLE_TIMEOUT) return \"EXPIRED: Idle timeout (30 min inactivity)\"; return \"VALID\";"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Session Store",
+          "description": "Build a simple in-memory session store with CRUD operations.",
+          "difficulty": "intermediate",
+          "category": "Session Management",
+          "estimated_minutes": 5,
+          "ai_intro": "Sessions keep users logged in securely. Let's build robust session handling!",
+          "starter_code": "import java.util.*;\n\npublic class SessionStore {\n    static Map<String, Map<String, String>> sessions = new HashMap<>();\n    \n    static void create(String id, String userId, String role) {\n        // TODO: Create session entry\n    }\n    static Map<String, String> get(String id) {\n        // TODO: Return session data or null\n        return null;\n    }\n    static void destroy(String id) {\n        // TODO: Remove session\n    }\n    public static void main(String[] args) {\n        create(\"s1\", \"alice\", \"ADMIN\");\n        System.out.println(\"Get s1: \" + get(\"s1\"));\n        System.out.println(\"Get fake: \" + get(\"fake\"));\n        destroy(\"s1\");\n        System.out.println(\"After destroy: \" + get(\"s1\"));\n    }\n}",
+          "expected_output": "Get s1: {userId=alice, role=ADMIN}\nGet fake: null\nAfter destroy: null",
+          "hints": [
+            {
+              "message": "Use HashMap for session data. create puts, get retrieves, destroy removes."
+            },
+            {
+              "message": "create: sessions.put(id, Map.of(\"userId\",userId,\"role\",role)). get: sessions.get(id). destroy: sessions.remove(id)."
+            },
+            {
+              "message": "create: sessions.put(id, new HashMap<>(Map.of(\"userId\",userId,\"role\",role))). get: return sessions.get(id). destroy: sessions.remove(id)."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Session Fixation Prevention",
+          "description": "Generate new session ID after login.",
+          "difficulty": "intermediate",
+          "category": "Session Management",
+          "estimated_minutes": 5,
+          "ai_intro": "Sessions keep users logged in securely. Let's build robust session handling!",
+          "starter_code": "import java.security.SecureRandom;\nimport java.util.*;\n\npublic class FixationPrevention {\n    static Map<String, String> sessions = new HashMap<>();\n    \n    // VULNERABLE: Keeps same session ID after login\n    static String vulnerableLogin(String sessionId, String user) {\n        sessions.put(sessionId, user);\n        return sessionId; // Same ID!\n    }\n    \n    // TODO: Generate NEW session ID after login\n    static String secureLogin(String oldSessionId, String user) {\n        return \"\";\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"Vulnerable: \" + vulnerableLogin(\"attacker-known-id\", \"alice\"));\n        System.out.println(\"Secure: \" + secureLogin(\"attacker-known-id\", \"bob\"));\n    }\n}",
+          "expected_output": "Vulnerable: attacker-known-id\nSecure: (new random session ID)",
+          "hints": [
+            {
+              "message": "Remove the old session, generate a new random ID, create the session with the new ID."
+            },
+            {
+              "message": "sessions.remove(oldSessionId); generate new random ID; sessions.put(newId, user); return newId;"
+            },
+            {
+              "message": "Remove old, generate 32-byte random, Base64 encode, store new session, return new ID."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Secure Cookie Builder",
+          "description": "Build a Set-Cookie header with all security attributes.",
+          "difficulty": "intermediate",
+          "category": "Session Management",
+          "estimated_minutes": 5,
+          "ai_intro": "Sessions keep users logged in securely. Let's build robust session handling!",
+          "starter_code": "public class CookieBuilder {\n    static String buildSessionCookie(String sessionId) {\n        // TODO: Build complete Set-Cookie with HttpOnly, Secure, SameSite, Path, Max-Age\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(buildSessionCookie(\"abc123\"));\n    }\n}",
+          "expected_output": "Set-Cookie: session=abc123; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=28800",
+          "hints": [
+            {
+              "message": "Concatenate all attributes with semicolons."
+            },
+            {
+              "message": "return \"Set-Cookie: session=\"+id+\"; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=28800\";"
+            },
+            {
+              "message": "Exact: \"Set-Cookie: session=\"+sessionId+\"; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=28800\""
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Logout Handler",
+          "description": "Properly destroy session and clear cookie on logout.",
+          "difficulty": "intermediate",
+          "category": "Session Management",
+          "estimated_minutes": 5,
+          "ai_intro": "Sessions keep users logged in securely. Let's build robust session handling!",
+          "starter_code": "import java.util.*;\n\npublic class LogoutHandler {\n    static Map<String, String> sessions = new HashMap<>();\n    \n    static String logout(String sessionId) {\n        // TODO: Destroy session, return Set-Cookie that clears the cookie\n        return \"\";\n    }\n    public static void main(String[] args) {\n        sessions.put(\"sess123\", \"alice\");\n        System.out.println(\"Before: \" + sessions.size() + \" sessions\");\n        System.out.println(logout(\"sess123\"));\n        System.out.println(\"After: \" + sessions.size() + \" sessions\");\n    }\n}",
+          "expected_output": "Before: 1 sessions\nSession destroyed. Set-Cookie: session=; Max-Age=0; HttpOnly; Secure; Path=/\nAfter: 0 sessions",
+          "hints": [
+            {
+              "message": "Remove from map + return a cookie with Max-Age=0 to clear it."
+            },
+            {
+              "message": "sessions.remove(sessionId); return clearing cookie header."
+            },
+            {
+              "message": "sessions.remove(sessionId); return \"Session destroyed. Set-Cookie: session=; Max-Age=0; HttpOnly; Secure; Path=/\";"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Concurrent Session Limit",
+          "description": "Allow only one active session per user.",
+          "difficulty": "intermediate",
+          "category": "Session Management",
+          "estimated_minutes": 5,
+          "ai_intro": "Sessions keep users logged in securely. Let's build robust session handling!",
+          "starter_code": "import java.util.*;\n\npublic class ConcurrentSessions {\n    static Map<String, String> sessionToUser = new HashMap<>();\n    static Map<String, String> userToSession = new HashMap<>();\n    \n    static String login(String user) {\n        // TODO: If user already has session, destroy old one. Create new.\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(login(\"alice\")); // New session\n        String old = userToSession.get(\"alice\");\n        System.out.println(login(\"alice\")); // Replaces old session\n        System.out.println(\"Old session valid: \" + sessionToUser.containsKey(old));\n    }\n}",
+          "expected_output": "New session: (id1)\nNew session: (id2), old session invalidated\nOld session valid: false",
+          "hints": [
+            {
+              "message": "Check if user already has a session. If yes, remove it. Then create new."
+            },
+            {
+              "message": "String existing = userToSession.get(user); if(existing!=null) sessionToUser.remove(existing); then create new."
+            },
+            {
+              "message": "Remove old session if exists, generate new ID, update both maps."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Session Data Encryption",
+          "description": "Encrypt sensitive session data before storage.",
+          "difficulty": "intermediate",
+          "category": "Session Management",
+          "estimated_minutes": 5,
+          "ai_intro": "Sessions keep users logged in securely. Let's build robust session handling!",
+          "starter_code": "import javax.crypto.*;\nimport javax.crypto.spec.*;\nimport java.util.Base64;\nimport java.security.SecureRandom;\n\npublic class EncryptedSession {\n    // TODO: Implement encrypt and decrypt for session data\n    static String encrypt(String data, SecretKey key) throws Exception {\n        return \"\";\n    }\n    static String decrypt(String encrypted, SecretKey key) throws Exception {\n        return \"\";\n    }\n    public static void main(String[] args) throws Exception {\n        KeyGenerator kg = KeyGenerator.getInstance(\"AES\");\n        kg.init(256);\n        SecretKey key = kg.generateKey();\n        \n        String data = \"userId=alice,role=ADMIN\";\n        String enc = encrypt(data, key);\n        System.out.println(\"Encrypted: \" + enc.substring(0, 20) + \"...\");\n        System.out.println(\"Decrypted: \" + decrypt(enc, key));\n    }\n}",
+          "expected_output": "Encrypted: (Base64 ciphertext)...\nDecrypted: userId=alice,role=ADMIN",
+          "hints": [
+            {
+              "message": "Use Cipher.getInstance(\"AES\") with ENCRYPT_MODE and DECRYPT_MODE."
+            },
+            {
+              "message": "encrypt: Cipher.init(ENCRYPT_MODE, key), doFinal(data.getBytes()), Base64 encode. decrypt: reverse."
+            },
+            {
+              "message": "Cipher c=Cipher.getInstance(\"AES\"); c.init(Cipher.ENCRYPT_MODE,key); return Base64.getEncoder().encodeToString(c.doFinal(data.getBytes()));"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Session Activity Logger",
+          "description": "Log all session events for security monitoring.",
+          "difficulty": "intermediate",
+          "category": "Session Management",
+          "estimated_minutes": 5,
+          "ai_intro": "Sessions keep users logged in securely. Let's build robust session handling!",
+          "starter_code": "import java.util.*;\n\npublic class SessionLogger {\n    static List<String> log = new ArrayList<>();\n    \n    static void logEvent(String sessionId, String event, String detail) {\n        // TODO: Create log entry with timestamp, session (first 8 chars), event, detail\n        // NEVER log the full session ID!\n    }\n    public static void main(String[] args) {\n        logEvent(\"kX7vR2mP9qYtN5wB3jL8\", \"CREATED\", \"user=alice\");\n        logEvent(\"kX7vR2mP9qYtN5wB3jL8\", \"ACCESS\", \"page=/profile\");\n        logEvent(\"kX7vR2mP9qYtN5wB3jL8\", \"DESTROYED\", \"logout\");\n        log.forEach(System.out::println);\n    }\n}",
+          "expected_output": "[timestamp] session=kX7vR2mP... event=CREATED detail=user=alice\n[timestamp] session=kX7vR2mP... event=ACCESS detail=page=/profile\n[timestamp] session=kX7vR2mP... event=DESTROYED detail=logout",
+          "hints": [
+            {
+              "message": "Use sessionId.substring(0, 8) + \"...\" to avoid logging full session IDs."
+            },
+            {
+              "message": "String partial = sessionId.substring(0, 8) + \"...\"; Build log entry with timestamp."
+            },
+            {
+              "message": "log.add(\"[\" + java.time.LocalDateTime.now() + \"] session=\" + sessionId.substring(0,8) + \"... event=\" + event + \" detail=\" + detail);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Validate Session Middleware",
+          "description": "Build middleware that checks session on every request.",
+          "difficulty": "intermediate",
+          "category": "Session Management",
+          "estimated_minutes": 5,
+          "ai_intro": "Sessions keep users logged in securely. Let's build robust session handling!",
+          "starter_code": "import java.util.*;\n\npublic class SessionMiddleware {\n    static Map<String, Map<String,String>> sessions = new HashMap<>();\n    \n    static String processRequest(String sessionCookie, String path) {\n        // TODO: Public paths (/login, /register) skip check\n        // Other paths: validate session, return user info or 401\n        return \"\";\n    }\n    public static void main(String[] args) {\n        sessions.put(\"valid-sess\", Map.of(\"user\",\"alice\",\"role\",\"ADMIN\"));\n        System.out.println(processRequest(null, \"/login\"));\n        System.out.println(processRequest(null, \"/profile\"));\n        System.out.println(processRequest(\"valid-sess\", \"/profile\"));\n        System.out.println(processRequest(\"expired\", \"/profile\"));\n    }\n}",
+          "expected_output": "ALLOW: /login is public\n401: No session cookie\nALLOW: alice (ADMIN) accessing /profile\n401: Invalid session",
+          "hints": [
+            {
+              "message": "Check if path is public first. Then check if cookie exists. Then validate against session store."
+            },
+            {
+              "message": "Public paths: /login, /register -> allow. No cookie -> 401. Invalid session -> 401. Valid -> allow with user info."
+            },
+            {
+              "message": "if(path is public) allow. if(cookie==null) 401. Map data=sessions.get(cookie); if(data==null) 401. else allow with user info."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Build RBAC Permission Check",
+          "description": "Implement a role-permission lookup system.",
+          "difficulty": "intermediate",
+          "category": "Access Control",
+          "estimated_minutes": 6,
+          "ai_intro": "Access control is the #1 web vulnerability. Let's get it right!",
+          "starter_code": "import java.util.*;\n\npublic class RBACCheck {\n    static Map<String, Set<String>> perms = new HashMap<>();\n    static {\n        perms.put(\"ADMIN\", new HashSet<>(Arrays.asList(\"READ\",\"WRITE\",\"DELETE\",\"MANAGE\")));\n        perms.put(\"EDITOR\", new HashSet<>(Arrays.asList(\"READ\",\"WRITE\")));\n        perms.put(\"VIEWER\", new HashSet<>(Arrays.asList(\"READ\")));\n    }\n    \n    static boolean hasPermission(String role, String action) {\n        // TODO: Check if role has the action permission\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(hasPermission(\"ADMIN\", \"DELETE\"));\n        System.out.println(hasPermission(\"EDITOR\", \"DELETE\"));\n        System.out.println(hasPermission(\"VIEWER\", \"READ\"));\n        System.out.println(hasPermission(\"UNKNOWN\", \"READ\"));\n    }\n}",
+          "expected_output": "true\nfalse\ntrue\nfalse",
+          "hints": [
+            {
+              "message": "Get the permission set for the role, then check if it contains the action."
+            },
+            {
+              "message": "Set<String> p = perms.get(role); return p != null && p.contains(action);"
+            },
+            {
+              "message": "return perms.containsKey(role) && perms.get(role).contains(action);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: IDOR Prevention",
+          "description": "Add ownership checks to a data access method.",
+          "difficulty": "intermediate",
+          "category": "Access Control",
+          "estimated_minutes": 6,
+          "ai_intro": "Access control is the #1 web vulnerability. Let's get it right!",
+          "starter_code": "import java.util.*;\n\npublic class IDORFix {\n    static Map<String, String> docOwners = Map.of(\"doc1\",\"alice\",\"doc2\",\"bob\",\"doc3\",\"alice\");\n    \n    // TODO: Return document only if user owns it or is ADMIN\n    static String getDocument(String docId, String userId, String role) {\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(getDocument(\"doc1\", \"alice\", \"USER\"));  // Owner\n        System.out.println(getDocument(\"doc2\", \"alice\", \"USER\"));  // Not owner\n        System.out.println(getDocument(\"doc2\", \"alice\", \"ADMIN\")); // Admin override\n        System.out.println(getDocument(\"doc99\", \"alice\", \"USER\")); // Not found\n    }\n}",
+          "expected_output": "ACCESS GRANTED: doc1 (owner)\nACCESS DENIED: doc2 belongs to bob\nACCESS GRANTED: doc2 (admin)\nNOT FOUND: doc99",
+          "hints": [
+            {
+              "message": "Check if doc exists, then if user is owner OR role is ADMIN."
+            },
+            {
+              "message": "String owner=docOwners.get(docId); if null->not found. if owner.equals(userId) or ADMIN -> grant. else deny."
+            },
+            {
+              "message": "String o=docOwners.get(docId); if(o==null) return \"NOT FOUND\"; if(o.equals(userId)) return \"ACCESS GRANTED (owner)\"; if(\"ADMIN\".equals(role)) return \"ACCESS GRANTED (admin)\"; return \"ACCESS DENIED: belongs to \"+o;"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Authorisation Middleware",
+          "description": "Check permissions before processing any request.",
+          "difficulty": "intermediate",
+          "category": "Access Control",
+          "estimated_minutes": 6,
+          "ai_intro": "Access control is the #1 web vulnerability. Let's get it right!",
+          "starter_code": "import java.util.*;\n\npublic class AuthzMiddleware {\n    static Map<String, Set<String>> rolePerms = Map.of(\n        \"ADMIN\", Set.of(\"GET\",\"POST\",\"PUT\",\"DELETE\"),\n        \"USER\", Set.of(\"GET\",\"POST\")\n    );\n    \n    static String checkAuth(String role, String method, String path) {\n        // TODO: Check role has permission for this HTTP method\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(checkAuth(\"ADMIN\", \"DELETE\", \"/users/5\"));\n        System.out.println(checkAuth(\"USER\", \"DELETE\", \"/users/5\"));\n        System.out.println(checkAuth(\"USER\", \"GET\", \"/profile\"));\n        System.out.println(checkAuth(null, \"GET\", \"/profile\"));\n    }\n}",
+          "expected_output": "ALLOW: ADMIN can DELETE /users/5\nDENY: USER cannot DELETE /users/5\nALLOW: USER can GET /profile\nDENY: No role (not authenticated)",
+          "hints": [
+            {
+              "message": "Check role is not null, get permission set, check if method is in the set."
+            },
+            {
+              "message": "if(role==null) deny. Set perms=rolePerms.get(role); if(perms==null or !contains method) deny. else allow."
+            },
+            {
+              "message": "if(role==null) return \"DENY: No role\"; Set<String> p=rolePerms.get(role); if(p==null||!p.contains(method)) return \"DENY\"; return \"ALLOW\";"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Privilege Escalation Prevention",
+          "description": "Prevent users from promoting themselves.",
+          "difficulty": "advanced",
+          "category": "Access Control",
+          "estimated_minutes": 6,
+          "ai_intro": "Access control is the #1 web vulnerability. Let's get it right!",
+          "starter_code": "import java.util.*;\n\npublic class EscalationPrevention {\n    static Map<String, String> userRoles = new HashMap<>(Map.of(\"alice\",\"ADMIN\",\"bob\",\"USER\"));\n    static Map<String, Integer> levels = Map.of(\"USER\",1,\"MANAGER\",2,\"ADMIN\",3);\n    \n    static String changeRole(String requester, String target, String newRole) {\n        // TODO: Only ADMIN can change. Cannot assign >= own level. Cannot change self.\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(changeRole(\"bob\", \"bob\", \"ADMIN\"));       // User self-promote\n        System.out.println(changeRole(\"alice\", \"bob\", \"ADMIN\"));     // Admin promotes to admin\n        System.out.println(changeRole(\"alice\", \"bob\", \"MANAGER\"));   // Admin promotes to manager\n        System.out.println(changeRole(\"alice\", \"alice\", \"USER\"));    // Admin self-demote\n    }\n}",
+          "expected_output": "DENIED: Only admins can change roles\nDENIED: Cannot assign role equal to or above your own\nSUCCESS: bob changed to MANAGER\nDENIED: Cannot change own role",
+          "hints": [
+            {
+              "message": "Check: is requester ADMIN? Is target != requester? Is newRole level < requester's level?"
+            },
+            {
+              "message": "Three checks in order: role==ADMIN, target!=requester, levels.get(newRole)<levels.get(requesterRole)."
+            },
+            {
+              "message": "if(!\"ADMIN\".equals(userRoles.get(requester))) deny. if(requester.equals(target)) deny. if(levels.get(newRole)>=levels.get(userRoles.get(requester))) deny. else change and return success."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Horizontal Access Control",
+          "description": "Prevent users from accessing other users' data.",
+          "difficulty": "intermediate",
+          "category": "Access Control",
+          "estimated_minutes": 6,
+          "ai_intro": "Access control is the #1 web vulnerability. Let's get it right!",
+          "starter_code": "import java.util.*;\n\npublic class HorizontalAC {\n    static Map<String, List<String>> userOrders = Map.of(\n        \"alice\", List.of(\"ORD-1\",\"ORD-2\"),\n        \"bob\", List.of(\"ORD-3\",\"ORD-4\")\n    );\n    \n    static String viewOrders(String requestUser, String targetUser) {\n        // TODO: Users can only view their OWN orders. Admins can view anyone's.\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(viewOrders(\"alice\", \"alice\"));  // Own orders\n        System.out.println(viewOrders(\"alice\", \"bob\"));    // Other's orders\n    }\n}",
+          "expected_output": "alice's orders: [ORD-1, ORD-2]\nDENIED: alice cannot view bob's orders",
+          "hints": [
+            {
+              "message": "Check if requestUser equals targetUser."
+            },
+            {
+              "message": "if(!requestUser.equals(targetUser)) deny. else return orders."
+            },
+            {
+              "message": "if(!requestUser.equals(targetUser)) return \"DENIED: \"+requestUser+\" cannot view \"+targetUser+\"'s orders\"; return targetUser+\"'s orders: \"+userOrders.get(targetUser);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Vertical Access Control",
+          "description": "Enforce hierarchical permissions.",
+          "difficulty": "intermediate",
+          "category": "Access Control",
+          "estimated_minutes": 6,
+          "ai_intro": "Access control is the #1 web vulnerability. Let's get it right!",
+          "starter_code": "import java.util.*;\n\npublic class VerticalAC {\n    static Map<String, Integer> levels = Map.of(\"USER\",1,\"MANAGER\",2,\"ADMIN\",3);\n    \n    // TODO: Action requires minimum level. Check user's role level.\n    static String checkVertical(String userRole, String action, int requiredLevel) {\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(checkVertical(\"USER\", \"view_profile\", 1));\n        System.out.println(checkVertical(\"USER\", \"manage_users\", 3));\n        System.out.println(checkVertical(\"ADMIN\", \"manage_users\", 3));\n        System.out.println(checkVertical(\"MANAGER\", \"view_reports\", 2));\n    }\n}",
+          "expected_output": "ALLOW: USER (level 1) >= 1 for view_profile\nDENY: USER (level 1) < 3 for manage_users\nALLOW: ADMIN (level 3) >= 3 for manage_users\nALLOW: MANAGER (level 2) >= 2 for view_reports",
+          "hints": [
+            {
+              "message": "Get the user's level from the map, compare with required level."
+            },
+            {
+              "message": "int userLevel = levels.getOrDefault(userRole, 0); if(userLevel >= requiredLevel) allow else deny."
+            },
+            {
+              "message": "int ul=levels.getOrDefault(userRole,0); return ul>=requiredLevel ? \"ALLOW\" : \"DENY\";"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Admin Function Protection",
+          "description": "Add authentication check to critical admin functions.",
+          "difficulty": "intermediate",
+          "category": "Access Control",
+          "estimated_minutes": 6,
+          "ai_intro": "Access control is the #1 web vulnerability. Let's get it right!",
+          "starter_code": "import java.util.*;\n\npublic class AdminProtection {\n    static Map<String, String> sessions = Map.of(\"s1\",\"ADMIN\",\"s2\",\"USER\");\n    \n    // VULNERABLE: No auth check!\n    static String resetAllPasswords() { return \"All passwords reset!\"; }\n    \n    // TODO: Require ADMIN session\n    static String secureResetAllPasswords(String sessionId) {\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(\"Vulnerable: \" + resetAllPasswords());\n        System.out.println(\"Secure (admin): \" + secureResetAllPasswords(\"s1\"));\n        System.out.println(\"Secure (user): \" + secureResetAllPasswords(\"s2\"));\n        System.out.println(\"Secure (none): \" + secureResetAllPasswords(null));\n    }\n}",
+          "expected_output": "Vulnerable: All passwords reset!\nSecure (admin): All passwords reset!\nSecure (user): DENIED: Admin access required\nSecure (none): DENIED: Not authenticated",
+          "hints": [
+            {
+              "message": "Check session exists (authn), then check role is ADMIN (authz)."
+            },
+            {
+              "message": "if(sessionId==null) not authenticated. if(!\"ADMIN\".equals(sessions.get(sessionId))) not authorised."
+            },
+            {
+              "message": "if(sessionId==null) return \"DENIED: Not authenticated\"; String role=sessions.get(sessionId); if(!\"ADMIN\".equals(role)) return \"DENIED: Admin access required\"; return \"All passwords reset!\";"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Resource-Level Permissions",
+          "description": "Implement per-resource access control.",
+          "difficulty": "advanced",
+          "category": "Access Control",
+          "estimated_minutes": 6,
+          "ai_intro": "Access control is the #1 web vulnerability. Let's get it right!",
+          "starter_code": "import java.util.*;\n\npublic class ResourcePerms {\n    // resource -> {user -> permissions}\n    static Map<String, Map<String, Set<String>>> acl = new HashMap<>();\n    static {\n        acl.put(\"project-alpha\", Map.of(\n            \"alice\", Set.of(\"READ\",\"WRITE\",\"ADMIN\"),\n            \"bob\", Set.of(\"READ\")\n        ));\n    }\n    \n    static String checkAccess(String user, String resource, String permission) {\n        // TODO: Check ACL for this user on this resource\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(checkAccess(\"alice\", \"project-alpha\", \"WRITE\"));\n        System.out.println(checkAccess(\"bob\", \"project-alpha\", \"WRITE\"));\n        System.out.println(checkAccess(\"bob\", \"project-alpha\", \"READ\"));\n        System.out.println(checkAccess(\"charlie\", \"project-alpha\", \"READ\"));\n    }\n}",
+          "expected_output": "ALLOW: alice has WRITE on project-alpha\nDENY: bob lacks WRITE on project-alpha\nALLOW: bob has READ on project-alpha\nDENY: charlie has no access to project-alpha",
+          "hints": [
+            {
+              "message": "Navigate the nested map: acl -> resource -> user -> permissions set."
+            },
+            {
+              "message": "Map<String,Set<String>> resAcl = acl.get(resource); if null, deny. Set<String> userPerms = resAcl.get(user); if null or !contains, deny."
+            },
+            {
+              "message": "Get resource ACL, get user perms within it, check contains. Null at any level = deny."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Complete Access Check Pipeline",
+          "description": "Combine authentication + authorisation + IDOR check.",
+          "difficulty": "advanced",
+          "category": "Access Control",
+          "estimated_minutes": 6,
+          "ai_intro": "Access control is the #1 web vulnerability. Let's get it right!",
+          "starter_code": "import java.util.*;\n\npublic class FullAccessPipeline {\n    static Map<String, Map<String,String>> sessions = new HashMap<>();\n    static Map<String, String> docOwners = Map.of(\"doc1\",\"alice\",\"doc2\",\"bob\");\n    static Set<String> adminActions = Set.of(\"DELETE\",\"MANAGE\");\n    \n    static String fullCheck(String sessionId, String action, String resourceId) {\n        // TODO: 1. Check session (authn)\n        // 2. Check role for action (authz)\n        // 3. Check ownership for non-admin (IDOR)\n        return \"\";\n    }\n    public static void main(String[] args) {\n        sessions.put(\"s1\", Map.of(\"user\",\"alice\",\"role\",\"ADMIN\"));\n        sessions.put(\"s2\", Map.of(\"user\",\"bob\",\"role\",\"USER\"));\n        System.out.println(fullCheck(null, \"READ\", \"doc1\"));      // No session\n        System.out.println(fullCheck(\"s2\", \"DELETE\", \"doc1\"));    // User tries admin\n        System.out.println(fullCheck(\"s2\", \"READ\", \"doc1\"));     // User reads other's\n        System.out.println(fullCheck(\"s2\", \"READ\", \"doc2\"));     // User reads own\n        System.out.println(fullCheck(\"s1\", \"DELETE\", \"doc2\"));   // Admin deletes\n    }\n}",
+          "expected_output": "401: Not authenticated\n403: USER cannot DELETE\n403: bob cannot access doc1 (owner: alice)\n200: bob reads doc2\n200: alice (ADMIN) deletes doc2",
+          "hints": [
+            {
+              "message": "Three checks in order: session exists, role allows action, ownership (or admin bypass)."
+            },
+            {
+              "message": "Step 1: if no session -> 401. Step 2: if action needs admin and role!=ADMIN -> 403. Step 3: if not admin and not owner -> 403. Else 200."
+            },
+            {
+              "message": "Check session null->401. Get role/user. If adminActions.contains(action) and role!=ADMIN -> 403. If role!=ADMIN and owner!=user -> 403. Else 200."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Audit Trail for Access Decisions",
+          "description": "Log every access control decision.",
+          "difficulty": "advanced",
+          "category": "Access Control",
+          "estimated_minutes": 6,
+          "ai_intro": "Access control is the #1 web vulnerability. Let's get it right!",
+          "starter_code": "import java.util.*;\n\npublic class AccessAudit {\n    static List<String> log = new ArrayList<>();\n    \n    static boolean checkAndLog(String user, String role, String action, String resource) {\n        // TODO: Check permission, log the decision (ALLOW or DENY), return result\n        boolean allowed = false; // compute this\n        return allowed;\n    }\n    public static void main(String[] args) {\n        checkAndLog(\"alice\", \"ADMIN\", \"DELETE\", \"/users/5\");\n        checkAndLog(\"bob\", \"USER\", \"DELETE\", \"/users/5\");\n        checkAndLog(\"bob\", \"USER\", \"READ\", \"/profile\");\n        System.out.println(\"=== AUDIT LOG ===\");\n        log.forEach(System.out::println);\n    }\n}",
+          "expected_output": "=== AUDIT LOG ===\n[ALLOW] user=alice role=ADMIN action=DELETE resource=/users/5\n[DENY] user=bob role=USER action=DELETE resource=/users/5\n[ALLOW] user=bob role=USER action=READ resource=/profile",
+          "hints": [
+            {
+              "message": "Determine allowed based on role and action, then log the decision."
+            },
+            {
+              "message": "ADMIN can do everything. USER can only READ. Log format: [ALLOW/DENY] user=... role=... action=... resource=..."
+            },
+            {
+              "message": "boolean allowed = \"ADMIN\".equals(role) || \"READ\".equals(action); log.add((allowed?\"[ALLOW]\":\"[DENY]\")+\" user=\"+user+\" role=\"+role+\" action=\"+action+\" resource=\"+resource); return allowed;"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Fix: Login Accepts Empty Password",
+          "description": "Fix authentication that doesn't check the password.",
+          "difficulty": "intermediate",
+          "category": "Fix the Code",
+          "estimated_minutes": 5,
+          "ai_intro": "Find the security bug and fix it!",
+          "starter_code": "public class FixEmptyPassword {\n    // VULNERABLE:\n    static boolean login(String user, String pass) {\n        return user.equals(\"admin\"); // Never checks password!\n    }\n    // TODO: Fix\n    static boolean fixedLogin(String user, String pass) {\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(\"Vuln: \" + login(\"admin\", \"\"));\n        System.out.println(\"Fixed: \" + fixedLogin(\"admin\", \"\"));\n        System.out.println(\"Fixed: \" + fixedLogin(\"admin\", \"correctPass\"));\n    }\n}",
+          "expected_output": "Vuln: true\nFixed: false\nFixed: true",
+          "hints": [
+            {
+              "message": "Must check BOTH username AND password."
+            },
+            {
+              "message": "if(user==null || pass==null || pass.isEmpty()) return false; then check credentials."
+            },
+            {
+              "message": "return \"admin\".equals(user) && \"correctPass\".equals(pass);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Fix: Missing Role Check on Delete",
+          "description": "Add authorisation to a vulnerable endpoint.",
+          "difficulty": "intermediate",
+          "category": "Fix the Code",
+          "estimated_minutes": 5,
+          "ai_intro": "Find the security bug and fix it!",
+          "starter_code": "import java.util.*;\n\npublic class FixMissingRoleCheck {\n    static List<String> items = new ArrayList<>(Arrays.asList(\"item1\",\"item2\",\"item3\"));\n    // VULNERABLE: any user can delete\n    static String deleteItem(String item) {\n        items.remove(item); return \"Deleted\";\n    }\n    // TODO: Fix - require ADMIN role\n    static String fixedDeleteItem(String role, String item) {\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(fixedDeleteItem(\"USER\", \"item1\"));\n        System.out.println(fixedDeleteItem(\"ADMIN\", \"item1\"));\n    }\n}",
+          "expected_output": "DENIED: Admin role required\nDeleted: item1",
+          "hints": [
+            {
+              "message": "Check role before performing the action."
+            },
+            {
+              "message": "if(!\"ADMIN\".equals(role)) return deny. else remove and return success."
+            },
+            {
+              "message": "if(!\"ADMIN\".equals(role)) return \"DENIED: Admin role required\"; items.remove(item); return \"Deleted: \"+item;"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Fix: Predictable Session IDs",
+          "description": "Replace sequential IDs with secure random ones.",
+          "difficulty": "intermediate",
+          "category": "Fix the Code",
+          "estimated_minutes": 5,
+          "ai_intro": "Find the security bug and fix it!",
+          "starter_code": "public class FixPredictableSession {\n    static int counter = 1;\n    // VULNERABLE: predictable!\n    static String badSessionId() { return \"session_\" + counter++; }\n    // TODO: Fix with SecureRandom\n    static String secureSessionId() { return \"\"; }\n    public static void main(String[] args) {\n        System.out.println(\"Bad: \" + badSessionId());\n        System.out.println(\"Bad: \" + badSessionId());\n        System.out.println(\"Secure: \" + secureSessionId());\n    }\n}",
+          "expected_output": "Bad: session_1\nBad: session_2\nSecure: (43-char random string)",
+          "hints": [
+            {
+              "message": "Use SecureRandom + 32 bytes + Base64 instead of a counter."
+            },
+            {
+              "message": "byte[] b=new byte[32]; new SecureRandom().nextBytes(b); Base64 encode."
+            },
+            {
+              "message": "byte[] b=new byte[32]; new java.security.SecureRandom().nextBytes(b); return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(b);"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Fix: IDOR in Profile View",
+          "description": "Add ownership check to profile endpoint.",
+          "difficulty": "intermediate",
+          "category": "Fix the Code",
+          "estimated_minutes": 5,
+          "ai_intro": "Find the security bug and fix it!",
+          "starter_code": "import java.util.*;\n\npublic class FixIDOR {\n    static Map<String,String> profiles = Map.of(\"1\",\"Alice's data\",\"2\",\"Bob's data\");\n    static Map<String,String> userIds = Map.of(\"alice\",\"1\",\"bob\",\"2\");\n    \n    // VULNERABLE:\n    static String viewProfile(String profileId) {\n        return profiles.getOrDefault(profileId, \"Not found\");\n    }\n    // TODO: Fix with ownership check\n    static String fixedViewProfile(String currentUser, String profileId) {\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(\"Vuln: \" + viewProfile(\"2\")); // Anyone sees Bob\n        System.out.println(\"Fixed: \" + fixedViewProfile(\"alice\", \"1\")); // Own\n        System.out.println(\"Fixed: \" + fixedViewProfile(\"alice\", \"2\")); // Other's\n    }\n}",
+          "expected_output": "Vuln: Bob's data\nFixed: Alice's data\nFixed: DENIED: Not your profile",
+          "hints": [
+            {
+              "message": "Check if currentUser's ID matches the requested profileId."
+            },
+            {
+              "message": "String ownId = userIds.get(currentUser); if(!ownId.equals(profileId)) deny."
+            },
+            {
+              "message": "String ownId=userIds.get(currentUser); if(!ownId.equals(profileId)) return \"DENIED: Not your profile\"; return profiles.getOrDefault(profileId,\"Not found\");"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Fix: No Session Expiry",
+          "description": "Add timeout to sessions that never expire.",
+          "difficulty": "intermediate",
+          "category": "Fix the Code",
+          "estimated_minutes": 5,
+          "ai_intro": "Find the security bug and fix it!",
+          "starter_code": "import java.util.*;\n\npublic class FixNoExpiry {\n    static Map<String, Long> sessions = new HashMap<>();\n    static final long MAX_AGE = 3600000; // 1 hour\n    \n    static void createSession(String id) {\n        sessions.put(id, System.currentTimeMillis());\n    }\n    // VULNERABLE: never checks age!\n    static boolean isValid(String id) {\n        return sessions.containsKey(id);\n    }\n    // TODO: Check age\n    static boolean fixedIsValid(String id) {\n        return false;\n    }\n    public static void main(String[] args) {\n        createSession(\"old-session\");\n        sessions.put(\"old-session\", System.currentTimeMillis() - 3600001); // expired\n        System.out.println(\"Vuln: \" + isValid(\"old-session\"));\n        System.out.println(\"Fixed: \" + fixedIsValid(\"old-session\"));\n    }\n}",
+          "expected_output": "Vuln: true\nFixed: false",
+          "hints": [
+            {
+              "message": "Get creation time, compare with current time, reject if older than MAX_AGE."
+            },
+            {
+              "message": "Long created=sessions.get(id); return created!=null && (System.currentTimeMillis()-created) <= MAX_AGE;"
+            },
+            {
+              "message": "Long c=sessions.get(id); return c!=null && (System.currentTimeMillis()-c)<=MAX_AGE;"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Fix: Plain Text Password Storage",
+          "description": "Refactor to use hashing with salt.",
+          "difficulty": "advanced",
+          "category": "Fix the Code",
+          "estimated_minutes": 5,
+          "ai_intro": "Find the security bug and fix it!",
+          "starter_code": "import java.util.*;\nimport java.security.*;\n\npublic class FixPlainText {\n    // VULNERABLE: plain text!\n    static Map<String, String> users = new HashMap<>();\n    static void badRegister(String u, String p) { users.put(u, p); }\n    static boolean badLogin(String u, String p) { return p.equals(users.get(u)); }\n    \n    // TODO: Store salt+hash instead\n    static Map<String, String[]> secureUsers = new HashMap<>(); // user -> [salt, hash]\n    static void secureRegister(String u, String p) throws Exception {\n        // Generate salt, hash, store\n    }\n    static boolean secureLogin(String u, String p) throws Exception {\n        return false;\n    }\n    public static void main(String[] args) throws Exception {\n        badRegister(\"alice\", \"secret\");\n        System.out.println(\"Plain text stored: \" + users.get(\"alice\"));\n        secureRegister(\"bob\", \"secret\");\n        System.out.println(\"Hash stored: \" + secureUsers.get(\"bob\")[1].substring(0, 15) + \"...\");\n        System.out.println(\"Login: \" + secureLogin(\"bob\", \"secret\"));\n        System.out.println(\"Wrong: \" + secureLogin(\"bob\", \"wrong\"));\n    }\n}",
+          "expected_output": "Plain text stored: secret\nHash stored: (Base64 hash)...\nLogin: true\nWrong: false",
+          "hints": [
+            {
+              "message": "Register: generate 16-byte salt, hash password+salt, store both. Login: retrieve salt, hash input, compare."
+            },
+            {
+              "message": "SecureRandom for salt, MessageDigest SHA-256 for hash, Base64 for encoding."
+            },
+            {
+              "message": "Register: generate salt, hash with SHA-256, store [saltB64, hashB64]. Login: get stored salt/hash, hash input with stored salt, compare."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Fix: User Can Change Own Role",
+          "description": "Prevent self-service role escalation.",
+          "difficulty": "advanced",
+          "category": "Fix the Code",
+          "estimated_minutes": 5,
+          "ai_intro": "Find the security bug and fix it!",
+          "starter_code": "import java.util.*;\n\npublic class FixSelfRoleChange {\n    static Map<String, String> userRoles = new HashMap<>(Map.of(\"alice\",\"USER\",\"admin\",\"ADMIN\"));\n    \n    // VULNERABLE: User can set their own role!\n    static String changeRole(String user, String newRole) {\n        userRoles.put(user, newRole);\n        return user + \" is now \" + newRole;\n    }\n    // TODO: Fix - only admin can change, cannot self-change\n    static String fixedChangeRole(String requester, String target, String newRole) {\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(\"Vuln: \" + changeRole(\"alice\", \"ADMIN\"));\n        userRoles.put(\"alice\", \"USER\"); // reset\n        System.out.println(fixedChangeRole(\"alice\", \"alice\", \"ADMIN\"));\n        System.out.println(fixedChangeRole(\"admin\", \"alice\", \"MANAGER\"));\n    }\n}",
+          "expected_output": "Vuln: alice is now ADMIN\nDENIED: Only admins can change roles\nSUCCESS: alice changed to MANAGER",
+          "hints": [
+            {
+              "message": "Check requester is ADMIN and requester != target."
+            },
+            {
+              "message": "if(!\"ADMIN\".equals(userRoles.get(requester))) deny. if(requester.equals(target)) deny self-change."
+            },
+            {
+              "message": "if(!\"ADMIN\".equals(userRoles.get(requester))) return \"DENIED: Only admins can change roles\"; if(requester.equals(target)) return \"DENIED: Cannot change own role\"; userRoles.put(target,newRole); return \"SUCCESS: \"+target+\" changed to \"+newRole;"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Fix: No Lockout on Login",
+          "description": "Add brute-force protection to a vulnerable login.",
+          "difficulty": "intermediate",
+          "category": "Fix the Code",
+          "estimated_minutes": 5,
+          "ai_intro": "Find the security bug and fix it!",
+          "starter_code": "import java.util.*;\n\npublic class FixNoLockout {\n    static Map<String, String> users = Map.of(\"alice\", \"pass123\");\n    static Map<String, Integer> fails = new HashMap<>();\n    static final int MAX = 3;\n    \n    // VULNERABLE: unlimited attempts!\n    static boolean badLogin(String u, String p) { return p.equals(users.get(u)); }\n    \n    // TODO: Track failures and lock after MAX attempts\n    static String fixedLogin(String u, String p) {\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(fixedLogin(\"alice\", \"wrong1\"));\n        System.out.println(fixedLogin(\"alice\", \"wrong2\"));\n        System.out.println(fixedLogin(\"alice\", \"wrong3\"));\n        System.out.println(fixedLogin(\"alice\", \"pass123\")); // Locked!\n    }\n}",
+          "expected_output": "FAILED: 2 attempts remaining\nFAILED: 1 attempts remaining\nLOCKED: Account locked\nLOCKED: Account locked",
+          "hints": [
+            {
+              "message": "Track fail count per user. After MAX, always return locked."
+            },
+            {
+              "message": "int f = fails.getOrDefault(u,0); if(f>=MAX) return locked. if wrong password, increment and return failed. if correct and not locked, return success."
+            },
+            {
+              "message": "int f=fails.getOrDefault(u,0); if(f>=MAX) return \"LOCKED\"; if(!users.getOrDefault(u,\"\").equals(p)){fails.put(u,f+1);if(f+1>=MAX) return \"LOCKED\"; return \"FAILED: \"+(MAX-f-1)+\" remaining\";} return \"SUCCESS\";"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Fix: Admin Page Without Auth",
+          "description": "Add authentication to an unprotected admin endpoint.",
+          "difficulty": "intermediate",
+          "category": "Fix the Code",
+          "estimated_minutes": 5,
+          "ai_intro": "Find the security bug and fix it!",
+          "starter_code": "public class FixNoAuthAdmin {\n    // VULNERABLE: CWE-306 - No authentication!\n    static String adminDashboard() {\n        return \"Admin Dashboard: 500 users, 12 pending requests\";\n    }\n    // TODO: Require valid admin session\n    static String fixedAdminDashboard(String sessionId, String role) {\n        return \"\";\n    }\n    public static void main(String[] args) {\n        System.out.println(\"Vuln: \" + adminDashboard());\n        System.out.println(fixedAdminDashboard(null, null));\n        System.out.println(fixedAdminDashboard(\"valid\", \"USER\"));\n        System.out.println(fixedAdminDashboard(\"valid\", \"ADMIN\"));\n    }\n}",
+          "expected_output": "Vuln: Admin Dashboard: 500 users, 12 pending requests\n401: Authentication required\n403: Admin access required\nAdmin Dashboard: 500 users, 12 pending requests",
+          "hints": [
+            {
+              "message": "Check session first (authn), then role (authz)."
+            },
+            {
+              "message": "if(sessionId==null) 401. if(!ADMIN) 403. else return dashboard."
+            },
+            {
+              "message": "if(sessionId==null) return \"401: Authentication required\"; if(!\"ADMIN\".equals(role)) return \"403: Admin access required\"; return \"Admin Dashboard: 500 users, 12 pending requests\";"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Fix: Logging Passwords",
+          "description": "Remove sensitive data from audit logs.",
+          "difficulty": "intermediate",
+          "category": "Fix the Code",
+          "estimated_minutes": 5,
+          "ai_intro": "Find the security bug and fix it!",
+          "starter_code": "public class FixPasswordLogging {\n    // VULNERABLE: Logs the password!\n    static void badLog(String user, String password, boolean success) {\n        System.out.println(\"LOGIN user=\" + user + \" pass=\" + password + \" result=\" + success);\n    }\n    // TODO: Log without sensitive data\n    static void fixedLog(String user, String password, boolean success) {\n        // Should NOT include password\n    }\n    public static void main(String[] args) {\n        System.out.println(\"BAD:\");\n        badLog(\"alice\", \"MySecret123\", true);\n        System.out.println(\"FIXED:\");\n        fixedLog(\"alice\", \"MySecret123\", true);\n        fixedLog(\"alice\", \"WrongPass\", false);\n    }\n}",
+          "expected_output": "BAD:\nLOGIN user=alice pass=MySecret123 result=true\nFIXED:\nLOGIN user=alice result=SUCCESS\nLOGIN user=alice result=FAILED",
+          "hints": [
+            {
+              "message": "Simply remove the password parameter from the log output."
+            },
+            {
+              "message": "System.out.println(\"LOGIN user=\" + user + \" result=\" + (success ? \"SUCCESS\" : \"FAILED\"));"
+            },
+            {
+              "message": "Never include passwords, tokens, or session IDs in logs. Log user + result only."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Build: Complete Login System",
+          "description": "Full registration + login + session + logout.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 10,
+          "ai_intro": "Build complete security systems from the ground up!",
+          "starter_code": "import java.util.*;\nimport java.security.*;\n\npublic class LoginSystem {\n    static Map<String, String[]> users = new HashMap<>(); // user -> [salt, hash, role]\n    static Map<String, Map<String,String>> sessions = new HashMap<>();\n    \n    // TODO: register(user, pass, role) -> success/error\n    // TODO: login(user, pass) -> session ID or error\n    // TODO: logout(sessionId) -> success\n    // TODO: checkSession(sessionId) -> user info or null\n    \n    public static void main(String[] args) throws Exception {\n        System.out.println(\"Register: \" /* + register(...) */);\n        System.out.println(\"Login: \" /* + login(...) */);\n        System.out.println(\"Check: \" /* + checkSession(...) */);\n        System.out.println(\"Logout: \" /* + logout(...) */);\n    }\n}",
+          "expected_output": "Register: SUCCESS\nLogin: Session=kX7vR2...\nCheck: {user=alice, role=ADMIN}\nLogout: Session destroyed",
+          "hints": [
+            {
+              "message": "Four methods: register (hash+store), login (verify+create session), checkSession (lookup), logout (destroy)."
+            },
+            {
+              "message": "register: salt+hash+store. login: lookup user, hash input, compare, create session. checkSession: sessions.get. logout: sessions.remove."
+            },
+            {
+              "message": "Full implementation: register with salt+SHA256, login with verification+SecureRandom session, checkSession returns map, logout removes."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Build: API Key Authentication",
+          "description": "Implement API key generation and validation.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 10,
+          "ai_intro": "Build complete security systems from the ground up!",
+          "starter_code": "import java.security.SecureRandom;\nimport java.util.*;\n\npublic class APIKeyAuth {\n    static Map<String, String> apiKeys = new HashMap<>(); // key -> userId\n    \n    // TODO: generateKey(userId) -> new API key\n    // TODO: validateKey(key) -> userId or null\n    // TODO: revokeKey(key) -> success\n    \n    public static void main(String[] args) {\n        // Test all three methods\n    }\n}",
+          "expected_output": "Generated: sk_live_kX7vR2mP...\nValidate: alice\nRevoke: Key revoked\nAfter revoke: null",
+          "hints": [
+            {
+              "message": "generateKey: SecureRandom prefix + random, store mapping. validateKey: lookup. revokeKey: remove."
+            },
+            {
+              "message": "Prefix with 'sk_live_' for readability. Generate 32 random bytes. Store key->userId mapping."
+            },
+            {
+              "message": "Full: generate with prefix, store in map, validate by lookup, revoke by removal."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Build: Rate Limiter",
+          "description": "Create a request rate limiter by IP address.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 10,
+          "ai_intro": "Build complete security systems from the ground up!",
+          "starter_code": "import java.util.*;\n\npublic class RateLimiter {\n    static Map<String, List<Long>> requests = new HashMap<>();\n    static final int MAX_REQUESTS = 5;\n    static final long WINDOW_MS = 60000; // 1 minute\n    \n    // TODO: allowRequest(ip) -> true if under limit, false if exceeded\n    static boolean allowRequest(String ip) {\n        return false;\n    }\n    public static void main(String[] args) {\n        for (int i = 1; i <= 7; i++) {\n            System.out.println(\"Request \" + i + \": \" + allowRequest(\"192.168.1.1\"));\n        }\n    }\n}",
+          "expected_output": "Request 1: true\nRequest 2: true\nRequest 3: true\nRequest 4: true\nRequest 5: true\nRequest 6: false\nRequest 7: false",
+          "hints": [
+            {
+              "message": "Track timestamps per IP. Remove old ones outside window. Count remaining."
+            },
+            {
+              "message": "Get list for IP, remove entries older than WINDOW_MS, if size < MAX add current time and return true, else return false."
+            },
+            {
+              "message": "Get/create list, remove old entries, check size < MAX, add current timestamp if allowed."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Build: Password Reset Flow",
+          "description": "Complete reset: request, validate token, update password.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 10,
+          "ai_intro": "Build complete security systems from the ground up!",
+          "starter_code": "import java.util.*;\nimport java.security.*;\n\npublic class PasswordResetFlow {\n    static Map<String, String[]> users = new HashMap<>();\n    static Map<String, String[]> resetTokens = new HashMap<>(); // token -> [email, expiry]\n    \n    // TODO: requestReset(email) -> token\n    // TODO: completeReset(token, newPassword) -> success/error\n    \n    public static void main(String[] args) throws Exception {\n        users.put(\"alice@mail.com\", new String[]{\"salt\", \"oldHash\", \"USER\"});\n        // Test reset flow\n    }\n}",
+          "expected_output": "Reset requested for alice@mail.com\nToken: kX7vR2...\nReset complete: password updated\nReplay: INVALID (token consumed)",
+          "hints": [
+            {
+              "message": "requestReset: generate token, store with email+expiry. completeReset: validate token, check expiry, update password, remove token."
+            },
+            {
+              "message": "Token should be single-use (removed after success) and time-limited."
+            },
+            {
+              "message": "Full flow: generate 32-byte token, store hashed version, send plain to email, validate by hashing input and comparing, remove after use."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Build: JWT-like Token Validator",
+          "description": "Create and validate signed authentication tokens.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 10,
+          "ai_intro": "Build complete security systems from the ground up!",
+          "starter_code": "import javax.crypto.Mac;\nimport javax.crypto.spec.SecretKeySpec;\nimport java.util.Base64;\n\npublic class TokenValidator {\n    static final String SECRET = \"server-secret-key\";\n    \n    // TODO: createToken(payload) -> payload.signature\n    // TODO: validateToken(token) -> payload or null\n    \n    public static void main(String[] args) throws Exception {\n        String token = \"create token for userId=alice,role=ADMIN\";\n        System.out.println(\"Token: \" + token);\n        System.out.println(\"Valid: \" /* + validateToken(token) */);\n        // Test with tampered token\n    }\n}",
+          "expected_output": "Token: (payload.signature)\nValid: userId=alice,role=ADMIN\nTampered: INVALID",
+          "hints": [
+            {
+              "message": "Create: HMAC-SHA256(payload, secret) -> concatenate payload.signature. Validate: split, recompute HMAC, compare."
+            },
+            {
+              "message": "Mac mac = Mac.getInstance(\"HmacSHA256\"); mac.init(new SecretKeySpec(SECRET.getBytes(), \"HmacSHA256\")); return Base64 of mac.doFinal."
+            },
+            {
+              "message": "createToken: compute HMAC of payload, return payload+\".\"+base64(hmac). validateToken: split on \".\", recompute HMAC of part[0], compare with part[1]."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Build: Two-Factor Login",
+          "description": "Complete login requiring password + MFA code.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 10,
+          "ai_intro": "Build complete security systems from the ground up!",
+          "starter_code": "import java.util.*;\nimport java.security.*;\n\npublic class TwoFactorLogin {\n    // TODO: Step 1: verifyPassword(user, pass) -> true/false\n    // TODO: Step 2: sendMFACode(user) -> code (store for verification)\n    // TODO: Step 3: verifyMFA(user, code) -> true/false\n    // TODO: Step 4: createSession only after BOTH pass\n    \n    public static void main(String[] args) {\n        // Test complete 2FA flow\n    }\n}",
+          "expected_output": "Step 1: Password verified for alice\nStep 2: MFA code sent: 847293\nStep 3: MFA verified: true\nStep 4: Session created: kX7v...\n\nFailed MFA:\nStep 1: Password verified\nStep 3: Wrong code: false\nNo session created",
+          "hints": [
+            {
+              "message": "Four separate steps. Session only created after both succeed."
+            },
+            {
+              "message": "Password check with hash. MFA with SecureRandom 6-digit code. Session with SecureRandom ID."
+            },
+            {
+              "message": "Full flow: verify hash, generate 6-digit code, verify code, create session only if both pass."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Build: Access Control Matrix",
+          "description": "Create a complete permission matrix checker.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 10,
+          "ai_intro": "Build complete security systems from the ground up!",
+          "starter_code": "import java.util.*;\n\npublic class AccessMatrix {\n    // TODO: Define roles, permissions, and user assignments\n    // TODO: checkAccess(user, action) -> ALLOW/DENY with reason\n    // TODO: printMatrix() -> show full access matrix\n    \n    public static void main(String[] args) {\n        // Print matrix and test various access scenarios\n    }\n}",
+          "expected_output": "=== ACCESS MATRIX ===\n          READ  WRITE DELETE ADMIN\nADMIN     YES   YES   YES    YES\nMANAGER   YES   YES   NO     NO\nUSER      YES   NO    NO     NO\n\nalice(ADMIN)  READ=ALLOW  DELETE=ALLOW\nbob(USER)     READ=ALLOW  DELETE=DENY",
+          "hints": [
+            {
+              "message": "Three maps: roles->permissions, users->roles. checkAccess: look up role, check permission set."
+            },
+            {
+              "message": "Use Map<String,Set<String>> for role permissions, Map<String,String> for user roles."
+            },
+            {
+              "message": "Full: define 3+ roles with permission sets, assign users, implement checkAccess with role lookup, printMatrix showing grid."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Build: Security Event Monitor",
+          "description": "Detect suspicious authentication patterns.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 10,
+          "ai_intro": "Build complete security systems from the ground up!",
+          "starter_code": "import java.util.*;\n\npublic class SecurityMonitor {\n    static List<String[]> events = new ArrayList<>(); // [timestamp, user, ip, event, result]\n    \n    // TODO: recordEvent(user, ip, event, result)\n    // TODO: detectBruteForce(threshold) -> alerts\n    // TODO: detectCredentialStuffing(threshold) -> alerts\n    // TODO: detectAccountTakeover() -> alerts (login from new IP after password change)\n    \n    public static void main(String[] args) {\n        // Simulate events and detect anomalies\n    }\n}",
+          "expected_output": "=== SECURITY ALERTS ===\n[BRUTE FORCE] User 'alice' has 10 failed logins\n[CREDENTIAL STUFFING] IP 45.33.22.1 failed 20 logins across 15 accounts\n[ACCOUNT TAKEOVER] User 'bob' password changed, then login from new IP",
+          "hints": [
+            {
+              "message": "Aggregate events by user and IP. Flag when counts exceed thresholds."
+            },
+            {
+              "message": "Group by user for brute force, by IP for credential stuffing, track password changes + new IPs for takeover."
+            },
+            {
+              "message": "recordEvent adds to list. detectBruteForce counts fails per user. detectCredentialStuffing counts fails per IP. detectAccountTakeover tracks password change then login from new IP."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Build: Complete Secure API",
+          "description": "Full API with auth, authz, IDOR, rate limiting, and logging.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 10,
+          "ai_intro": "Build complete security systems from the ground up!",
+          "starter_code": "import java.util.*;\n\npublic class SecureAPI {\n    // TODO: Build a complete API simulation with:\n    // 1. Registration and login\n    // 2. Session management\n    // 3. Role-based access control\n    // 4. IDOR prevention on data access\n    // 5. Rate limiting per IP\n    // 6. Audit logging\n    \n    public static void main(String[] args) throws Exception {\n        // Demonstrate all security layers\n    }\n}",
+          "expected_output": "=== SECURE API DEMO ===\nRegister alice (ADMIN): SUCCESS\nLogin alice: Session=kX7v...\nAdmin views users: ALLOW\nUser views admin page: DENY\nUser views other's data: DENY (IDOR blocked)\nRate limit exceeded: BLOCKED\nAudit log: 6 entries recorded",
+          "hints": [
+            {
+              "message": "Combine all previous skills: hashing, sessions, RBAC, IDOR checks, rate limiting, logging."
+            },
+            {
+              "message": "Build each component separately, then wire them together in the main method."
+            },
+            {
+              "message": "Full system: user store with hashing, session store, RBAC permissions, ownership checks, request counter per IP, event logging."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Build: Penetration Test Checklist",
+          "description": "Automated security assessment for authentication systems.",
+          "difficulty": "advanced",
+          "category": "Build from Scratch",
+          "estimated_minutes": 10,
+          "ai_intro": "Build complete security systems from the ground up!",
+          "starter_code": "public class PenTestChecklist {\n    static int pass = 0, fail = 0;\n    static void test(String name, boolean result) {\n        if (result) pass++; else fail++;\n        System.out.println((result?\"[PASS]\":\"[FAIL]\") + \" \" + name);\n    }\n    \n    // TODO: Write 12+ security tests covering:\n    // - Password storage, login flow, session management\n    // - Access control, IDOR, privilege escalation\n    // - Brute force, user enumeration, audit logging\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== AUTH SECURITY ASSESSMENT ===\");\n        // Run all tests\n        System.out.println(\"Score: \" + pass + \"/\" + (pass+fail));\n    }\n}",
+          "expected_output": "=== AUTH SECURITY ASSESSMENT ===\n[PASS] Passwords hashed with salt\n[PASS] No hard-coded credentials\n[PASS] Generic login error messages\n[PASS] Brute-force lockout\n[PASS] Secure session IDs\n[PASS] Session expiry\n[PASS] Session destroyed on logout\n[PASS] RBAC enforced\n[PASS] IDOR prevented\n[PASS] Privilege escalation blocked\n[PASS] Admin functions protected\n[PASS] Audit logging active\nScore: 12/12",
+          "hints": [
+            {
+              "message": "Write each test as a boolean check on the system under test."
+            },
+            {
+              "message": "Each test calls a function and checks the result. Use the test() helper method."
+            },
+            {
+              "message": "12 tests: hash check, no hardcoded, generic errors, lockout, random session, expiry, logout, RBAC, IDOR, escalation, admin protection, audit."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

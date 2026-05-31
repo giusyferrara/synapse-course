@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Synapse AI</title>
+    <link rel="icon" href="/icons/butterfly_logo_bright.svg">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --purple: #667eea;
+            --purple-dark: #764ba2;
+            --green: #10b981;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --card-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            color: var(--text);
+        }
+
+        /* NAVBAR */
+        nav {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+        }
+        .nav-brand img { width: 32px; height: 32px; }
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        .avatar {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .btn-logout {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover { border-color: #ef4444; color: #ef4444; }
+
+        /* MAIN */
+        main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 36px 24px;
+        }
+
+        .welcome-section {
+            margin-bottom: 32px;
+        }
+        .welcome-section h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+        .welcome-section p {
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        /* STATS ROW */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border);
+        }
+        .stat-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -1px;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* SECTION TITLE */
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text);
+        }
+
+        /* COURSE GRID */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 36px;
+        }
+        .course-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border);
+            text-decoration: none;
+            color: var(--text);
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+            display: block;
+        }
+        .course-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            border-color: var(--purple);
+        }
+        .course-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        .badge-beginner { background: #dcfce7; color: #166534; }
+        .badge-intermediate { background: #dbeafe; color: #1e40af; }
+        .badge-advanced { background: #fce7f3; color: #9d174d; }
+        .badge-owasp { background: #fef3c7; color: #92400e; }
+
+        .course-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .course-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .course-progress {
+            background: var(--bg);
+            border-radius: 6px;
+            height: 6px;
+            overflow: hidden;
+        }
+        .course-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--purple), var(--purple-dark));
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+        .course-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* ND PROFILE BADGE */
+        .nd-banner {
+            background: linear-gradient(135deg, rgba(102,126,234,0.08), rgba(118,75,162,0.08));
+            border: 1px solid rgba(102,126,234,0.2);
+            border-radius: 14px;
+            padding: 18px 24px;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .nd-banner-icon { font-size: 28px; }
+        .nd-banner-text h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--purple-dark);
+            margin-bottom: 4px;
+        }
+        .nd-banner-text p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* NOT LOGGED IN */
+        .not-logged-in {
+            text-align: center;
+            padding: 80px 24px;
+        }
+        .not-logged-in h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .not-logged-in p {
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+        .btn-primary {
+            display: inline-block;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            color: white;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            margin: 0 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-2px); }
+        .btn-outline {
+            display: inline-block;
+            padding: 14px 28px;
+            background: white;
+            color: var(--purple);
+            border: 2px solid var(--purple);
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            margin: 0 8px;
+            transition: all 0.2s;
+        }
+        .btn-outline:hover { background: rgba(102,126,234,0.05); }
+
+        @media (max-width: 768px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            nav { padding: 0 16px; }
+            main { padding: 24px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+    <a href="/" class="nav-brand">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="44" height="44">
+  <defs>
+    <linearGradient id="wingLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#764ba2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f093fb;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="wingRight" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#00f2fe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#43e97b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <g transform="rotate(8 100 100)">
+    <ellipse cx="55" cy="65" rx="48" ry="60" fill="url(#wingLeft)" transform="rotate(-28 55 65)"/>
+    <ellipse cx="60" cy="70" rx="28" ry="38" fill="#ffffff" opacity="0.4" transform="rotate(-28 60 70)"/>
+    <ellipse cx="145" cy="65" rx="48" ry="60" fill="url(#wingRight)" transform="rotate(28 145 65)"/>
+    <ellipse cx="140" cy="70" rx="28" ry="38" fill="#ffffff" opacity="0.4" transform="rotate(28 140 70)"/>
+    <ellipse cx="62" cy="138" rx="42" ry="52" fill="url(#wingRight)" transform="rotate(-45 62 138)"/>
+    <ellipse cx="67" cy="135" rx="24" ry="32" fill="#ffffff" opacity="0.35" transform="rotate(-45 67 135)"/>
+    <ellipse cx="138" cy="138" rx="42" ry="52" fill="url(#wingLeft)" transform="rotate(45 138 138)"/>
+    <ellipse cx="133" cy="135" rx="24" ry="32" fill="#ffffff" opacity="0.35" transform="rotate(45 133 135)"/>
+    <ellipse cx="100" cy="100" rx="14" ry="70" fill="#2d3748"/>
+    <ellipse cx="100" cy="100" rx="12" ry="68" fill="url(#wingLeft)"/>
+    <ellipse cx="97" cy="95" rx="6" ry="60" fill="#ffffff" opacity="0.3"/>
+    <circle cx="100" cy="32" r="16" fill="#2d3748"/>
+    <circle cx="100" cy="32" r="14" fill="#667eea"/>
+    <circle cx="95" cy="30" r="3" fill="#ffffff" opacity="0.9"/>
+    <circle cx="105" cy="30" r="3" fill="#ffffff" opacity="0.9"/>
+    <circle cx="96" cy="29" r="1.5" fill="#2d3748"/>
+    <circle cx="106" cy="29" r="1.5" fill="#2d3748"/>
+    <path d="M 100 18 Q 88 8 82 0" stroke="#667eea" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="82" cy="0" r="5" fill="#667eea"/>
+    <path d="M 100 18 Q 112 8 118 0" stroke="#4facfe" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="118" cy="0" r="5" fill="#4facfe"/>
+  </g>
+</svg>
+        Synapse AI
+    </a>
+    <div class="nav-right">
+        <div class="nav-user" id="navUser" style="display:none;">
+            <div class="avatar" id="navAvatar">?</div>
+            <span id="navName">User</span>
+        </div>
+        <button class="btn-logout" onclick="logout()" id="logoutBtn" style="display:none;">Sign out</button>
+    </div>
+</nav>
+
+<!-- MAIN -->
+<main id="mainContent">
+    <!-- NOT LOGGED IN STATE -->
+    <div class="not-logged-in" id="notLoggedIn">
+        <div style="font-size: 56px; margin-bottom: 16px;">🔒</div>
+        <h2>Sign in to view your dashboard</h2>
+        <p>Track your progress, pick up where you left off, and personalise your experience.</p>
+        <a href="/login" class="btn-primary">🔑 Sign in</a>
+        <a href="/register" class="btn-outline">🚀 Create account</a>
+    </div>
+
+    <!-- LOGGED IN STATE -->
+    <div id="loggedInContent" style="display:none;">
+
+        <div class="welcome-section">
+            <h1 id="welcomeText">Welcome back! 🦋</h1>
+            <p id="welcomeSub">Pick up where you left off.</p>
+        </div>
+
+        <!-- ND BANNER -->
+        <div class="nd-banner" id="ndBanner" style="display:none;">
+            <div class="nd-banner-icon">💜</div>
+            <div class="nd-banner-text">
+                <h4>Accessibility profile active</h4>
+                <p id="ndBannerText">Your AI Tutor is personalised for your learning style.</p>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon">📚</div>
+                <div class="stat-value" id="statTopics">0</div>
+                <div class="stat-label">Topics started</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value" id="statExercises">0</div>
+                <div class="stat-label">Exercises completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-value" id="statStreak">0</div>
+                <div class="stat-label">Day streak</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-value" id="statScore">0</div>
+                <div class="stat-label">Total score</div>
+            </div>
+        </div>
+
+        <!-- COURSES -->
+        <div class="section-title">Your Courses</div>
+        <div class="courses-grid" id="coursesGrid">
+            <!-- Populated by JS -->
+        </div>
+
+    </div>
+</main>
+
+<script>
+const COURSES = [
+    // ═══════ JAVA PROGRAMMING ═══════
+    { section: '☕ Java Programming Fundamentals' },
+    { id: 'java_syntax_output', title: 'Java Syntax & Output (60 Exercises)', desc: 'Program structure, println, printf, comments, escape chars, concatenation', badge: 'BEGINNER', badgeClass: 'badge-beginner', url: '/course/java-security' },
+    { id: 'java_variables_datatypes', title: 'Variables & Data Types (60 Exercises)', desc: 'Primitives, Strings, casting, overflow, constants', badge: 'BEGINNER', badgeClass: 'badge-beginner', url: '/course/java-security' },
+    { id: 'java_operators', title: 'Java Operators (60 Exercises)', desc: 'Arithmetic, comparison, logical, assignment, unary, ternary, bitwise', badge: 'BEGINNER', badgeClass: 'badge-beginner', url: '/course/java-security' },
+    { id: 'java_conditions', title: 'Conditions If/Else/Switch (60 Exercises)', desc: 'Decision-making with if, else if, switch, guard clauses, nested conditions', badge: 'BEGINNER', badgeClass: 'badge-beginner', url: '/course/java-security' },
+    { id: 'java_loops', title: 'Loops For/While/Do-While (60 Exercises)', desc: 'Repetition with for, while, do-while, break, continue, nested loops', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course/java-security' },
+    { id: 'java_methods', title: 'Java Methods (60 Exercises)', desc: 'Reusable code blocks, parameters, return values, overloading, scope, recursion', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course/java-security' },
+    { id: 'java_classes_objects', title: 'Classes & Objects (60 Exercises)', desc: 'OOP fundamentals: classes, objects, constructors, encapsulation, static, toString', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course/java-security' },
+    { id: 'java_oop_concepts', title: 'OOP: Inheritance & Polymorphism (60 Exercises)', desc: 'Inheritance, method overriding, polymorphism, abstract classes, interfaces', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course/java-security' },
+    { id: 'java_collections', title: 'ArrayList & Data Structures (60 Exercises)', desc: 'ArrayList, HashMap, sorting, and real-world data management', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course/java-security' },
+    { id: 'java_strings_security', title: 'Strings & Text Security (60 Exercises)', desc: 'String manipulation, validation, sanitisation, secure text handling', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course/java-security' },
+    { id: 'java_practice_capstone', title: 'Practice & Exercises Capstone (60 Exercises)', desc: 'Ultimate challenge combining all Java concepts', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course/java-security' },
+
+    // ═══════ SECURE SOFTWARE DEVELOPMENT ═══════
+    { section: '🔒 Secure Software Development' },
+    { id: 'exceptions_secure_handling', title: 'Exceptions & Secure Handling (60 Exercises)', desc: 'Try-catch, custom exceptions, info leakage prevention, CWE-209, CWE-248', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course/java-security' },
+    { id: 'sql_injection', title: 'SQL & Command Injection (60 Exercises)', desc: 'SQL injection, command injection, prepared statements, input validation, CWE-89, CWE-78', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course/java-security' },
+    { id: 'xss_web_security', title: 'XSS & Web Security (60 Exercises)', desc: 'Reflected, stored, DOM XSS, CSRF basics, output encoding, CSP, CWE-79', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course/java-security' },
+    { id: 'csrf_protection', title: 'CSRF Protection (60 Exercises)', desc: 'Cross-site request forgery, token validation, SameSite cookies, CWE-352', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course/java-security' },
+    { id: 'authentication_access', title: 'Authentication & Access Control (60 Exercises)', desc: 'Password hashing, sessions, RBAC, IDOR, CWE-287/798/862', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course/java-security' },
+    { id: 'session_hijacking_hands_on', title: 'Session Hijacking Hands-On (60 Exercises)', desc: 'Steal, replay, and defend session cookies with python3 http.server and curl', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course/java-security' },
+    { id: 'path_traversal_design', title: 'Path Traversal & Design Principles (60 Exercises)', desc: 'Directory traversal, canonical paths, Saltzer-Schroeder principles, CWE-22', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course/java-security' },
+    { id: 'serialisation_attacks', title: 'Serialisation Attacks (60 Exercises)', desc: 'Java ObjectInputStream, Python pickle exploits, JSON alternatives, CWE-502', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course/java-security' },
+    { id: 'security_architecture', title: 'Security Architecture & Secure Design (60 Exercises)', desc: 'Saltzer & Schroeder principles, SDLC, threat modeling, defence in depth', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course/java-security' },
+    { id: 'static_analysis_fuzzing', title: 'Static Analysis & Fuzz Testing (60 Exercises)', desc: 'SAST, DAST, AFL fuzzing, taint analysis, SpotBugs, DevSecOps pipelines', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course/java-security' },
+    { id: 'security_engineering_resilience', title: 'Security Engineering & Resilience (60 Exercises)', desc: 'Dependable systems, redundancy, diversity, formal methods, defence in depth', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course/java-security' },
+    { id: 'attack_chaining_xss_worms', title: 'Attack Chaining & XSS Worms (60 Exercises)', desc: 'Chain XSS, CSRF, session hijacking into self-replicating worms', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course/java-security' },
+
+    // ═══════ ASSESSMENT & REPORTING ═══════
+    { section: '📋 Assessment & Reporting' },
+    { id: 'webapp_vuln_assessment', title: 'Web App Vulnerability Assessment (60 Exercises)', desc: 'Find, exploit & document SQLi, XSS, CSRF, CMDi, path traversal, IDOR', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course/java-security' },
+    { id: 'web_vuln_assessment', title: 'Web Vulnerability Assessment (60 Exercises)', desc: 'Find, exploit, and fix real web vulnerabilities using OWASP Top 10', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course/java-security' },
+    { id: 'vuln_assessment_methodology', title: 'Vulnerability Assessment Methodology (60 Exercises)', desc: 'Systematically find, test, and document security vulnerabilities', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course/java-security' },
+    { id: 'security_reporting_pentest', title: 'Security Reporting & Pentest (60 Exercises)', desc: 'Professional vulnerability reports, CWE classification, CIA analysis', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course/java-security' },
+
+    // ═══════ PYTHON FOR CYBERSECURITY ═══════
+    { section: '🐍 Python Programming' },
+    { id: 'py_syntax_output', title: 'Python Syntax & Output (60 Exercises)', desc: 'Print, variables, comments, indentation, your first Python script', badge: 'BEGINNER', badgeClass: 'badge-beginner', url: '/course' },
+    { id: 'py_variables_datatypes', title: 'Python Variables & Data Types (60 Exercises)', desc: 'Strings, integers, floats, lists, dictionaries, type casting', badge: 'BEGINNER', badgeClass: 'badge-beginner', url: '/course' },
+    { id: 'py_conditions_loops', title: 'Python Conditions & Loops (60 Exercises)', desc: 'If/else, for, while, list comprehensions, control flow', badge: 'BEGINNER', badgeClass: 'badge-beginner', url: '/course' },
+    { id: 'py_functions_modules', title: 'Python Functions & Modules (60 Exercises)', desc: 'Defining functions, imports, lambda, decorators, packages', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course' },
+    { id: 'py_files_io', title: 'Python Files & I/O (60 Exercises)', desc: 'Read/write files, CSV, JSON, binary files, path handling', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course' },
+    { id: 'py_hex_ascii_encoding', title: 'Hex, ASCII & Encoding (60 Exercises)', desc: 'Character encoding, hex conversion, Base64, binary data', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course' },
+    { id: 'py_log_analysis', title: 'Log Analysis (60 Exercises)', desc: 'Parse, filter, and analyse security logs with Python', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course' },
+    { id: 'py_network_analysis', title: 'Network Analysis (60 Exercises)', desc: 'Sockets, packet parsing, Scapy, traffic analysis', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course' },
+    { id: 'py_password_hashing', title: 'Password Hashing & Crypto (60 Exercises)', desc: 'Hashlib, bcrypt, salting, key derivation, secure storage', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course' },
+    { id: 'py_web_scraping_osint', title: 'Web Scraping & OSINT (60 Exercises)', desc: 'BeautifulSoup, requests, APIs, open-source intelligence', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course' },
+    { id: 'py_image_metadata', title: 'Image & Metadata Forensics (60 Exercises)', desc: 'EXIF data, PIL, metadata extraction, steganography basics', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course' },
+    { id: 'py_pdf_doc_forensics', title: 'PDF & Document Forensics (60 Exercises)', desc: 'Extract text, metadata, hidden content from PDFs and documents', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course' },
+    { id: 'python_network_scanning', title: 'Network Scanning & Recon (60 Exercises)', desc: 'Port scanning, service detection, Nmap automation', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course' },
+    { id: 'py_automation_security', title: 'Security Automation (60 Exercises)', desc: 'Automate scans, reports, alerts with Python scripts', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course' },
+    { id: 'london_transport_active_ai', title: 'London Transport API (Real-World Project)', desc: 'Build a real-world app using live transport data and Python', badge: 'INTERMEDIATE', badgeClass: 'badge-intermediate', url: '/course' },
+    { id: 'py_capstone_forensics', title: 'Capstone: Digital Forensics (60 Exercises)', desc: 'Final project combining all Python forensics skills', badge: 'ADVANCED', badgeClass: 'badge-advanced', url: '/course' },
+];
+
+function init() {
+    const raw = localStorage.getItem('synapse_user');
+    if (!raw) {
+        document.getElementById('notLoggedIn').style.display = 'block';
+        return;
+    }
+
+    const user = JSON.parse(raw);
+    document.getElementById('notLoggedIn').style.display = 'none';
+    document.getElementById('loggedInContent').style.display = 'block';
+    document.getElementById('navUser').style.display = 'flex';
+    document.getElementById('logoutBtn').style.display = 'block';
+
+    // Set name
+    const name = user.display_name || 'Learner';
+    document.getElementById('welcomeText').textContent = `Welcome back, ${name}! 🦋`;
+    document.getElementById('navName').textContent = name;
+    document.getElementById('navAvatar').textContent = name.charAt(0).toUpperCase();
+
+    // ND banner
+    if (user.is_neurodivergent && user.nd_type) {
+        document.getElementById('ndBanner').style.display = 'flex';
+        const types = user.nd_type.split(',').filter(t => t !== 'prefer_not').join(', ');
+        if (types) document.getElementById('ndBannerText').textContent = `Profile: ${types} — accessibility features and AI tutor adapted for you.`;
+    }
+
+    // Load progress then render courses
+    loadProgress(user.id);
+}
+
+async function loadProgress(userId) {
+    let progress = [];
+    try {
+        const res = await fetch(`/api/auth/progress?user_id=${userId}`);
+        const data = await res.json();
+        if (data.success) progress = data.progress;
+    } catch(e) {}
+
+    // Compute stats
+    const completed = progress.filter(p => p.completed);
+    const topicIds = [...new Set(progress.map(p => p.topic_id))];
+    const totalScore = completed.reduce((sum, p) => sum + (p.score || 0), 0);
+
+    document.getElementById('statTopics').textContent = topicIds.length;
+    document.getElementById('statExercises').textContent = completed.length;
+    document.getElementById('statScore').textContent = totalScore;
+
+    // Render courses
+    const grid = document.getElementById('coursesGrid');
+    grid.innerHTML = COURSES.map(course => {
+        if (course.section) {
+            return `<div style="grid-column: 1 / -1; margin: 24px 0 8px 0; padding: 10px 16px; font-size: 1.2em; font-weight: 700; color: var(--text-primary, #1e293b); border-bottom: 2px solid var(--accent, #6366f1);">${course.section}</div>`;
+        }
+        const courseProgress = progress.filter(p => p.course_id === course.id);
+        const courseCompleted = courseProgress.filter(p => p.completed).length;
+        const pct = courseCompleted > 0 ? Math.min(100, Math.round((courseCompleted / 60) * 100)) : 0;
+        const status = pct === 0 ? 'Not started' : pct === 100 ? '✅ Complete' : `${courseCompleted} exercises done`;
+
+        return `
+        <a href="${course.url}?topic=${course.id}" class="course-card">
+            <span class="course-badge ${course.badgeClass}">${course.badge}</span>
+            <div class="course-title">${course.title}</div>
+            <div class="course-desc">${course.desc}</div>
+            <div class="course-progress">
+                <div class="course-progress-fill" style="width: ${pct}%"></div>
+            </div>
+            <div class="course-meta">
+                <span>${status}</span>
+                <span>${pct}%</span>
+            </div>
+        </a>`;
+    }).join('');
+}
+
+function logout() {
+    localStorage.removeItem('synapse_user');
+    window.location.href = '/';
+}
+
+init();
+</script>
+
+</body>
+</html>

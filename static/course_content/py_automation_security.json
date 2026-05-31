@@ -1,0 +1,1582 @@
+{
+  "course_id": "py_automation_security",
+  "title": "Python Security Automation & Scripting",
+  "description": "Build automated security tools with Python: port scanners, config auditors, file integrity monitors, and incident response scripts.",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "Basic Python knowledge"
+  ],
+  "learning_outcomes": [
+    "Build port scanners and network service discovery tools with Python sockets",
+    "Implement password policy enforcers and credential security checkers",
+    "Create file integrity monitoring (FIM) systems using cryptographic hashing",
+    "Automate configuration auditing against security best practices",
+    "Check web servers for missing security headers and misconfigurations",
+    "Build automated incident response playbooks in Python",
+    "Generate professional security reports and compliance summaries",
+    "Understand security automation frameworks and SOAR principles"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses robot/automation analogies. Never judges. Celebrates small wins. Makes automation feel like building a security robot army.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Building automation scripts can feel complex — totally normal! Think of each function as one robot that does one job. Which part is tricky? Let me help break it down! 🤖",
+      "idle_90_seconds": "Still thinking? That's fine — automation requires careful design. The trick is: start with the simplest version that works, then add features. Want me to walk through the logic step by step?",
+      "idle_180_seconds": "No worries at all! Let's simplify. Every automation script follows: 1) Get input, 2) Process/check, 3) Report results. Which step are you stuck on? I can show you a template! 🛠️",
+      "first_error": "Almost there! Security scripts need careful logic. Check: is your comparison using == not =? Is your function returning or just printing? Let's debug together!",
+      "repeated_errors": "Let me try a different angle. Think of this like a checklist: your script goes through items one by one, checks each against a rule, and marks pass or fail. Let me show the pattern...",
+      "after_success": "You just built a real security tool! 🎉 Companies pay good money for scripts like this. Your automation skills are growing fast!"
+    },
+    "encouragement_phrases": [
+      "You're building a security robot army! 🤖",
+      "That's production-quality code!",
+      "SOC teams would love to have this tool!",
+      "Every script you write saves hours of manual work!",
+      "Great automation thinking!",
+      "You're thinking like a security engineer now! 🛡️",
+      "Clean, efficient, effective — that's the automation way!",
+      "Another tool in your security toolkit!",
+      "This is exactly what DevSecOps looks like!",
+      "That logic is solid — well done! 💪",
+      "Security automation is a superpower. You're levelling up!",
+      "Real companies deploy scripts just like this!"
+    ],
+    "explanation_styles": {
+      "analogy": "Security automation is like building robot security guards — each script patrols one area, checks one thing, and reports back automatically.",
+      "visual": "Picture a dashboard with green/red lights: each light is one automated check. Your script turns the lights on by running each check.",
+      "step_by_step": "1. Define what to check. 2. Write the check function. 3. Run it against your target. 4. Collect results. 5. Generate report.",
+      "code_trace": "host='127.0.0.1', port=80. socket creates connection attempt. connect_ex returns 0=open, non-zero=closed. We collect all opens into a list.",
+      "comparison": "Manual security = checking 500 doors by hand every night. Automated = robot checks all doors in 60 seconds and texts you if one is unlocked."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "py_automation_security_lesson_1",
+      "title": "Python Security Automation & Scripting",
+      "theory": {
+        "introduction": "Imagine you're a security guard at a massive building complex with 500 doors, 200 cameras, and 100 alarm systems. Checking every door lock manually every night would take hours. But what if you had a robot that could check all 500 doors in 60 seconds, report which ones are unlocked, and automatically lock them? That's exactly what security automation does with Python.\n\nSecurity automation means writing Python scripts that perform repetitive security tasks automatically — scanning networks for open ports, checking if software is up to date, verifying configurations, monitoring file changes, testing passwords against policies, and responding to incidents. Instead of a human clicking through tools manually, Python does it faster, more consistently, and without getting tired or making mistakes.\n\nIn the real world, security teams are overwhelmed. The average Security Operations Centre (SOC) receives thousands of alerts per day, and most are handled too slowly because humans can't keep up. Companies that automate their security workflows respond to incidents 10x faster and catch 3x more threats. Python is the number one language for security automation because it's readable, has incredible library support (requests, paramiko, scapy, nmap), and can interact with APIs, files, networks, and operating systems.\n\nIn this module, you'll build real security automation tools: port scanners, vulnerability checkers, password policy enforcers, file integrity monitors, configuration auditors, and automated incident response scripts. By the end, you'll have a toolkit that would be genuinely useful in a professional security role. Let's automate the boring stuff — securely! 🤖🔒",
+        "why_important": "Manual security processes don't scale. A company with 1,000 servers can't manually check each one for vulnerabilities every week — but a Python script can do it in minutes. Security automation is now a core requirement in every major framework: NIST recommends automated continuous monitoring, ISO 27001 requires regular automated audits, and PCI-DSS mandates automated vulnerability scanning.\n\nThe job market reflects this: 'Security Automation Engineer' is one of the fastest-growing roles in cybersecurity, with salaries 20-30% higher than traditional security analyst roles. Skills in Python security scripting are listed in 70% of senior security job postings. Whether you're building a career in penetration testing, SOC operations, DevSecOps, or security engineering, automation skills are what separate junior from senior practitioners.\n\nBeyond career benefits, automation makes security MORE reliable. Humans forget steps, make typos, and get fatigued. Scripts run the same way every time, log everything they do, and can run 24/7. A well-written security automation script is like having a tireless, perfectly consistent security guard that never sleeps.",
+        "key_concepts": [
+          {
+            "concept": "What is Security Automation?",
+            "explanation": "Security automation means using scripts and programs to perform security tasks without human intervention. This includes scanning for vulnerabilities, monitoring for changes, enforcing policies, and responding to incidents. Think of it as building a security robot army — each script is a specialised robot that does one job perfectly. Python is ideal because it can interact with networks (sockets), files (os), web services (requests), and other tools (subprocess). The goal is to reduce human error, increase speed, and enable 24/7 monitoring.",
+            "example": "import socket\nimport datetime\n\ndef quick_port_check(host, port):\n    \"\"\"Check if a single port is open — basic automation building block.\"\"\"\n    try:\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        sock.settimeout(2)\n        result = sock.connect_ex((host, port))\n        sock.close()\n        return result == 0  # 0 means open\n    except socket.error:\n        return False\n\n# Automated check\nhost = '127.0.0.1'\nfor port in [22, 80, 443, 8080]:\n    status = 'OPEN' if quick_port_check(host, port) else 'closed'\n    print(f'Port {port}: {status}')",
+            "ai_hint": "Security automation = building robot helpers that check things automatically. Each script is one robot with one job!"
+          },
+          {
+            "concept": "Port Scanning with Python Sockets",
+            "explanation": "A port scanner checks which network ports are open on a target machine. Open ports mean running services — and each service is a potential entry point for attackers. Python's socket module can connect to ports and determine if they're open (accepting connections) or closed (rejecting). A basic scanner tries connecting to each port; if the connection succeeds, the port is open. This is the same technique tools like Nmap use internally. It's like trying every door in a building to see which ones are unlocked.",
+            "example": "import socket\n\ndef scan_ports(host, port_range):\n    \"\"\"Scan a range of ports on a host.\"\"\"\n    open_ports = []\n    for port in port_range:\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        sock.settimeout(1)\n        if sock.connect_ex((host, port)) == 0:\n            open_ports.append(port)\n        sock.close()\n    return open_ports\n\n# Common service ports\nCOMMON_PORTS = {22:'SSH', 80:'HTTP', 443:'HTTPS', 3306:'MySQL', 5432:'PostgreSQL', 8080:'HTTP-Alt'}\nresults = scan_ports('127.0.0.1', COMMON_PORTS.keys())\nfor port in results:\n    print(f'Port {port} ({COMMON_PORTS.get(port,\"unknown\")}): OPEN')",
+            "ai_hint": "Port scanning is trying every door in a building — open ports are unlocked doors that need investigating!"
+          },
+          {
+            "concept": "File Integrity Monitoring (FIM)",
+            "explanation": "File Integrity Monitoring watches critical system files for unauthorized changes. If an attacker modifies a config file, replaces a binary, or plants a backdoor, FIM detects it by comparing current file hashes against known-good baselines. Python's hashlib calculates SHA-256 hashes, and os.walk() traverses directory trees. You create a baseline of all file hashes, then periodically re-scan and compare. Any mismatch means a file was modified — which could be legitimate (update) or malicious (tampering). It's like taking a photo of every room in your house, then checking if anything moved.",
+            "example": "import hashlib\nimport os\n\ndef hash_file(filepath):\n    sha256 = hashlib.sha256()\n    with open(filepath, 'rb') as f:\n        for chunk in iter(lambda: f.read(8192), b''):\n            sha256.update(chunk)\n    return sha256.hexdigest()\n\ndef create_baseline(directory):\n    baseline = {}\n    for root, dirs, files in os.walk(directory):\n        for fname in files:\n            fpath = os.path.join(root, fname)\n            try:\n                baseline[fpath] = hash_file(fpath)\n            except (PermissionError, OSError):\n                pass\n    return baseline\n\n# Usage: baseline = create_baseline('/etc')\nprint('FIM: Create baseline, then compare periodically')",
+            "ai_hint": "FIM is like photographing every room — if anything moves, you'll know. Hashes are your photos!"
+          },
+          {
+            "concept": "Password Policy Enforcement",
+            "explanation": "Weak passwords are the number one cause of breaches. A password policy enforcer checks passwords against rules: minimum length, uppercase, lowercase, digits, special characters, no dictionary words, no common patterns. Python's re module and string methods make this easy. You can also check against lists of known breached passwords (like the Have I Been Pwned database). Automating this ensures EVERY password meets the policy — no exceptions, no human oversight needed.",
+            "example": "import re\nimport string\n\ndef check_password(password, min_length=8):\n    issues = []\n    if len(password) < min_length:\n        issues.append(f'Too short (min {min_length} chars)')\n    if not re.search(r'[A-Z]', password):\n        issues.append('Missing uppercase letter')\n    if not re.search(r'[a-z]', password):\n        issues.append('Missing lowercase letter')\n    if not re.search(r'\\d', password):\n        issues.append('Missing digit')\n    if not re.search(r'[!@#$%^&*(),.?\":{}|<>]', password):\n        issues.append('Missing special character')\n    common = ['password','123456','qwerty','admin','letmein']\n    if password.lower() in common:\n        issues.append('Common password — easily guessable!')\n    return issues\n\nfor pw in ['hello', 'Password1', 'P@ssw0rd!', 'admin']:\n    problems = check_password(pw)\n    print(f'{pw}: {\"✅ STRONG\" if not problems else \"❌ \" + \", \".join(problems)}')",
+            "ai_hint": "Password checking is like a bouncer with a checklist — no entry without uppercase, lowercase, digit, AND special character!"
+          },
+          {
+            "concept": "Automated Configuration Auditing",
+            "explanation": "Misconfigurations cause 60% of breaches. An automated config auditor reads system configuration files and checks them against security best practices. For example: Is SSH root login disabled? Is the firewall enabled? Are default passwords changed? Are unnecessary services running? Python can read config files, parse key-value pairs, and flag non-compliant settings. It's like a building inspector checking every room against a safety code — but your script does it in seconds instead of days.",
+            "example": "def audit_ssh_config(config_text):\n    results = []\n    checks = {\n        'PermitRootLogin': ('no', 'Root login should be disabled'),\n        'PasswordAuthentication': ('no', 'Use key-based auth instead'),\n        'Port': ('!22', 'Change default SSH port'),\n        'MaxAuthTries': ('3', 'Limit authentication attempts'),\n    }\n    lines = {}\n    for line in config_text.strip().split('\\n'):\n        if line.strip() and not line.startswith('#'):\n            parts = line.split()\n            if len(parts) >= 2:\n                lines[parts[0]] = parts[1]\n    \n    for key, (expected, reason) in checks.items():\n        actual = lines.get(key, 'NOT SET')\n        if expected.startswith('!'):\n            passed = actual != expected[1:]\n        else:\n            passed = actual.lower() == expected.lower()\n        status = '✅ PASS' if passed else '❌ FAIL'\n        results.append(f'{status}: {key} = {actual} ({reason})')\n    return results\n\nconfig = 'Port 22\\nPermitRootLogin yes\\nPasswordAuthentication yes\\nMaxAuthTries 6'\nfor r in audit_ssh_config(config): print(r)",
+            "ai_hint": "Config auditing is like a building inspection — check every setting against the security code. Non-compliant = risk!"
+          },
+          {
+            "concept": "Network Service Discovery",
+            "explanation": "Before you can secure a network, you need to know what's on it. Service discovery means finding all devices and services running on a network. Python can send packets, check for responses, and map out what's listening where. Combined with port scanning, you can build a complete inventory: 'Server A runs SSH on port 22 and HTTP on port 80, Server B runs MySQL on port 3306'. This inventory is essential for vulnerability management — you can't protect what you don't know exists.",
+            "example": "import socket\n\nSERVICE_BANNERS = {\n    22: 'SSH', 80: 'HTTP', 443: 'HTTPS', 21: 'FTP',\n    25: 'SMTP', 53: 'DNS', 3306: 'MySQL', 5432: 'PostgreSQL',\n    6379: 'Redis', 27017: 'MongoDB', 8080: 'HTTP-Proxy',\n    8443: 'HTTPS-Alt', 3389: 'RDP', 5900: 'VNC'\n}\n\ndef discover_services(host, ports=None):\n    if ports is None:\n        ports = SERVICE_BANNERS.keys()\n    services = []\n    for port in ports:\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        sock.settimeout(1)\n        if sock.connect_ex((host, port)) == 0:\n            name = SERVICE_BANNERS.get(port, 'Unknown')\n            services.append({'port': port, 'service': name, 'status': 'open'})\n        sock.close()\n    return services\n\nprint('Service discovery maps your network attack surface')",
+            "ai_hint": "Service discovery is like doing a building inventory — which rooms exist, what's inside each one, and which doors are open!"
+          },
+          {
+            "concept": "Automated Vulnerability Checking",
+            "explanation": "Once you know what services are running, the next step is checking if they have known vulnerabilities. Python can check software versions against vulnerability databases, verify that patches are applied, and test for common misconfigurations. For web services, this means checking HTTP headers for missing security features (X-Frame-Options, Content-Security-Policy, HSTS). For servers, it means checking OS versions, open ports with known exploits, and default credentials. It's like a doctor doing a health check — systematically testing each body system for problems.",
+            "example": "import re\n\ndef check_http_headers(headers):\n    \"\"\"Check HTTP response headers for security best practices.\"\"\"\n    checks = {\n        'X-Frame-Options': 'Prevents clickjacking attacks',\n        'X-Content-Type-Options': 'Prevents MIME type sniffing',\n        'Strict-Transport-Security': 'Enforces HTTPS (HSTS)',\n        'Content-Security-Policy': 'Prevents XSS attacks',\n        'X-XSS-Protection': 'Browser XSS filter',\n        'Referrer-Policy': 'Controls referrer information',\n    }\n    results = []\n    for header, purpose in checks.items():\n        present = header.lower() in {h.lower() for h in headers}\n        status = '✅' if present else '❌ MISSING'\n        results.append(f'{status}: {header} — {purpose}')\n    return results\n\ntest_headers = {'Content-Type', 'X-Frame-Options', 'Server'}\nfor r in check_http_headers(test_headers): print(r)",
+            "ai_hint": "Vulnerability checking is a health check for your servers — test each system for known weaknesses!"
+          },
+          {
+            "concept": "Subprocess and System Command Automation",
+            "explanation": "Python's subprocess module lets you run system commands and capture their output. This is incredibly powerful for security automation: you can run Nmap scans, check firewall rules, verify user accounts, inspect running processes, and much more — all from Python. subprocess.run() executes a command and returns the output. You can then parse the output with regex or string methods. It's like having a remote control for your operating system — Python presses the buttons and reads the screen.",
+            "example": "import subprocess\n\ndef run_command(cmd):\n    \"\"\"Run a system command and return output.\"\"\"\n    try:\n        result = subprocess.run(\n            cmd, shell=True, capture_output=True,\n            text=True, timeout=30\n        )\n        return {\n            'stdout': result.stdout.strip(),\n            'stderr': result.stderr.strip(),\n            'returncode': result.returncode\n        }\n    except subprocess.TimeoutExpired:\n        return {'stdout': '', 'stderr': 'Command timed out', 'returncode': -1}\n\n# Examples of security commands\ncommands = {\n    'Current user': 'whoami',\n    'Open ports': 'ss -tlnp 2>/dev/null || netstat -tlnp 2>/dev/null',\n    'Disk usage': 'df -h / | tail -1',\n}\n\nfor name, cmd in commands.items():\n    result = run_command(cmd)\n    print(f'{name}: {result[\"stdout\"][:60]}')",
+            "ai_hint": "subprocess is your remote control for the OS — run any command from Python and process the results!"
+          },
+          {
+            "concept": "Scheduled Security Tasks (Cron-style)",
+            "explanation": "Security automation is most powerful when it runs automatically on a schedule — like a night watchman doing rounds every hour. Python can implement scheduling with the time module (simple loops with sleep), the schedule library, or by being called from cron (Linux) or Task Scheduler (Windows). Common scheduled tasks include: hourly port scans, daily file integrity checks, weekly configuration audits, and continuous log monitoring. The script runs, performs its checks, and either logs results or sends alerts if something is wrong.",
+            "example": "import time\nfrom datetime import datetime\n\ndef security_check():\n    \"\"\"Perform a scheduled security check.\"\"\"\n    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')\n    checks = [\n        ('File integrity', True),   # Simulated\n        ('Port scan', True),         # Simulated\n        ('Config audit', False),     # Simulated failure\n        ('Log analysis', True),      # Simulated\n    ]\n    print(f'\\n[{timestamp}] Security Check Running...')\n    for name, passed in checks:\n        icon = '✅' if passed else '🚨'\n        print(f'  {icon} {name}: {\"PASS\" if passed else \"ALERT\"}')\n    failed = sum(1 for _, p in checks if not p)\n    if failed:\n        print(f'  ⚠️ {failed} check(s) need attention!')\n    else:\n        print(f'  All checks passed.')\n\n# Run once (in production, use cron or schedule library)\nsecurity_check()\nprint('\\nIn production: schedule this via cron every hour')",
+            "ai_hint": "Scheduled tasks are like a night watchman doing rounds — automated, regular, and never forget a check!"
+          },
+          {
+            "concept": "API-Based Security Automation",
+            "explanation": "Modern security tools expose APIs (Application Programming Interfaces) that let Python interact with them programmatically. You can query threat intelligence databases, submit file hashes for malware checks, manage firewall rules, create tickets in incident management systems, and pull data from SIEMs — all through HTTP requests. Python's requests library makes API calls simple. This is the foundation of Security Orchestration, Automation, and Response (SOAR) platforms. It's like giving Python a phone to call other security tools and coordinate their actions.",
+            "example": "import json\n\ndef simulate_api_call(endpoint, data):\n    \"\"\"Simulate a security API call (no real network needed).\"\"\"\n    responses = {\n        '/api/threat/check': {'status': 'malicious', 'confidence': 95, 'category': 'trojan'},\n        '/api/ip/reputation': {'status': 'blocklisted', 'reports': 47, 'country': 'unknown'},\n        '/api/vuln/scan': {'vulnerabilities': 3, 'critical': 1, 'high': 2},\n    }\n    return responses.get(endpoint, {'error': 'Unknown endpoint'})\n\n# Check file hash against threat intelligence\nresult = simulate_api_call('/api/threat/check', {'hash': 'abc123'})\nprint(f'Threat check: {result}')\n\n# Check IP reputation\nresult = simulate_api_call('/api/ip/reputation', {'ip': '10.0.0.55'})\nprint(f'IP reputation: {result}')\n\n# Run vulnerability scan\nresult = simulate_api_call('/api/vuln/scan', {'target': '192.168.1.1'})\nprint(f'Vuln scan: {result}')",
+            "ai_hint": "APIs let Python talk to other security tools — like giving your script a phone to coordinate your entire security team!"
+          },
+          {
+            "concept": "Incident Response Automation",
+            "explanation": "When a security incident happens, every second counts. Automated incident response scripts can perform immediate containment actions: block an IP at the firewall, disable a compromised user account, isolate a machine from the network, capture forensic evidence, and notify the security team — all within seconds of detection. Python orchestrates these actions by combining network commands, file operations, API calls, and alerting. Manual incident response takes 30-60 minutes; automated response takes under 60 seconds. That difference can mean millions of dollars in prevented damage.",
+            "example": "from datetime import datetime\n\ndef auto_respond(incident):\n    \"\"\"Automated incident response playbook.\"\"\"\n    actions = []\n    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')\n    actions.append(f'[{timestamp}] Incident detected: {incident[\"type\"]}')\n    \n    if incident['type'] == 'brute_force':\n        actions.append(f'ACTION: Block IP {incident[\"ip\"]} at firewall')\n        actions.append(f'ACTION: Lock account {incident[\"target_user\"]}')\n        actions.append(f'ACTION: Capture auth logs for forensics')\n        actions.append(f'NOTIFY: Security team alerted via email')\n    elif incident['type'] == 'malware':\n        actions.append(f'ACTION: Isolate host {incident[\"host\"]} from network')\n        actions.append(f'ACTION: Capture memory dump for analysis')\n        actions.append(f'ACTION: Block C2 domain {incident.get(\"c2\",\"unknown\")}')\n        actions.append(f'NOTIFY: IR team paged')\n    \n    actions.append(f'STATUS: {len(actions)-1} response actions executed')\n    return actions\n\nincident = {'type': 'brute_force', 'ip': '10.0.0.55', 'target_user': 'root'}\nfor a in auto_respond(incident): print(a)",
+            "ai_hint": "Automated IR is like having an emergency protocol that triggers instantly — block, isolate, capture evidence, notify — all in seconds!"
+          },
+          {
+            "concept": "Building a Security Automation Framework",
+            "explanation": "Individual scripts are useful, but a framework ties everything together. A security automation framework has: a scheduler that runs checks on different intervals, a central configuration file, modular check functions that can be added/removed, a results database, alerting capabilities, and reporting. Python classes and modules make this possible. You define a base SecurityCheck class, then create specific checks (PortScanCheck, FIMCheck, ConfigAuditCheck) that inherit from it. The framework runs all checks, collects results, and generates a unified security dashboard.",
+            "example": "class SecurityCheck:\n    \"\"\"Base class for all security checks.\"\"\"\n    def __init__(self, name, severity='MEDIUM'):\n        self.name = name\n        self.severity = severity\n        self.passed = None\n        self.details = ''\n    \n    def run(self):\n        raise NotImplementedError\n    \n    def report(self):\n        icon = '✅' if self.passed else '🚨'\n        return f'{icon} [{self.severity}] {self.name}: {self.details}'\n\nclass PasswordPolicyCheck(SecurityCheck):\n    def __init__(self):\n        super().__init__('Password Policy', 'HIGH')\n    def run(self):\n        # Simulated check\n        self.passed = True\n        self.details = 'All passwords meet policy'\n        return self\n\nclass PortScanCheck(SecurityCheck):\n    def __init__(self):\n        super().__init__('Port Scan', 'CRITICAL')\n    def run(self):\n        self.passed = False\n        self.details = 'Port 3306 (MySQL) exposed to internet!'\n        return self\n\n# Run all checks\nchecks = [PasswordPolicyCheck(), PortScanCheck()]\nprint('=== SECURITY FRAMEWORK ===')\nfor check in checks:\n    check.run()\n    print(check.report())",
+            "ai_hint": "A framework is like a security control room — each monitor shows a different check, all running automatically, all reporting to one dashboard!"
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Basic Port Scanner",
+          "description": "Scans common ports on a target host using Python sockets to identify running services.",
+          "difficulty": "beginner",
+          "code": "import socket\n\ndef scan_ports(host, ports):\n    \"\"\"Scan a list of ports on a target host.\"\"\"\n    results = []\n    print(f'Scanning {host}...')\n    for port in ports:\n        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        sock.settimeout(1)\n        status = 'OPEN' if sock.connect_ex((host, port)) == 0 else 'closed'\n        sock.close()\n        results.append((port, status))\n    return results\n\nSERVICES = {22:'SSH',80:'HTTP',443:'HTTPS',3306:'MySQL',5432:'PostgreSQL',8080:'HTTP-Alt'}\nresults = scan_ports('127.0.0.1', SERVICES.keys())\nprint('\\n=== SCAN RESULTS ===')\nfor port, status in results:\n    icon = '🟢' if status == 'OPEN' else '⚪'\n    print(f'  {icon} Port {port:5d} ({SERVICES.get(port,\"?\")}): {status}')",
+          "output": "Scanning 127.0.0.1...\n\n=== SCAN RESULTS ===\n  ⚪ Port    22 (SSH): closed\n  ⚪ Port    80 (HTTP): closed\n  ...",
+          "ai_explanation": "socket.connect_ex() returns 0 if connection succeeds (port open) or an error code if it fails (port closed). settimeout(1) prevents hanging on filtered ports. We map port numbers to service names for readable output.",
+          "ai_challenge": "Add banner grabbing: after connecting to an open port, try sock.recv(1024) to read the service banner."
+        },
+        {
+          "title": "Example 2: Password Strength Checker",
+          "description": "Validates passwords against a comprehensive security policy with detailed feedback.",
+          "difficulty": "beginner",
+          "code": "import re\n\ndef check_password(password, min_len=8):\n    score = 0\n    issues = []\n    if len(password) >= min_len: score += 1\n    else: issues.append(f'Too short ({len(password)}/{min_len})')\n    if re.search(r'[A-Z]', password): score += 1\n    else: issues.append('No uppercase')\n    if re.search(r'[a-z]', password): score += 1\n    else: issues.append('No lowercase')\n    if re.search(r'\\d', password): score += 1\n    else: issues.append('No digit')\n    if re.search(r'[!@#$%^&*(),.?\":{}|<>]', password): score += 1\n    else: issues.append('No special char')\n    common = ['password','123456','qwerty','admin','letmein','welcome']\n    if password.lower() in common:\n        score = 0; issues.append('Common password!')\n    if re.search(r'(.)\\1{2,}', password):\n        score -= 1; issues.append('Repeated chars (e.g. aaa)')\n    strength = {0:'TERRIBLE',1:'WEAK',2:'FAIR',3:'GOOD',4:'STRONG',5:'EXCELLENT'}\n    return {'score':max(score,0),'rating':strength.get(max(score,0),'EXCELLENT'),'issues':issues}\n\nfor pw in ['hello','Password1','P@ssw0rd!','admin','aaaBBB111!!!','Tr0ub4dor&3']:\n    r = check_password(pw)\n    print(f'{pw:15s} → {r[\"rating\"]:9s} (score:{r[\"score\"]}) {\"| \"+\", \".join(r[\"issues\"]) if r[\"issues\"] else \"\"}')\n",
+          "output": "hello           → WEAK      (score:1) | Too short (5/8), No uppercase, No digit, No special char\nPassword1       → GOOD      (score:4) | No special char\nP@ssw0rd!       → EXCELLENT (score:5) \nadmin           → TERRIBLE  (score:0) | Too short (5/8), No uppercase, No digit, No special char, Common password!\n...",
+          "ai_explanation": "Each rule adds 1 to the score. Common passwords reset score to 0. Repeated characters deduct 1. The score maps to a human-readable rating. This is how password meters work on websites — now you can build your own!",
+          "ai_challenge": "Add entropy calculation: import math, calculate bits = len(password) * math.log2(charset_size). Require minimum 50 bits."
+        },
+        {
+          "title": "Example 3: File Integrity Monitor",
+          "description": "Creates a baseline of file hashes and detects modifications by comparing current hashes.",
+          "difficulty": "intermediate",
+          "code": "import hashlib, os, json\n\nclass FileIntegrityMonitor:\n    def __init__(self, baseline_path='fim_baseline.json'):\n        self.baseline_path = baseline_path\n        self.baseline = {}\n    \n    def hash_file(self, filepath):\n        sha = hashlib.sha256()\n        with open(filepath, 'rb') as f:\n            for chunk in iter(lambda: f.read(8192), b''):\n                sha.update(chunk)\n        return sha.hexdigest()\n    \n    def create_baseline(self, directory):\n        self.baseline = {}\n        for root, dirs, files in os.walk(directory):\n            for fname in files:\n                fpath = os.path.join(root, fname)\n                try:\n                    self.baseline[fpath] = {'hash': self.hash_file(fpath), 'size': os.path.getsize(fpath)}\n                except (PermissionError, OSError): pass\n        with open(self.baseline_path, 'w') as f:\n            json.dump(self.baseline, f, indent=2)\n        print(f'Baseline: {len(self.baseline)} files registered')\n    \n    def check(self, directory):\n        changes = {'modified':[], 'added':[], 'deleted':[]}\n        current = set()\n        for root, dirs, files in os.walk(directory):\n            for fname in files:\n                fpath = os.path.join(root, fname)\n                current.add(fpath)\n                try:\n                    h = self.hash_file(fpath)\n                    if fpath in self.baseline:\n                        if h != self.baseline[fpath]['hash']:\n                            changes['modified'].append(fpath)\n                    else:\n                        changes['added'].append(fpath)\n                except (PermissionError, OSError): pass\n        for fpath in self.baseline:\n            if fpath not in current:\n                changes['deleted'].append(fpath)\n        return changes\n\n# Demo\nos.makedirs('test_fim', exist_ok=True)\nfor f in ['config.txt','app.py','data.csv']:\n    with open(f'test_fim/{f}','w') as fh: fh.write(f'Original {f}')\n\nfim = FileIntegrityMonitor()\nfim.create_baseline('test_fim')\n\n# Simulate changes\nwith open('test_fim/config.txt','w') as f: f.write('TAMPERED!')\nwith open('test_fim/backdoor.py','w') as f: f.write('malicious code')\nos.remove('test_fim/data.csv')\n\nresults = fim.check('test_fim')\nprint(f'\\n=== FIM RESULTS ===')\nfor cat, files in results.items():\n    for fp in files:\n        icons = {'modified':'🟡 MODIFIED','added':'🔴 NEW FILE','deleted':'⚫ DELETED'}\n        print(f'  {icons[cat]}: {fp}')\n\n# Cleanup\nimport shutil; shutil.rmtree('test_fim'); os.remove('fim_baseline.json')",
+          "output": "Baseline: 3 files registered\n\n=== FIM RESULTS ===\n  🟡 MODIFIED: test_fim/config.txt\n  🔴 NEW FILE: test_fim/backdoor.py\n  ⚫ DELETED: test_fim/data.csv",
+          "ai_explanation": "create_baseline() walks a directory tree, hashes every file, and saves the baseline as JSON. check() re-scans and compares: if hash differs → modified, if file is new → added, if baseline file is missing → deleted. This is exactly how enterprise FIM tools like OSSEC and Tripwire work.",
+          "ai_challenge": "Add file permission monitoring: track os.stat(file).st_mode and alert on permission changes too."
+        },
+        {
+          "title": "Example 4: SSH Configuration Auditor",
+          "description": "Reads SSH config and checks settings against security best practices.",
+          "difficulty": "intermediate",
+          "code": "def audit_ssh(config_text):\n    rules = {\n        'PermitRootLogin': {'expected':'no','severity':'CRITICAL','reason':'Disable root SSH login'},\n        'PasswordAuthentication': {'expected':'no','severity':'HIGH','reason':'Use SSH keys instead'},\n        'MaxAuthTries': {'expected':'3','severity':'MEDIUM','reason':'Limit brute-force attempts'},\n        'X11Forwarding': {'expected':'no','severity':'LOW','reason':'Disable unnecessary features'},\n        'PermitEmptyPasswords': {'expected':'no','severity':'CRITICAL','reason':'Never allow empty passwords'},\n        'Protocol': {'expected':'2','severity':'CRITICAL','reason':'SSH v1 has known vulnerabilities'},\n    }\n    settings = {}\n    for line in config_text.split('\\n'):\n        line = line.strip()\n        if line and not line.startswith('#'):\n            parts = line.split(None, 1)\n            if len(parts) == 2: settings[parts[0]] = parts[1]\n    \n    print('=== SSH CONFIGURATION AUDIT ===')\n    passed = failed = 0\n    for key, rule in rules.items():\n        actual = settings.get(key, 'NOT SET')\n        ok = actual.lower() == rule['expected'].lower()\n        icon = '✅' if ok else '❌'\n        if ok: passed += 1\n        else: failed += 1\n        print(f'  {icon} [{rule[\"severity\"]:8s}] {key} = {actual} (expected: {rule[\"expected\"]}) — {rule[\"reason\"]}')\n    \n    score = passed / (passed + failed) * 100\n    print(f'\\nScore: {score:.0f}% ({passed} passed, {failed} failed)')\n    print(f'Rating: {\"SECURE\" if score >= 80 else \"NEEDS WORK\" if score >= 50 else \"INSECURE\"}')\n\ntest_config = '''Port 22\nPermitRootLogin yes\nPasswordAuthentication yes\nMaxAuthTries 6\nX11Forwarding yes\nPermitEmptyPasswords no\nProtocol 2'''\n\naudit_ssh(test_config)",
+          "output": "=== SSH CONFIGURATION AUDIT ===\n  ❌ [CRITICAL] PermitRootLogin = yes (expected: no) — Disable root SSH login\n  ❌ [HIGH    ] PasswordAuthentication = yes (expected: no) — Use SSH keys instead\n  ❌ [MEDIUM  ] MaxAuthTries = 6 (expected: 3) — Limit brute-force attempts\n  ❌ [LOW     ] X11Forwarding = yes (expected: no) — Disable unnecessary features\n  ✅ [CRITICAL] PermitEmptyPasswords = no (expected: no) — Never allow empty passwords\n  ✅ [CRITICAL] Protocol = 2 (expected: 2) — SSH v1 has known vulnerabilities\n\nScore: 33% (2 passed, 4 failed)\nRating: INSECURE",
+          "ai_explanation": "The auditor parses config into key-value pairs, then checks each against expected values. Each rule has a severity level. The score gives an at-a-glance health rating. This pattern works for ANY config file — Apache, Nginx, MySQL, etc.",
+          "ai_challenge": "Add a fix_config() function that generates a corrected config file with all failing settings fixed."
+        },
+        {
+          "title": "Example 5: HTTP Security Headers Checker",
+          "description": "Checks a web server's response headers against OWASP security header recommendations.",
+          "difficulty": "intermediate",
+          "code": "def check_security_headers(headers):\n    required = {\n        'X-Frame-Options': {'severity':'HIGH','fix':'Add: X-Frame-Options: DENY','desc':'Prevents clickjacking'},\n        'X-Content-Type-Options': {'severity':'MEDIUM','fix':'Add: X-Content-Type-Options: nosniff','desc':'Prevents MIME sniffing'},\n        'Strict-Transport-Security': {'severity':'HIGH','fix':'Add: Strict-Transport-Security: max-age=31536000','desc':'Enforces HTTPS'},\n        'Content-Security-Policy': {'severity':'HIGH','fix':'Add CSP header restricting sources','desc':'Prevents XSS'},\n        'X-XSS-Protection': {'severity':'MEDIUM','fix':'Add: X-XSS-Protection: 1; mode=block','desc':'Browser XSS filter'},\n        'Referrer-Policy': {'severity':'LOW','fix':'Add: Referrer-Policy: strict-origin-when-cross-origin','desc':'Controls referrer info'},\n    }\n    header_lower = {h.lower(): v for h, v in headers.items()}\n    print('=== HTTP SECURITY HEADERS AUDIT ===')\n    passed = missing = 0\n    for header, info in required.items():\n        present = header.lower() in header_lower\n        if present: passed += 1; icon = '✅'\n        else: missing += 1; icon = '❌'\n        print(f'  {icon} [{info[\"severity\"]:6s}] {header}')\n        print(f'       {info[\"desc\"]}')\n        if not present:\n            print(f'       Fix: {info[\"fix\"]}')\n    grade = 'A' if missing==0 else 'B' if missing<=1 else 'C' if missing<=3 else 'F'\n    print(f'\\nGrade: {grade} ({passed}/{passed+missing} headers present)')\n\ntest_headers = {'Content-Type':'text/html','X-Frame-Options':'DENY','Server':'nginx','X-Content-Type-Options':'nosniff'}\ncheck_security_headers(test_headers)",
+          "output": "=== HTTP SECURITY HEADERS AUDIT ===\n  ✅ [HIGH  ] X-Frame-Options\n       Prevents clickjacking\n  ✅ [MEDIUM] X-Content-Type-Options\n       Prevents MIME sniffing\n  ❌ [HIGH  ] Strict-Transport-Security\n       Enforces HTTPS\n       Fix: Add: Strict-Transport-Security: max-age=31536000\n  ❌ [HIGH  ] Content-Security-Policy\n       Prevents XSS\n       Fix: Add CSP header restricting sources\n  ❌ [MEDIUM] X-XSS-Protection\n       Browser XSS filter\n       Fix: Add: X-XSS-Protection: 1; mode=block\n  ❌ [LOW   ] Referrer-Policy\n       Controls referrer info\n       Fix: Add: Referrer-Policy: strict-origin-when-cross-origin\n\nGrade: C (2/6 headers present)",
+          "ai_explanation": "Each security header protects against a specific attack. The checker compares present headers against the required list and provides specific fix instructions for missing ones. The grading system gives quick assessment. This is what tools like SecurityHeaders.com do.",
+          "ai_challenge": "Add value validation — not just presence but also correct values (e.g., X-Frame-Options should be DENY or SAMEORIGIN, not ALLOW)."
+        },
+        {
+          "title": "Example 6: Automated User Account Auditor",
+          "description": "Checks user accounts for security issues: inactive accounts, no password expiry, excessive privileges.",
+          "difficulty": "intermediate",
+          "code": "from datetime import datetime, timedelta\n\ndef audit_users(users):\n    issues = []\n    now = datetime.now()\n    print('=== USER ACCOUNT AUDIT ===')\n    for user in users:\n        user_issues = []\n        # Check last login\n        if user.get('last_login'):\n            days_inactive = (now - datetime.strptime(user['last_login'],'%Y-%m-%d')).days\n            if days_inactive > 90:\n                user_issues.append(f'Inactive {days_inactive} days')\n        else:\n            user_issues.append('Never logged in')\n        # Check password age\n        if user.get('password_age_days', 0) > 90:\n            user_issues.append(f'Password {user[\"password_age_days\"]}d old (max 90)')\n        # Check privileges\n        if 'admin' in user.get('groups', []) and user['username'] != 'admin':\n            user_issues.append('Has admin privileges')\n        # Check MFA\n        if not user.get('mfa_enabled', False):\n            user_issues.append('No MFA')\n        \n        icon = '✅' if not user_issues else '⚠️'\n        print(f'\\n  {icon} {user[\"username\"]}')\n        for issue in user_issues:\n            print(f'    ❌ {issue}')\n        if not user_issues:\n            print(f'    All checks passed')\n        issues.extend([(user['username'], i) for i in user_issues])\n    \n    print(f'\\n--- Summary: {len(issues)} issues across {len(users)} users ---')\n    return issues\n\nusers = [\n    {'username':'admin','last_login':'2025-02-28','password_age_days':30,'groups':['admin'],'mfa_enabled':True},\n    {'username':'jdoe','last_login':'2024-08-15','password_age_days':200,'groups':['users'],'mfa_enabled':False},\n    {'username':'temp_contractor','last_login':None,'password_age_days':5,'groups':['admin','users'],'mfa_enabled':False},\n    {'username':'alice','last_login':'2025-02-25','password_age_days':45,'groups':['users','dev'],'mfa_enabled':True},\n]\naudit_users(users)",
+          "output": "=== USER ACCOUNT AUDIT ===\n\n  ✅ admin\n    All checks passed\n\n  ⚠️ jdoe\n    ❌ Inactive 197 days\n    ❌ Password 200d old (max 90)\n    ❌ No MFA\n\n  ⚠️ temp_contractor\n    ❌ Never logged in\n    ❌ Has admin privileges\n    ❌ No MFA\n\n  ✅ alice\n    All checks passed\n\n--- Summary: 6 issues across 4 users ---",
+          "ai_explanation": "The auditor checks multiple security aspects per user: activity (last login), password hygiene (age), privilege level (admin groups), and MFA status. Each issue is flagged with a specific description. In production, you'd pull this data from Active Directory or LDAP.",
+          "ai_challenge": "Add a remediation function that generates specific commands to fix each issue (disable account, force password reset, remove admin group, enable MFA)."
+        },
+        {
+          "title": "Example 7: Network Service Inventory Builder",
+          "description": "Scans a range of hosts and ports to build a complete network service inventory.",
+          "difficulty": "intermediate",
+          "code": "import socket\n\ndef build_inventory(hosts, ports):\n    SERVICE_MAP = {22:'SSH',80:'HTTP',443:'HTTPS',3306:'MySQL',5432:'PostgreSQL',8080:'Proxy',8443:'HTTPS-Alt'}\n    inventory = []\n    for host in hosts:\n        host_services = []\n        for port in ports:\n            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n            sock.settimeout(0.5)\n            if sock.connect_ex((host, port)) == 0:\n                host_services.append({'port':port,'service':SERVICE_MAP.get(port,'Unknown')})\n            sock.close()\n        inventory.append({'host':host,'services':host_services})\n    return inventory\n\n# Scan localhost only (safe demo)\ninv = build_inventory(['127.0.0.1'], [22,80,443,3306,5432,8080])\n\nprint('=== NETWORK INVENTORY ===')\nfor host_info in inv:\n    h = host_info['host']\n    svcs = host_info['services']\n    print(f'\\n  Host: {h}')\n    if svcs:\n        for s in svcs:\n            print(f'    🟢 Port {s[\"port\"]}: {s[\"service\"]}')\n    else:\n        print(f'    ⚪ No open ports detected')\n    print(f'    Attack surface: {len(svcs)} services exposed')",
+          "output": "=== NETWORK INVENTORY ===\n\n  Host: 127.0.0.1\n    ⚪ No open ports detected\n    Attack surface: 0 services exposed",
+          "ai_explanation": "The inventory builder systematically scans each host-port combination. Results are structured as a list of dicts for easy processing. The 'attack surface' count gives a quick risk indicator — more exposed services = more potential entry points. This is the foundation of asset management.",
+          "ai_challenge": "Add risk scoring: critical services (SSH, database) get higher risk scores. Calculate total risk per host."
+        },
+        {
+          "title": "Example 8: Automated Incident Response Playbook",
+          "description": "Implements an automated incident response workflow that executes containment and notification actions.",
+          "difficulty": "advanced",
+          "code": "from datetime import datetime\n\nclass IncidentResponse:\n    def __init__(self):\n        self.log = []\n        self.actions_taken = []\n    \n    def _log(self, msg):\n        ts = datetime.now().strftime('%H:%M:%S')\n        entry = f'[{ts}] {msg}'\n        self.log.append(entry)\n        print(entry)\n    \n    def respond(self, incident):\n        self._log(f'INCIDENT: {incident[\"type\"]} from {incident[\"ip\"]}')\n        self._log(f'Severity: {incident[\"severity\"]}')\n        \n        playbooks = {\n            'brute_force': self._pb_brute_force,\n            'malware': self._pb_malware,\n            'data_exfil': self._pb_data_exfil,\n            'sqli': self._pb_sqli,\n        }\n        pb = playbooks.get(incident['type'], self._pb_generic)\n        pb(incident)\n        self._log(f'Response complete: {len(self.actions_taken)} actions taken')\n    \n    def _pb_brute_force(self, inc):\n        self._action(f'BLOCK IP {inc[\"ip\"]} at firewall')\n        self._action(f'LOCK account {inc.get(\"target\",\"unknown\")}')\n        self._action('CAPTURE auth logs (last 24h)')\n        self._action('NOTIFY: Security team email sent')\n    \n    def _pb_malware(self, inc):\n        self._action(f'ISOLATE host {inc.get(\"host\",\"unknown\")} from network')\n        self._action('CAPTURE memory dump')\n        self._action('SCAN all endpoints for IOCs')\n        self._action('NOTIFY: IR team paged')\n    \n    def _pb_data_exfil(self, inc):\n        self._action(f'BLOCK destination {inc.get(\"dest\",\"unknown\")}')\n        self._action('REVOKE user access tokens')\n        self._action('PRESERVE network capture logs')\n        self._action('NOTIFY: CISO and legal team')\n    \n    def _pb_sqli(self, inc):\n        self._action(f'BLOCK IP {inc[\"ip\"]} via WAF')\n        self._action('ENABLE enhanced SQL injection rules')\n        self._action('AUDIT database for unauthorized queries')\n        self._action('NOTIFY: Dev team for code review')\n    \n    def _pb_generic(self, inc):\n        self._action('CAPTURE relevant logs')\n        self._action('NOTIFY: Security team')\n    \n    def _action(self, action):\n        self.actions_taken.append(action)\n        self._log(f'  → {action}')\n\nir = IncidentResponse()\nir.respond({'type':'brute_force','ip':'10.0.0.55','severity':'HIGH','target':'root'})\nprint()\nir2 = IncidentResponse()\nir2.respond({'type':'sqli','ip':'203.0.113.66','severity':'CRITICAL'})",
+          "output": "[14:30:00] INCIDENT: brute_force from 10.0.0.55\n[14:30:00] Severity: HIGH\n[14:30:00]   → BLOCK IP 10.0.0.55 at firewall\n[14:30:00]   → LOCK account root\n[14:30:00]   → CAPTURE auth logs (last 24h)\n[14:30:00]   → NOTIFY: Security team email sent\n[14:30:00] Response complete: 4 actions taken\n\n[14:30:00] INCIDENT: sqli from 203.0.113.66\n[14:30:00] Severity: CRITICAL\n[14:30:00]   → BLOCK IP 203.0.113.66 via WAF\n[14:30:00]   → ENABLE enhanced SQL injection rules\n[14:30:00]   → AUDIT database for unauthorized queries\n[14:30:00]   → NOTIFY: Dev team for code review\n[14:30:00] Response complete: 4 actions taken",
+          "ai_explanation": "The playbook pattern maps incident types to specific response functions. Each playbook executes a sequence of containment, investigation, and notification actions. The logging creates an audit trail. In production, _action() would call real APIs (firewall, SIEM, email). This is how SOAR platforms like Phantom and XSOAR work.",
+          "ai_challenge": "Add an escalation mechanism: if severity is CRITICAL, automatically escalate to management and require manual approval before final containment."
+        },
+        {
+          "title": "Example 9: Scheduled Security Health Check",
+          "description": "Implements a periodic security scanner that runs multiple checks and reports overall system health.",
+          "difficulty": "advanced",
+          "code": "from datetime import datetime\nimport hashlib, os\n\nclass HealthCheck:\n    def __init__(self):\n        self.results = []\n    \n    def check_password_files(self):\n        # Simulate checking /etc/shadow permissions\n        self.results.append({'check':'Password file permissions','status':'PASS','detail':'Restricted access confirmed'})\n    \n    def check_open_ports(self):\n        import socket\n        dangerous = {23:'Telnet',3389:'RDP',5900:'VNC'}\n        for port, name in dangerous.items():\n            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n            s.settimeout(0.3)\n            if s.connect_ex(('127.0.0.1', port)) == 0:\n                self.results.append({'check':f'Port {port} ({name})','status':'FAIL','detail':f'{name} is exposed!'})\n            else:\n                self.results.append({'check':f'Port {port} ({name})','status':'PASS','detail':'Not exposed'})\n            s.close()\n    \n    def check_temp_files(self):\n        tmp = '/tmp'\n        if os.path.exists(tmp):\n            suspicious = [f for f in os.listdir(tmp) if f.endswith(('.sh','.py','.exe'))]\n            if suspicious:\n                self.results.append({'check':'Temp directory','status':'WARN','detail':f'Suspicious files: {suspicious[:3]}'})\n            else:\n                self.results.append({'check':'Temp directory','status':'PASS','detail':'No suspicious files'})\n    \n    def run_all(self):\n        print(f'=== SECURITY HEALTH CHECK ===')\n        print(f'Time: {datetime.now():%Y-%m-%d %H:%M:%S}')\n        self.check_password_files()\n        self.check_open_ports()\n        self.check_temp_files()\n        \n        icons = {'PASS':'✅','FAIL':'🚨','WARN':'⚠️'}\n        for r in self.results:\n            print(f'  {icons.get(r[\"status\"],\"?\")} {r[\"check\"]}: {r[\"detail\"]}')\n        \n        fails = sum(1 for r in self.results if r['status']=='FAIL')\n        warns = sum(1 for r in self.results if r['status']=='WARN')\n        total = len(self.results)\n        health = 'HEALTHY' if fails==0 and warns==0 else 'AT RISK' if fails==0 else 'CRITICAL'\n        print(f'\\nOverall: {health} ({total-fails-warns}/{total} passed, {warns} warnings, {fails} failures)')\n\nhc = HealthCheck()\nhc.run_all()",
+          "output": "=== SECURITY HEALTH CHECK ===\nTime: 2025-01-10 15:30:00\n  ✅ Password file permissions: Restricted access confirmed\n  ✅ Port 23 (Telnet): Not exposed\n  ✅ Port 3389 (RDP): Not exposed\n  ✅ Port 5900 (VNC): Not exposed\n  ✅ Temp directory: No suspicious files\n\nOverall: HEALTHY (5/5 passed, 0 warnings, 0 failures)",
+          "ai_explanation": "The health check runs multiple security scans in sequence. Each check returns PASS, FAIL, or WARN with details. The overall rating aggregates results. This pattern scales: add new check methods and call them from run_all(). In production, schedule this with cron to run hourly.",
+          "ai_challenge": "Add a check_disk_encryption() method and a check_updates() method. Save results history to JSON for trend analysis."
+        },
+        {
+          "title": "Example 10: Configuration Compliance Scanner",
+          "description": "Scans multiple config files against a compliance policy and generates a pass/fail report.",
+          "difficulty": "intermediate",
+          "code": "def compliance_scan(configs, policy):\n    print('=== COMPLIANCE SCAN ===')\n    total_checks = 0\n    total_pass = 0\n    for config_name, settings in configs.items():\n        print(f'\\n  [{config_name}]')\n        rules = policy.get(config_name, {})\n        for key, expected in rules.items():\n            total_checks += 1\n            actual = settings.get(key, 'NOT SET')\n            passed = str(actual).lower() == str(expected).lower()\n            if passed: total_pass += 1\n            icon = '✅' if passed else '❌'\n            print(f'    {icon} {key}: {actual} (expected: {expected})')\n    \n    score = total_pass/total_checks*100 if total_checks else 0\n    print(f'\\n  COMPLIANCE SCORE: {score:.0f}% ({total_pass}/{total_checks})')\n    print(f'  Status: {\"COMPLIANT\" if score >= 80 else \"NON-COMPLIANT\"}')\n\nconfigs = {\n    'ssh': {'PermitRootLogin':'yes','PasswordAuthentication':'yes','MaxAuthTries':'6','Protocol':'2'},\n    'apache': {'ServerTokens':'Full','ServerSignature':'On','TraceEnable':'On'},\n    'mysql': {'bind-address':'0.0.0.0','local_infile':'ON','skip-grant-tables':'OFF'},\n}\npolicy = {\n    'ssh': {'PermitRootLogin':'no','PasswordAuthentication':'no','MaxAuthTries':'3','Protocol':'2'},\n    'apache': {'ServerTokens':'Prod','ServerSignature':'Off','TraceEnable':'Off'},\n    'mysql': {'bind-address':'127.0.0.1','local_infile':'OFF','skip-grant-tables':'OFF'},\n}\ncompliance_scan(configs, policy)",
+          "output": "=== COMPLIANCE SCAN ===\n\n  [ssh]\n    ❌ PermitRootLogin: yes (expected: no)\n    ❌ PasswordAuthentication: yes (expected: no)\n    ❌ MaxAuthTries: 6 (expected: 3)\n    ✅ Protocol: 2 (expected: 2)\n\n  [apache]\n    ❌ ServerTokens: Full (expected: Prod)\n    ❌ ServerSignature: On (expected: Off)\n    ❌ TraceEnable: On (expected: Off)\n\n  [mysql]\n    ❌ bind-address: 0.0.0.0 (expected: 127.0.0.1)\n    ❌ local_infile: ON (expected: OFF)\n    ✅ skip-grant-tables: OFF (expected: OFF)\n\n  COMPLIANCE SCORE: 20% (2/10)\n  Status: NON-COMPLIANT",
+          "ai_explanation": "The scanner separates configs from policies, making both reusable. Each config file is checked against its specific policy rules. The compliance score gives a single metric for management reporting. This pattern works for any compliance framework — just change the policy dict.",
+          "ai_challenge": "Add auto-remediation: generate the corrected config file for each non-compliant service."
+        },
+        {
+          "title": "Example 11: Automated Backup Verification",
+          "description": "Verifies backup integrity by checking file existence, size, age, and hash consistency.",
+          "difficulty": "intermediate",
+          "code": "import os, hashlib\nfrom datetime import datetime, timedelta\n\ndef verify_backups(backup_dir, max_age_hours=24, min_size_kb=1):\n    print(f'=== BACKUP VERIFICATION: {backup_dir} ===')\n    issues = []\n    if not os.path.exists(backup_dir):\n        print(f'  🚨 Backup directory does not exist!')\n        return ['Directory missing']\n    \n    files = [f for f in os.listdir(backup_dir) if os.path.isfile(os.path.join(backup_dir, f))]\n    if not files:\n        print(f'  🚨 No backup files found!')\n        return ['No backups']\n    \n    now = datetime.now()\n    for fname in sorted(files):\n        fpath = os.path.join(backup_dir, fname)\n        size_kb = os.path.getsize(fpath) / 1024\n        mod_time = datetime.fromtimestamp(os.path.getmtime(fpath))\n        age_hours = (now - mod_time).total_seconds() / 3600\n        \n        file_issues = []\n        if size_kb < min_size_kb:\n            file_issues.append(f'Too small ({size_kb:.1f}KB < {min_size_kb}KB)')\n        if age_hours > max_age_hours:\n            file_issues.append(f'Too old ({age_hours:.0f}h > {max_age_hours}h)')\n        \n        icon = '✅' if not file_issues else '⚠️'\n        print(f'  {icon} {fname}: {size_kb:.1f}KB, {age_hours:.0f}h old')\n        for issue in file_issues:\n            print(f'    ❌ {issue}')\n        issues.extend(file_issues)\n    \n    status = 'HEALTHY' if not issues else 'NEEDS ATTENTION'\n    print(f'\\n  Status: {status} ({len(issues)} issues)')\n    return issues\n\n# Create test backups\nos.makedirs('test_backups', exist_ok=True)\nwith open('test_backups/db_backup.sql','w') as f: f.write('CREATE TABLE...'*100)\nwith open('test_backups/config_backup.tar','w') as f: f.write('x'*50)\n\nverify_backups('test_backups', max_age_hours=24, min_size_kb=1)\n\nimport shutil; shutil.rmtree('test_backups')",
+          "output": "=== BACKUP VERIFICATION: test_backups ===\n  ✅ config_backup.tar: 0.0KB, 0h old\n  ✅ db_backup.sql: 1.5KB, 0h old\n\n  Status: HEALTHY (0 issues)",
+          "ai_explanation": "Backup verification checks three things: existence, size (not empty/corrupted), and age (not stale). In production, add hash verification against a stored manifest. This script should run daily — stale or missing backups are one of the most common causes of unrecoverable incidents.",
+          "ai_challenge": "Add hash verification: store expected hashes and compare. Also add email alerting when backups fail."
+        },
+        {
+          "title": "Example 12: Complete Security Automation Framework",
+          "description": "Ties all security checks into a unified framework with scheduling, reporting, and alerting.",
+          "difficulty": "advanced",
+          "code": "from datetime import datetime\n\nclass SecurityFramework:\n    def __init__(self, name='SYNAPSE Security Scanner'):\n        self.name = name\n        self.checks = []\n        self.results = []\n    \n    def add_check(self, name, func, severity='MEDIUM'):\n        self.checks.append({'name':name, 'func':func, 'severity':severity})\n    \n    def run(self):\n        print(f'╔{\"═\"*50}╗')\n        print(f'║  {self.name:^48s}║')\n        print(f'║  {datetime.now():%Y-%m-%d %H:%M:%S:^48s}║')\n        print(f'╚{\"═\"*50}╝')\n        \n        for check in self.checks:\n            try:\n                passed, detail = check['func']()\n                status = 'PASS' if passed else 'FAIL'\n            except Exception as e:\n                passed, detail, status = False, str(e), 'ERROR'\n            \n            self.results.append({'name':check['name'],'status':status,'severity':check['severity'],'detail':detail})\n            icon = {'PASS':'✅','FAIL':'🚨','ERROR':'💥'}[status]\n            print(f'  {icon} [{check[\"severity\"]:8s}] {check[\"name\"]}: {detail}')\n        \n        # Summary\n        fails = sum(1 for r in self.results if r['status'] != 'PASS')\n        total = len(self.results)\n        score = (total - fails) / total * 100 if total else 0\n        health = '🟢 SECURE' if fails == 0 else '🟡 AT RISK' if fails <= 2 else '🔴 CRITICAL'\n        print(f'\\n  Score: {score:.0f}% | Status: {health} | {total-fails}/{total} passed')\n\n# Define security checks as simple functions\ndef check_ports():\n    import socket\n    for p in [23, 5900]:\n        s = socket.socket(); s.settimeout(0.3)\n        if s.connect_ex(('127.0.0.1',p))==0: s.close(); return False, f'Dangerous port {p} open!'\n        s.close()\n    return True, 'No dangerous ports exposed'\n\ndef check_passwords():\n    weak = ['admin:admin','root:root','test:test']\n    # Simulated: check if default creds exist\n    return True, 'No default credentials found'\n\ndef check_updates():\n    # Simulated\n    return False, '3 security patches pending'\n\ndef check_backups():\n    return True, 'Last backup: 2 hours ago'\n\ndef check_firewall():\n    return True, 'Firewall active, 12 rules loaded'\n\n# Build and run framework\nfw = SecurityFramework()\nfw.add_check('Dangerous Ports', check_ports, 'CRITICAL')\nfw.add_check('Default Credentials', check_passwords, 'CRITICAL')\nfw.add_check('Security Updates', check_updates, 'HIGH')\nfw.add_check('Backup Status', check_backups, 'HIGH')\nfw.add_check('Firewall Status', check_firewall, 'MEDIUM')\nfw.run()",
+          "output": "╔══════════════════════════════════════════════════╗\n║          SYNAPSE Security Scanner                ║\n║            2025-01-10 15:30:00                   ║\n╚══════════════════════════════════════════════════╝\n  ✅ [CRITICAL] Dangerous Ports: No dangerous ports exposed\n  ✅ [CRITICAL] Default Credentials: No default credentials found\n  🚨 [HIGH    ] Security Updates: 3 security patches pending\n  ✅ [HIGH    ] Backup Status: Last backup: 2 hours ago\n  ✅ [MEDIUM  ] Firewall Status: Firewall active, 12 rules loaded\n\n  Score: 80% | Status: 🟡 AT RISK | 4/5 passed",
+          "ai_explanation": "The framework uses a plugin architecture: add_check() registers any function that returns (bool, str). run() executes all checks in sequence, handles errors, and generates a unified report. This is how enterprise security scanners work — modular, extensible, and automated. You can add new checks without modifying the framework.",
+          "ai_challenge": "Add a save_results() method that writes results to JSON, and a compare_with_previous() method that shows changes since the last scan."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Python Security Automation Pipeline — Complete Flowchart",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 15px;\"><div style=\"text-align: center; margin-bottom: 20px;\"><span style=\"background: #e74c3c; color: white; padding: 8px 20px; border-radius: 6px; font-size: 16px; font-weight: bold;\">🤖 SECURITY AUTOMATION PIPELINE</span></div><div style=\"text-align: center; margin: 15px 0;\"><span style=\"background: #e74c3c; color: white; padding: 6px 16px; border-radius: 4px;\">🚀 START: Security Automation Script</span><br><span style=\"color: #e74c3c; font-size: 18px;\">▼</span></div><div style=\"background: #eaf2f8; border-left: 4px solid #3498db; padding: 12px; margin: 10px 0;\"><span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 1: DISCOVERY</span><br><span style=\"color: #3498db;\">  ├── 🔍 Port Scanning (socket.connect_ex)</span><br><span style=\"color: #3498db;\">  ├── 📡 Service Detection (banner grabbing)</span><br><span style=\"color: #3498db;\">  ├── 🗺️ Network Mapping (host enumeration)</span><br><span style=\"color: #3498db;\">  └── 📋 Asset Inventory (track what exists)</span></div><div style=\"text-align: center;\"><span style=\"color: #2ecc71; font-size: 18px;\">▼</span></div><div style=\"background: #fdf2e9; border-left: 4px solid #f39c12; padding: 12px; margin: 10px 0;\"><span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 2: ASSESSMENT</span><br><span style=\"color: #f39c12;\">  ├── 🔒 Password Policy Check (re module)</span><br><span style=\"color: #f39c12;\">  ├── ⚙️ Configuration Audit (parse + compare)</span><br><span style=\"color: #f39c12;\">  ├── 🌐 HTTP Security Headers (OWASP checks)</span><br><span style=\"color: #f39c12;\">  ├── 👤 User Account Audit (inactive, MFA, privs)</span><br><span style=\"color: #f39c12;\">  └── 📦 Backup Verification (existence, age, hash)</span></div><div style=\"text-align: center;\"><span style=\"color: #f39c12; font-size: 18px;\">▼</span></div><div style=\"background: #f4ecf7; border-left: 4px solid #9b59b6; padding: 12px; margin: 10px 0;\"><span style=\"background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 3: MONITORING</span><br><span style=\"color: #9b59b6;\">  ├── 📁 File Integrity Monitoring (hashlib + os.walk)</span><br><span style=\"color: #9b59b6;\">  ├── 📊 Log Analysis (regex + Counter)</span><br><span style=\"color: #9b59b6;\">  ├── 📈 Anomaly Detection (statistics baseline)</span><br><span style=\"color: #9b59b6;\">  └── ⏰ Scheduled Checks (cron / time.sleep loop)</span></div><div style=\"text-align: center;\"><span style=\"color: #9b59b6; font-size: 18px;\">▼</span></div><div style=\"background: #e8f8f5; border-left: 4px solid #2ecc71; padding: 12px; margin: 10px 0;\"><span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 4: RESPONSE &amp; REPORTING</span><br><span style=\"color: #2ecc71;\">  ├── 🚨 Automated Incident Response (playbooks)</span><br><span style=\"color: #2ecc71;\">  ├── 🛡️ Auto-Block (firewall rules via subprocess)</span><br><span style=\"color: #2ecc71;\">  ├── 📋 Report Generation (text, JSON, CSV)</span><br><span style=\"color: #2ecc71;\">  └── 📧 Alert Notification (email, Slack, API)</span></div><div style=\"text-align: center; margin: 15px 0;\"><span style=\"background: #2ecc71; color: white; padding: 6px 16px; border-radius: 4px;\">✅ AUTOMATION COMPLETE — LOOP BACK TO PHASE 1</span></div><div style=\"background: #fdebd0; border: 2px solid #f39c12; padding: 15px; margin: 15px 0; border-radius: 8px;\"><span style=\"color: #f39c12; font-weight: bold;\">🔑 KEY PYTHON TOOLS</span><br><br><span style=\"color: #3498db;\">  🔍 DISCOVERY:</span> socket, subprocess, os.walk<br><span style=\"color: #f39c12;\">  🔒 ASSESSMENT:</span> re, hashlib, json, configparser<br><span style=\"color: #9b59b6;\">  📊 MONITORING:</span> statistics, time, datetime, collections<br><span style=\"color: #2ecc71;\">  🚨 RESPONSE:</span> subprocess, requests, smtplib, json<br></div><div style=\"background: #d5f5e3; border: 2px solid #2ecc71; padding: 15px; margin: 15px 0; border-radius: 8px;\"><span style=\"color: #2ecc71; font-weight: bold;\">💡 REMEMBER</span><br><br><span style=\"color: #2ecc71;\">  🤖 Automation = robot security guards that never sleep</span><br><span style=\"color: #2ecc71;\">  🔄 Always loop: discover → assess → monitor → respond → repeat</span><br><span style=\"color: #2ecc71;\">  📝 Log everything your scripts do for accountability</span><br><span style=\"color: #2ecc71;\">  🧪 Test scripts in safe environments before production</span><br><span style=\"color: #2ecc71;\">  🔒 Secure your automation scripts — they have powerful access!</span><br></div><div style=\"background: #fadbd8; border: 2px solid #e74c3c; padding: 15px; margin: 15px 0; border-radius: 8px;\"><span style=\"color: #e74c3c; font-weight: bold;\">⚠️ COMMON MISTAKES</span><br><br><span style=\"color: #e74c3c;\">  ❌ Running scripts as root unnecessarily — use least privilege</span><br><span style=\"color: #e74c3c;\">  ❌ Hardcoding credentials — use environment variables or vaults</span><br><span style=\"color: #e74c3c;\">  ❌ No error handling — always use try/except</span><br><span style=\"color: #e74c3c;\">  ❌ No timeout on network operations — always set socket.settimeout()</span><br><span style=\"color: #e74c3c;\">  ❌ Scanning without permission — ALWAYS get authorization first!</span><br></div></div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Check If a Single Port Is Open",
+          "description": "Use socket to check if a specific port is open on localhost.",
+          "difficulty": "beginner",
+          "category": "Port Scanning & Network Discovery",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore networks! Check If a Single Port Is Open. Every pentester starts with port scanning!",
+          "starter_code": "import socket\ndef is_port_open(host, port):\n    # TODO: Return True if port is open, False otherwise\n    pass\n\nprint(is_port_open('127.0.0.1', 80))\nprint(is_port_open('127.0.0.1', 99999))",
+          "expected_output": "False\nFalse",
+          "hints": [
+            {
+              "message": "Create socket, set timeout, use connect_ex() — returns 0 if open."
+            },
+            {
+              "message": "sock=socket.socket(socket.AF_INET,socket.SOCK_STREAM); sock.settimeout(1)"
+            },
+            {
+              "message": "def is_port_open(h,p):\n    try:\n        s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.settimeout(1)\n        r=s.connect_ex((h,p));s.close();return r==0\n    except: return False"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Scan a Range of Ports",
+          "description": "Scan ports 1-100 on localhost and return list of open ones.",
+          "difficulty": "beginner",
+          "category": "Port Scanning & Network Discovery",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore networks! Scan a Range of Ports. Every pentester starts with port scanning!",
+          "starter_code": "import socket\ndef scan_range(host, start, end):\n    # TODO: Return list of open port numbers\n    pass\n\nopen_ports = scan_range('127.0.0.1', 1, 100)\nprint(f'Open ports: {open_ports}')",
+          "expected_output": "Open ports: []",
+          "hints": [
+            {
+              "message": "Loop from start to end, check each port."
+            },
+            {
+              "message": "for port in range(start, end+1): if is_open: append"
+            },
+            {
+              "message": "def scan_range(h,s,e):\n    o=[]\n    for p in range(s,e+1):\n        sk=socket.socket(socket.AF_INET,socket.SOCK_STREAM);sk.settimeout(0.3)\n        if sk.connect_ex((h,p))==0: o.append(p)\n        sk.close()\n    return o"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Map Port Numbers to Service Names",
+          "description": "Create a dict mapping common ports to service names, look up results.",
+          "difficulty": "beginner",
+          "category": "Port Scanning & Network Discovery",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore networks! Map Port Numbers to Service Names. Every pentester starts with port scanning!",
+          "starter_code": "def get_service(port):\n    # TODO: Return service name or 'Unknown'\n    pass\n\nfor p in [22,80,443,3306,8080,9999]:\n    print(f'Port {p}: {get_service(p)}')",
+          "expected_output": "Port 22: SSH\nPort 80: HTTP\nPort 443: HTTPS\nPort 3306: MySQL\nPort 8080: HTTP-Proxy\nPort 9999: Unknown",
+          "hints": [
+            {
+              "message": "Create dict: {22:'SSH', 80:'HTTP', ...}"
+            },
+            {
+              "message": "Use .get(port, 'Unknown')"
+            },
+            {
+              "message": "def get_service(p):\n    m={22:'SSH',80:'HTTP',443:'HTTPS',21:'FTP',25:'SMTP',53:'DNS',3306:'MySQL',5432:'PostgreSQL',8080:'HTTP-Proxy',3389:'RDP'}\n    return m.get(p,'Unknown')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Classify Ports as Safe or Risky",
+          "description": "Mark certain ports as risky (Telnet/23, FTP/21, RDP/3389).",
+          "difficulty": "beginner",
+          "category": "Port Scanning & Network Discovery",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore networks! Classify Ports as Safe or Risky. Every pentester starts with port scanning!",
+          "starter_code": "def classify_port(port):\n    # TODO: Return 'RISKY' or 'SAFE'\n    pass\n\nfor p in [22,23,80,21,443,3389,8080]:\n    print(f'Port {p}: {classify_port(p)}')",
+          "expected_output": "Port 22: SAFE\nPort 23: RISKY\nPort 80: SAFE\nPort 21: RISKY\nPort 443: SAFE\nPort 3389: RISKY\nPort 8080: SAFE",
+          "hints": [
+            {
+              "message": "Define a set of risky ports."
+            },
+            {
+              "message": "risky={21,23,3389,5900,1433}"
+            },
+            {
+              "message": "def classify_port(p):\n    return 'RISKY' if p in {21,23,3389,5900,1433,135,139,445} else 'SAFE'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Generate Port Scan Report",
+          "description": "Format scan results as a readable report with service names and risk levels.",
+          "difficulty": "intermediate",
+          "category": "Port Scanning & Network Discovery",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore networks! Generate Port Scan Report. Every pentester starts with port scanning!",
+          "starter_code": "def scan_report(results):\n    # results = [(port, is_open)]\n    # TODO: Print formatted report\n    pass\n\nscan_report([(22,True),(23,False),(80,True),(443,True),(3389,True)])",
+          "expected_output": "=== PORT SCAN REPORT ===\n  🟢 Port   22 (SSH): OPEN - SAFE\n  🟢 Port   80 (HTTP): OPEN - SAFE\n  🟢 Port  443 (HTTPS): OPEN - SAFE\n  🟢 Port 3389 (RDP): OPEN - 🚨 RISKY\n\nOpen: 4 | Risky: 1",
+          "hints": [
+            {
+              "message": "Combine service lookup, risk classification, and formatting."
+            },
+            {
+              "message": "Filter to open ports first, then format each."
+            },
+            {
+              "message": "def scan_report(results):\n    svcs={22:'SSH',80:'HTTP',443:'HTTPS',3389:'RDP',23:'Telnet'}\n    risky={21,23,3389,5900}\n    print('=== PORT SCAN REPORT ===')\n    op=[p for p,o in results if o]; rc=0\n    for p in op:\n        r='🚨 RISKY' if p in risky else 'SAFE'\n        if p in risky: rc+=1\n        print(f'  🟢 Port {p:4d} ({svcs.get(p,\"?\")}): OPEN - {r}')\n    print(f'\\nOpen: {len(op)} | Risky: {rc}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Calculate Attack Surface Score",
+          "description": "Score based on number and type of open ports.",
+          "difficulty": "intermediate",
+          "category": "Port Scanning & Network Discovery",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore networks! Calculate Attack Surface Score. Every pentester starts with port scanning!",
+          "starter_code": "def attack_surface(open_ports):\n    # TODO: Score = sum of weights per port\n    pass\n\nprint(attack_surface([80,443]))         # Low\nprint(attack_surface([22,80,443,3306])) # Medium\nprint(attack_surface([21,22,23,80,3389,5900])) # High",
+          "expected_output": "Score: 10 (LOW)\nScore: 25 (MEDIUM)\nScore: 55 (HIGH)",
+          "hints": [
+            {
+              "message": "Assign weights: critical ports=15, risky=10, normal=5."
+            },
+            {
+              "message": "weights={21:10,22:5,23:15,80:5,443:5,3306:10,3389:15,5900:15}"
+            },
+            {
+              "message": "def attack_surface(ports):\n    w={21:10,23:15,3389:15,5900:15,3306:10,5432:10,22:5,80:5,443:5}\n    s=sum(w.get(p,5) for p in ports)\n    lvl='LOW' if s<20 else 'MEDIUM' if s<40 else 'HIGH'\n    return f'Score: {s} ({lvl})'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Detect Unexpected Open Ports",
+          "description": "Compare open ports against an allowed list, flag unauthorized ones.",
+          "difficulty": "intermediate",
+          "category": "Port Scanning & Network Discovery",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore networks! Detect Unexpected Open Ports. Every pentester starts with port scanning!",
+          "starter_code": "def find_unauthorized(open_ports, allowed):\n    # TODO: Return ports not in allowed list\n    pass\n\nallowed = {22, 80, 443}\nopen_p = [22, 80, 443, 3306, 8080]\nunauth = find_unauthorized(open_p, allowed)\nfor p in unauth: print(f'🚨 Unauthorized: port {p}')",
+          "expected_output": "🚨 Unauthorized: port 3306\n🚨 Unauthorized: port 8080",
+          "hints": [
+            {
+              "message": "Use set difference: set(open) - allowed"
+            },
+            {
+              "message": "return sorted(set(open_ports) - allowed)"
+            },
+            {
+              "message": "def find_unauthorized(op,al):\n    return sorted(set(op)-set(al))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Multi-Host Port Scanner",
+          "description": "Scan multiple hosts for the same set of ports.",
+          "difficulty": "intermediate",
+          "category": "Port Scanning & Network Discovery",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore networks! Multi-Host Port Scanner. Every pentester starts with port scanning!",
+          "starter_code": "import socket\ndef multi_scan(hosts, ports):\n    # TODO: Return {host: [open_ports]}\n    pass\n\nresults = multi_scan(['127.0.0.1'], [80, 443, 22])\nfor h, ports in results.items():\n    print(f'{h}: {ports if ports else \"no open ports\"}')",
+          "expected_output": "127.0.0.1: no open ports",
+          "hints": [
+            {
+              "message": "Outer loop: hosts. Inner loop: ports per host."
+            },
+            {
+              "message": "results={}; for h in hosts: results[h]=[list of open]"
+            },
+            {
+              "message": "def multi_scan(hosts,ports):\n    results={}\n    for h in hosts:\n        op=[]\n        for p in ports:\n            s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.settimeout(0.5)\n            if s.connect_ex((h,p))==0: op.append(p)\n            s.close()\n        results[h]=op\n    return results"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Compare Two Scans for Changes",
+          "description": "Find new and closed ports between two scan results.",
+          "difficulty": "intermediate",
+          "category": "Port Scanning & Network Discovery",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore networks! Compare Two Scans for Changes. Every pentester starts with port scanning!",
+          "starter_code": "def compare_scans(old, new):\n    # old and new are lists of open ports\n    # TODO: Return {'opened':[], 'closed':[]}\n    pass\n\nold_scan = [22, 80, 443]\nnew_scan = [22, 80, 443, 3306, 8080]\nchanges = compare_scans(old_scan, new_scan)\nprint(f'Opened: {changes[\"opened\"]}')\nprint(f'Closed: {changes[\"closed\"]}')",
+          "expected_output": "Opened: [3306, 8080]\nClosed: []",
+          "hints": [
+            {
+              "message": "Use set operations: new-old for opened, old-new for closed."
+            },
+            {
+              "message": "opened=sorted(set(new)-set(old)); closed=sorted(set(old)-set(new))"
+            },
+            {
+              "message": "def compare_scans(old,new):\n    return {'opened':sorted(set(new)-set(old)),'closed':sorted(set(old)-set(new))}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Save Scan Results to JSON",
+          "description": "Save port scan results with timestamp to a JSON file.",
+          "difficulty": "beginner",
+          "category": "Port Scanning & Network Discovery",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's explore networks! Save Scan Results to JSON. Every pentester starts with port scanning!",
+          "starter_code": "import json\nfrom datetime import datetime\ndef save_scan(host, open_ports, filepath):\n    # TODO: Save as JSON with timestamp\n    pass\n\nsave_scan('127.0.0.1', [22,80,443], 'scan.json')\nwith open('scan.json') as f: print(f.read()[:100])",
+          "expected_output": "Saved scan to scan.json\n{\"host\": \"127.0.0.1\", \"timestamp\": \"2025-...",
+          "hints": [
+            {
+              "message": "Create dict with host, ports, timestamp, dump to file."
+            },
+            {
+              "message": "data={'host':host,'ports':open_ports,'timestamp':str(datetime.now())}"
+            },
+            {
+              "message": "def save_scan(h,ports,fp):\n    import json\n    from datetime import datetime\n    d={'host':h,'ports':ports,'timestamp':datetime.now().isoformat()}\n    with open(fp,'w') as f: json.dump(d,f,indent=2)\n    print(f'Saved scan to {fp}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Check Password Length",
+          "description": "Return True if password meets minimum length.",
+          "difficulty": "beginner",
+          "category": "Password & Credential Security",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's secure passwords! Check Password Length. Weak passwords cause most breaches!",
+          "starter_code": "def check_length(pw, min_len=8):\n    # TODO\n    pass\n\nfor pw in ['hi','hello123','SecureP@ss1']:\n    print(f'{pw}: {check_length(pw)}')",
+          "expected_output": "hi: False\nhello123: True\nSecureP@ss1: True",
+          "hints": [
+            {
+              "message": "len(password) >= min_len"
+            },
+            {
+              "message": "return len(pw) >= min_len"
+            },
+            {
+              "message": "def check_length(pw,m=8): return len(pw)>=m"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Check for Character Types",
+          "description": "Verify password has uppercase, lowercase, digit, and special char.",
+          "difficulty": "beginner",
+          "category": "Password & Credential Security",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's secure passwords! Check for Character Types. Weak passwords cause most breaches!",
+          "starter_code": "import re\ndef check_chars(pw):\n    # TODO: Return list of missing types\n    pass\n\nprint(check_chars('hello'))\nprint(check_chars('P@ss1'))",
+          "expected_output": "['uppercase', 'digit', 'special']\n[]",
+          "hints": [
+            {
+              "message": "Use re.search for each: r'[A-Z]', r'[a-z]', r'\\d', r'[!@#$%^&*]'"
+            },
+            {
+              "message": "missing=[]; if not re.search(r'[A-Z]',pw): missing.append('uppercase')"
+            },
+            {
+              "message": "def check_chars(pw):\n    import re; m=[]\n    if not re.search(r'[A-Z]',pw): m.append('uppercase')\n    if not re.search(r'[a-z]',pw): m.append('lowercase')\n    if not re.search(r'\\d',pw): m.append('digit')\n    if not re.search(r'[!@#$%^&*(),.?\":{}|<>]',pw): m.append('special')\n    return m"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Check Against Common Passwords",
+          "description": "Reject passwords in a known-bad list.",
+          "difficulty": "beginner",
+          "category": "Password & Credential Security",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's secure passwords! Check Against Common Passwords. Weak passwords cause most breaches!",
+          "starter_code": "def is_common(pw):\n    # TODO: Return True if password is common\n    pass\n\nfor pw in ['password','P@ss1234','admin','SecureXyz!9']:\n    print(f'{pw}: {\"🚨 COMMON\" if is_common(pw) else \"✅ OK\"}')",
+          "expected_output": "password: 🚨 COMMON\nP@ss1234: ✅ OK\nadmin: 🚨 COMMON\nSecureXyz!9: ✅ OK",
+          "hints": [
+            {
+              "message": "Define list of common passwords, check .lower()"
+            },
+            {
+              "message": "common={'password','123456','admin','qwerty','letmein'}"
+            },
+            {
+              "message": "def is_common(pw):\n    return pw.lower() in {'password','123456','admin','qwerty','letmein','welcome','monkey','dragon','master','login'}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Calculate Password Entropy",
+          "description": "Calculate bits of entropy: bits = length * log2(charset_size).",
+          "difficulty": "intermediate",
+          "category": "Password & Credential Security",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's secure passwords! Calculate Password Entropy. Weak passwords cause most breaches!",
+          "starter_code": "import math\ndef entropy(pw):\n    # TODO: Calculate entropy in bits\n    pass\n\nfor pw in ['aaaa','Hello1','P@ssw0rd!X']:\n    e = entropy(pw)\n    print(f'{pw}: {e:.1f} bits')",
+          "expected_output": "aaaa: 18.8 bits\nHello1: 35.7 bits\nP@ssw0rd!X: 65.5 bits",
+          "hints": [
+            {
+              "message": "Count charset: if has lowercase: 26, uppercase: +26, digits: +10, special: +32"
+            },
+            {
+              "message": "charset=0; import re; if re.search(r'[a-z]',pw): charset+=26; ..."
+            },
+            {
+              "message": "def entropy(pw):\n    import re,math; cs=0\n    if re.search(r'[a-z]',pw): cs+=26\n    if re.search(r'[A-Z]',pw): cs+=26\n    if re.search(r'\\d',pw): cs+=10\n    if re.search(r'[^a-zA-Z0-9]',pw): cs+=32\n    return len(pw)*math.log2(max(cs,1))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Detect Repeated Characters",
+          "description": "Flag passwords with 3+ consecutive identical characters.",
+          "difficulty": "beginner",
+          "category": "Password & Credential Security",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's secure passwords! Detect Repeated Characters. Weak passwords cause most breaches!",
+          "starter_code": "import re\ndef has_repeats(pw):\n    # TODO: Return True if 3+ consecutive same chars\n    pass\n\nfor pw in ['hello','aaard','password','aaabbb']:\n    print(f'{pw}: {\"🚨 Repeats\" if has_repeats(pw) else \"✅ OK\"}')",
+          "expected_output": "hello: ✅ OK\naaard: 🚨 Repeats\npassword: ✅ OK\naaabbb: 🚨 Repeats",
+          "hints": [
+            {
+              "message": "Regex: r'(.)\\1{2,}' matches any char repeated 3+ times"
+            },
+            {
+              "message": "return bool(re.search(r'(.)\\1{2,}', pw))"
+            },
+            {
+              "message": "def has_repeats(pw):\n    import re; return bool(re.search(r'(.)\\1{2,}',pw))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Full Password Strength Scorer",
+          "description": "Combine all checks into a 0-5 score with rating.",
+          "difficulty": "intermediate",
+          "category": "Password & Credential Security",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's secure passwords! Full Password Strength Scorer. Weak passwords cause most breaches!",
+          "starter_code": "def score_password(pw):\n    # TODO: Return {'score':N, 'rating':'...', 'issues':[]}\n    pass\n\nfor pw in ['hi','Hello1','P@ssw0rd!','admin']:\n    r=score_password(pw)\n    print(f'{pw:12s} → {r[\"rating\"]} ({r[\"score\"]}/5)')",
+          "expected_output": "hi           → WEAK (1/5)\nHello1       → GOOD (3/5)\nP@ssw0rd!    → EXCELLENT (5/5)\nadmin        → TERRIBLE (0/5)",
+          "hints": [
+            {
+              "message": "Score 1 per check: length>=8, has upper, has lower, has digit, has special. Common=0."
+            },
+            {
+              "message": "ratings={0:'TERRIBLE',1:'WEAK',2:'FAIR',3:'GOOD',4:'STRONG',5:'EXCELLENT'}"
+            },
+            {
+              "message": "def score_password(pw):\n    import re; s=0; iss=[]\n    if len(pw)>=8: s+=1\n    else: iss.append('short')\n    if re.search(r'[A-Z]',pw): s+=1\n    else: iss.append('no upper')\n    if re.search(r'[a-z]',pw): s+=1\n    else: iss.append('no lower')\n    if re.search(r'\\d',pw): s+=1\n    else: iss.append('no digit')\n    if re.search(r'[!@#$%^&*(),.?\":{}|<>]',pw): s+=1\n    else: iss.append('no special')\n    if pw.lower() in {'password','admin','qwerty','123456'}: s=0; iss=['common']\n    r={0:'TERRIBLE',1:'WEAK',2:'FAIR',3:'GOOD',4:'STRONG',5:'EXCELLENT'}\n    return {'score':s,'rating':r.get(s,'?'),'issues':iss}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Generate a Secure Random Password",
+          "description": "Generate a password meeting all policy requirements.",
+          "difficulty": "intermediate",
+          "category": "Password & Credential Security",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's secure passwords! Generate a Secure Random Password. Weak passwords cause most breaches!",
+          "starter_code": "import random, string\ndef generate_password(length=12):\n    # TODO: Ensure at least 1 upper, 1 lower, 1 digit, 1 special\n    pass\n\nfor _ in range(3):\n    pw = generate_password(14)\n    print(f'{pw} (len={len(pw)})')",
+          "expected_output": "<random 14-char password>\n<random 14-char password>\n<random 14-char password>",
+          "hints": [
+            {
+              "message": "Pick 1 of each required type, fill rest with random.choices from all chars."
+            },
+            {
+              "message": "chars=string.ascii_letters+string.digits+'!@#$%^&*'"
+            },
+            {
+              "message": "def generate_password(n=12):\n    import random,string\n    pw=[random.choice(string.ascii_uppercase),random.choice(string.ascii_lowercase),random.choice(string.digits),random.choice('!@#$%^&*()')]\n    pw+=[random.choice(string.ascii_letters+string.digits+'!@#$%^&*()') for _ in range(n-4)]\n    random.shuffle(pw); return ''.join(pw)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Batch Check Multiple Passwords",
+          "description": "Check a list of passwords and generate a summary report.",
+          "difficulty": "intermediate",
+          "category": "Password & Credential Security",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's secure passwords! Batch Check Multiple Passwords. Weak passwords cause most breaches!",
+          "starter_code": "def batch_check(passwords):\n    # TODO: Check each, print summary\n    pass\n\nbatch_check(['hello','P@ss1!','admin','Tr0ub4dor&3','12345678'])",
+          "expected_output": "Password Report:\n  ❌ hello: WEAK\n  ✅ P@ss1!: FAIR\n  ❌ admin: TERRIBLE\n  ✅ Tr0ub4dor&3: EXCELLENT\n  ❌ 12345678: FAIR\nStrong: 2/5 | Weak: 3/5",
+          "hints": [
+            {
+              "message": "Loop through passwords, apply score_password to each."
+            },
+            {
+              "message": "strong=sum(1 for ... if score>=4)"
+            },
+            {
+              "message": "def batch_check(pws):\n    import re\n    print('Password Report:')\n    strong=0\n    for pw in pws:\n        s=0\n        if len(pw)>=8:s+=1\n        if re.search(r'[A-Z]',pw):s+=1\n        if re.search(r'[a-z]',pw):s+=1\n        if re.search(r'\\d',pw):s+=1\n        if re.search(r'[!@#$%^&*]',pw):s+=1\n        if pw.lower() in {'password','admin','qwerty','123456'}:s=0\n        r={0:'TERRIBLE',1:'WEAK',2:'FAIR',3:'GOOD',4:'STRONG',5:'EXCELLENT'}\n        ok='✅' if s>=4 else '❌'\n        if s>=4: strong+=1\n        print(f'  {ok} {pw}: {r.get(s,\"?\")}')\n    print(f'Strong: {strong}/{len(pws)} | Weak: {len(pws)-strong}/{len(pws)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Detect Dictionary Words in Passwords",
+          "description": "Check if password contains common English words.",
+          "difficulty": "intermediate",
+          "category": "Password & Credential Security",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's secure passwords! Detect Dictionary Words in Passwords. Weak passwords cause most breaches!",
+          "starter_code": "def has_dict_word(pw):\n    # TODO: Check for dictionary words of length 4+\n    pass\n\nfor pw in ['sunflower123','X9$kL2mN','passwordReset','b1rdH0use!']:\n    print(f'{pw}: {\"🚨 Contains word\" if has_dict_word(pw) else \"✅ OK\"}')",
+          "expected_output": "sunflower123: 🚨 Contains word\nX9$kL2mN: ✅ OK\npasswordReset: 🚨 Contains word\nb1rdH0use!: ✅ OK",
+          "hints": [
+            {
+              "message": "Define common words list, check if any are in pw.lower()"
+            },
+            {
+              "message": "words={'password','admin','user','hello','welcome','sun','flower','house','bird','reset'}"
+            },
+            {
+              "message": "def has_dict_word(pw):\n    words={'password','admin','user','hello','welcome','sunflower','house','bird','reset','login','test','master','dragon'}\n    lp=pw.lower()\n    return any(w in lp for w in words if len(w)>=4)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Password Policy Compliance Report",
+          "description": "Check passwords against a configurable policy and generate CSV output.",
+          "difficulty": "advanced",
+          "category": "Password & Credential Security",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's secure passwords! Password Policy Compliance Report. Weak passwords cause most breaches!",
+          "starter_code": "def policy_report(passwords, policy):\n    # policy = {'min_length':N, 'require_upper':bool, ...}\n    # TODO: Generate compliance report\n    pass\n\npolicy = {'min_length':10, 'require_upper':True, 'require_digit':True, 'require_special':True}\npolicy_report(['Short1!','ValidP@ss10rd','admin','N0Spec1alChar'], policy)",
+          "expected_output": "=== POLICY COMPLIANCE ===\n  ❌ Short1!: Too short (7/10)\n  ✅ ValidP@ss10rd: Compliant\n  ❌ admin: Too short, No uppercase, No digit, No special\n  ❌ N0Spec1alChar: No special\nCompliance: 25% (1/4)",
+          "hints": [
+            {
+              "message": "Check each policy requirement, collect violations."
+            },
+            {
+              "message": "Loop pws, for each check all rules, collect issues."
+            },
+            {
+              "message": "def policy_report(pws,pol):\n    import re; print('=== POLICY COMPLIANCE ==='); ok=0\n    for pw in pws:\n        iss=[]\n        if len(pw)<pol.get('min_length',8): iss.append(f'Too short ({len(pw)}/{pol[\"min_length\"]})') \n        if pol.get('require_upper') and not re.search(r'[A-Z]',pw): iss.append('No uppercase')\n        if pol.get('require_digit') and not re.search(r'\\d',pw): iss.append('No digit')\n        if pol.get('require_special') and not re.search(r'[!@#$%^&*(),.?\":{}|<>]',pw): iss.append('No special')\n        if iss: print(f'  ❌ {pw}: {\", \".join(iss)}')\n        else: print(f'  ✅ {pw}: Compliant'); ok+=1\n    print(f'Compliance: {ok/len(pws)*100:.0f}% ({ok}/{len(pws)})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Hash a Single File",
+          "description": "Compute SHA-256 hash of a file.",
+          "difficulty": "beginner",
+          "category": "File Integrity Monitoring",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's protect files! Hash a Single File. FIM catches attackers who modify your system!",
+          "starter_code": "import hashlib\ndef hash_file(fp):\n    # TODO\n    pass\n\nwith open('test.txt','w') as f: f.write('Hello World\\n')\nprint(f'Hash: {hash_file(\"test.txt\")[:32]}...')",
+          "expected_output": "Hash: <32 hex chars>...",
+          "hints": [
+            {
+              "message": "Open in 'rb' mode, read chunks, update sha256."
+            },
+            {
+              "message": "sha=hashlib.sha256(); for chunk: sha.update(chunk)"
+            },
+            {
+              "message": "def hash_file(fp):\n    sha=hashlib.sha256()\n    with open(fp,'rb') as f:\n        for c in iter(lambda:f.read(8192),b''): sha.update(c)\n    return sha.hexdigest()"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Compare Two File Hashes",
+          "description": "Check if two files are identical by comparing hashes.",
+          "difficulty": "beginner",
+          "category": "File Integrity Monitoring",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's protect files! Compare Two File Hashes. FIM catches attackers who modify your system!",
+          "starter_code": "import hashlib\ndef files_match(f1, f2):\n    # TODO: Return True if same hash\n    pass\n\nwith open('a.txt','w') as f: f.write('Same content')\nwith open('b.txt','w') as f: f.write('Same content')\nwith open('c.txt','w') as f: f.write('Different!')\nprint(files_match('a.txt','b.txt'))\nprint(files_match('a.txt','c.txt'))",
+          "expected_output": "True\nFalse",
+          "hints": [
+            {
+              "message": "Hash both files, compare hex digests."
+            },
+            {
+              "message": "return hash_file(f1)==hash_file(f2)"
+            },
+            {
+              "message": "def files_match(f1,f2):\n    def h(fp):\n        import hashlib; s=hashlib.sha256()\n        with open(fp,'rb') as f:\n            for c in iter(lambda:f.read(8192),b''): s.update(c)\n        return s.hexdigest()\n    return h(f1)==h(f2)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Create Baseline for a Directory",
+          "description": "Hash all files in a directory and store as dict.",
+          "difficulty": "intermediate",
+          "category": "File Integrity Monitoring",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's protect files! Create Baseline for a Directory. FIM catches attackers who modify your system!",
+          "starter_code": "import hashlib, os\ndef create_baseline(directory):\n    # TODO: Return {filepath: hash}\n    pass\n\nos.makedirs('testdir',exist_ok=True)\nfor f in ['a.txt','b.py']: \n    with open(f'testdir/{f}','w') as fh: fh.write(f'Content {f}')\nbl = create_baseline('testdir')\nfor fp,h in sorted(bl.items()): print(f'{os.path.basename(fp)}: {h[:16]}...')\nimport shutil; shutil.rmtree('testdir')",
+          "expected_output": "a.txt: <hash>...\nb.py: <hash>...",
+          "hints": [
+            {
+              "message": "Use os.walk() to traverse, hash each file."
+            },
+            {
+              "message": "for root,dirs,files in os.walk(dir): for f in files: fpath=os.path.join(root,f)"
+            },
+            {
+              "message": "def create_baseline(d):\n    import hashlib,os; bl={}\n    for root,_,files in os.walk(d):\n        for f in files:\n            fp=os.path.join(root,f)\n            try:\n                sha=hashlib.sha256()\n                with open(fp,'rb') as fh:\n                    for c in iter(lambda:fh.read(8192),b''): sha.update(c)\n                bl[fp]=sha.hexdigest()\n            except: pass\n    return bl"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Detect Modified Files",
+          "description": "Compare current hashes against baseline, return list of modified files.",
+          "difficulty": "intermediate",
+          "category": "File Integrity Monitoring",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's protect files! Detect Modified Files. FIM catches attackers who modify your system!",
+          "starter_code": "def find_modified(baseline, current):\n    # TODO: Return list of modified file paths\n    pass\n\nbl = {'a.txt':'abc123','b.txt':'def456','c.txt':'ghi789'}\ncur = {'a.txt':'abc123','b.txt':'CHANGED','c.txt':'ghi789'}\nprint(find_modified(bl, cur))",
+          "expected_output": "['b.txt']",
+          "hints": [
+            {
+              "message": "Compare hashes for files in both dicts."
+            },
+            {
+              "message": "[fp for fp in baseline if fp in current and baseline[fp]!=current[fp]]"
+            },
+            {
+              "message": "def find_modified(bl,cur):\n    return [fp for fp in bl if fp in cur and bl[fp]!=cur[fp]]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Detect New Files",
+          "description": "Find files in current scan that weren't in baseline.",
+          "difficulty": "beginner",
+          "category": "File Integrity Monitoring",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's protect files! Detect New Files. FIM catches attackers who modify your system!",
+          "starter_code": "def find_new(baseline, current):\n    # TODO: Return list of new file paths\n    pass\n\nbl = {'a.txt':'h1','b.txt':'h2'}\ncur = {'a.txt':'h1','b.txt':'h2','backdoor.py':'h3'}\nprint(find_new(bl, cur))",
+          "expected_output": "['backdoor.py']",
+          "hints": [
+            {
+              "message": "Files in current but not in baseline."
+            },
+            {
+              "message": "sorted(set(current)-set(baseline))"
+            },
+            {
+              "message": "def find_new(bl,cur): return sorted(set(cur)-set(bl))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Detect Deleted Files",
+          "description": "Find files in baseline that are missing from current scan.",
+          "difficulty": "beginner",
+          "category": "File Integrity Monitoring",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's protect files! Detect Deleted Files. FIM catches attackers who modify your system!",
+          "starter_code": "def find_deleted(baseline, current):\n    # TODO\n    pass\n\nbl = {'a.txt':'h1','b.txt':'h2','c.txt':'h3'}\ncur = {'a.txt':'h1','c.txt':'h3'}\nprint(find_deleted(bl, cur))",
+          "expected_output": "['b.txt']",
+          "hints": [
+            {
+              "message": "Files in baseline but not in current."
+            },
+            {
+              "message": "sorted(set(baseline)-set(current))"
+            },
+            {
+              "message": "def find_deleted(bl,cur): return sorted(set(bl)-set(cur))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Full FIM Scan with Report",
+          "description": "Run complete scan: modified + new + deleted with formatted output.",
+          "difficulty": "intermediate",
+          "category": "File Integrity Monitoring",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's protect files! Full FIM Scan with Report. FIM catches attackers who modify your system!",
+          "starter_code": "def fim_report(baseline, current):\n    # TODO: Print formatted report\n    pass\n\nbl={'a.txt':'h1','b.txt':'h2','deleted.log':'h3'}\ncur={'a.txt':'CHANGED','b.txt':'h2','new_file.py':'h4'}\nfim_report(bl, cur)",
+          "expected_output": "=== FIM REPORT ===\n  🟡 MODIFIED: a.txt\n  🔴 NEW FILE: new_file.py\n  ⚫ DELETED: deleted.log\nTotal changes: 3",
+          "hints": [
+            {
+              "message": "Combine find_modified, find_new, find_deleted."
+            },
+            {
+              "message": "Print each category with icons."
+            },
+            {
+              "message": "def fim_report(bl,cur):\n    mod=[f for f in bl if f in cur and bl[f]!=cur[f]]\n    new=sorted(set(cur)-set(bl)); dele=sorted(set(bl)-set(cur))\n    print('=== FIM REPORT ===')\n    for f in mod: print(f'  🟡 MODIFIED: {f}')\n    for f in new: print(f'  🔴 NEW FILE: {f}')\n    for f in dele: print(f'  ⚫ DELETED: {f}')\n    print(f'Total changes: {len(mod)+len(new)+len(dele)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Save and Load Baseline from JSON",
+          "description": "Persist baseline to JSON file and reload it.",
+          "difficulty": "intermediate",
+          "category": "File Integrity Monitoring",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's protect files! Save and Load Baseline from JSON. FIM catches attackers who modify your system!",
+          "starter_code": "import json\ndef save_baseline(bl, filepath):\n    # TODO: Save to JSON\n    pass\ndef load_baseline(filepath):\n    # TODO: Load from JSON\n    pass\n\nbl = {'config.txt':'abc123','app.py':'def456'}\nsave_baseline(bl, 'baseline.json')\nloaded = load_baseline('baseline.json')\nprint(f'Loaded {len(loaded)} entries')\nprint(bl == loaded)",
+          "expected_output": "Saved baseline (2 files)\nLoaded 2 entries\nTrue",
+          "hints": [
+            {
+              "message": "json.dump to save, json.load to read."
+            },
+            {
+              "message": "with open(fp,'w') as f: json.dump(bl,f)"
+            },
+            {
+              "message": "def save_baseline(bl,fp):\n    import json\n    with open(fp,'w') as f: json.dump(bl,f,indent=2)\n    print(f'Saved baseline ({len(bl)} files)')\ndef load_baseline(fp):\n    import json\n    with open(fp) as f: return json.load(f)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Monitor File Permissions",
+          "description": "Check if file permissions changed (using os.stat).",
+          "difficulty": "advanced",
+          "category": "File Integrity Monitoring",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's protect files! Monitor File Permissions. FIM catches attackers who modify your system!",
+          "starter_code": "import os\ndef check_perms(filepath, expected_mode):\n    # TODO: Return True if current mode matches expected\n    pass\n\nwith open('test.txt','w') as f: f.write('test')\nmode = oct(os.stat('test.txt').st_mode)[-3:]\nprint(f'Current mode: {mode}')\nprint(f'Matches 644: {check_perms(\"test.txt\", \"644\")}')",
+          "expected_output": "Current mode: 644\nMatches 644: True",
+          "hints": [
+            {
+              "message": "os.stat(fp).st_mode gives mode. oct()[-3:] extracts permission bits."
+            },
+            {
+              "message": "actual = oct(os.stat(fp).st_mode)[-3:]"
+            },
+            {
+              "message": "def check_perms(fp,expected):\n    import os; return oct(os.stat(fp).st_mode)[-3:]==expected"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Alert on Critical File Changes",
+          "description": "Monitor a list of critical files and generate alerts for any changes.",
+          "difficulty": "advanced",
+          "category": "File Integrity Monitoring",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's protect files! Alert on Critical File Changes. FIM catches attackers who modify your system!",
+          "starter_code": "def monitor_critical(critical_files, baseline):\n    # critical_files = list of important paths\n    # TODO: Check each, alert on changes\n    pass\n\nbl={'config.ini':'h1','users.db':'h2','firewall.rules':'h3'}\ncritical=['config.ini','users.db','firewall.rules']\n# Simulate changes\ncur={'config.ini':'CHANGED','users.db':'h2','firewall.rules':'h3'}\nmonitor_critical(critical, bl)",
+          "expected_output": "=== CRITICAL FILE MONITOR ===\n  🚨 config.ini: CHANGED (hash mismatch)\n  ✅ users.db: Intact\n  ✅ firewall.rules: Intact\nAlerts: 1/3 files modified",
+          "hints": [
+            {
+              "message": "Read current hash, compare to baseline for each critical file."
+            },
+            {
+              "message": "Hash each file, compare to bl[path]."
+            },
+            {
+              "message": "def monitor_critical(crit,bl):\n    import hashlib,os; print('=== CRITICAL FILE MONITOR ===')\n    alerts=0\n    for fp in crit:\n        if not os.path.exists(fp):\n            print(f'  🚨 {fp}: MISSING!'); alerts+=1; continue\n        sha=hashlib.sha256()\n        with open(fp,'rb') as f:\n            for c in iter(lambda:f.read(8192),b''): sha.update(c)\n        cur=sha.hexdigest()\n        if cur!=bl.get(fp,''):\n            print(f'  🚨 {fp}: CHANGED (hash mismatch)'); alerts+=1\n        else: print(f'  ✅ {fp}: Intact')\n    print(f'Alerts: {alerts}/{len(crit)} files modified')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Parse Key-Value Config",
+          "description": "Parse 'Key Value' lines from a config string into a dict.",
+          "difficulty": "beginner",
+          "category": "Configuration Auditing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's audit configs! Parse Key-Value Config. Misconfigurations cause 60% of breaches!",
+          "starter_code": "def parse_config(text):\n    # TODO: Return {key: value}, skip comments (#)\n    pass\n\ncfg = 'Port 22\\n# Comment\\nPermitRootLogin yes\\nMaxAuthTries 6'\nfor k,v in sorted(parse_config(cfg).items()): print(f'{k} = {v}')",
+          "expected_output": "MaxAuthTries = 6\nPermitRootLogin = yes\nPort = 22",
+          "hints": [
+            {
+              "message": "Split lines, skip #, split on whitespace."
+            },
+            {
+              "message": "parts=line.split(None,1)"
+            },
+            {
+              "message": "def parse_config(t):\n    d={}\n    for l in t.split('\\n'):\n        l=l.strip()\n        if l and not l.startswith('#'):\n            p=l.split(None,1)\n            if len(p)==2: d[p[0]]=p[1]\n    return d"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Check Single Config Setting",
+          "description": "Compare one setting against expected value.",
+          "difficulty": "beginner",
+          "category": "Configuration Auditing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's audit configs! Check Single Config Setting. Misconfigurations cause 60% of breaches!",
+          "starter_code": "def check_setting(config, key, expected):\n    # TODO: Return (passed, actual_value)\n    pass\n\ncfg = {'PermitRootLogin':'yes','Port':'22'}\npassed, actual = check_setting(cfg, 'PermitRootLogin', 'no')\nprint(f'{\"✅\" if passed else \"❌\"} PermitRootLogin: {actual} (expected: no)')",
+          "expected_output": "❌ PermitRootLogin: yes (expected: no)",
+          "hints": [
+            {
+              "message": "Get actual=config.get(key,'NOT SET'), compare with expected."
+            },
+            {
+              "message": "return (actual.lower()==expected.lower(), actual)"
+            },
+            {
+              "message": "def check_setting(cfg,key,exp):\n    actual=cfg.get(key,'NOT SET')\n    return (actual.lower()==exp.lower(), actual)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Audit Multiple Settings",
+          "description": "Check multiple settings against a policy dict.",
+          "difficulty": "intermediate",
+          "category": "Configuration Auditing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's audit configs! Audit Multiple Settings. Misconfigurations cause 60% of breaches!",
+          "starter_code": "def audit(config, policy):\n    # policy = {key: expected_value}\n    # TODO: Return list of (key, passed, actual, expected)\n    pass\n\ncfg={'PermitRootLogin':'yes','Port':'22','Protocol':'2'}\npol={'PermitRootLogin':'no','Port':'2222','Protocol':'2'}\nfor k,p,a,e in audit(cfg,pol):\n    print(f'{\"✅\" if p else \"❌\"} {k}: {a} (expected {e})')",
+          "expected_output": "❌ PermitRootLogin: yes (expected no)\n❌ Port: 22 (expected 2222)\n✅ Protocol: 2 (expected 2)",
+          "hints": [
+            {
+              "message": "Loop policy items, check each against config."
+            },
+            {
+              "message": "return [(k, cfg.get(k,'')==v, cfg.get(k,'NOT SET'), v) for k,v in policy.items()]"
+            },
+            {
+              "message": "def audit(cfg,pol):\n    return [(k,cfg.get(k,'').lower()==v.lower(),cfg.get(k,'NOT SET'),v) for k,v in pol.items()]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Calculate Compliance Score",
+          "description": "Compute pass/fail ratio as percentage.",
+          "difficulty": "beginner",
+          "category": "Configuration Auditing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's audit configs! Calculate Compliance Score. Misconfigurations cause 60% of breaches!",
+          "starter_code": "def compliance_score(results):\n    # results = list of (key, passed, actual, expected)\n    # TODO: Return percentage\n    pass\n\nresults=[('A',True,'x','x'),('B',False,'y','z'),('C',True,'a','a'),('D',False,'b','c')]\nprint(f'Score: {compliance_score(results):.0f}%')",
+          "expected_output": "Score: 50%",
+          "hints": [
+            {
+              "message": "Count passed / total * 100"
+            },
+            {
+              "message": "sum(1 for _,p,_,_ in results if p) / len(results) * 100"
+            },
+            {
+              "message": "def compliance_score(r):\n    return sum(1 for _,p,_,_ in r if p)/len(r)*100 if r else 0"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Generate Fix Recommendations",
+          "description": "For each failed check, suggest a fix command.",
+          "difficulty": "intermediate",
+          "category": "Configuration Auditing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's audit configs! Generate Fix Recommendations. Misconfigurations cause 60% of breaches!",
+          "starter_code": "def suggest_fixes(results):\n    # TODO: Return list of fix suggestions\n    pass\n\nresults=[('PermitRootLogin',False,'yes','no'),('Port',False,'22','2222'),('Protocol',True,'2','2')]\nfor fix in suggest_fixes(results): print(fix)",
+          "expected_output": "Fix: Set PermitRootLogin to no (currently: yes)\nFix: Set Port to 2222 (currently: 22)",
+          "hints": [
+            {
+              "message": "Filter for not passed, format suggestion."
+            },
+            {
+              "message": "[f'Fix: Set {k} to {exp} (currently: {act})' for k,p,act,exp in results if not p]"
+            },
+            {
+              "message": "def suggest_fixes(r):\n    return [f'Fix: Set {k} to {e} (currently: {a})' for k,p,a,e in r if not p]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Audit Apache Configuration",
+          "description": "Check Apache-specific settings against security best practices.",
+          "difficulty": "intermediate",
+          "category": "Configuration Auditing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's audit configs! Audit Apache Configuration. Misconfigurations cause 60% of breaches!",
+          "starter_code": "def audit_apache(config):\n    # TODO: Check ServerTokens, ServerSignature, TraceEnable\n    pass\n\ncfg={'ServerTokens':'Full','ServerSignature':'On','TraceEnable':'On','Timeout':'300'}\naudit_apache(cfg)",
+          "expected_output": "=== APACHE AUDIT ===\n  ❌ ServerTokens: Full (expected: Prod)\n  ❌ ServerSignature: On (expected: Off)\n  ❌ TraceEnable: On (expected: Off)\nScore: 0%",
+          "hints": [
+            {
+              "message": "Define Apache policy dict, reuse audit function."
+            },
+            {
+              "message": "policy={'ServerTokens':'Prod','ServerSignature':'Off','TraceEnable':'Off'}"
+            },
+            {
+              "message": "def audit_apache(cfg):\n    pol={'ServerTokens':'Prod','ServerSignature':'Off','TraceEnable':'Off'}\n    print('=== APACHE AUDIT ===')\n    p=f=0\n    for k,exp in pol.items():\n        act=cfg.get(k,'NOT SET')\n        ok=act.lower()==exp.lower()\n        if ok: p+=1\n        else: f+=1\n        print(f'  {\"✅\" if ok else \"❌\"} {k}: {act} (expected: {exp})')\n    print(f'Score: {p/(p+f)*100:.0f}%')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Audit MySQL Configuration",
+          "description": "Check MySQL bind-address, local_infile, and skip-grant-tables.",
+          "difficulty": "intermediate",
+          "category": "Configuration Auditing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's audit configs! Audit MySQL Configuration. Misconfigurations cause 60% of breaches!",
+          "starter_code": "def audit_mysql(config):\n    # TODO\n    pass\n\ncfg={'bind-address':'0.0.0.0','local_infile':'ON','skip-grant-tables':'OFF'}\naudit_mysql(cfg)",
+          "expected_output": "=== MYSQL AUDIT ===\n  ❌ bind-address: 0.0.0.0 (expected: 127.0.0.1)\n  ❌ local_infile: ON (expected: OFF)\n  ✅ skip-grant-tables: OFF (expected: OFF)\nScore: 33%",
+          "hints": [
+            {
+              "message": "Same pattern as Apache audit."
+            },
+            {
+              "message": "policy={'bind-address':'127.0.0.1','local_infile':'OFF','skip-grant-tables':'OFF'}"
+            },
+            {
+              "message": "def audit_mysql(cfg):\n    pol={'bind-address':'127.0.0.1','local_infile':'OFF','skip-grant-tables':'OFF'}\n    print('=== MYSQL AUDIT ===')\n    p=f=0\n    for k,exp in pol.items():\n        act=cfg.get(k,'NOT SET'); ok=act.lower()==exp.lower()\n        if ok: p+=1\n        else: f+=1\n        print(f'  {\"✅\" if ok else \"❌\"} {k}: {act} (expected: {exp})')\n    print(f'Score: {p/(p+f)*100:.0f}%')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Multi-Service Compliance Scan",
+          "description": "Audit SSH, Apache, and MySQL configs in one scan.",
+          "difficulty": "advanced",
+          "category": "Configuration Auditing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's audit configs! Multi-Service Compliance Scan. Misconfigurations cause 60% of breaches!",
+          "starter_code": "def full_compliance(configs, policies):\n    # TODO: Audit all services, overall score\n    pass\n\ncfgs={'ssh':{'PermitRootLogin':'no','Protocol':'2'},'apache':{'ServerTokens':'Prod'},'mysql':{'bind-address':'127.0.0.1'}}\npols={'ssh':{'PermitRootLogin':'no','Protocol':'2'},'apache':{'ServerTokens':'Prod'},'mysql':{'bind-address':'127.0.0.1'}}\nfull_compliance(cfgs, pols)",
+          "expected_output": "=== FULL COMPLIANCE SCAN ===\n  [ssh] 2/2 ✅\n  [apache] 1/1 ✅\n  [mysql] 1/1 ✅\nOverall: 100% COMPLIANT",
+          "hints": [
+            {
+              "message": "Loop each service, audit its config against its policy."
+            },
+            {
+              "message": "For each svc: count pass/fail, track totals."
+            },
+            {
+              "message": "def full_compliance(cfgs,pols):\n    print('=== FULL COMPLIANCE SCAN ===')\n    tp=tf=0\n    for svc in sorted(cfgs):\n        p=f=0\n        for k,exp in pols.get(svc,{}).items():\n            if cfgs[svc].get(k,'').lower()==exp.lower(): p+=1\n            else: f+=1\n        tp+=p;tf+=f\n        print(f'  [{svc}] {p}/{p+f} {\"✅\" if f==0 else \"❌\"}')\n    total=tp+tf; pct=tp/total*100 if total else 0\n    print(f'Overall: {pct:.0f}% {\"COMPLIANT\" if pct>=80 else \"NON-COMPLIANT\"}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Export Audit Results to JSON",
+          "description": "Save audit findings as structured JSON.",
+          "difficulty": "intermediate",
+          "category": "Configuration Auditing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's audit configs! Export Audit Results to JSON. Misconfigurations cause 60% of breaches!",
+          "starter_code": "import json\ndef export_audit(service, results, filepath):\n    # TODO: Save as JSON\n    pass\n\nresults = [{'key':'PermitRootLogin','passed':False,'actual':'yes','expected':'no'}]\nexport_audit('ssh', results, 'audit.json')\nwith open('audit.json') as f: print(f.read()[:80])",
+          "expected_output": "Exported 1 findings to audit.json\n{\"service\": \"ssh\", \"findings\": [{\"key\": \"PermitRootLogin\", ...",
+          "hints": [
+            {
+              "message": "Build dict with service name, findings, timestamp. json.dump."
+            },
+            {
+              "message": "data={'service':service,'findings':results,'timestamp':...}"
+            },
+            {
+              "message": "def export_audit(svc,results,fp):\n    import json; from datetime import datetime\n    d={'service':svc,'findings':results,'timestamp':datetime.now().isoformat()}\n    with open(fp,'w') as f: json.dump(d,f,indent=2)\n    print(f'Exported {len(results)} findings to {fp}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Generate Remediation Script",
+          "description": "Auto-generate a shell script to fix non-compliant SSH settings.",
+          "difficulty": "advanced",
+          "category": "Configuration Auditing",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's audit configs! Generate Remediation Script. Misconfigurations cause 60% of breaches!",
+          "starter_code": "def gen_fix_script(failures):\n    # failures = [('PermitRootLogin','yes','no'), ...]\n    # TODO: Generate sed commands\n    pass\n\nfailures=[('PermitRootLogin','yes','no'),('PasswordAuthentication','yes','no'),('MaxAuthTries','6','3')]\nprint(gen_fix_script(failures))",
+          "expected_output": "#!/bin/bash\n# SSH Remediation Script\nsed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config\nsed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config\nsed -i 's/MaxAuthTries 6/MaxAuthTries 3/' /etc/ssh/sshd_config\nsystemctl restart sshd",
+          "hints": [
+            {
+              "message": "Generate sed -i 's/old/new/' commands for each failure."
+            },
+            {
+              "message": "lines=['#!/bin/bash','# SSH Remediation Script']"
+            },
+            {
+              "message": "def gen_fix_script(failures):\n    lines=['#!/bin/bash','# SSH Remediation Script']\n    for k,old,new in failures:\n        lines.append(f\"sed -i 's/{k} {old}/{k} {new}/' /etc/ssh/sshd_config\")\n    lines.append('systemctl restart sshd')\n    return '\\n'.join(lines)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Check If Header Exists",
+          "description": "Check if a specific header is present (case-insensitive).",
+          "difficulty": "beginner",
+          "category": "HTTP & Web Security Automation",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's secure the web! Check If Header Exists. OWASP recommends these checks for every website!",
+          "starter_code": "def has_header(headers, name):\n    # TODO\n    pass\n\nh={'Content-Type':'text/html','X-Frame-Options':'DENY'}\nprint(has_header(h,'x-frame-options'))\nprint(has_header(h,'Content-Security-Policy'))",
+          "expected_output": "True\nFalse",
+          "hints": [
+            {
+              "message": "Lowercase both: name.lower() in {h.lower() for h in headers}"
+            },
+            {
+              "message": "return name.lower() in {k.lower() for k in headers}"
+            },
+            {
+              "message": "def has_header(h,n): return n.lower() in {k.lower() for k in h}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: List Missing Security Headers",
+          "description": "Return names of missing required security headers.",
+          "difficulty": "beginner",
+          "category": "HTTP & Web Security Automation",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's secure the web! List Missing Security Headers. OWASP recommends these checks for every website!",
+          "starter_code": "def missing_headers(headers):\n    # TODO: Return list of missing headers\n    pass\n\nh={'Content-Type':'text/html','X-Frame-Options':'DENY'}\nfor m in missing_headers(h): print(f'❌ Missing: {m}')",
+          "expected_output": "❌ Missing: Strict-Transport-Security\n❌ Missing: Content-Security-Policy\n❌ Missing: X-Content-Type-Options\n❌ Missing: X-XSS-Protection",
+          "hints": [
+            {
+              "message": "Define required set, check which are missing."
+            },
+            {
+              "message": "required={'X-Frame-Options','Strict-Transport-Security','Content-Security-Policy',...}"
+            },
+            {
+              "message": "def missing_headers(h):\n    req={'X-Frame-Options','Strict-Transport-Security','Content-Security-Policy','X-Content-Type-Options','X-XSS-Protection','Referrer-Policy'}\n    present={k.lower() for k in h}\n    return sorted(r for r in req if r.lower() not in present)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Grade Security Headers",
+          "description": "Assign A-F grade based on how many headers are present.",
+          "difficulty": "intermediate",
+          "category": "HTTP & Web Security Automation",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's secure the web! Grade Security Headers. OWASP recommends these checks for every website!",
+          "starter_code": "def grade_headers(headers):\n    # TODO: Return grade and score\n    pass\n\nprint(grade_headers({'X-Frame-Options':'DENY','X-Content-Type-Options':'nosniff','Strict-Transport-Security':'max-age=31536000','Content-Security-Policy':\"default-src 'self'\",'X-XSS-Protection':'1','Referrer-Policy':'strict-origin'}))\nprint(grade_headers({'Content-Type':'text/html'}))",
+          "expected_output": "Grade: A (6/6)\nGrade: F (0/6)",
+          "hints": [
+            {
+              "message": "Count present required headers. A=6, B=5, C=4, D=3, F=<3."
+            },
+            {
+              "message": "grades={6:'A',5:'B',4:'C',3:'D'}; grade=grades.get(count,'F')"
+            },
+            {
+              "message": "def grade_headers(h):\n    req={'X-Frame-Options','X-Content-Type-Options','Strict-Transport-Security','Content-Security-Policy','X-XSS-Protection','Referrer-Policy'}\n    present=sum(1 for r in req if r.lower() in {k.lower() for k in h})\n    g={6:'A',5:'B',4:'C',3:'D'}.get(present,'F')\n    return f'Grade: {g} ({present}/{len(req)})'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Check for Server Version Disclosure",
+          "description": "Flag if Server header reveals version info.",
+          "difficulty": "beginner",
+          "category": "HTTP & Web Security Automation",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's secure the web! Check for Server Version Disclosure. OWASP recommends these checks for every website!",
+          "starter_code": "def check_server_header(headers):\n    # TODO: Check if Server header reveals version\n    pass\n\nprint(check_server_header({'Server':'Apache/2.4.41 (Ubuntu)'}))\nprint(check_server_header({'Server':'nginx'}))\nprint(check_server_header({}))",
+          "expected_output": "🚨 Server header reveals version: Apache/2.4.41 (Ubuntu)\n✅ Server header minimal: nginx\n✅ No Server header",
+          "hints": [
+            {
+              "message": "Check if Server value contains / (version indicator)."
+            },
+            {
+              "message": "if '/' in headers.get('Server',''): flag it"
+            },
+            {
+              "message": "def check_server_header(h):\n    s=h.get('Server','')\n    if not s: return '✅ No Server header'\n    return f'🚨 Server header reveals version: {s}' if '/' in s else f'✅ Server header minimal: {s}'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Validate HSTS Configuration",
+          "description": "Check Strict-Transport-Security value for minimum max-age.",
+          "difficulty": "intermediate",
+          "category": "HTTP & Web Security Automation",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's secure the web! Validate HSTS Configuration. OWASP recommends these checks for every website!",
+          "starter_code": "import re\ndef check_hsts(value, min_age=31536000):\n    # TODO: Validate HSTS header value\n    pass\n\nprint(check_hsts('max-age=31536000; includeSubDomains'))\nprint(check_hsts('max-age=3600'))\nprint(check_hsts(''))",
+          "expected_output": "✅ HSTS valid: max-age=31536000\n❌ HSTS max-age too low: 3600 (min: 31536000)\n❌ HSTS not set",
+          "hints": [
+            {
+              "message": "Extract max-age with regex: r'max-age=(\\d+)'"
+            },
+            {
+              "message": "if int(age)<min_age: flag"
+            },
+            {
+              "message": "def check_hsts(v,m=31536000):\n    import re\n    if not v: return '❌ HSTS not set'\n    match=re.search(r'max-age=(\\d+)',v)\n    if not match: return '❌ Invalid HSTS format'\n    age=int(match.group(1))\n    return f'✅ HSTS valid: max-age={age}' if age>=m else f'❌ HSTS max-age too low: {age} (min: {m})'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Build URL Tester for Common Paths",
+          "description": "Check if sensitive paths exist (200 response = exposed).",
+          "difficulty": "intermediate",
+          "category": "HTTP & Web Security Automation",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's secure the web! Build URL Tester for Common Paths. OWASP recommends these checks for every website!",
+          "starter_code": "def check_paths(base_url, paths):\n    # Simulate HTTP responses\n    # TODO: Return list of exposed paths\n    pass\n\nsim_responses = {'/admin':200,'/wp-admin':404,'/.env':200,'/.git':403,'/login':200,'/phpinfo.php':404}\ndef check_paths(paths, responses):\n    exposed = []\n    for path in paths:\n        status = responses.get(path, 404)\n        if status in (200, 301, 302):\n            exposed.append((path, status))\n    return exposed\n\npaths=['/.env','/.git','/admin','/wp-admin','/phpinfo.php','/login']\nfor path,code in check_paths(paths, sim_responses):\n    print(f'🚨 {path} → {code}')",
+          "expected_output": "🚨 /.env → 200\n🚨 /admin → 200\n🚨 /login → 200",
+          "hints": [
+            {
+              "message": "Check each path's status code. 200/301/302 = exposed."
+            },
+            {
+              "message": "exposed=[(p,r) for p in paths if responses.get(p) in (200,301,302)]"
+            },
+            {
+              "message": "# Already solved in starter code above"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Generate Security Headers Nginx Config",
+          "description": "Output Nginx config block with all required security headers.",
+          "difficulty": "intermediate",
+          "category": "HTTP & Web Security Automation",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's secure the web! Generate Security Headers Nginx Config. OWASP recommends these checks for every website!",
+          "starter_code": "def gen_nginx_headers():\n    # TODO: Return Nginx config snippet\n    pass\n\nprint(gen_nginx_headers())",
+          "expected_output": "# Security Headers\nadd_header X-Frame-Options \"DENY\" always;\nadd_header X-Content-Type-Options \"nosniff\" always;\nadd_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;\nadd_header Content-Security-Policy \"default-src 'self'\" always;\nadd_header X-XSS-Protection \"1; mode=block\" always;\nadd_header Referrer-Policy \"strict-origin-when-cross-origin\" always;",
+          "hints": [
+            {
+              "message": "Build list of add_header lines."
+            },
+            {
+              "message": "lines=['# Security Headers'] + [f'add_header {k} \"{v}\" always;' for ...]"
+            },
+            {
+              "message": "def gen_nginx_headers():\n    h={'X-Frame-Options':'DENY','X-Content-Type-Options':'nosniff','Strict-Transport-Security':'max-age=31536000; includeSubDomains','Content-Security-Policy':\"default-src 'self'\",'X-XSS-Protection':'1; mode=block','Referrer-Policy':'strict-origin-when-cross-origin'}\n    lines=['# Security Headers']\n    for k,v in h.items(): lines.append(f'add_header {k} \"{v}\" always;')\n    return '\\n'.join(lines)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Cookie Security Checker",
+          "description": "Check Set-Cookie headers for Secure, HttpOnly, SameSite flags.",
+          "difficulty": "advanced",
+          "category": "HTTP & Web Security Automation",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's secure the web! Cookie Security Checker. OWASP recommends these checks for every website!",
+          "starter_code": "def check_cookie(cookie_str):\n    # TODO: Check for security flags\n    pass\n\nfor c in ['session=abc123; Secure; HttpOnly; SameSite=Strict','token=xyz; Path=/','id=123; Secure']:\n    print(check_cookie(c))",
+          "expected_output": "✅ session=abc123: Secure HttpOnly SameSite\n❌ token=xyz: Missing Secure, HttpOnly, SameSite\n❌ id=123: Missing HttpOnly, SameSite",
+          "hints": [
+            {
+              "message": "Check if 'Secure', 'HttpOnly', 'SameSite' appear in string."
+            },
+            {
+              "message": "missing=[]; if 'secure' not in c.lower(): missing.append('Secure')"
+            },
+            {
+              "message": "def check_cookie(c):\n    cl=c.lower(); name=c.split('=')[0]\n    m=[]\n    if 'secure' not in cl: m.append('Secure')\n    if 'httponly' not in cl: m.append('HttpOnly')\n    if 'samesite' not in cl: m.append('SameSite')\n    return f'❌ {name}: Missing {\", \".join(m)}' if m else f'✅ {name}: Secure HttpOnly SameSite'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: SSL/TLS Certificate Expiry Checker",
+          "description": "Check if a certificate expires within N days (simulated).",
+          "difficulty": "advanced",
+          "category": "HTTP & Web Security Automation",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's secure the web! SSL/TLS Certificate Expiry Checker. OWASP recommends these checks for every website!",
+          "starter_code": "from datetime import datetime, timedelta\ndef check_cert_expiry(expiry_date, warn_days=30):\n    # TODO: Return status based on days remaining\n    pass\n\nfor days in [90, 25, 5, -2]:\n    exp = datetime.now() + timedelta(days=days)\n    print(check_cert_expiry(exp))",
+          "expected_output": "✅ Certificate valid: 90 days remaining\n⚠️ Certificate expiring soon: 25 days remaining\n🚨 Certificate critical: 5 days remaining\n🚨 Certificate EXPIRED: -2 days",
+          "hints": [
+            {
+              "message": "Calculate remaining = (expiry - now).days"
+            },
+            {
+              "message": "if remaining < 0: EXPIRED; elif < 7: critical; elif < warn: warning"
+            },
+            {
+              "message": "def check_cert_expiry(exp,warn=30):\n    from datetime import datetime\n    rem=(exp-datetime.now()).days\n    if rem<0: return f'🚨 Certificate EXPIRED: {rem} days'\n    if rem<7: return f'🚨 Certificate critical: {rem} days remaining'\n    if rem<warn: return f'⚠️ Certificate expiring soon: {rem} days remaining'\n    return f'✅ Certificate valid: {rem} days remaining'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Full Web Security Scan",
+          "description": "Combine header check, cookie check, cert check, and path scan into one report.",
+          "difficulty": "advanced",
+          "category": "HTTP & Web Security Automation",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's secure the web! Full Web Security Scan. OWASP recommends these checks for every website!",
+          "starter_code": "def web_security_scan(site_data):\n    # site_data has: headers, cookies, cert_expiry, paths\n    # TODO: Run all checks, generate unified report\n    pass\n\nsite = {\n    'url': 'https://example.com',\n    'headers': {'X-Frame-Options':'DENY','Server':'Apache/2.4'},\n    'cookies': ['session=abc; Secure; HttpOnly; SameSite=Strict'],\n    'cert_days': 45,\n    'exposed_paths': ['/admin','/login']\n}\nweb_security_scan(site)",
+          "expected_output": "=== WEB SECURITY SCAN: https://example.com ===\n  Headers: 1/6 present (Grade F)\n  Server disclosure: Apache/2.4\n  Cookies: 1/1 secure\n  Certificate: 45 days remaining ✅\n  Exposed paths: /admin, /login",
+          "hints": [
+            {
+              "message": "Combine all previous web check functions."
+            },
+            {
+              "message": "Run each check, format as unified report."
+            },
+            {
+              "message": "def web_security_scan(s):\n    req={'X-Frame-Options','X-Content-Type-Options','Strict-Transport-Security','Content-Security-Policy','X-XSS-Protection','Referrer-Policy'}\n    hcount=sum(1 for r in req if r.lower() in {k.lower() for k in s['headers']})\n    g={6:'A',5:'B',4:'C',3:'D'}.get(hcount,'F')\n    print(f'=== WEB SECURITY SCAN: {s[\"url\"]} ===')\n    print(f'  Headers: {hcount}/{len(req)} present (Grade {g})')\n    sv=s['headers'].get('Server','')\n    if '/' in sv: print(f'  Server disclosure: {sv}')\n    sec_cookies=sum(1 for c in s['cookies'] if 'secure' in c.lower() and 'httponly' in c.lower())\n    print(f'  Cookies: {sec_cookies}/{len(s[\"cookies\"])} secure')\n    cd=s.get('cert_days',0)\n    print(f'  Certificate: {cd} days remaining {\"✅\" if cd>30 else \"🚨\"}')\n    if s.get('exposed_paths'): print(f'  Exposed paths: {\", \".join(s[\"exposed_paths\"])}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Create an Incident Record",
+          "description": "Build a structured dict representing a security incident.",
+          "difficulty": "beginner",
+          "category": "Incident Response & Reporting",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for incident response! Create an Incident Record. Every second counts when responding to attacks!",
+          "starter_code": "from datetime import datetime\ndef create_incident(inc_type, ip, severity, details):\n    # TODO: Return incident dict\n    pass\n\ninc = create_incident('brute_force','10.0.0.55','HIGH','47 failed logins')\nfor k,v in inc.items(): print(f'{k}: {v}')",
+          "expected_output": "id: INC-001\ntype: brute_force\nip: 10.0.0.55\nseverity: HIGH\ndetails: 47 failed logins\ntimestamp: 2025-...\nstatus: open",
+          "hints": [
+            {
+              "message": "Build dict with all fields."
+            },
+            {
+              "message": "{'id':'INC-001','type':inc_type,'ip':ip,'severity':severity,...}"
+            },
+            {
+              "message": "def create_incident(t,ip,sev,det):\n    from datetime import datetime\n    return {'id':'INC-001','type':t,'ip':ip,'severity':sev,'details':det,'timestamp':datetime.now().isoformat(),'status':'open'}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Determine Response Actions",
+          "description": "Map incident type to a list of response actions.",
+          "difficulty": "beginner",
+          "category": "Incident Response & Reporting",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for incident response! Determine Response Actions. Every second counts when responding to attacks!",
+          "starter_code": "def get_actions(inc_type):\n    # TODO: Return list of actions\n    pass\n\nfor a in get_actions('brute_force'): print(f'→ {a}')",
+          "expected_output": "→ Block source IP at firewall\n→ Lock targeted account\n→ Capture authentication logs\n→ Notify security team",
+          "hints": [
+            {
+              "message": "Define dict: {'brute_force':['Block IP','Lock account',...]}"
+            },
+            {
+              "message": "playbooks={'brute_force':[...],'malware':[...],'sqli':[...]}"
+            },
+            {
+              "message": "def get_actions(t):\n    pb={'brute_force':['Block source IP at firewall','Lock targeted account','Capture authentication logs','Notify security team'],'malware':['Isolate host','Memory dump','Scan endpoints','Page IR team'],'sqli':['Block IP via WAF','Enable SQLi rules','Audit database','Notify dev team']}\n    return pb.get(t,['Capture logs','Notify security team'])"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Execute Response Playbook",
+          "description": "Simulate executing each action and log the results.",
+          "difficulty": "intermediate",
+          "category": "Incident Response & Reporting",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for incident response! Execute Response Playbook. Every second counts when responding to attacks!",
+          "starter_code": "from datetime import datetime\ndef execute_playbook(incident):\n    # TODO: Execute actions, return log\n    pass\n\ninc={'type':'brute_force','ip':'10.0.0.55','target':'root'}\nfor entry in execute_playbook(inc): print(entry)",
+          "expected_output": "[15:30:01] Executing: Block source IP at firewall → ✅\n[15:30:01] Executing: Lock targeted account → ✅\n[15:30:01] Executing: Capture authentication logs → ✅\n[15:30:01] Executing: Notify security team → ✅",
+          "hints": [
+            {
+              "message": "Get actions for type, loop and format each with timestamp."
+            },
+            {
+              "message": "for action in get_actions: log.append(f'[{ts}] Executing: {action} → ✅')"
+            },
+            {
+              "message": "def execute_playbook(inc):\n    from datetime import datetime\n    pb={'brute_force':['Block source IP at firewall','Lock targeted account','Capture authentication logs','Notify security team']}\n    actions=pb.get(inc['type'],['Log and notify'])\n    log=[]\n    for a in actions:\n        ts=datetime.now().strftime('%H:%M:%S')\n        log.append(f'[{ts}] Executing: {a} → ✅')\n    return log"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Calculate Incident Severity Score",
+          "description": "Score based on type, affected systems, and data sensitivity.",
+          "difficulty": "intermediate",
+          "category": "Incident Response & Reporting",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for incident response! Calculate Incident Severity Score. Every second counts when responding to attacks!",
+          "starter_code": "def severity_score(inc_type, affected_systems, data_sensitive):\n    # TODO: Return (score, level)\n    pass\n\nprint(severity_score('sqli', 3, True))\nprint(severity_score('brute_force', 1, False))",
+          "expected_output": "Score: 85 (CRITICAL)\nScore: 35 (MEDIUM)",
+          "hints": [
+            {
+              "message": "type_weights={'sqli':40,'malware':50,'brute_force':20}; add systems*10; add 25 if data_sensitive"
+            },
+            {
+              "message": "score=type_weight+systems*10+(25 if sensitive else 0)"
+            },
+            {
+              "message": "def severity_score(t,sys,ds):\n    tw={'sqli':40,'malware':50,'brute_force':20,'xss':30,'data_exfil':50}\n    s=tw.get(t,15)+sys*10+(25 if ds else 0)\n    lvl='CRITICAL' if s>=70 else 'HIGH' if s>=50 else 'MEDIUM' if s>=30 else 'LOW'\n    return f'Score: {s} ({lvl})'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Create Incident Timeline",
+          "description": "Build chronological timeline from event list.",
+          "difficulty": "intermediate",
+          "category": "Incident Response & Reporting",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for incident response! Create Incident Timeline. Every second counts when responding to attacks!",
+          "starter_code": "def build_timeline(events):\n    # events = [{'time':'HH:MM:SS','action':'...'}]\n    # TODO: Sort and display\n    pass\n\nevents=[{'time':'14:23:10','action':'SSH brute force detected'},{'time':'14:23:01','action':'Port scan from 10.0.0.55'},{'time':'14:25:30','action':'SQL injection attempt'},{'time':'14:25:35','action':'IP blocked by firewall'}]\nbuild_timeline(events)",
+          "expected_output": "📅 INCIDENT TIMELINE\n  14:23:01 → Port scan from 10.0.0.55\n  14:23:10 → SSH brute force detected\n  14:25:30 → SQL injection attempt\n  14:25:35 → IP blocked by firewall",
+          "hints": [
+            {
+              "message": "Sort events by time, print each."
+            },
+            {
+              "message": "events.sort(key=lambda e:e['time'])"
+            },
+            {
+              "message": "def build_timeline(events):\n    print('📅 INCIDENT TIMELINE')\n    for e in sorted(events,key=lambda x:x['time']):\n        print(f'  {e[\"time\"]} → {e[\"action\"]}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Generate Incident Report",
+          "description": "Create a formatted incident report with all sections.",
+          "difficulty": "intermediate",
+          "category": "Incident Response & Reporting",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for incident response! Generate Incident Report. Every second counts when responding to attacks!",
+          "starter_code": "def incident_report(incident, actions, timeline):\n    # TODO: Full report\n    pass\n\ninc={'id':'INC-042','type':'brute_force','ip':'10.0.0.55','severity':'HIGH'}\nacts=['Block IP','Lock account']\ntl=[('14:23:01','Attack started'),('14:25:35','IP blocked')]\nincident_report(inc,acts,tl)",
+          "expected_output": "===============================\n  INCIDENT REPORT: INC-042\n===============================\nType: brute_force\nSource: 10.0.0.55\nSeverity: HIGH\n\nActions Taken:\n  1. Block IP\n  2. Lock account\n\nTimeline:\n  14:23:01 - Attack started\n  14:25:35 - IP blocked",
+          "hints": [
+            {
+              "message": "Build sections: header, details, actions, timeline."
+            },
+            {
+              "message": "lines=['='*31, f'  INCIDENT REPORT: {inc[\"id\"]}', ...]"
+            },
+            {
+              "message": "def incident_report(inc,acts,tl):\n    print('='*31+f'\\n  INCIDENT REPORT: {inc[\"id\"]}\\n'+'='*31)\n    print(f'Type: {inc[\"type\"]}\\nSource: {inc[\"ip\"]}\\nSeverity: {inc[\"severity\"]}\\n')\n    print('Actions Taken:')\n    for i,a in enumerate(acts,1): print(f'  {i}. {a}')\n    print('\\nTimeline:')\n    for t,e in tl: print(f'  {t} - {e}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Save Incident to JSON",
+          "description": "Serialize incident with actions and timeline to JSON file.",
+          "difficulty": "beginner",
+          "category": "Incident Response & Reporting",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for incident response! Save Incident to JSON. Every second counts when responding to attacks!",
+          "starter_code": "import json\ndef save_incident(incident, filepath):\n    # TODO\n    pass\n\ninc={'id':'INC-042','type':'brute_force','actions':['Block IP']}\nsave_incident(inc,'incident.json')\nwith open('incident.json') as f: print(f.read()[:60])",
+          "expected_output": "Saved to incident.json\n{\"id\": \"INC-042\", \"type\": \"brute_force\", \"actions\": [\"Bloc",
+          "hints": [
+            {
+              "message": "json.dump with indent=2"
+            },
+            {
+              "message": "with open(fp,'w') as f: json.dump(incident,f,indent=2)"
+            },
+            {
+              "message": "def save_incident(inc,fp):\n    import json\n    with open(fp,'w') as f: json.dump(inc,f,indent=2)\n    print(f'Saved to {fp}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Calculate Mean Time to Respond",
+          "description": "Calculate average response time from incident data.",
+          "difficulty": "intermediate",
+          "category": "Incident Response & Reporting",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for incident response! Calculate Mean Time to Respond. Every second counts when responding to attacks!",
+          "starter_code": "def mttr(incidents):\n    # incidents = [{'detect_min':N, 'respond_min':N}]\n    # TODO: Return average MTTR\n    pass\n\nincs=[{'detect_min':5,'respond_min':15},{'detect_min':2,'respond_min':8},{'detect_min':10,'respond_min':45}]\nprint(f'MTTR: {mttr(incs):.1f} minutes')",
+          "expected_output": "MTTR: 22.7 minutes",
+          "hints": [
+            {
+              "message": "Sum respond_min for all, divide by count."
+            },
+            {
+              "message": "sum(i['respond_min'] for i in incidents) / len(incidents)"
+            },
+            {
+              "message": "def mttr(incs):\n    return sum(i['respond_min'] for i in incs)/len(incs) if incs else 0"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Build Security Dashboard Summary",
+          "description": "Aggregate multiple incidents into a dashboard view.",
+          "difficulty": "advanced",
+          "category": "Incident Response & Reporting",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for incident response! Build Security Dashboard Summary. Every second counts when responding to attacks!",
+          "starter_code": "def dashboard(incidents):\n    # TODO: Summary by type, severity, status\n    pass\n\nincs=[{'type':'brute_force','severity':'HIGH','status':'resolved'},{'type':'sqli','severity':'CRITICAL','status':'open'},{'type':'brute_force','severity':'MEDIUM','status':'resolved'},{'type':'xss','severity':'HIGH','status':'open'}]\ndashboard(incs)",
+          "expected_output": "=== SECURITY DASHBOARD ===\nTotal incidents: 4 | Open: 2 | Resolved: 2\n\nBy Type:\n  brute_force: 2\n  sqli: 1\n  xss: 1\n\nBy Severity:\n  CRITICAL: 1\n  HIGH: 2\n  MEDIUM: 1",
+          "hints": [
+            {
+              "message": "Use Counter for type and severity."
+            },
+            {
+              "message": "from collections import Counter; types=Counter(i['type'] for i in incs)"
+            },
+            {
+              "message": "def dashboard(incs):\n    from collections import Counter\n    print('=== SECURITY DASHBOARD ===')\n    op=sum(1 for i in incs if i['status']=='open')\n    print(f'Total incidents: {len(incs)} | Open: {op} | Resolved: {len(incs)-op}\\n')\n    print('By Type:')\n    for t,c in Counter(i['type'] for i in incs).most_common(): print(f'  {t}: {c}')\n    print('\\nBy Severity:')\n    for s in ['CRITICAL','HIGH','MEDIUM','LOW']:\n        c=sum(1 for i in incs if i['severity']==s)\n        if c: print(f'  {s}: {c}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Complete Automation Pipeline",
+          "description": "Run discovery → assessment → monitoring → response in sequence.",
+          "difficulty": "advanced",
+          "category": "Incident Response & Reporting",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for incident response! Complete Automation Pipeline. Every second counts when responding to attacks!",
+          "starter_code": "def full_pipeline():\n    # TODO: Simulate complete security automation pipeline\n    pass\n\nfull_pipeline()",
+          "expected_output": "╔════════════════════════════════════╗\n║   SECURITY AUTOMATION PIPELINE     ║\n╚════════════════════════════════════╝\n\n📡 Phase 1: Discovery\n  Scanned 5 ports → 2 open\n\n🔍 Phase 2: Assessment\n  Password policy: ✅\n  Config audit: 67% compliant\n\n📊 Phase 3: Monitoring\n  File integrity: ✅ No changes\n\n🚨 Phase 4: Response\n  0 incidents requiring action\n\n✅ Pipeline complete",
+          "hints": [
+            {
+              "message": "Call each phase function in sequence."
+            },
+            {
+              "message": "Print formatted output for each phase."
+            },
+            {
+              "message": "def full_pipeline():\n    print('╔'+'═'*36+'╗\\n║   SECURITY AUTOMATION PIPELINE     ║\\n╚'+'═'*36+'╝')\n    print('\\n📡 Phase 1: Discovery\\n  Scanned 5 ports → 2 open')\n    print('\\n🔍 Phase 2: Assessment\\n  Password policy: ✅\\n  Config audit: 67% compliant')\n    print('\\n📊 Phase 3: Monitoring\\n  File integrity: ✅ No changes')\n    print('\\n🚨 Phase 4: Response\\n  0 incidents requiring action')\n    print('\\n✅ Pipeline complete')"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

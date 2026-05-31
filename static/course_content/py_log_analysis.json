@@ -1,0 +1,1583 @@
+{
+  "course_id": "py_log_analysis",
+  "title": "Python Log Analysis & Security Monitoring",
+  "description": "Master the art of reading, parsing, and analysing security logs with Python to detect threats, anomalies, and incidents.",
+  "difficulty": "INTERMEDIATE",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "Basic Python knowledge"
+  ],
+  "learning_outcomes": [
+    "Read and parse common log formats (Apache, auth, syslog, JSON logs)",
+    "Use Python regex to extract security-relevant fields from log entries",
+    "Build scripts that detect brute-force attacks, privilege escalations, and anomalies",
+    "Analyse timestamps and correlate events across multiple log sources",
+    "Generate security reports and alerts from log data",
+    "Understand log rotation, retention policies, and chain-of-custody",
+    "Detect SQL injection, XSS, and path traversal attacks in web server logs",
+    "Create statistical baselines and flag deviations indicating compromise",
+    "Apply Python data structures to large-scale log processing"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses detective/CCTV analogies. Never judges. Celebrates small wins. Makes log analysis feel like solving a mystery.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Hey! Log analysis can feel like staring at a wall of text — totally normal. Want me to highlight what to look for? Think of each log line as a witness statement — let's interview them together! 🔍",
+      "idle_90_seconds": "Still thinking? That's great — careful analysis is key! Each log line has a timestamp, source, and action. Which part is tricky? I can walk through it piece by piece.",
+      "idle_180_seconds": "No worries! Here's a trick: focus on ONE field at a time. Start with timestamps, then IPs, then actions. Want me to show the pattern step by step? 🕵️",
+      "first_error": "Almost there! Parsing logs is tricky because formats vary. Check your regex — does it match the sample log? Let's compare side by side.",
+      "repeated_errors": "Let me try a different approach. Each log line is a sentence: 'WHO did WHAT from WHERE at WHEN'. Your code extracts each part. Let me show you...",
+      "after_success": "Brilliant detective work! 🎉 You just parsed real security data — that's exactly what SOC analysts do. Ready for the next case?"
+    },
+    "encouragement_phrases": [
+      "You're becoming a log detective! 🕵️",
+      "That regex is clean and precise!",
+      "Most people find this intimidating. You're handling it like a pro!",
+      "Security analysts spend 60% of their time on logs. You're building a superpower!",
+      "Great catch! That's how real breaches get discovered.",
+      "Your skills are levelling up fast! 📈",
+      "Think of yourself as a digital archaeologist!",
+      "That's careful analysis. Excellent!",
+      "You just automated hours of manual work. That's Python power!",
+      "Each line parsed builds your threat-hunting instincts. Keep going!",
+      "Regex can be frustrating, but you're getting the hang of it!",
+      "You're building a toolkit that real companies need. Valuable stuff!"
+    ],
+    "explanation_styles": {
+      "analogy": "Log files are like CCTV footage for computers. Each entry is one frame showing WHO did WHAT, WHEN, and WHERE.",
+      "visual": "Picture a log as a spreadsheet: TIMESTAMP | SOURCE IP | ACTION | RESULT. Your script highlights suspicious rows in red.",
+      "step_by_step": "1. Open file. 2. Read line by line. 3. Regex to split fields. 4. Check against rules. 5. Collect suspicious entries. 6. Report.",
+      "code_trace": "line='192.168.1.100 [10/Jan] GET /admin 403'. Regex captures: group(1)=IP, group(2)=date, group(3)=method, group(4)=path, status=403. Admin access denied → suspicious!",
+      "comparison": "Manual log review = reading every phone book page. Python log analysis = Ctrl+F with superpowers — search patterns, count, timeline, report in seconds."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "py_log_analysis_lesson_1",
+      "title": "Python Log Analysis & Security Monitoring",
+      "theory": {
+        "introduction": "Every computer system keeps a diary — we call them log files. Just like a shop's CCTV cameras record everyone who walks in and out, log files record every action that happens on a server, network, or application. When something goes wrong — a hacker breaks in, a system crashes, or data gets stolen — the FIRST place investigators look is the logs. They're the digital crime scene evidence.\n\nBut here's the problem: modern systems generate MILLIONS of log entries every day. A busy web server might produce 10GB of logs in 24 hours. No human can read all of that. That's where Python comes in. With Python, you can write scripts that automatically read through mountains of log data, extract the important bits, spot patterns that indicate attacks, and raise alerts — all in seconds.\n\nIn this module, you'll learn to think like a Security Operations Centre (SOC) analyst. You'll parse real log formats (Apache web server logs, Linux authentication logs, firewall logs, and application JSON logs), build detection rules for common attacks like brute-force login attempts and SQL injection, create timeline correlations across multiple sources, and generate professional security reports.\n\nThink of yourself as a detective: the logs are your witness statements, Python is your magnifying glass, and regex is your fingerprint kit. By the end of this module, you'll be able to turn a wall of text into actionable security intelligence. Let's crack the case!",
+        "why_important": "Log analysis is the backbone of cybersecurity defence. According to industry reports, the average time to detect a data breach is over 200 days — and in most cases, the evidence was sitting in log files the entire time, unread and unanalysed. Companies that implement automated log monitoring detect breaches 10x faster.\n\nEvery major security framework (NIST, ISO 27001, PCI-DSS, GDPR) REQUIRES log monitoring. If you work in cybersecurity — whether as a penetration tester, SOC analyst, incident responder, or security engineer — you WILL read and analyse logs. Python is the most popular language for this because it handles text processing beautifully, has powerful regex support, and can scale from small scripts to enterprise-grade SIEM pipelines.\n\nBeyond professional use, understanding logs helps you protect your own systems. Want to know if someone is trying to hack your server? Check the logs. Want to debug why your application crashed at 3 AM? Check the logs. Logs are the truth — they don't lie, they don't forget, and with Python, they don't stay hidden.",
+        "key_concepts": [
+          {
+            "concept": "What Are Log Files?",
+            "explanation": "A log file is a text file where a system automatically records events as they happen. Think of it like a ship captain's log — every event gets a timestamp and description. Servers, applications, firewalls, databases, and operating systems all generate logs. Common locations include /var/log/ on Linux. Each line typically contains: a timestamp (when), a source (who/where), an action (what happened), and a result (success/failure). Understanding log structure is the foundation of all security monitoring.",
+            "example": "# Reading a simple log file in Python\nwith open('server.log', 'r') as f:\n    for line_num, line in enumerate(f, 1):\n        print(f'Line {line_num}: {line.strip()}')\n\n# Output:\n# Line 1: 2025-01-10 14:23:01 INFO User admin logged in from 192.168.1.100\n# Line 2: 2025-01-10 14:23:05 WARN Failed login for root from 10.0.0.55",
+            "ai_hint": "Think of log files as your system's diary — every entry has a date, a mood (INFO/WARNING/ERROR), and a story about what happened."
+          },
+          {
+            "concept": "Common Log Formats",
+            "explanation": "Different systems use different log formats, just like different countries use different date formats. The most common are: Apache/Nginx Combined Log Format (web servers), Syslog format (Linux system logs), Auth.log format (authentication events), JSON structured logs (modern apps), and CSV/TSV logs (custom applications). Each has its own structure but shares the same DNA: timestamp + source + event + details. Learning to recognise these formats instantly is like a detective learning to read different types of evidence.",
+            "example": "# Apache Combined Log Format\napache = '192.168.1.100 - frank [10/Jan/2025:13:55:36 +0000] \"GET /index.html HTTP/1.1\" 200 2326'\n\n# Syslog Format\nsyslog = 'Jan 10 14:23:01 webserver sshd[12345]: Failed password for root from 10.0.0.55'\n\n# JSON Log Format\nimport json\njson_log = json.loads('{\"timestamp\":\"2025-01-10T14:23:01Z\",\"level\":\"ERROR\",\"message\":\"Invalid token\"}')\nprint(json_log['level'])  # ERROR",
+            "ai_hint": "Different log formats are like different languages — once you learn the grammar of each one, you can read them all fluently!"
+          },
+          {
+            "concept": "Regular Expressions for Log Parsing",
+            "explanation": "Regular expressions (regex) are patterns that describe text structures. For log analysis, they are your most powerful tool — like a metal detector that finds exactly the needles in the haystack. Python's 're' module lets you define patterns to extract IP addresses, timestamps, usernames, HTTP methods, status codes, and error messages from any log format. A regex like r'(\\d{1,3}\\.){3}\\d{1,3}' matches any IPv4 address. Key components: \\d (digit), \\s (space), \\S (non-space), .* (anything), groups () for capturing, quantifiers + and *.",
+            "example": "import re\n\nlog = '192.168.1.100 - - [10/Jan/2025:14:23:01 +0000] \"GET /admin HTTP/1.1\" 403 287'\npattern = r'(\\S+) - - \\[(.*?)\\] \"(\\S+) (\\S+) \\S+\" (\\d{3})'\nmatch = re.search(pattern, log)\nif match:\n    print(f'IP: {match.group(1)}')        # 192.168.1.100\n    print(f'Path: {match.group(4)}')      # /admin\n    print(f'Status: {match.group(5)}')    # 403",
+            "ai_hint": "Regex is like a search template with wildcards on steroids. \\d means 'any digit', \\S means 'any non-space character', and () captures what you want to keep!"
+          },
+          {
+            "concept": "Detecting Brute-Force Attacks",
+            "explanation": "A brute-force attack is when someone tries thousands of password combinations hoping to guess the right one. In logs, this appears as many failed login attempts from the same IP address in a short time window. Your Python script can detect this by counting failed logins per IP and flagging any IP that exceeds a threshold (e.g., 5 failures in 10 minutes). This is exactly what tools like Fail2Ban do. The analogy: if someone tries 100 different keys on your front door in 5 minutes, that's not a forgetful neighbour — that's a break-in attempt.",
+            "example": "from collections import Counter\nimport re\n\nfailed = Counter()\nlog_lines = [\n    'Jan 10 14:23:05 sshd: Failed password for root from 10.0.0.55',\n    'Jan 10 14:23:06 sshd: Failed password for root from 10.0.0.55',\n    'Jan 10 14:23:07 sshd: Failed password for admin from 10.0.0.55',\n]\nfor line in log_lines:\n    if 'Failed password' in line:\n        ip = re.search(r'from (\\S+)', line).group(1)\n        failed[ip] += 1\n\nfor ip, count in failed.most_common():\n    if count >= 3:\n        print(f'ALERT: {ip} has {count} failed logins!')",
+            "ai_hint": "Counting failed logins per IP is like counting how many times someone jiggles different keys in your lock — too many tries means suspicious!"
+          },
+          {
+            "concept": "Timestamp Parsing and Time Windows",
+            "explanation": "Timestamps are the heartbeat of log analysis. Every event has a 'when', and correlating events by time is how you reconstruct attack timelines. Python's datetime module can parse timestamps from any format into datetime objects, letting you calculate time differences, group events into windows, and detect time-based patterns. 100 requests in 1 second might indicate DDoS, while logins at 3 AM might indicate an attacker in a different timezone. strptime() converts strings to datetime using format codes: %Y=year, %m=month, %d=day, %H=hour, %M=minute, %S=second.",
+            "example": "from datetime import datetime\n\n# Parse Apache timestamp\nts = '10/Jan/2025:14:23:01 +0000'\ndt = datetime.strptime(ts, '%d/%b/%Y:%H:%M:%S %z')\nprint(f'Parsed: {dt}')\n\n# Calculate time between events\nevent1 = datetime(2025,1,10,14,23,1)\nevent2 = datetime(2025,1,10,14,23,58)\ndiff = (event2 - event1).total_seconds()\nprint(f'Gap: {diff} seconds')  # 57.0",
+            "ai_hint": "strptime = 'string-parse-time'. Match the format codes to your timestamp pattern: %d=day, %b=month-name, %Y=year, %H=hour."
+          },
+          {
+            "concept": "Detecting Web Attacks in HTTP Logs",
+            "explanation": "Web server logs are a goldmine for detecting attacks. SQL injection appears as requests containing UNION SELECT, ' OR 1=1, DROP TABLE in URLs. XSS shows up as <script> tags or javascript: protocols. Path traversal shows ../ sequences. Your Python script can scan HTTP request paths for these malicious patterns. It's like having a bouncer at a club who checks everyone's ID — except instead of age, you check for attack signatures in URLs.",
+            "example": "import re\n\nATTACK_PATTERNS = {\n    'SQLi': re.compile(r\"(union.*select|'\\s*or\\s*'|drop\\s+table)\", re.I),\n    'XSS': re.compile(r'(<script|javascript:|onerror\\s*=)', re.I),\n    'Path Traversal': re.compile(r'(\\.\\./|%2e%2e)', re.I),\n}\n\nrequests = ['GET /search?q=shoes', \"GET /login?u=admin' OR '1'='1\", 'GET /file?p=../../../etc/passwd']\nfor req in requests:\n    for name, pat in ATTACK_PATTERNS.items():\n        if pat.search(req):\n            print(f'ALERT [{name}]: {req}')",
+            "ai_hint": "Attack patterns are like 'red flag words' — your script watches for 'UNION SELECT' and '../' just like spam filters watch for 'FREE MONEY'!"
+          },
+          {
+            "concept": "Log Aggregation with Counters",
+            "explanation": "Raw logs are overwhelming — thousands of similar lines. Aggregation means grouping and counting events to see the big picture. Python's Counter and defaultdict are perfect. Count requests per IP, errors per hour, most-visited pages, status code distribution. This transforms 10,000 lines into a 20-line summary. Like organising 1,000 receipts by category — suddenly you see where the money went. One 404 is normal; 500 from the same IP scanning for vulnerable paths is an attack.",
+            "example": "from collections import Counter\n\nlogs = ['10.0.0.55 GET /admin 403','10.0.0.55 POST /login 401',\n        '10.0.0.55 POST /login 401','192.168.1.1 GET /index 200',\n        '192.168.1.1 GET /about 200']\n\nip_counts = Counter(line.split()[0] for line in logs)\nstatus_counts = Counter(line.split()[-1] for line in logs)\n\nprint('Requests per IP:')\nfor ip, c in ip_counts.most_common():\n    print(f'  {ip}: {c}')\nprint('Status codes:')\nfor s, c in status_counts.most_common():\n    print(f'  {s}: {c}')",
+            "ai_hint": "Counter is like a tally chart — count how many times each thing appears. most_common() gives you the top offenders!"
+          },
+          {
+            "concept": "Real-Time Log Monitoring",
+            "explanation": "Batch analysis reviews logs after the fact, but real-time monitoring watches logs as they are written — like live CCTV versus reviewing recordings. Python can tail a log file by seeking to the end and checking for new lines continuously. Combined with pattern matching, your script becomes a live security monitor that alerts the MOMENT something suspicious happens. Uses file.seek(0, 2) to jump to end, then loops with readline(). Adding sleep(0.5) prevents CPU overuse.",
+            "example": "import time\n\ndef monitor_log(filepath, keywords):\n    print(f'Monitoring {filepath}...')\n    with open(filepath, 'r') as f:\n        f.seek(0, 2)  # Jump to end\n        while True:\n            line = f.readline()\n            if line:\n                for kw in keywords:\n                    if kw.lower() in line.lower():\n                        print(f'ALERT: {line.strip()}')\n                        break\n            else:\n                time.sleep(0.5)\n\n# Usage: monitor_log('/var/log/auth.log', ['Failed', 'error'])\nprint('Real-time monitor ready')",
+            "ai_hint": "Real-time monitoring is like a security guard watching live cameras instead of reviewing yesterday's footage — catch intruders AS they break in!"
+          },
+          {
+            "concept": "Statistical Baseline and Anomaly Detection",
+            "explanation": "Every system has a 'normal' baseline. 500 requests/hour with 2% errors is normal. If suddenly 5,000 requests with 40% errors appear, something is wrong. Anomaly detection means establishing what's normal (mean, standard deviation) and flagging deviations. Values outside 2-3 standard deviations get flagged. This catches zero-day attacks and insider threats that don't match known signatures. Python's statistics module provides mean() and stdev() for building baselines.",
+            "example": "import statistics\n\nbaseline = [480,520,510,490,505,530,485,515,500,495]\nmean = statistics.mean(baseline)\nstdev = statistics.stdev(baseline)\nthreshold = mean + (2 * stdev)\n\nprint(f'Normal: {mean:.0f} ± {stdev:.0f}')\nprint(f'Alert above: {threshold:.0f}')\n\nnew_data = [505, 4800, 490, 510]\nfor val in new_data:\n    if val > threshold:\n        print(f'ANOMALY: {val} (expected ~{mean:.0f})')\n    else:\n        print(f'Normal: {val}')",
+            "ai_hint": "Baselines are like knowing your resting heart rate — if it suddenly doubles, something is wrong even if you don't know exactly what!"
+          },
+          {
+            "concept": "Generating Security Reports",
+            "explanation": "The final step is communicating findings. A security report summarises threats, prioritises them, and recommends actions. Python auto-generates reports in text, CSV, HTML, or JSON. A good report includes: executive summary, timeline, affected systems, severity classification, and remediation steps. Think of it as your detective case file — all evidence organised for the security team.",
+            "example": "from datetime import datetime\n\ndef make_report(threats):\n    lines = ['='*50, 'SECURITY REPORT', f'Date: {datetime.now():%Y-%m-%d}', '='*50]\n    lines.append(f'Total threats: {len(threats)}')\n    for t in threats:\n        lines.append(f'  [{t[\"severity\"]}] {t[\"type\"]}: {t[\"detail\"]}')\n    lines.append('='*50)\n    return '\\n'.join(lines)\n\nthreats = [\n    {'severity':'CRITICAL','type':'SQLi','detail':'UNION SELECT from 10.0.0.55'},\n    {'severity':'HIGH','type':'Brute-Force','detail':'47 failures from 10.0.0.55'},\n]\nprint(make_report(threats))",
+            "ai_hint": "A security report is your case file — clear, organised, actionable. Automate it so you never write one from scratch!"
+          },
+          {
+            "concept": "Log Integrity and Chain of Custody",
+            "explanation": "Logs are digital evidence. Chain of custody means proving they haven't been tampered with — important for legal proceedings. SHA-256 hashing creates a unique fingerprint; even changing one character gives a different hash. Python's hashlib module calculates hashes. Always work on copies, never originals, and document your process. Log rotation (logrotate) compresses old logs (.gz files). Python can read these with gzip.open(). Regulations (GDPR, PCI-DSS) require specific retention periods.",
+            "example": "import hashlib\n\ndef hash_file(filepath):\n    sha256 = hashlib.sha256()\n    with open(filepath, 'rb') as f:\n        for chunk in iter(lambda: f.read(8192), b''):\n            sha256.update(chunk)\n    return sha256.hexdigest()\n\n# Create test file\nwith open('evidence.log', 'w') as f:\n    f.write('2025-01-10 Root access from 10.0.0.55\\n')\n\noriginal_hash = hash_file('evidence.log')\nprint(f'SHA-256: {original_hash[:32]}...')\nprint('Document this hash before analysis!')",
+            "ai_hint": "Hashing is like sealing evidence in a tamper-proof bag — if anyone opens it, you'll know. SHA-256 is the gold standard."
+          },
+          {
+            "concept": "Processing Large Log Files Efficiently",
+            "explanation": "Production logs can be gigabytes. Loading everything with readlines() crashes scripts. Python's line-by-line iteration uses minimal memory. Pre-filter with 'if keyword in line' before expensive regex. Generators yield results one at a time. For compressed files, gzip.open() reads .gz files transparently. Think of it as sifting for gold: coarse filter first (string check), then fine filter (regex) on what remains.",
+            "example": "import re, time\n\ndef fast_scan(filepath, keyword, pattern):\n    matches = []\n    total = 0\n    start = time.time()\n    with open(filepath, 'r', errors='ignore') as f:\n        for line in f:\n            total += 1\n            if keyword not in line:  # Fast pre-filter\n                continue\n            m = re.search(pattern, line)  # Slow regex only on filtered\n            if m:\n                matches.append(m.groups())\n    elapsed = time.time() - start\n    print(f'Scanned {total} lines in {elapsed:.2f}s, found {len(matches)}')\n    return matches\n\nprint('Two-pass filtering: string check first, regex second')",
+            "ai_hint": "Processing big files: first remove obvious rocks (keyword filter), then carefully examine what's left (regex)!"
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Reading and Displaying Log File Contents",
+          "description": "Opens a log file, reads line by line, displays with line numbers — the fundamental first step.",
+          "difficulty": "beginner",
+          "code": "def read_log_file(filepath):\n    entries = []\n    try:\n        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:\n            for num, line in enumerate(f, 1):\n                stripped = line.strip()\n                if stripped:\n                    entries.append((num, stripped))\n        print(f'Read {len(entries)} entries from {filepath}')\n    except FileNotFoundError:\n        print(f'Error: {filepath} not found!')\n    return entries\n\nsample = ['2025-01-10 14:23:01 INFO User admin logged in from 192.168.1.100',\n          '2025-01-10 14:23:05 WARN Failed login for root from 10.0.0.55',\n          '2025-01-10 14:23:10 ERROR Database connection timeout after 30s',\n          '2025-01-10 14:23:15 INFO User admin accessed /dashboard',\n          '2025-01-10 14:23:20 WARN Failed login for root from 10.0.0.55',\n          '2025-01-10 14:23:25 INFO Backup job started',\n          '2025-01-10 14:23:30 ERROR File /tmp/upload.php not found (404)',\n          '2025-01-10 14:23:35 WARN Failed login for admin from 10.0.0.55']\n\nwith open('sample.log', 'w') as f:\n    for e in sample:\n        f.write(e + '\\n')\n\nentries = read_log_file('sample.log')\nfor num, entry in entries:\n    print(f'  [{num:3d}] {entry}')",
+          "output": "Read 8 entries from sample.log\n  [  1] 2025-01-10 14:23:01 INFO User admin logged in from 192.168.1.100\n  [  2] 2025-01-10 14:23:05 WARN Failed login for root from 10.0.0.55\n  [  3] 2025-01-10 14:23:10 ERROR Database connection timeout after 30s\n  [  4] 2025-01-10 14:23:15 INFO User admin accessed /dashboard\n  [  5] 2025-01-10 14:23:20 WARN Failed login for root from 10.0.0.55\n  [  6] 2025-01-10 14:23:25 INFO Backup job started\n  [  7] 2025-01-10 14:23:30 ERROR File /tmp/upload.php not found (404)\n  [  8] 2025-01-10 14:23:35 WARN Failed login for admin from 10.0.0.55",
+          "ai_explanation": "We open the file with error handling, enumerate from 1 for line numbers, strip whitespace, skip empty lines. This pattern is the foundation of ALL log analysis scripts.",
+          "ai_challenge": "Add counting: print how many INFO, WARN, ERROR entries there are using a dictionary."
+        },
+        {
+          "title": "Example 2: Parsing Apache Logs with Regex",
+          "description": "Uses regex named groups to extract IP, timestamp, method, path, and status from Apache Combined Log Format.",
+          "difficulty": "intermediate",
+          "code": "import re\n\ndef parse_apache(line):\n    pattern = (r'(?P<ip>\\S+) \\S+ \\S+ \\[(?P<timestamp>[^\\]]+)\\] '\n               r'\"(?P<method>\\S+) (?P<path>\\S+) (?P<protocol>\\S+)\" '\n               r'(?P<status>\\d{3}) (?P<size>\\S+)')\n    match = re.match(pattern, line)\n    return match.groupdict() if match else None\n\nlogs = [\n    '192.168.1.100 - frank [10/Jan/2025:13:55:36 +0000] \"GET /index.html HTTP/1.1\" 200 2326',\n    '10.0.0.55 - - [10/Jan/2025:13:56:01 +0000] \"POST /login HTTP/1.1\" 401 185',\n    '10.0.0.55 - - [10/Jan/2025:13:56:02 +0000] \"POST /login HTTP/1.1\" 401 185',\n    '10.0.0.55 - - [10/Jan/2025:13:56:03 +0000] \"GET /admin HTTP/1.1\" 403 287',\n    '10.0.0.55 - - [10/Jan/2025:13:56:15 +0000] \"GET /../../etc/passwd HTTP/1.1\" 400 0',\n    '192.168.1.200 - - [10/Jan/2025:13:56:20 +0000] \"GET /products?id=1 HTTP/1.1\" 200 1847',\n]\n\nfor i, log in enumerate(logs, 1):\n    p = parse_apache(log)\n    if p:\n        icon = '🚨' if int(p['status']) >= 400 else '✅'\n        print(f'Entry {i}: {icon}  IP:{p[\"ip\"]}  {p[\"method\"]} {p[\"path\"]}  Status:{p[\"status\"]}')",
+          "output": "Entry 1: ✅  IP:192.168.1.100  GET /index.html  Status:200\nEntry 2: 🚨  IP:10.0.0.55  POST /login  Status:401\nEntry 3: 🚨  IP:10.0.0.55  POST /login  Status:401\nEntry 4: 🚨  IP:10.0.0.55  GET /admin  Status:403\nEntry 5: 🚨  IP:10.0.0.55  GET /../../etc/passwd  Status:400\nEntry 6: ✅  IP:192.168.1.200  GET /products?id=1  Status:200",
+          "ai_explanation": "Named groups (?P<n>...) make code readable. re.match() checks from string start. groupdict() returns all groups as a dict. Status codes >= 400 indicate errors/blocked requests — exactly how SOC analysts triage.",
+          "ai_challenge": "Add counting: after parsing, print how many requests per IP and which IP looks most suspicious."
+        },
+        {
+          "title": "Example 3: Brute-Force Login Detection",
+          "description": "Counts failed SSH login attempts per IP using Counter and flags IPs exceeding the threshold.",
+          "difficulty": "intermediate",
+          "code": "from collections import Counter, defaultdict\nimport re\n\nauth_logs = [\n    'Jan 10 14:23:01 sshd: Accepted password for admin from 192.168.1.100',\n    'Jan 10 14:23:05 sshd: Failed password for root from 10.0.0.55',\n    'Jan 10 14:23:06 sshd: Failed password for root from 10.0.0.55',\n    'Jan 10 14:23:07 sshd: Failed password for root from 10.0.0.55',\n    'Jan 10 14:23:08 sshd: Failed password for root from 10.0.0.55',\n    'Jan 10 14:23:09 sshd: Failed password for admin from 10.0.0.55',\n    'Jan 10 14:23:10 sshd: Failed password for admin from 10.0.0.55',\n    'Jan 10 14:23:15 sshd: Accepted password for dev from 192.168.1.200',\n    'Jan 10 14:23:20 sshd: Failed password for test from 10.0.0.99',\n    'Jan 10 14:23:25 sshd: Failed password for test from 10.0.0.99',\n    'Jan 10 14:23:30 sshd: Failed password for root from 10.0.0.55',\n]\n\ndef detect_brute_force(logs, threshold=5):\n    failed_by_ip = Counter()\n    targeted = defaultdict(set)\n    for line in logs:\n        if 'Failed password' in line:\n            ip = re.search(r'from (\\S+)', line).group(1)\n            user = re.search(r'for (\\S+)', line).group(1)\n            failed_by_ip[ip] += 1\n            targeted[ip].add(user)\n    print('=== BRUTE-FORCE DETECTION ===')\n    for ip, count in failed_by_ip.most_common():\n        users = ', '.join(targeted[ip])\n        flag = '🚨 FLAGGED' if count >= threshold else '✅ OK'\n        bar = '█' * count\n        print(f'  {ip:15s} | {bar} ({count}) → {flag}  [users: {users}]')\n\ndetect_brute_force(auth_logs, threshold=5)",
+          "output": "=== BRUTE-FORCE DETECTION ===\n  10.0.0.55       | ███████ (7) → 🚨 FLAGGED  [users: root, admin]\n  10.0.0.99       | ██ (2) → ✅ OK  [users: test]",
+          "ai_explanation": "Counter counts failed logins per IP. defaultdict(set) tracks unique targeted usernames. The bar chart makes patterns visible at a glance. This is exactly how Fail2Ban works internally.",
+          "ai_challenge": "Add time window detection: only flag IPs with 5+ failures within 60 seconds by parsing the timestamps."
+        },
+        {
+          "title": "Example 4: Web Attack Signature Scanner",
+          "description": "Scans HTTP logs for SQL injection, XSS, path traversal, and command injection using compiled regex.",
+          "difficulty": "intermediate",
+          "code": "import re\nfrom collections import defaultdict\n\nclass WebAttackScanner:\n    def __init__(self):\n        self.sigs = {\n            'SQL Injection': re.compile(r\"(union\\s+select|'\\s*or\\s*'|drop\\s+table|;\\s*--)\", re.I),\n            'XSS': re.compile(r'(<script|javascript:|onerror\\s*=|onload\\s*=)', re.I),\n            'Path Traversal': re.compile(r'(\\.\\./|%2e%2e|/etc/passwd)', re.I),\n            'Command Injection': re.compile(r'(;\\s*cat\\s|\\|\\s*whoami|`[^`]+`)', re.I),\n        }\n        self.results = defaultdict(list)\n\n    def scan(self, requests):\n        for req in requests:\n            found = []\n            for name, pat in self.sigs.items():\n                if pat.search(req):\n                    found.append(name)\n                    self.results[name].append(req)\n            icon = '🚨 ' + ' + '.join(found) if found else '✅ Clean'\n            print(f'{icon}: {req[:60]}')\n\n    def summary(self):\n        print('\\n=== SUMMARY ===')\n        for attack, entries in sorted(self.results.items()):\n            print(f'  {attack}: {len(entries)} detections')\n\nscanner = WebAttackScanner()\nscanner.scan([\n    'GET /index.html HTTP/1.1',\n    \"GET /search?q=shoes' OR '1'='1 HTTP/1.1\",\n    'GET /page?id=<script>alert(1)</script> HTTP/1.1',\n    'GET /file?name=../../../etc/passwd HTTP/1.1',\n    'GET /ping?host=8.8.8.8;cat /etc/passwd HTTP/1.1',\n    'GET /about.html HTTP/1.1',\n    'GET /users?id=1 UNION SELECT user,pass FROM accounts-- HTTP/1.1',\n])\nscanner.summary()",
+          "output": "✅ Clean: GET /index.html HTTP/1.1\n🚨 SQL Injection: GET /search?q=shoes' OR '1'='1 HTTP/1.1\n🚨 XSS: GET /page?id=<script>alert(1)</script> HTTP/1.1\n🚨 Path Traversal: GET /file?name=../../../etc/passwd HTTP/1.1\n🚨 Command Injection + Path Traversal: GET /ping?host=8.8.8.8;cat /etc/passwd HTTP/1.1\n✅ Clean: GET /about.html HTTP/1.1\n🚨 SQL Injection: GET /users?id=1 UNION SELECT user,pass FROM accounts--\n\n=== SUMMARY ===\n  Command Injection: 1 detections\n  Path Traversal: 2 detections\n  SQL Injection: 2 detections\n  XSS: 1 detections",
+          "ai_explanation": "Compiled regex (re.compile) is faster for repeated use. The class organizes signatures, scanning, and reporting. A single request can trigger multiple detections. This architecture is extensible — just add more signatures.",
+          "ai_challenge": "Add severity ratings (CRITICAL, HIGH, MEDIUM) per attack type and sort the summary by severity."
+        },
+        {
+          "title": "Example 5: Timeline Reconstruction from Multiple Sources",
+          "description": "Parses timestamps from different formats and builds a chronological timeline of security events.",
+          "difficulty": "intermediate",
+          "code": "from datetime import datetime\n\nclass Timeline:\n    FORMATS = {\n        'apache': '%d/%b/%Y:%H:%M:%S %z',\n        'syslog': '%b %d %H:%M:%S',\n        'iso': '%Y-%m-%dT%H:%M:%S',\n        'standard': '%Y-%m-%d %H:%M:%S',\n    }\n    def __init__(self): self.events = []\n\n    def parse_ts(self, s, fmt):\n        dt = datetime.strptime(s, self.FORMATS[fmt])\n        if fmt == 'syslog': dt = dt.replace(year=2025)\n        return dt.replace(tzinfo=None) if dt.tzinfo else dt\n\n    def add(self, ts, source, desc, severity='INFO'):\n        self.events.append({'time':ts,'source':source,'desc':desc,'sev':severity})\n\n    def show(self):\n        self.events.sort(key=lambda e: e['time'])\n        icons = {'INFO':'🔵','WARNING':'🟡','HIGH':'🟠','CRITICAL':'🔴'}\n        print('\\n📅 SECURITY TIMELINE')\n        for e in self.events:\n            icon = icons.get(e['sev'],'⚪')\n            print(f'  {e[\"time\"]:%H:%M:%S} {icon} [{e[\"source\"]:8s}] {e[\"desc\"]}')\n\ntl = Timeline()\ntl.add(tl.parse_ts('10/Jan/2025:14:23:01 +0000','apache'),'WEB','GET /admin → 403','WARNING')\ntl.add(tl.parse_ts('10/Jan/2025:14:23:05 +0000','apache'),'WEB','POST /login → 401','WARNING')\ntl.add(tl.parse_ts('Jan 10 14:23:06','syslog'),'AUTH','Failed SSH for root','HIGH')\ntl.add(tl.parse_ts('Jan 10 14:23:10','syslog'),'AUTH','Failed SSH for root','HIGH')\ntl.add(tl.parse_ts('2025-01-10T14:25:30','iso'),'APP','SQL error near UNION','CRITICAL')\ntl.add(tl.parse_ts('2025-01-10 14:25:35','standard'),'FIREWALL','Blocked 10.0.0.55','CRITICAL')\ntl.show()",
+          "output": "📅 SECURITY TIMELINE\n  14:23:01 🟡 [WEB     ] GET /admin → 403\n  14:23:05 🟡 [WEB     ] POST /login → 401\n  14:23:06 🟠 [AUTH    ] Failed SSH for root\n  14:23:10 🟠 [AUTH    ] Failed SSH for root\n  14:25:30 🔴 [APP     ] SQL error near UNION\n  14:25:35 🔴 [FIREWALL] Blocked 10.0.0.55",
+          "ai_explanation": "Different log sources use different timestamp formats. By normalizing to datetime objects, we sort chronologically regardless of source. The timeline tells a story: web probing → SSH brute force → SQL injection → blocked by firewall.",
+          "ai_challenge": "Add gap detection: if more than 60 seconds between events, print '... X seconds gap ...' between them."
+        },
+        {
+          "title": "Example 6: JSON Log Parser and Analyser",
+          "description": "Parses structured JSON log entries, filters by severity, and generates summary statistics.",
+          "difficulty": "beginner",
+          "code": "import json\nfrom collections import Counter\n\njson_logs = [\n    '{\"ts\":\"14:23:01\",\"level\":\"INFO\",\"service\":\"auth\",\"msg\":\"Login successful\",\"user\":\"admin\"}',\n    '{\"ts\":\"14:23:05\",\"level\":\"WARNING\",\"service\":\"auth\",\"msg\":\"Failed login\",\"user\":\"root\",\"ip\":\"10.0.0.55\"}',\n    '{\"ts\":\"14:23:10\",\"level\":\"ERROR\",\"service\":\"db\",\"msg\":\"Connection timeout\",\"timeout_ms\":30000}',\n    '{\"ts\":\"14:23:15\",\"level\":\"INFO\",\"service\":\"web\",\"msg\":\"Page served\",\"path\":\"/dashboard\"}',\n    '{\"ts\":\"14:23:20\",\"level\":\"WARNING\",\"service\":\"auth\",\"msg\":\"Failed login\",\"user\":\"root\",\"ip\":\"10.0.0.55\"}',\n    '{\"ts\":\"14:23:25\",\"level\":\"ERROR\",\"service\":\"auth\",\"msg\":\"Account locked\",\"user\":\"root\"}',\n    '{\"ts\":\"14:23:30\",\"level\":\"CRITICAL\",\"service\":\"fw\",\"msg\":\"DDoS detected\",\"pps\":150000}',\n    '{\"ts\":\"14:23:35\",\"level\":\"INFO\",\"service\":\"backup\",\"msg\":\"Backup completed\",\"size_gb\":2.3}',\n]\n\nevents = []\nlevel_counts = Counter()\nicons = {'INFO':'🔵','WARNING':'🟡','ERROR':'🟠','CRITICAL':'🔴'}\n\nfor line in json_logs:\n    try:\n        e = json.loads(line)\n        events.append(e)\n        level_counts[e['level']] += 1\n    except json.JSONDecodeError:\n        pass\n\nprint('=== JSON LOG EVENTS ===')\nfor e in events:\n    print(f'  {e[\"ts\"]} {icons.get(e[\"level\"],\"⚪\")} [{e[\"service\"]:6s}] {e[\"msg\"]}')\n\nprint('\\n=== SUMMARY ===')\nfor level in ['CRITICAL','ERROR','WARNING','INFO']:\n    c = level_counts.get(level, 0)\n    print(f'  {icons.get(level,\"\")} {level:10s} {\"█\"*c} ({c})')",
+          "output": "=== JSON LOG EVENTS ===\n  14:23:01 🔵 [auth  ] Login successful\n  14:23:05 🟡 [auth  ] Failed login\n  14:23:10 🟠 [db    ] Connection timeout\n  14:23:15 🔵 [web   ] Page served\n  14:23:20 🟡 [auth  ] Failed login\n  14:23:25 🟠 [auth  ] Account locked\n  14:23:30 🔴 [fw    ] DDoS detected\n  14:23:35 🔵 [backup] Backup completed\n\n=== SUMMARY ===\n  🔴 CRITICAL   █ (1)\n  🟠 ERROR      ██ (2)\n  🟡 WARNING    ██ (2)\n  🔵 INFO       ███ (3)",
+          "ai_explanation": "JSON logs are easiest to parse: json.loads() converts directly to Python dicts. No regex needed! Counter tracks severity distribution. The visual bar chart makes the severity breakdown instantly clear.",
+          "ai_challenge": "Add filtering: write a function that returns only events at WARNING level or above."
+        },
+        {
+          "title": "Example 7: IP Address Analyser",
+          "description": "Categorises IPs as internal/external, checks against a blocklist, and builds activity profiles.",
+          "difficulty": "intermediate",
+          "code": "import re\nfrom collections import defaultdict\n\nPRIVATE_RANGES = [re.compile(r'^10\\.'), re.compile(r'^172\\.(1[6-9]|2\\d|3[01])\\.'), re.compile(r'^192\\.168\\.')]\nBLOCKLIST = {'10.0.0.55', '203.0.113.66'}\n\ndef classify_ip(ip):\n    for pat in PRIVATE_RANGES:\n        if pat.match(ip): return 'Internal'\n    return 'External'\n\nlogs = ['192.168.1.100 GET /index 200', '10.0.0.55 POST /login 401',\n        '10.0.0.55 POST /login 401', '10.0.0.55 GET /admin 403',\n        '172.16.5.20 GET /dashboard 200', '203.0.113.66 GET /../../etc/passwd 400',\n        '192.168.1.200 GET /products 200']\n\nip_data = defaultdict(lambda: {'count':0, 'actions':[]})\nfor line in logs:\n    parts = line.split()\n    ip = parts[0]\n    ip_data[ip]['count'] += 1\n    ip_data[ip]['actions'].append(f'{parts[1]} {parts[2]} → {parts[3]}')\n\nprint('=== IP ANALYSIS ===')\nfor ip in sorted(ip_data):\n    d = ip_data[ip]\n    cat = classify_ip(ip)\n    blocked = '🔴 BLOCKED' if ip in BLOCKLIST else ('🟢 '+cat if cat=='Internal' else '🟡 '+cat)\n    print(f'\\n  {ip} [{blocked}] — {d[\"count\"]} requests')\n    for a in d['actions'][:3]:\n        print(f'    → {a}')",
+          "output": "=== IP ANALYSIS ===\n\n  10.0.0.55 [🔴 BLOCKED] — 3 requests\n    → POST /login → 401\n    → POST /login → 401\n    → GET /admin → 403\n\n  172.16.5.20 [🟢 Internal] — 1 requests\n    → GET /dashboard → 200\n\n  192.168.1.100 [🟢 Internal] — 1 requests\n    → GET /index → 200\n\n  192.168.1.200 [🟢 Internal] — 1 requests\n    → GET /products → 200\n\n  203.0.113.66 [🔴 BLOCKED] — 1 requests\n    → GET /../../etc/passwd → 400",
+          "ai_explanation": "RFC 1918 defines private IP ranges (10.x, 172.16-31.x, 192.168.x). Regex patterns match these prefixes. The blocklist simulates a threat intelligence feed. defaultdict builds profiles per IP. In production, blocklists come from services like AbuseIPDB.",
+          "ai_challenge": "Add risk scoring: blocklisted +100, external with 4xx +50, path traversal +75. Sort by score."
+        },
+        {
+          "title": "Example 8: Automated Security Report Generator",
+          "description": "Collects analysis findings and generates a formatted report with executive summary, findings, and recommendations.",
+          "difficulty": "advanced",
+          "code": "from datetime import datetime\n\nclass ReportGenerator:\n    def __init__(self):\n        self.threats = []\n        self.recs = []\n    def add_threat(self, sev, cat, desc, ip, evidence):\n        self.threats.append({'sev':sev,'cat':cat,'desc':desc,'ip':ip,'ev':evidence})\n    def add_rec(self, priority, action):\n        self.recs.append({'p':priority,'a':action})\n    def generate(self):\n        r = ['='*55, '   SECURITY LOG ANALYSIS REPORT',\n             f'   Generated: {datetime.now():%Y-%m-%d %H:%M}', '='*55]\n        crit = sum(1 for t in self.threats if t['sev']=='CRITICAL')\n        high = sum(1 for t in self.threats if t['sev']=='HIGH')\n        r.append(f'\\n  EXECUTIVE SUMMARY')\n        r.append(f'  Threats: {len(self.threats)} | Critical: {crit} | High: {high}')\n        r.append(f'  Risk Level: {\"CRITICAL\" if crit else \"HIGH\" if high else \"MEDIUM\"}')\n        r.append(f'\\n  FINDINGS')\n        for i, t in enumerate(sorted(self.threats, key=lambda x: ['CRITICAL','HIGH','MEDIUM','LOW'].index(x['sev'])), 1):\n            r.append(f'  #{i} [{t[\"sev\"]}] {t[\"cat\"]} from {t[\"ip\"]}')\n            r.append(f'     {t[\"desc\"]}')\n        r.append(f'\\n  RECOMMENDATIONS')\n        for rec in sorted(self.recs, key=lambda x: x['p']):\n            r.append(f'  [{rec[\"p\"]}] {rec[\"a\"]}')\n        r.append('='*55)\n        return '\\n'.join(r)\n\nrg = ReportGenerator()\nrg.add_threat('CRITICAL','SQL Injection','UNION SELECT payload detected','10.0.0.55','GET /search?q=UNION SELECT...')\nrg.add_threat('HIGH','Brute-Force','47 failed logins in 5 minutes','10.0.0.55','47x Failed password for root')\nrg.add_threat('HIGH','Path Traversal','Attempted /etc/passwd access','203.0.113.66','GET /file?name=../../etc/passwd')\nrg.add_rec('P1','Block 10.0.0.55 at firewall immediately')\nrg.add_rec('P1','Check database for data exfiltration')\nrg.add_rec('P2','Enable WAF SQL injection rules')\nrg.add_rec('P3','Review directory permissions')\nprint(rg.generate())",
+          "output": "=======================================================\n   SECURITY LOG ANALYSIS REPORT\n   Generated: 2025-01-10 15:30\n=======================================================\n\n  EXECUTIVE SUMMARY\n  Threats: 3 | Critical: 1 | High: 2\n  Risk Level: CRITICAL\n\n  FINDINGS\n  #1 [CRITICAL] SQL Injection from 10.0.0.55\n     UNION SELECT payload detected\n  #2 [HIGH] Brute-Force from 10.0.0.55\n     47 failed logins in 5 minutes\n  #3 [HIGH] Path Traversal from 203.0.113.66\n     Attempted /etc/passwd access\n\n  RECOMMENDATIONS\n  [P1] Block 10.0.0.55 at firewall immediately\n  [P1] Check database for data exfiltration\n  [P2] Enable WAF SQL injection rules\n  [P3] Review directory permissions\n=======================================================",
+          "ai_explanation": "This generates a professional security report. Threats sorted by severity (CRITICAL first). Recommendations prioritized P1 (now), P2 (soon), P3 (planned). Executive summary gives quick overview for managers. This is the exact format real SOC teams use.",
+          "ai_challenge": "Add save_report(filepath) and save_json(filepath) methods for file export."
+        },
+        {
+          "title": "Example 9: Failed Login Rate Calculator",
+          "description": "Calculates failed login rates per minute, builds a histogram, and detects rate spikes indicating attacks.",
+          "difficulty": "intermediate",
+          "code": "from collections import defaultdict\n\ndef analyse_rates(logs):\n    per_minute = defaultdict(int)\n    per_ip = defaultdict(lambda: defaultdict(int))\n    for line in logs:\n        parts = line.split()\n        ts, result, ip = parts[0], parts[1], parts[-1]\n        minute = ts[:5]  # HH:MM\n        if result == 'FAILED':\n            per_minute[minute] += 1\n            per_ip[ip][minute] += 1\n    print('=== FAILURE RATE PER MINUTE ===')\n    for m in sorted(per_minute):\n        c = per_minute[m]\n        bar = '█' * c\n        alert = ' 🚨 SPIKE!' if c >= 5 else ''\n        print(f'  {m} | {bar} ({c}){alert}')\n    print('\\n=== PER IP PER MINUTE ===')\n    for ip in sorted(per_ip):\n        print(f'  {ip}:')\n        for m in sorted(per_ip[ip]):\n            print(f'    {m} | {\"▓\" * per_ip[ip][m]} ({per_ip[ip][m]})')\n\nlogs = [\n    '14:20:01 SUCCESS admin 192.168.1.100',\n    '14:20:15 FAILED root 10.0.0.55', '14:20:16 FAILED root 10.0.0.55',\n    '14:20:17 FAILED admin 10.0.0.55', '14:20:18 FAILED root 10.0.0.55',\n    '14:20:19 FAILED root 10.0.0.55', '14:20:20 FAILED test 10.0.0.55',\n    '14:20:21 FAILED root 10.0.0.55',\n    '14:21:01 FAILED user1 10.0.0.99', '14:21:05 FAILED user2 10.0.0.99',\n    '14:22:01 FAILED root 10.0.0.55', '14:22:02 FAILED root 10.0.0.55',\n    '14:22:03 FAILED root 10.0.0.55',\n]\nanalyse_rates(logs)",
+          "output": "=== FAILURE RATE PER MINUTE ===\n  14:20 | ███████ (7) 🚨 SPIKE!\n  14:21 | ██ (2)\n  14:22 | ███ (3)\n\n=== PER IP PER MINUTE ===\n  10.0.0.55:\n    14:20 | ▓▓▓▓▓▓ (6)\n    14:22 | ▓▓▓ (3)\n  10.0.0.99:\n    14:21 | ▓▓ (2)",
+          "ai_explanation": "Time-bucketing groups events by minute to see WHEN attacks happen. defaultdict(int) counts per bucket. The nested defaultdict creates per-IP-per-minute analysis. Visual bars make spikes obvious. This is the foundation of rate-limiting systems.",
+          "ai_challenge": "Add sliding window: check every 60-second window for bursts, not just fixed minutes."
+        },
+        {
+          "title": "Example 10: Log File Integrity Checker",
+          "description": "Uses SHA-256 hashing to verify log file integrity for forensic chain-of-custody.",
+          "difficulty": "advanced",
+          "code": "import hashlib, os, json\n\ndef hash_file(path):\n    sha = hashlib.sha256()\n    with open(path, 'rb') as f:\n        for chunk in iter(lambda: f.read(8192), b''):\n            sha.update(chunk)\n    return sha.hexdigest()\n\n# Create evidence file\nwith open('evidence.log', 'w') as f:\n    f.write('2025-01-10 Root access from 10.0.0.55\\n')\n    f.write('2025-01-10 Data exported to 10.0.0.55\\n')\n\n# Register hash\noriginal = hash_file('evidence.log')\nprint(f'1. Registered: SHA-256={original[:40]}...')\n\n# Verify (unchanged)\ncurrent = hash_file('evidence.log')\nprint(f'2. Verify: {\"✅ INTACT\" if current == original else \"🚨 TAMPERED\"}')\n\n# Simulate tampering\nwith open('evidence.log', 'w') as f:\n    f.write('2025-01-10 Root access from 10.0.0.55\\n')  # Removed line!\n\ntampered = hash_file('evidence.log')\nprint(f'3. After tampering: {\"✅ INTACT\" if tampered == original else \"🚨 TAMPERED\"}')\nprint(f'   Expected: {original[:30]}...')\nprint(f'   Got:      {tampered[:30]}...')\n\nos.remove('evidence.log')",
+          "output": "1. Registered: SHA-256=a1b2c3d4...\n2. Verify: ✅ INTACT\n3. After tampering: 🚨 TAMPERED\n   Expected: a1b2c3d4...\n   Got:      x7y8z9w0...",
+          "ai_explanation": "SHA-256 creates a unique fingerprint — change even one character and the hash is completely different. Register the hash BEFORE analysis, verify AFTER. This proves evidence wasn't tampered with. Critical for legal proceedings.",
+          "ai_challenge": "Add MD5 as a secondary hash and create a verify_all() function that checks multiple files."
+        },
+        {
+          "title": "Example 11: Anomaly Detection with Statistical Baseline",
+          "description": "Builds a statistical baseline from historical data and detects anomalies using standard deviation.",
+          "difficulty": "advanced",
+          "code": "import statistics, random\n\nrandom.seed(42)\nhistorical = [random.gauss(500, 30) for _ in range(100)]\nmean = statistics.mean(historical)\nstdev = statistics.stdev(historical)\nupper = mean + 2*stdev\nlower = mean - 2*stdev\n\nprint(f'Baseline: mean={mean:.0f}, stdev={stdev:.0f}')\nprint(f'Normal range: {lower:.0f} - {upper:.0f}')\n\nnew_data = [505, 510, 4800, 490, 520, 15, 500, 495, 510, 480, 530, 490]\nprint('\\n=== MONITORING ===')\nanomalies = 0\nfor i, val in enumerate(new_data, 1):\n    if val > upper:\n        print(f'  Hour {i:2d}: {val:5.0f} 🚨 HIGH (possible DDoS)')\n        anomalies += 1\n    elif val < lower:\n        print(f'  Hour {i:2d}: {val:5.0f} 🚨 LOW (possible outage)')\n        anomalies += 1\n    else:\n        print(f'  Hour {i:2d}: {val:5.0f} ✅')\n\nprint(f'\\nAnomalies: {anomalies}/{len(new_data)}')",
+          "output": "Baseline: mean=500, stdev=30\nNormal range: 440 - 560\n\n=== MONITORING ===\n  Hour  1:   505 ✅\n  Hour  2:   510 ✅\n  Hour  3:  4800 🚨 HIGH (possible DDoS)\n  Hour  4:   490 ✅\n  Hour  5:   520 ✅\n  Hour  6:    15 🚨 LOW (possible outage)\n  ...\n\nAnomalies: 2/12",
+          "ai_explanation": "95% of normal values fall within 2 standard deviations. Values outside are anomalies. A high spike (4800) = possible DDoS. A low dip (15) = possible outage. This catches attacks that don't match known signatures.",
+          "ai_challenge": "Add time-of-day awareness: what's normal at 2 PM might be anomalous at 3 AM."
+        },
+        {
+          "title": "Example 12: Complete Log Analysis Pipeline",
+          "description": "Combines ingestion, threat detection, analysis, and reporting into a complete end-to-end pipeline.",
+          "difficulty": "advanced",
+          "code": "import re\nfrom collections import Counter\n\nclass Pipeline:\n    def __init__(self):\n        self.entries = []\n        self.threats = []\n        self.stats = {'lines':0,'parsed':0,'ips':Counter(),'status':Counter()}\n        self.sigs = {'SQLi':re.compile(r\"(union.*select|'\\s*or)\",re.I),\n                     'XSS':re.compile(r'(<script|javascript:)',re.I),\n                     'PathTraversal':re.compile(r'(\\.\\./|%2e%2e)',re.I)}\n\n    def ingest(self, logs):\n        print('📥 Stage 1: Ingesting...')\n        pat = r'(\\S+) .* \\[(.*?)\\] \"(\\S+) (\\S+) \\S+\" (\\d{3})'\n        for line in logs:\n            self.stats['lines'] += 1\n            m = re.match(pat, line)\n            if m:\n                entry = {'ip':m.group(1),'path':m.group(4),'status':int(m.group(5)),'raw':line}\n                self.entries.append(entry)\n                self.stats['parsed'] += 1\n                self.stats['ips'][entry['ip']] += 1\n                self.stats['status'][str(entry['status'])] += 1\n        print(f'   Parsed {self.stats[\"parsed\"]}/{self.stats[\"lines\"]}')\n\n    def detect(self):\n        print('🔍 Stage 2: Detecting...')\n        for e in self.entries:\n            for name, pat in self.sigs.items():\n                if pat.search(e['path']):\n                    self.threats.append({'type':name,'ip':e['ip'],'path':e['path']})\n        print(f'   Found {len(self.threats)} threats')\n\n    def report(self):\n        print('📋 Stage 3: Report')\n        print(f'\\n  Lines: {self.stats[\"lines\"]} | Parsed: {self.stats[\"parsed\"]} | Threats: {len(self.threats)}')\n        threat_types = Counter(t['type'] for t in self.threats)\n        for t, c in threat_types.most_common():\n            print(f'    {t}: {c}')\n        risk = 'CRITICAL' if threat_types.get('SQLi',0) > 0 else 'HIGH' if self.threats else 'LOW'\n        print(f'  Risk: {risk}')\n\nlogs = [\n    '192.168.1.100 - - [10/Jan/2025:14:23:01 +0000] \"GET /index.html HTTP/1.1\" 200 2326',\n    '10.0.0.55 - - [10/Jan/2025:14:23:05 +0000] \"POST /login HTTP/1.1\" 401 185',\n    '10.0.0.55 - - [10/Jan/2025:14:23:10 +0000] \"GET /admin HTTP/1.1\" 403 287',\n    \"10.0.0.55 - - [10/Jan/2025:14:23:15 +0000] \\\"GET /s?q='+OR+'1'='1 HTTP/1.1\\\" 200 4521\",\n    '10.0.0.55 - - [10/Jan/2025:14:23:20 +0000] \"GET /f?n=../../../etc/passwd HTTP/1.1\" 400 0',\n    '10.0.0.55 - - [10/Jan/2025:14:23:25 +0000] \"GET /p?x=<script>alert(1)</script> HTTP/1.1\" 400 0',\n]\np = Pipeline()\np.ingest(logs)\np.detect()\np.report()",
+          "output": "📥 Stage 1: Ingesting...\n   Parsed 5/6\n🔍 Stage 2: Detecting...\n   Found 3 threats\n📋 Stage 3: Report\n\n  Lines: 6 | Parsed: 5 | Threats: 3\n    SQLi: 1\n    PathTraversal: 1\n    XSS: 1\n  Risk: CRITICAL",
+          "ai_explanation": "This is the capstone — a complete 3-stage pipeline: Ingest (parse), Detect (scan signatures), Report (summarize). This architecture matches production SIEM systems like Splunk and ELK. Each stage feeds the next. Extensible — add new stages without changing existing code.",
+          "ai_challenge": "Add Stage 2.5: Correlation. Group threats by IP and flag multi-vector attackers (same IP doing SQLi AND brute force)."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Python Log Analysis Pipeline — Complete Visual Flowchart",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 15px;\"><div style=\"text-align: center; margin-bottom: 20px;\"><span style=\"background: #e74c3c; color: white; padding: 8px 20px; border-radius: 6px; font-size: 16px; font-weight: bold;\">🔍 LOG ANALYSIS PIPELINE FLOWCHART</span></div><div style=\"text-align: center; margin: 15px 0;\"><span style=\"background: #e74c3c; color: white; padding: 6px 16px; border-radius: 4px;\">📂 START: Raw Log Files</span><br><span style=\"color: #e74c3c; font-size: 18px;\">▼</span></div><div style=\"background: #eaf2f8; border-left: 4px solid #3498db; padding: 12px; margin: 10px 0;\"><span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">STAGE 1: INGEST &amp; PARSE</span><br><span style=\"color: #3498db;\">  ├── 📄 Open log file with open(filepath, 'r')</span><br><span style=\"color: #3498db;\">  ├── 🔄 Read line by line (memory efficient)</span><br><span style=\"color: #3498db;\">  ├── 🔤 Identify format: Apache? Syslog? JSON?</span><br><span style=\"color: #3498db;\">  ├── 🎯 Apply regex pattern to extract fields</span><br><span style=\"color: #3498db;\">  │     ├── IP address (who)</span><br><span style=\"color: #3498db;\">  │     ├── Timestamp (when)</span><br><span style=\"color: #3498db;\">  │     ├── Action/method (what)</span><br><span style=\"color: #3498db;\">  │     ├── Path/resource (where)</span><br><span style=\"color: #3498db;\">  │     └── Status/result (outcome)</span><br><span style=\"color: #3498db;\">  └── 📦 Store as dict: {ip, time, action, status}</span></div><div style=\"text-align: center;\"><span style=\"color: #2ecc71; font-size: 18px;\">▼ Parsed entries</span></div><div style=\"background: #fdf2e9; border-left: 4px solid #f39c12; padding: 12px; margin: 10px 0;\"><span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">STAGE 2: THREAT DETECTION</span><br><span style=\"color: #f39c12;\">  ├── 🔍 Scan each entry against attack signatures:</span><br><span style=\"color: #e74c3c;\">  │     ├── 💉 SQL Injection: union select, ' OR '1'='1</span><br><span style=\"color: #e74c3c;\">  │     ├── 🕷️ XSS: &lt;script&gt;, javascript:, onerror=</span><br><span style=\"color: #e74c3c;\">  │     ├── 📁 Path Traversal: ../, ../../etc/passwd</span><br><span style=\"color: #e74c3c;\">  │     ├── ⌨️ Command Injection: ; cat, | whoami</span><br><span style=\"color: #e74c3c;\">  │     └── 🔐 Brute Force: multiple 401/403 same IP</span><br><span style=\"color: #f39c12;\">  ├── 📊 Count failed logins per IP (Counter)</span><br><span style=\"color: #f39c12;\">  └── 🚨 Flag IPs exceeding threshold</span></div><div style=\"text-align: center;\"><span style=\"color: #f39c12; font-size: 18px;\">▼ Threats identified</span></div><div style=\"background: #f4ecf7; border-left: 4px solid #9b59b6; padding: 12px; margin: 10px 0;\"><span style=\"background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;\">STAGE 3: CORRELATION &amp; ANALYSIS</span><br><span style=\"color: #9b59b6;\">  ├── 🔗 Correlate events by IP across log sources</span><br><span style=\"color: #9b59b6;\">  │     ├── Same IP in web + auth = multi-vector attack</span><br><span style=\"color: #9b59b6;\">  │     └── Timeline reconstruction with sorting</span><br><span style=\"color: #9b59b6;\">  ├── 📈 Statistical baseline comparison</span><br><span style=\"color: #9b59b6;\">  │     ├── Calculate mean and standard deviation</span><br><span style=\"color: #9b59b6;\">  │     ├── Flag values &gt; 2 StdDevs from normal</span><br><span style=\"color: #9b59b6;\">  │     └── Detect DDoS spikes and outage dips</span><br><span style=\"color: #9b59b6;\">  ├── 🗂️ Aggregate: requests/IP, errors/hour</span><br><span style=\"color: #9b59b6;\">  └── 🏷️ Classify: CRITICAL → HIGH → MEDIUM → LOW</span></div><div style=\"text-align: center;\"><span style=\"color: #9b59b6; font-size: 18px;\">▼ Analysis complete</span></div><div style=\"background: #e8f8f5; border-left: 4px solid #2ecc71; padding: 12px; margin: 10px 0;\"><span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">STAGE 4: REPORT &amp; RESPOND</span><br><span style=\"color: #2ecc71;\">  ├── 📋 Generate report: summary + findings + recommendations</span><br><span style=\"color: #2ecc71;\">  ├── 🚨 Trigger alerts for CRITICAL findings</span><br><span style=\"color: #2ecc71;\">  ├── 🔒 Recommend: block IPs, patch vulns, update rules</span><br><span style=\"color: #2ecc71;\">  └── 💾 Save report + evidence with SHA-256 hash</span></div><div style=\"text-align: center; margin: 15px 0;\"><span style=\"background: #2ecc71; color: white; padding: 6px 16px; border-radius: 4px;\">✅ PIPELINE COMPLETE</span></div><div style=\"background: #fdebd0; border: 2px solid #f39c12; padding: 15px; margin: 15px 0; border-radius: 8px;\"><span style=\"color: #f39c12; font-weight: bold; font-size: 14px;\">🔑 KEY PYTHON TOOLS</span><br><br><span style=\"color: #3498db;\">  📥 INGEST:</span> open(), re.match(), json.loads(), gzip.open()<br><span style=\"color: #f39c12;\">  🔍 DETECT:</span> re.compile(), re.search(), Counter(), 'in' operator<br><span style=\"color: #9b59b6;\">  📊 ANALYSE:</span> statistics.mean(), stdev(), defaultdict(), sorted()<br><span style=\"color: #2ecc71;\">  📋 REPORT:</span> string formatting, json.dump(), hashlib.sha256()<br></div><div style=\"background: #d5f5e3; border: 2px solid #2ecc71; padding: 15px; margin: 15px 0; border-radius: 8px;\"><span style=\"color: #2ecc71; font-weight: bold; font-size: 14px;\">💡 REMEMBER</span><br><br><span style=\"color: #2ecc71;\">  🕵️ Logs = WITNESS STATEMENTS — each line tells part of the story</span><br><span style=\"color: #2ecc71;\">  🔍 Regex = FINGERPRINT KIT — extract the evidence you need</span><br><span style=\"color: #2ecc71;\">  📊 Counters = TALLY CHART — spot who does what, how often</span><br><span style=\"color: #2ecc71;\">  📅 Timestamps = TIMELINE — reconstruct the sequence</span><br><span style=\"color: #2ecc71;\">  🔗 Correlate = CONNECT CLUES from different witnesses</span><br><span style=\"color: #2ecc71;\">  📈 Baselines = NORMAL heartbeat — flag deviations</span><br><span style=\"color: #2ecc71;\">  🔒 Hash everything = PROVE evidence wasn't tampered with</span><br></div><div style=\"background: #fadbd8; border: 2px solid #e74c3c; padding: 15px; margin: 15px 0; border-radius: 8px;\"><span style=\"color: #e74c3c; font-weight: bold; font-size: 14px;\">⚠️ COMMON MISTAKES</span><br><br><span style=\"color: #e74c3c;\">  ❌ Loading entire file with readlines() — use line-by-line for big files</span><br><span style=\"color: #e74c3c;\">  ❌ Using regex without pre-filtering — string check first, regex second</span><br><span style=\"color: #e74c3c;\">  ❌ Ignoring timezones — always normalise timestamps</span><br><span style=\"color: #e74c3c;\">  ❌ Hardcoding thresholds — make them configurable</span><br><span style=\"color: #e74c3c;\">  ❌ Working on originals — always copy forensic evidence first</span><br><span style=\"color: #e74c3c;\">  ❌ Forgetting error handling — logs can be malformed</span><br></div></div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Read a Log File Line by Line",
+          "description": "Write a function that opens a log file and prints each line with its number using enumerate(start=1).",
+          "difficulty": "beginner",
+          "category": "Reading & Opening Log Files",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on reading log files! This exercise focuses on: read a log file line by line. Take your time — every SOC analyst starts here!",
+          "starter_code": "def read_log(filepath):\n    # TODO: Open file, read line by line\n    # Print 'Line X: <content>'\n    pass\n\nwith open('test.log','w') as f:\n    f.write('INFO Started\\nWARN Disk low\\nERROR Timeout\\n')\nread_log('test.log')",
+          "expected_output": "Line 1: INFO Started\nLine 2: WARN Disk low\nLine 3: ERROR Timeout",
+          "hints": [
+            {
+              "message": "Use with open(filepath,'r') as f: to open safely."
+            },
+            {
+              "message": "Use enumerate(f,1) for line numbers. Don't forget .strip()"
+            },
+            {
+              "message": "Solution:\nwith open(filepath,'r') as f:\n    for num,line in enumerate(f,1):\n        print(f'Line {num}: {line.strip()}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Count Non-Empty Lines",
+          "description": "Write a function returning the count of non-empty lines in a log file.",
+          "difficulty": "beginner",
+          "category": "Reading & Opening Log Files",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on reading log files! This exercise focuses on: count non-empty lines. Take your time — every SOC analyst starts here!",
+          "starter_code": "def count_lines(filepath):\n    # TODO: Count non-empty lines\n    pass\n\nwith open('test.log','w') as f:\n    f.write('Line1\\n\\nLine3\\n\\nLine5\\n')\nprint(f'Count: {count_lines(\"test.log\")}')",
+          "expected_output": "Count: 3",
+          "hints": [
+            {
+              "message": "Initialize counter, check if line.strip() is truthy."
+            },
+            {
+              "message": "count=0; for line in f: if line.strip(): count+=1"
+            },
+            {
+              "message": "def count_lines(fp):\n    with open(fp) as f:\n        return sum(1 for l in f if l.strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Filter Lines by Severity",
+          "description": "Return only lines matching a given level (INFO/WARNING/ERROR).",
+          "difficulty": "beginner",
+          "category": "Reading & Opening Log Files",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on reading log files! This exercise focuses on: filter lines by severity. Take your time — every SOC analyst starts here!",
+          "starter_code": "def filter_level(filepath, level):\n    # TODO: Return lines containing level\n    pass\n\nwith open('test.log','w') as f:\n    f.write('14:00 INFO Start\\n14:01 WARNING Low\\n14:02 ERROR Fail\\n14:03 INFO OK\\n14:04 ERROR Down\\n')\nfor l in filter_level('test.log','ERROR'):\n    print(l)",
+          "expected_output": "14:02 ERROR Fail\n14:04 ERROR Down",
+          "hints": [
+            {
+              "message": "Check 'if level in line' for each line."
+            },
+            {
+              "message": "Build a list: matches=[]; if level in line: matches.append(line.strip())"
+            },
+            {
+              "message": "def filter_level(fp,lev):\n    with open(fp) as f:\n        return [l.strip() for l in f if lev in l]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Handle Missing Files Gracefully",
+          "description": "Try to read a log file with proper FileNotFoundError and PermissionError handling.",
+          "difficulty": "beginner",
+          "category": "Reading & Opening Log Files",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on reading log files! This exercise focuses on: handle missing files gracefully. Take your time — every SOC analyst starts here!",
+          "starter_code": "def safe_read(filepath):\n    # TODO: Handle errors gracefully\n    pass\n\nprint(safe_read('missing.log'))\nwith open('ok.log','w') as f: f.write('Line1\\n')\nprint(safe_read('ok.log'))",
+          "expected_output": "Error: File 'missing.log' not found\n['Line1']",
+          "hints": [
+            {
+              "message": "Use try/except FileNotFoundError."
+            },
+            {
+              "message": "try: ... except FileNotFoundError: return f\"Error: File '{filepath}' not found\""
+            },
+            {
+              "message": "def safe_read(fp):\n    try:\n        with open(fp) as f: return [l.strip() for l in f if l.strip()]\n    except FileNotFoundError: return f\"Error: File '{fp}' not found\""
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Split Log Line into Components",
+          "description": "Parse 'TIMESTAMP LEVEL MESSAGE' into a dict with keys timestamp, level, message.",
+          "difficulty": "beginner",
+          "category": "Reading & Opening Log Files",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on reading log files! This exercise focuses on: split log line into components. Take your time — every SOC analyst starts here!",
+          "starter_code": "def parse_line(line):\n    # Format: '2025-01-10 14:23:01 INFO User logged in'\n    # TODO: Return dict\n    pass\n\nlines = ['2025-01-10 14:23:01 INFO Login','2025-01-10 14:23:05 ERROR Timeout']\nfor l in lines:\n    print(parse_line(l))",
+          "expected_output": "{'timestamp': '2025-01-10 14:23:01', 'level': 'INFO', 'message': 'Login'}\n{'timestamp': '2025-01-10 14:23:05', 'level': 'ERROR', 'message': 'Timeout'}",
+          "hints": [
+            {
+              "message": "Use split(). Timestamp = parts[0]+' '+parts[1]."
+            },
+            {
+              "message": "level=parts[2], message=' '.join(parts[3:])"
+            },
+            {
+              "message": "def parse_line(l):\n    p=l.split()\n    return {'timestamp':p[0]+' '+p[1],'level':p[2],'message':' '.join(p[3:])}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Count Entries by Severity Level",
+          "description": "Read a log and return a dict counting each level.",
+          "difficulty": "beginner",
+          "category": "Reading & Opening Log Files",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on reading log files! This exercise focuses on: count entries by severity level. Take your time — every SOC analyst starts here!",
+          "starter_code": "def count_by_level(filepath):\n    # TODO: Return {'INFO':N, 'ERROR':M, ...}\n    pass\n\nwith open('t.log','w') as f:\n    f.write('14:00 INFO A\\n14:01 ERROR B\\n14:02 INFO C\\n14:03 WARNING D\\n14:04 ERROR E\\n')\ncounts = count_by_level('t.log')\nfor k in sorted(counts): print(f'{k}: {counts[k]}')",
+          "expected_output": "ERROR: 2\nINFO: 2\nWARNING: 1",
+          "hints": [
+            {
+              "message": "Create dict, extract level from each line, increment."
+            },
+            {
+              "message": "counts={}; level=parts[2]; counts[level]=counts.get(level,0)+1"
+            },
+            {
+              "message": "def count_by_level(fp):\n    c={}\n    with open(fp) as f:\n        for l in f:\n            p=l.split()\n            if len(p)>=3: c[p[2]]=c.get(p[2],0)+1\n    return c"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Get Last N Lines (tail)",
+          "description": "Return the last N lines of a log file, like the Unix tail command.",
+          "difficulty": "beginner",
+          "category": "Reading & Opening Log Files",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on reading log files! This exercise focuses on: get last n lines (tail). Take your time — every SOC analyst starts here!",
+          "starter_code": "def tail(filepath, n=3):\n    # TODO: Return last n lines\n    pass\n\nwith open('t.log','w') as f:\n    for i in range(1,11): f.write(f'Line {i}\\n')\nfor l in tail('t.log',3): print(l)",
+          "expected_output": "Line 8\nLine 9\nLine 10",
+          "hints": [
+            {
+              "message": "Read all lines into list, slice with [-n:]"
+            },
+            {
+              "message": "lines=[l.strip() for l in f]; return lines[-n:]"
+            },
+            {
+              "message": "def tail(fp,n=3):\n    with open(fp) as f: lines=[l.strip() for l in f if l.strip()]\n    return lines[-n:]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Search Logs for Keyword",
+          "description": "Search case-insensitively for a keyword, return (line_number, content) tuples.",
+          "difficulty": "beginner",
+          "category": "Reading & Opening Log Files",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on reading log files! This exercise focuses on: search logs for keyword. Take your time — every SOC analyst starts here!",
+          "starter_code": "def search(filepath, keyword):\n    # TODO: Case-insensitive search\n    pass\n\nwith open('t.log','w') as f:\n    f.write('User admin connected\\nDatabase query done\\nUser Admin disconnected\\n')\nfor num,line in search('t.log','admin'):\n    print(f'[{num}] {line}')",
+          "expected_output": "[1] User admin connected\n[3] User Admin disconnected",
+          "hints": [
+            {
+              "message": "Use .lower() on both keyword and line."
+            },
+            {
+              "message": "if keyword.lower() in line.lower(): append((num,line))"
+            },
+            {
+              "message": "def search(fp,kw):\n    r=[]\n    with open(fp) as f:\n        for i,l in enumerate(f,1):\n            if kw.lower() in l.lower(): r.append((i,l.strip()))\n    return r"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Merge Two Log Files Chronologically",
+          "description": "Read two log files and merge into a single sorted list by timestamp.",
+          "difficulty": "intermediate",
+          "category": "Reading & Opening Log Files",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on reading log files! This exercise focuses on: merge two log files chronologically. Take your time — every SOC analyst starts here!",
+          "starter_code": "def merge(f1, f2):\n    # TODO: Merge and sort by timestamp (first 19 chars)\n    pass\n\nwith open('a.log','w') as f: f.write('2025-01-10 14:23:01 GET /index\\n2025-01-10 14:23:10 POST /api\\n')\nwith open('b.log','w') as f: f.write('2025-01-10 14:23:05 Login OK\\n2025-01-10 14:23:15 Logout\\n')\nfor l in merge('a.log','b.log'): print(l)",
+          "expected_output": "2025-01-10 14:23:01 GET /index\n2025-01-10 14:23:05 Login OK\n2025-01-10 14:23:10 POST /api\n2025-01-10 14:23:15 Logout",
+          "hints": [
+            {
+              "message": "Read both files, combine lists, sort."
+            },
+            {
+              "message": "all_lines = lines1+lines2; all_lines.sort(key=lambda x: x[:19])"
+            },
+            {
+              "message": "def merge(f1,f2):\n    a=[]\n    for fp in [f1,f2]:\n        with open(fp) as f: a.extend(l.strip() for l in f if l.strip())\n    a.sort(key=lambda x:x[:19])\n    return a"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Read JSON Log File",
+          "description": "Parse a file where each line is a JSON object. Handle invalid JSON gracefully.",
+          "difficulty": "beginner",
+          "category": "Reading & Opening Log Files",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's work on reading log files! This exercise focuses on: read json log file. Take your time — every SOC analyst starts here!",
+          "starter_code": "import json\ndef read_json_logs(filepath):\n    # TODO: Parse each line as JSON, skip invalid\n    pass\n\nwith open('t.log','w') as f:\n    f.write('{\"level\":\"INFO\",\"msg\":\"OK\"}\\nNOT JSON\\n{\"level\":\"ERROR\",\"msg\":\"Fail\"}\\n')\nfor e in read_json_logs('t.log'): print(e)",
+          "expected_output": "{'level': 'INFO', 'msg': 'OK'}\n{'level': 'ERROR', 'msg': 'Fail'}",
+          "hints": [
+            {
+              "message": "Use json.loads() with try/except json.JSONDecodeError."
+            },
+            {
+              "message": "try: events.append(json.loads(line)) except: pass"
+            },
+            {
+              "message": "def read_json_logs(fp):\n    import json; evts=[]\n    with open(fp) as f:\n        for l in f:\n            try: evts.append(json.loads(l))\n            except: pass\n    return evts"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Extract All IP Addresses",
+          "description": "Use regex to find all unique IPv4 addresses in a text.",
+          "difficulty": "intermediate",
+          "category": "Regex & Pattern Matching",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for some regex detective work! Let's practice: extract all ip addresses. Regex is your most powerful log analysis tool!",
+          "starter_code": "import re\ndef extract_ips(text):\n    # TODO: Find all IPv4 addresses, return unique list\n    pass\n\nlogs='192.168.1.100 GET /index\\n10.0.0.55 POST /login\\n192.168.1.100 GET /about\\n172.16.0.5 GET /admin'\nfor ip in sorted(extract_ips(logs)): print(ip)",
+          "expected_output": "10.0.0.55\n172.16.0.5\n192.168.1.100",
+          "hints": [
+            {
+              "message": "Pattern: r'\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}'"
+            },
+            {
+              "message": "Use re.findall() then set() for uniqueness."
+            },
+            {
+              "message": "def extract_ips(t):\n    return list(set(re.findall(r'\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b',t)))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Extract HTTP Status Codes",
+          "description": "Extract 3-digit status codes from Apache log lines.",
+          "difficulty": "intermediate",
+          "category": "Regex & Pattern Matching",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for some regex detective work! Let's practice: extract http status codes. Regex is your most powerful log analysis tool!",
+          "starter_code": "import re\ndef get_status(logs):\n    # TODO: Extract status code from each line\n    pass\n\nlogs=['x [t] \"GET / HTTP/1.1\" 200 100','x [t] \"POST /login HTTP/1.1\" 401 50','x [t] \"GET /x HTTP/1.1\" 404 0']\nfor c in get_status(logs): print(f'Status: {c}')",
+          "expected_output": "Status: 200\nStatus: 401\nStatus: 404",
+          "hints": [
+            {
+              "message": "Status code follows the HTTP version and closing quote."
+            },
+            {
+              "message": "Pattern: r'HTTP/\\d\\.\\d\"\\s+(\\d{3})'"
+            },
+            {
+              "message": "def get_status(logs):\n    return [int(re.search(r'HTTP/\\d\\.\\d\"\\s+(\\d{3})',l).group(1)) for l in logs if re.search(r'HTTP/\\d\\.\\d\"\\s+(\\d{3})',l)]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Extract Usernames from Auth Logs",
+          "description": "Extract the username between 'for' and 'from' in auth log entries.",
+          "difficulty": "intermediate",
+          "category": "Regex & Pattern Matching",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for some regex detective work! Let's practice: extract usernames from auth logs. Regex is your most powerful log analysis tool!",
+          "starter_code": "import re\ndef get_users(logs):\n    # TODO: Extract username after 'for' before 'from'\n    pass\n\nlogs=['sshd: Failed password for root from 10.0.0.55','sshd: Failed password for admin from 10.0.0.55','sshd: Accepted password for dev from 192.168.1.1']\nfor u in get_users(logs): print(u)",
+          "expected_output": "root\nadmin\ndev",
+          "hints": [
+            {
+              "message": "Pattern: r'for (\\S+) from'"
+            },
+            {
+              "message": "Use re.search and .group(1)"
+            },
+            {
+              "message": "def get_users(logs):\n    r=[]\n    for l in logs:\n        m=re.search(r'for\\s+(\\S+)\\s+from',l)\n        if m: r.append(m.group(1))\n    return r"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Detect SQL Injection Patterns",
+          "description": "Check URLs for SQLi signatures: UNION SELECT, OR 1=1, DROP TABLE, comment --.",
+          "difficulty": "intermediate",
+          "category": "Regex & Pattern Matching",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for some regex detective work! Let's practice: detect sql injection patterns. Regex is your most powerful log analysis tool!",
+          "starter_code": "import re\ndef has_sqli(url):\n    # TODO: Return True if SQLi pattern found\n    pass\n\nurls=['/products?id=1',\"/s?q=' OR '1'='1\",'/u?id=1 UNION SELECT x--','/about']\nfor u in urls:\n    print(f'{\"🚨 SQLi\" if has_sqli(u) else \"✅ Clean\"}: {u[:40]}')",
+          "expected_output": "✅ Clean: /products?id=1\n🚨 SQLi: /s?q=' OR '1'='1\n🚨 SQLi: /u?id=1 UNION SELECT x--\n✅ Clean: /about",
+          "hints": [
+            {
+              "message": "Combine patterns with |: (union.*select|' or '|drop table|;--)"
+            },
+            {
+              "message": "Use re.IGNORECASE flag."
+            },
+            {
+              "message": "def has_sqli(u):\n    return bool(re.search(r\"(union\\s+select|'\\s*or\\s*'|drop\\s+table|;\\s*--)\",u,re.I))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Parse Apache Log with Named Groups",
+          "description": "Use (?P<name>...) groups to parse Apache logs into a dict.",
+          "difficulty": "intermediate",
+          "category": "Regex & Pattern Matching",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for some regex detective work! Let's practice: parse apache log with named groups. Regex is your most powerful log analysis tool!",
+          "starter_code": "import re\ndef parse_apache(line):\n    # TODO: Return dict with keys: ip, timestamp, method, path, status\n    pass\n\nlog='192.168.1.100 - frank [10/Jan/2025:13:55:36 +0000] \"GET /dash HTTP/1.1\" 200 2326'\nr=parse_apache(log)\nif r:\n    for k,v in r.items(): print(f'{k}: {v}')",
+          "expected_output": "ip: 192.168.1.100\ntimestamp: 10/Jan/2025:13:55:36 +0000\nmethod: GET\npath: /dash\nstatus: 200",
+          "hints": [
+            {
+              "message": "Start: (?P<ip>\\S+) then skip - -, then [timestamp], then \"METHOD PATH...\" STATUS"
+            },
+            {
+              "message": "Build pattern piece by piece and test each group."
+            },
+            {
+              "message": "def parse_apache(l):\n    m=re.match(r'(?P<ip>\\S+) \\S+ \\S+ \\[(?P<timestamp>[^\\]]+)\\] \"(?P<method>\\S+) (?P<path>\\S+) \\S+\" (?P<status>\\d{3})',l)\n    return m.groupdict() if m else None"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Detect Path Traversal Attacks",
+          "description": "Find ../ and URL-encoded %2e%2e%2f variants in log lines.",
+          "difficulty": "intermediate",
+          "category": "Regex & Pattern Matching",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for some regex detective work! Let's practice: detect path traversal attacks. Regex is your most powerful log analysis tool!",
+          "starter_code": "import re\ndef find_traversal(logs):\n    # TODO: Return (line_num, line) for path traversal attempts\n    pass\n\nlogs=['GET /img/photo.jpg','GET /f?n=../../../etc/passwd','GET /d?p=%2e%2e%2fetc/shadow','GET /about']\nfor num,l in find_traversal(logs): print(f'Line {num}: {l}')",
+          "expected_output": "Line 2: GET /f?n=../../../etc/passwd\nLine 3: GET /d?p=%2e%2e%2fetc/shadow",
+          "hints": [
+            {
+              "message": "Pattern: r'(\\.\\./|%2e%2e)' with re.IGNORECASE"
+            },
+            {
+              "message": "Loop with enumerate(logs,1) and re.search"
+            },
+            {
+              "message": "def find_traversal(logs):\n    pat=re.compile(r'(\\.\\./|\\.\\.\\\\|%2e%2e)',re.I)\n    return [(i,l) for i,l in enumerate(logs,1) if pat.search(l)]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Extract Timestamps from Multiple Formats",
+          "description": "Try ISO, Apache, and Syslog patterns to extract timestamps.",
+          "difficulty": "intermediate",
+          "category": "Regex & Pattern Matching",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for some regex detective work! Let's practice: extract timestamps from multiple formats. Regex is your most powerful log analysis tool!",
+          "starter_code": "import re\ndef get_ts(line):\n    # TODO: Try 3 patterns, return first match or None\n    pass\n\nlines=['2025-01-10 14:23:01 INFO Start','[10/Jan/2025:14:23:05] GET /','Jan 10 14:23:10 sshd: Failed','No timestamp']\nfor l in lines: print(f'TS: {get_ts(l)}')",
+          "expected_output": "TS: 2025-01-10 14:23:01\nTS: 10/Jan/2025:14:23:05\nTS: Jan 10 14:23:10\nTS: None",
+          "hints": [
+            {
+              "message": "Create 3 patterns: ISO r'\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}', Apache, Syslog."
+            },
+            {
+              "message": "Try each in order, return first match."
+            },
+            {
+              "message": "def get_ts(l):\n    for p in [r'(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})',r'(\\d{2}/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2})',r'(\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})']:\n        m=re.search(p,l)\n        if m: return m.group(1)\n    return None"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Detect XSS Patterns in URLs",
+          "description": "Check for <script>, javascript:, and event handlers (onerror=, onload=).",
+          "difficulty": "intermediate",
+          "category": "Regex & Pattern Matching",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for some regex detective work! Let's practice: detect xss patterns in urls. Regex is your most powerful log analysis tool!",
+          "starter_code": "import re\ndef detect_xss(url):\n    # TODO: Return list of detected XSS pattern names\n    pass\n\nurls=['/search?q=shoes','/p?x=<script>alert(1)</script>','/r?u=javascript:alert(1)','/about']\nfor u in urls:\n    r=detect_xss(u)\n    print(f'{\"🚨 \"+str(r) if r else \"✅ Clean\"}: {u[:40]}')",
+          "expected_output": "✅ Clean: /search?q=shoes\n🚨 ['script_tag']: /p?x=<script>alert(1)</script>\n🚨 ['js_uri']: /r?u=javascript:alert(1)\n✅ Clean: /about",
+          "hints": [
+            {
+              "message": "Create dict of patterns: {'script_tag':r'<script', 'js_uri':r'javascript:'}"
+            },
+            {
+              "message": "Check each pattern, collect names of matches."
+            },
+            {
+              "message": "def detect_xss(u):\n    pats={'script_tag':re.compile(r'<script',re.I),'js_uri':re.compile(r'javascript:',re.I),'event_handler':re.compile(r'on(error|load)\\s*=',re.I)}\n    return [n for n,p in pats.items() if p.search(u)] or []"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Extract HTTP Method and Path",
+          "description": "Get method (GET/POST/PUT/DELETE) and path from log entries. Return None for non-HTTP lines.",
+          "difficulty": "beginner",
+          "category": "Regex & Pattern Matching",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for some regex detective work! Let's practice: extract http method and path. Regex is your most powerful log analysis tool!",
+          "starter_code": "import re\ndef get_request(line):\n    # TODO: Return (method, path) or None\n    pass\n\nlogs=['x [t] \"GET /index HTTP/1.1\" 200','x [t] \"POST /api HTTP/1.1\" 401','System startup']\nfor l in logs:\n    r=get_request(l)\n    print(f'{r[0]:6s} → {r[1]}' if r else '  (not HTTP)')",
+          "expected_output": "GET    → /index\nPOST   → /api\n  (not HTTP)",
+          "hints": [
+            {
+              "message": "Pattern: r'\"(GET|POST|PUT|DELETE) (\\S+)'"
+            },
+            {
+              "message": "re.search returns match object; use .group(1) and .group(2)"
+            },
+            {
+              "message": "def get_request(l):\n    m=re.search(r'\"(GET|POST|PUT|DELETE|PATCH) (\\S+)',l)\n    return (m.group(1),m.group(2)) if m else None"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Build a Regex Pattern Tester",
+          "description": "Test a regex against multiple strings, showing matches and captured groups.",
+          "difficulty": "intermediate",
+          "category": "Regex & Pattern Matching",
+          "estimated_minutes": 5,
+          "ai_intro": "Time for some regex detective work! Let's practice: build a regex pattern tester. Regex is your most powerful log analysis tool!",
+          "starter_code": "import re\ndef test_regex(pattern, strings):\n    # TODO: Show match/no-match and groups for each string\n    pass\n\ntest_regex(r'(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})', ['192.168.1.100','Hello','Server at 10.0.0.55'])",
+          "expected_output": "✅ '192.168.1.100' → ('192','168','1','100')\n❌ 'Hello'\n✅ 'Server at 10.0.0.55' → ('10','0','0','55')",
+          "hints": [
+            {
+              "message": "Use re.search(pattern, s) for each string."
+            },
+            {
+              "message": "If match: print groups(). Else: print no match."
+            },
+            {
+              "message": "def test_regex(p,ss):\n    for s in ss:\n        m=re.search(p,s)\n        print(f\"✅ '{s}' → {m.groups()}\" if m else f\"❌ '{s}'\")"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Count Failed Logins Per IP",
+          "description": "Count failed attempts per IP using Counter.",
+          "difficulty": "beginner",
+          "category": "Brute-Force & Auth Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to hunt for brute-force attacks! This exercise: count failed logins per ip. You're building real SOC analyst skills!",
+          "starter_code": "from collections import Counter\ndef count_failed(logs):\n    # TODO: Count per IP, return Counter\n    pass\n\nlogs=['14:01 FAILED root 10.0.0.55','14:02 FAILED root 10.0.0.55','14:03 SUCCESS admin 192.168.1.1','14:04 FAILED admin 10.0.0.55','14:05 FAILED test 10.0.0.99']\nfor ip,c in count_failed(logs).most_common(): print(f'{ip}: {c}')",
+          "expected_output": "10.0.0.55: 3\n10.0.0.99: 1",
+          "hints": [
+            {
+              "message": "Check 'FAILED' in line, IP is last word."
+            },
+            {
+              "message": "counter = Counter(); counter[ip] += 1"
+            },
+            {
+              "message": "def count_failed(logs):\n    c=Counter()\n    for l in logs:\n        if 'FAILED' in l: c[l.split()[-1]]+=1\n    return c"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Flag IPs Above Threshold",
+          "description": "Return IPs with failures exceeding N.",
+          "difficulty": "beginner",
+          "category": "Brute-Force & Auth Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to hunt for brute-force attacks! This exercise: flag ips above threshold. You're building real SOC analyst skills!",
+          "starter_code": "from collections import Counter\ndef flag_ips(logs, threshold=3):\n    # TODO: Return [(ip,count)] for flagged IPs\n    pass\n\nlogs=['FAILED r 10.0.0.55']*5+['FAILED t 10.0.0.99']*2\nfor ip,c in flag_ips(logs,3): print(f'🚨 {ip}: {c}')",
+          "expected_output": "🚨 10.0.0.55: 5",
+          "hints": [
+            {
+              "message": "Count first, then filter."
+            },
+            {
+              "message": "[(ip,c) for ip,c in counts.items() if c>=threshold]"
+            },
+            {
+              "message": "def flag_ips(logs,th=3):\n    c=Counter(l.split()[-1] for l in logs if 'FAILED' in l)\n    return [(ip,n) for ip,n in c.most_common() if n>=th]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Track Targeted Usernames Per IP",
+          "description": "Use defaultdict(set) to track unique usernames each IP targeted.",
+          "difficulty": "intermediate",
+          "category": "Brute-Force & Auth Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to hunt for brute-force attacks! This exercise: track targeted usernames per ip. You're building real SOC analyst skills!",
+          "starter_code": "from collections import defaultdict\ndef track_targets(logs):\n    # TODO: Return {ip: set(usernames)}\n    pass\n\nlogs=['FAILED root 10.0.0.55','FAILED admin 10.0.0.55','FAILED root 10.0.0.55','FAILED user1 10.0.0.99']\nfor ip,users in sorted(track_targets(logs).items()): print(f'{ip}: {sorted(users)}')",
+          "expected_output": "10.0.0.55: ['admin', 'root']\n10.0.0.99: ['user1']",
+          "hints": [
+            {
+              "message": "defaultdict(set) auto-creates empty sets. Use .add(username)."
+            },
+            {
+              "message": "parts=line.split(); ip=parts[-1]; user=parts[1]; targets[ip].add(user)"
+            },
+            {
+              "message": "def track_targets(logs):\n    t=defaultdict(set)\n    for l in logs:\n        if 'FAILED' in l: p=l.split(); t[p[-1]].add(p[1])\n    return dict(t)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Detect Account Lockout Candidates",
+          "description": "Flag usernames with 3+ failures across ANY IP.",
+          "difficulty": "intermediate",
+          "category": "Brute-Force & Auth Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to hunt for brute-force attacks! This exercise: detect account lockout candidates. You're building real SOC analyst skills!",
+          "starter_code": "from collections import Counter\ndef lockout_candidates(logs, threshold=3):\n    # TODO: Count by username, return those >= threshold\n    pass\n\nlogs=['FAILED root 10.0.0.55','FAILED root 10.0.0.99','FAILED root 10.0.0.55','FAILED admin 10.0.0.55','FAILED admin 10.0.0.99','FAILED admin 172.16.0.1','FAILED test 10.0.0.55']\nfor u in lockout_candidates(logs,3): print(f'🔒 {u}')",
+          "expected_output": "🔒 admin\n🔒 root",
+          "hints": [
+            {
+              "message": "Count by USERNAME (parts[1]) instead of IP."
+            },
+            {
+              "message": "user_counts = Counter(parts[1] for ... if 'FAILED')"
+            },
+            {
+              "message": "def lockout_candidates(logs,th=3):\n    c=Counter(l.split()[1] for l in logs if 'FAILED' in l)\n    return sorted(u for u,n in c.items() if n>=th)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Success/Failure Ratio Per IP",
+          "description": "Calculate the failure rate for each IP.",
+          "difficulty": "intermediate",
+          "category": "Brute-Force & Auth Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to hunt for brute-force attacks! This exercise: success/failure ratio per ip. You're building real SOC analyst skills!",
+          "starter_code": "from collections import defaultdict\ndef ratios(logs):\n    # TODO: Return {ip: {'s':N,'f':N,'rate':X}}\n    pass\n\nlogs=['SUCCESS a 192.168.1.1','SUCCESS b 192.168.1.1','FAILED r 10.0.0.55','FAILED r 10.0.0.55','FAILED a 10.0.0.55','SUCCESS a 10.0.0.99','FAILED t 10.0.0.99']\nfor ip,d in sorted(ratios(logs).items()): print(f'{ip}: {d[\"s\"]}S/{d[\"f\"]}F rate={d[\"rate\"]:.0%}')",
+          "expected_output": "10.0.0.55: 0S/3F rate=100%\n10.0.0.99: 1S/1F rate=50%\n192.168.1.1: 2S/0F rate=0%",
+          "hints": [
+            {
+              "message": "Track success and failure counts per IP separately."
+            },
+            {
+              "message": "stats[ip]={'s':0,'f':0}; rate = f/(s+f)"
+            },
+            {
+              "message": "def ratios(logs):\n    s=defaultdict(lambda:{'s':0,'f':0})\n    for l in logs:\n        p=l.split(); ip=p[-1]\n        if p[0]=='SUCCESS': s[ip]['s']+=1\n        elif p[0]=='FAILED': s[ip]['f']+=1\n    for ip in s: t=s[ip]['s']+s[ip]['f']; s[ip]['rate']=s[ip]['f']/t if t else 0\n    return dict(s)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Visual Bar Chart of Failures",
+          "description": "Display text bar chart using █ chars, mark IPs above threshold with 🚨.",
+          "difficulty": "beginner",
+          "category": "Brute-Force & Auth Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to hunt for brute-force attacks! This exercise: visual bar chart of failures. You're building real SOC analyst skills!",
+          "starter_code": "from collections import Counter\ndef chart(logs, threshold=5):\n    # TODO: Print bar chart\n    pass\n\nlogs=['FAILED r 10.0.0.55']*8+['FAILED a 10.0.0.99']*3+['FAILED t 172.16.0.10']*6\nchart(logs, 5)",
+          "expected_output": "10.0.0.55  | ████████ (8) 🚨\n172.16.0.10| ██████ (6) 🚨\n10.0.0.99  | ███ (3)",
+          "hints": [
+            {
+              "message": "'█' * count creates a bar. Check count >= threshold for alert."
+            },
+            {
+              "message": "for ip,c in counts.most_common(): bar='█'*c"
+            },
+            {
+              "message": "def chart(logs,th=5):\n    c=Counter(l.split()[-1] for l in logs if 'FAILED' in l)\n    for ip,n in c.most_common():\n        print(f'{ip:11s}| {\"█\"*n} ({n}){\" 🚨\" if n>=th else \"\"}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Time-Window Brute-Force Detection",
+          "description": "Flag IPs with 5+ failures in any 60-second window.",
+          "difficulty": "advanced",
+          "category": "Brute-Force & Auth Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to hunt for brute-force attacks! This exercise: time-window brute-force detection. You're building real SOC analyst skills!",
+          "starter_code": "from datetime import datetime\nfrom collections import defaultdict\ndef detect_burst(logs, threshold=5, window=60):\n    # Format: 'HH:MM:SS FAILED user IP'\n    # TODO: Check time windows per IP\n    pass\n\nlogs=['14:23:01 FAILED root 10.0.0.55','14:23:02 FAILED root 10.0.0.55','14:23:03 FAILED a 10.0.0.55','14:23:04 FAILED root 10.0.0.55','14:23:05 FAILED t 10.0.0.55','14:23:06 FAILED root 10.0.0.55','14:30:01 FAILED a 10.0.0.99','14:35:01 FAILED a 10.0.0.99']\nfor ip,msg in detect_burst(logs).items(): print(f'🚨 {ip}: {msg}')",
+          "expected_output": "🚨 10.0.0.55: 6 failures in 5s",
+          "hints": [
+            {
+              "message": "Parse timestamps, store per IP as list, check window."
+            },
+            {
+              "message": "Sort times per IP, sliding window check."
+            },
+            {
+              "message": "def detect_burst(logs,th=5,w=60):\n    from collections import defaultdict\n    from datetime import datetime\n    d=defaultdict(list)\n    for l in logs:\n        if 'FAILED' in l: p=l.split(); d[p[-1]].append(datetime.strptime(p[0],'%H:%M:%S'))\n    r={}\n    for ip,ts in d.items():\n        ts.sort()\n        for i in range(len(ts)):\n            win=[t for t in ts[i:] if (t-ts[i]).total_seconds()<=w]\n            if len(win)>=th:\n                r[ip]=f'{len(win)} failures in {(win[-1]-win[0]).total_seconds():.0f}s'; break\n    return r"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Detect Success After Failures",
+          "description": "Find IPs that succeeded after multiple failures — possible cracked password!",
+          "difficulty": "advanced",
+          "category": "Brute-Force & Auth Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to hunt for brute-force attacks! This exercise: detect success after failures. You're building real SOC analyst skills!",
+          "starter_code": "def detect_crack(logs, min_fail=3):\n    # TODO: Find IPs with SUCCESS after min_fail FAILEDs\n    pass\n\nlogs=['FAILED root 10.0.0.55','FAILED root 10.0.0.55','FAILED a 10.0.0.55','FAILED root 10.0.0.55','SUCCESS root 10.0.0.55','FAILED t 10.0.0.99','SUCCESS a 192.168.1.1']\nfor msg in detect_crack(logs,3): print(f'🚨 {msg}')",
+          "expected_output": "🚨 10.0.0.55: SUCCESS after 4 failures — possible brute-force success!",
+          "hints": [
+            {
+              "message": "Track failure count per IP. On SUCCESS, check if count >= threshold."
+            },
+            {
+              "message": "failures={}; on FAILED: failures[ip]+=1; on SUCCESS: check failures[ip]"
+            },
+            {
+              "message": "def detect_crack(logs,mf=3):\n    fails={};r=[]\n    for l in logs:\n        p=l.split();ip=p[-1]\n        if p[0]=='FAILED': fails[ip]=fails.get(ip,0)+1\n        elif p[0]=='SUCCESS' and fails.get(ip,0)>=mf:\n            r.append(f'{ip}: SUCCESS after {fails[ip]} failures — possible brute-force success!')\n    return r"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Geographic IP Classification",
+          "description": "Classify IPs as internal (10.x, 172.16-31.x, 192.168.x) or external.",
+          "difficulty": "intermediate",
+          "category": "Brute-Force & Auth Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to hunt for brute-force attacks! This exercise: geographic ip classification. You're building real SOC analyst skills!",
+          "starter_code": "import re\ndef classify(ip):\n    # TODO: Return 'Internal' or 'External'\n    pass\n\nfor ip in ['192.168.1.100','10.0.0.55','8.8.8.8','172.16.5.20','203.0.113.66']:\n    print(f'{ip}: {classify(ip)}')",
+          "expected_output": "192.168.1.100: Internal\n10.0.0.55: Internal\n8.8.8.8: External\n172.16.5.20: Internal\n203.0.113.66: External",
+          "hints": [
+            {
+              "message": "Check prefixes: starts with '10.', '192.168.', or 172.16-31."
+            },
+            {
+              "message": "Use regex: r'^(10\\.|192\\.168\\.|172\\.(1[6-9]|2\\d|3[01])\\.)"
+            },
+            {
+              "message": "def classify(ip):\n    import re\n    return 'Internal' if re.match(r'^(10\\.|192\\.168\\.|172\\.(1[6-9]|2\\d|3[01])\\.)',ip) else 'External'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Generate Brute-Force Alert Report",
+          "description": "Build a formatted text report from brute-force detection results.",
+          "difficulty": "intermediate",
+          "category": "Brute-Force & Auth Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to hunt for brute-force attacks! This exercise: generate brute-force alert report. You're building real SOC analyst skills!",
+          "starter_code": "def brute_report(detections):\n    # detections = [(ip, count, [users])]\n    # TODO: Generate formatted report\n    pass\n\ndets=[('10.0.0.55',47,['root','admin']),('10.0.0.99',12,['test','user1']),('203.0.113.66',8,['root'])]\nprint(brute_report(dets))",
+          "expected_output": "=== BRUTE-FORCE REPORT ===\nTotal flagged IPs: 3\n\n  #1 10.0.0.55: 47 failures → users: admin, root\n  #2 10.0.0.99: 12 failures → users: test, user1\n  #3 203.0.113.66: 8 failures → users: root\n\nRecommendation: Block these IPs at firewall.",
+          "hints": [
+            {
+              "message": "Build list of strings, join with newline."
+            },
+            {
+              "message": "Format each line with f-strings."
+            },
+            {
+              "message": "def brute_report(dets):\n    r=['=== BRUTE-FORCE REPORT ===',f'Total flagged IPs: {len(dets)}','']\n    for i,(ip,c,u) in enumerate(dets,1): r.append(f'  #{i} {ip}: {c} failures → users: {\", \".join(sorted(u))}')\n    r.append('\\nRecommendation: Block these IPs at firewall.')\n    return '\\n'.join(r)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Build an Attack Signature Dictionary",
+          "description": "Create a dict mapping attack names to regex patterns.",
+          "difficulty": "beginner",
+          "category": "Web Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's hunt for web attacks! This exercise: build an attack signature dictionary. You're building a real WAF!",
+          "starter_code": "import re\ndef build_sigs():\n    # TODO: Return dict {name: compiled_regex}\n    pass\n\nsigs = build_sigs()\nfor name in sorted(sigs): print(f'{name}: pattern ready')",
+          "expected_output": "Command Injection: pattern ready\nPath Traversal: pattern ready\nSQL Injection: pattern ready\nXSS: pattern ready",
+          "hints": [
+            {
+              "message": "Create dict with re.compile() for each attack type."
+            },
+            {
+              "message": "{'SQL Injection': re.compile(r\"(union.*select|' or ')\", re.I), ...}"
+            },
+            {
+              "message": "def build_sigs():\n    return {'SQL Injection':re.compile(r\"(union.*select|'\\s*or\\s*'|drop\\s+table)\",re.I),'XSS':re.compile(r'(<script|javascript:|onerror=)',re.I),'Path Traversal':re.compile(r'(\\.\\./|%2e%2e)',re.I),'Command Injection':re.compile(r'(;\\s*cat|\\|\\s*whoami)',re.I)}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Scan a Single Request for Attacks",
+          "description": "Check one HTTP request against all signatures, return list of matches.",
+          "difficulty": "beginner",
+          "category": "Web Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's hunt for web attacks! This exercise: scan a single request for attacks. You're building a real WAF!",
+          "starter_code": "import re\ndef scan_request(req, sigs):\n    # TODO: Check req against each sig, return matched names\n    pass\n\nsigs = {'SQLi':re.compile(r\"(union.*select|' or ')\",re.I),'XSS':re.compile(r'<script',re.I)}\nprint(scan_request(\"GET /s?q=' OR '1'='1\",sigs))\nprint(scan_request('GET /about',sigs))",
+          "expected_output": "['SQLi']\n[]",
+          "hints": [
+            {
+              "message": "Loop through sigs, check if pattern.search(req)."
+            },
+            {
+              "message": "found=[name for name,pat in sigs.items() if pat.search(req)]"
+            },
+            {
+              "message": "def scan_request(req,sigs):\n    return [n for n,p in sigs.items() if p.search(req)]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Classify Attack Severity",
+          "description": "Map attack types to severity levels: SQLi/CmdInj=CRITICAL, XSS/PathTrav=HIGH, DirEnum=MEDIUM.",
+          "difficulty": "beginner",
+          "category": "Web Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's hunt for web attacks! This exercise: classify attack severity. You're building a real WAF!",
+          "starter_code": "def severity(attack_type):\n    # TODO: Return severity string\n    pass\n\nfor a in ['SQL Injection','XSS','Path Traversal','Command Injection','Directory Scan']:\n    print(f'{a}: {severity(a)}')",
+          "expected_output": "SQL Injection: CRITICAL\nXSS: HIGH\nPath Traversal: HIGH\nCommand Injection: CRITICAL\nDirectory Scan: MEDIUM",
+          "hints": [
+            {
+              "message": "Use a dictionary mapping attack types to severities."
+            },
+            {
+              "message": "sev_map = {'SQL Injection':'CRITICAL', 'XSS':'HIGH', ...}"
+            },
+            {
+              "message": "def severity(a):\n    m={'SQL Injection':'CRITICAL','Command Injection':'CRITICAL','XSS':'HIGH','Path Traversal':'HIGH'}\n    return m.get(a,'MEDIUM')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Count Attacks by Type",
+          "description": "Scan multiple requests and count how many of each attack type were found.",
+          "difficulty": "intermediate",
+          "category": "Web Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's hunt for web attacks! This exercise: count attacks by type. You're building a real WAF!",
+          "starter_code": "import re\nfrom collections import Counter\ndef count_attacks(requests):\n    # TODO: Return Counter of attack types\n    pass\n\nreqs=['GET /about','GET /s?q=UNION SELECT x','GET /f?n=../../etc/passwd','GET /p?x=<script>a','GET /login','GET /s?q=DROP TABLE x']\nc=count_attacks(reqs)\nfor t,n in c.most_common(): print(f'{t}: {n}')",
+          "expected_output": "SQLi: 2\nXSS: 1\nPathTraversal: 1",
+          "hints": [
+            {
+              "message": "Build signatures dict, scan each request, update Counter."
+            },
+            {
+              "message": "for req: for each sig that matches: counter[name]+=1"
+            },
+            {
+              "message": "def count_attacks(reqs):\n    import re\n    sigs={'SQLi':re.compile(r'(union.*select|drop\\s+table)',re.I),'XSS':re.compile(r'<script',re.I),'PathTraversal':re.compile(r'\\.\\.',re.I)}\n    c=Counter()\n    for r in reqs:\n        for n,p in sigs.items():\n            if p.search(r): c[n]+=1\n    return c"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Detect Directory Enumeration",
+          "description": "Flag IPs scanning for common admin paths (/admin, /wp-admin, /.env, /.git).",
+          "difficulty": "intermediate",
+          "category": "Web Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's hunt for web attacks! This exercise: detect directory enumeration. You're building a real WAF!",
+          "starter_code": "import re\ndef detect_dir_enum(logs, threshold=3):\n    # TODO: Flag IPs accessing 3+ sensitive paths\n    pass\n\nlogs=[('10.0.0.55','/admin'),('10.0.0.55','/wp-admin'),('10.0.0.55','/.env'),('10.0.0.55','/.git'),('192.168.1.1','/index'),('10.0.0.99','/admin')]\nfor ip,paths in detect_dir_enum(logs,3).items(): print(f'🚨 {ip}: scanned {paths}')",
+          "expected_output": "🚨 10.0.0.55: scanned ['/admin', '/wp-admin', '/.env', '/.git']",
+          "hints": [
+            {
+              "message": "Define sensitive paths set, track per IP which sensitive paths they hit."
+            },
+            {
+              "message": "sensitive={'/admin','/wp-admin','/.env','/.git','/config'}"
+            },
+            {
+              "message": "def detect_dir_enum(logs,th=3):\n    sens={'/admin','/wp-admin','/.env','/.git','/config','/phpmyadmin'}\n    from collections import defaultdict\n    d=defaultdict(list)\n    for ip,path in logs:\n        if path in sens and path not in d[ip]: d[ip].append(path)\n    return {ip:paths for ip,paths in d.items() if len(paths)>=th}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Extract URL Parameters for Inspection",
+          "description": "Parse query string parameters from a URL path for security inspection.",
+          "difficulty": "intermediate",
+          "category": "Web Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's hunt for web attacks! This exercise: extract url parameters for inspection. You're building a real WAF!",
+          "starter_code": "from urllib.parse import urlparse, parse_qs\ndef extract_params(url):\n    # TODO: Return dict of {param: [values]}\n    pass\n\nfor url in ['/search?q=shoes&page=1','/login?user=admin&pass=secret','/api?id=1%20UNION%20SELECT']:\n    print(extract_params(url))",
+          "expected_output": "{'q': ['shoes'], 'page': ['1']}\n{'user': ['admin'], 'pass': ['secret']}\n{'id': ['1 UNION SELECT']}",
+          "hints": [
+            {
+              "message": "Use urlparse to get query string, parse_qs to split params."
+            },
+            {
+              "message": "parsed=urlparse(url); params=parse_qs(parsed.query)"
+            },
+            {
+              "message": "def extract_params(url):\n    from urllib.parse import urlparse,parse_qs\n    return dict(parse_qs(urlparse(url).query))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Build a Web Application Firewall (WAF) Rule",
+          "description": "Create a function that decides ALLOW/BLOCK for each request based on signatures.",
+          "difficulty": "intermediate",
+          "category": "Web Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's hunt for web attacks! This exercise: build a web application firewall (waf) rule. You're building a real WAF!",
+          "starter_code": "import re\ndef waf_check(request):\n    # TODO: Return 'ALLOW' or 'BLOCK' with reason\n    pass\n\nreqs=['GET /index.html','GET /s?q=<script>alert(1)','POST /login','GET /f?n=../../../etc/passwd']\nfor r in reqs: print(f'{waf_check(r)}: {r[:40]}')",
+          "expected_output": "ALLOW: GET /index.html\nBLOCK [XSS]: GET /s?q=<script>alert(1)\nALLOW: POST /login\nBLOCK [Path Traversal]: GET /f?n=../../../etc/passwd",
+          "hints": [
+            {
+              "message": "Check against each pattern, return BLOCK with type if matched."
+            },
+            {
+              "message": "for name,pat in sigs: if pat.search(req): return f'BLOCK [{name}]'"
+            },
+            {
+              "message": "def waf_check(r):\n    import re\n    sigs={'XSS':re.compile(r'<script|javascript:',re.I),'SQLi':re.compile(r\"union.*select|' or '\",re.I),'Path Traversal':re.compile(r'\\.\\.',re.I)}\n    for n,p in sigs.items():\n        if p.search(r): return f'BLOCK [{n}]'\n    return 'ALLOW'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Calculate Attack Rate Per Minute",
+          "description": "Group attacks by minute and calculate the rate.",
+          "difficulty": "intermediate",
+          "category": "Web Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's hunt for web attacks! This exercise: calculate attack rate per minute. You're building a real WAF!",
+          "starter_code": "from collections import defaultdict\ndef attack_rate(logs):\n    # logs = [('14:23:01','SQLi'),('14:23:05','XSS'),...]\n    # TODO: Count attacks per minute, show rate\n    pass\n\nlogs=[('14:23:01','SQLi'),('14:23:02','SQLi'),('14:23:30','XSS'),('14:24:01','PathTrav'),('14:24:05','SQLi'),('14:24:06','SQLi'),('14:24:07','SQLi')]\nattack_rate(logs)",
+          "expected_output": "14:23 | ███ (3)\n14:24 | ████ (4) 🚨 SPIKE",
+          "hints": [
+            {
+              "message": "Group by minute (first 5 chars of timestamp)."
+            },
+            {
+              "message": "per_min=defaultdict(int); minute=ts[:5]"
+            },
+            {
+              "message": "def attack_rate(logs):\n    d=defaultdict(int)\n    for ts,_ in logs: d[ts[:5]]+=1\n    for m in sorted(d):\n        c=d[m]; print(f'{m} | {\"█\"*c} ({c}){\" 🚨 SPIKE\" if c>=4 else \"\"}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Multi-Pattern Attack Detection",
+          "description": "Detect when same IP uses multiple attack types — indicates sophisticated attacker.",
+          "difficulty": "advanced",
+          "category": "Web Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's hunt for web attacks! This exercise: multi-pattern attack detection. You're building a real WAF!",
+          "starter_code": "from collections import defaultdict\nimport re\ndef multi_attack(logs):\n    # logs = [(ip, request_path)]\n    # TODO: Find IPs using 2+ different attack types\n    pass\n\nlogs=[('10.0.0.55',\"s?q=' OR '1'='1\"),('10.0.0.55','f?n=../../etc/passwd'),('10.0.0.55','p?x=<script>'),('10.0.0.99','s?q=shoes'),('10.0.0.99','f?n=../etc/passwd')]\nfor ip,types in multi_attack(logs).items(): print(f'🚨 {ip}: {types}')",
+          "expected_output": "🚨 10.0.0.55: ['SQLi', 'PathTrav', 'XSS']",
+          "hints": [
+            {
+              "message": "Track set of attack types per IP."
+            },
+            {
+              "message": "ip_attacks=defaultdict(set); for each sig match: ip_attacks[ip].add(name)"
+            },
+            {
+              "message": "def multi_attack(logs):\n    import re\n    sigs={'SQLi':re.compile(r\"(union.*select|' or ')\",re.I),'XSS':re.compile(r'<script',re.I),'PathTrav':re.compile(r'\\.\\.',re.I)}\n    d=defaultdict(set)\n    for ip,path in logs:\n        for n,p in sigs.items():\n            if p.search(path): d[ip].add(n)\n    return {ip:sorted(v) for ip,v in d.items() if len(v)>=2}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Generate Attack Detection Summary",
+          "description": "Create a complete summary of all attacks found in a log set.",
+          "difficulty": "advanced",
+          "category": "Web Attack Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's hunt for web attacks! This exercise: generate attack detection summary. You're building a real WAF!",
+          "starter_code": "from collections import Counter\ndef attack_summary(scan_results):\n    # scan_results = [{'ip':..,'type':..,'path':..,'severity':..}]\n    # TODO: Generate formatted summary\n    pass\n\nresults=[{'ip':'10.0.0.55','type':'SQLi','path':'/search','severity':'CRITICAL'},{'ip':'10.0.0.55','type':'XSS','path':'/page','severity':'HIGH'},{'ip':'203.0.113.66','type':'PathTrav','path':'/file','severity':'HIGH'}]\nprint(attack_summary(results))",
+          "expected_output": "=== ATTACK SUMMARY ===\nTotal attacks: 3\nUnique attackers: 2\n\nBy Type:\n  SQLi: 1\n  XSS: 1\n  PathTrav: 1\n\nBy Severity:\n  CRITICAL: 1\n  HIGH: 2\n\nRisk: CRITICAL",
+          "hints": [
+            {
+              "message": "Count by type and severity using Counter."
+            },
+            {
+              "message": "Build lines list, join with newline."
+            },
+            {
+              "message": "def attack_summary(r):\n    types=Counter(x['type'] for x in r); sevs=Counter(x['severity'] for x in r); ips=len(set(x['ip'] for x in r))\n    lines=['=== ATTACK SUMMARY ===',f'Total attacks: {len(r)}',f'Unique attackers: {ips}','','By Type:']\n    for t,c in types.most_common(): lines.append(f'  {t}: {c}')\n    lines.append('\\nBy Severity:')\n    for s,c in sevs.most_common(): lines.append(f'  {s}: {c}')\n    risk='CRITICAL' if sevs.get('CRITICAL',0)>0 else 'HIGH' if sevs.get('HIGH',0)>0 else 'MEDIUM'\n    lines.append(f'\\nRisk: {risk}')\n    return '\\n'.join(lines)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Calculate Mean and StdDev",
+          "description": "Compute mean and standard deviation for hourly request counts.",
+          "difficulty": "beginner",
+          "category": "Statistical Analysis & Anomaly Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's find anomalies! This exercise: calculate mean and stddev. Statistical baselines are how real SOCs spot zero-day attacks!",
+          "starter_code": "import statistics\ndef baseline(data):\n    # TODO: Return (mean, stdev)\n    pass\n\ndata=[480,520,510,490,505,530,485,515,500,495]\nm,s=baseline(data)\nprint(f'Mean: {m:.0f}, StdDev: {s:.0f}')",
+          "expected_output": "Mean: 503, StdDev: 16",
+          "hints": [
+            {
+              "message": "Use statistics.mean() and statistics.stdev()."
+            },
+            {
+              "message": "return (statistics.mean(data), statistics.stdev(data))"
+            },
+            {
+              "message": "def baseline(d):\n    import statistics\n    return (statistics.mean(d),statistics.stdev(d))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Set Alert Thresholds",
+          "description": "Calculate upper and lower alert thresholds at 2 standard deviations.",
+          "difficulty": "beginner",
+          "category": "Statistical Analysis & Anomaly Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's find anomalies! This exercise: set alert thresholds. Statistical baselines are how real SOCs spot zero-day attacks!",
+          "starter_code": "import statistics\ndef thresholds(data, sensitivity=2):\n    # TODO: Return (lower, upper) thresholds\n    pass\n\ndata=[480,520,510,490,505,530,485,515,500,495]\nlo,hi=thresholds(data)\nprint(f'Normal range: {lo:.0f} - {hi:.0f}')",
+          "expected_output": "Normal range: 471 - 535",
+          "hints": [
+            {
+              "message": "lower = mean - (sensitivity * stdev), upper = mean + (sensitivity * stdev)"
+            },
+            {
+              "message": "m=statistics.mean(data); s=statistics.stdev(data); return (m-sensitivity*s, m+sensitivity*s)"
+            },
+            {
+              "message": "def thresholds(d,sens=2):\n    import statistics; m=statistics.mean(d); s=statistics.stdev(d)\n    return (m-sens*s, m+sens*s)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Check Single Value Against Baseline",
+          "description": "Return NORMAL, ANOMALY_HIGH, or ANOMALY_LOW for a value.",
+          "difficulty": "beginner",
+          "category": "Statistical Analysis & Anomaly Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's find anomalies! This exercise: check single value against baseline. Statistical baselines are how real SOCs spot zero-day attacks!",
+          "starter_code": "def check_value(value, mean, stdev, sensitivity=2):\n    # TODO: Compare value against thresholds\n    pass\n\nprint(check_value(500, 500, 30))  # Normal\nprint(check_value(4800, 500, 30))  # High\nprint(check_value(15, 500, 30))  # Low",
+          "expected_output": "NORMAL\nANOMALY_HIGH\nANOMALY_LOW",
+          "hints": [
+            {
+              "message": "upper = mean + sensitivity*stdev; lower = mean - sensitivity*stdev"
+            },
+            {
+              "message": "if value > upper: return 'ANOMALY_HIGH' elif value < lower: return 'ANOMALY_LOW'"
+            },
+            {
+              "message": "def check_value(v,m,s,sens=2):\n    if v > m+sens*s: return 'ANOMALY_HIGH'\n    if v < m-sens*s: return 'ANOMALY_LOW'\n    return 'NORMAL'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Monitor a Stream of Values",
+          "description": "Check a list of new values against a baseline and flag anomalies.",
+          "difficulty": "intermediate",
+          "category": "Statistical Analysis & Anomaly Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's find anomalies! This exercise: monitor a stream of values. Statistical baselines are how real SOCs spot zero-day attacks!",
+          "starter_code": "import statistics\ndef monitor(historical, new_data):\n    # TODO: Flag anomalies in new_data\n    pass\n\nhist=[500]*20\nnew=[505,510,4800,490,15,510]\nmonitor(hist,new)",
+          "expected_output": "Hour 1:   505 ✅\nHour 2:   510 ✅\nHour 3:  4800 🚨 HIGH\nHour 4:   490 ✅\nHour 5:    15 🚨 LOW\nHour 6:   510 ✅",
+          "hints": [
+            {
+              "message": "Calculate baseline from historical, check each new value."
+            },
+            {
+              "message": "m=mean(hist); s=max(stdev(hist),1); for each val: check thresholds"
+            },
+            {
+              "message": "def monitor(hist,new):\n    import statistics; m=statistics.mean(hist); s=max(statistics.stdev(hist),1)\n    hi=m+2*s; lo=m-2*s\n    for i,v in enumerate(new,1):\n        if v>hi: print(f'Hour {i}: {v:5.0f} 🚨 HIGH')\n        elif v<lo: print(f'Hour {i}: {v:5.0f} 🚨 LOW')\n        else: print(f'Hour {i}: {v:5.0f} ✅')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Count Anomalies in Dataset",
+          "description": "Return the number and percentage of anomalous values.",
+          "difficulty": "intermediate",
+          "category": "Statistical Analysis & Anomaly Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's find anomalies! This exercise: count anomalies in dataset. Statistical baselines are how real SOCs spot zero-day attacks!",
+          "starter_code": "import statistics\ndef anomaly_count(historical, new_data):\n    # TODO: Return (count, percentage)\n    pass\n\nhist=[500+i for i in range(-10,10)]\nnew=[505,510,4800,490,15,510,520,480,5000,495]\nc,p=anomaly_count(hist,new)\nprint(f'Anomalies: {c}/{len(new)} ({p:.0f}%)')",
+          "expected_output": "Anomalies: 3/10 (30%)",
+          "hints": [
+            {
+              "message": "Count values outside thresholds."
+            },
+            {
+              "message": "anomalies = sum(1 for v in new if v>hi or v<lo)"
+            },
+            {
+              "message": "def anomaly_count(hist,new):\n    import statistics; m=statistics.mean(hist); s=max(statistics.stdev(hist),1)\n    hi,lo=m+2*s,m-2*s\n    c=sum(1 for v in new if v>hi or v<lo)\n    return (c, c/len(new)*100)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Detect Error Rate Spikes",
+          "description": "Monitor error percentage per hour and flag spikes.",
+          "difficulty": "intermediate",
+          "category": "Statistical Analysis & Anomaly Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's find anomalies! This exercise: detect error rate spikes. Statistical baselines are how real SOCs spot zero-day attacks!",
+          "starter_code": "def error_spike(hourly_totals, hourly_errors, threshold_pct=10):\n    # TODO: Flag hours where error% > threshold\n    pass\n\ntotals= [500,510,480,520,490,500,510,480]\nerrors = [5,  8,  3,  55, 2,  6,  85, 4]\nerror_spike(totals, errors, 10)",
+          "expected_output": "Hour 1: 1.0% ✅\nHour 2: 1.6% ✅\nHour 3: 0.6% ✅\nHour 4: 10.6% 🚨 SPIKE\nHour 5: 0.4% ✅\nHour 6: 1.2% ✅\nHour 7: 16.7% 🚨 SPIKE\nHour 8: 0.8% ✅",
+          "hints": [
+            {
+              "message": "Calculate error_pct = (errors/total)*100 for each hour."
+            },
+            {
+              "message": "if pct > threshold: print SPIKE"
+            },
+            {
+              "message": "def error_spike(tots,errs,th=10):\n    for i,(t,e) in enumerate(zip(tots,errs),1):\n        pct=e/t*100 if t else 0\n        print(f'Hour {i}: {pct:.1f}% {\"🚨 SPIKE\" if pct>th else \"✅\"}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Build Request Rate Histogram",
+          "description": "Group requests by hour and display a text histogram.",
+          "difficulty": "beginner",
+          "category": "Statistical Analysis & Anomaly Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's find anomalies! This exercise: build request rate histogram. Statistical baselines are how real SOCs spot zero-day attacks!",
+          "starter_code": "from collections import Counter\ndef histogram(timestamps):\n    # timestamps like '14:23:01'\n    # TODO: Group by hour, show histogram\n    pass\n\ntimes=['14:23:01','14:45:00','14:50:30','15:01:00','15:02:00','15:03:00','15:04:00','15:05:00','16:00:00']\nhistogram(times)",
+          "expected_output": "Hour 14: ███ (3)\nHour 15: █████ (5)\nHour 16: █ (1)",
+          "hints": [
+            {
+              "message": "Extract hour from timestamp: ts[:2]"
+            },
+            {
+              "message": "counts = Counter(ts[:2] for ts in timestamps)"
+            },
+            {
+              "message": "def histogram(times):\n    c=Counter(t[:2] for t in times)\n    for h in sorted(c): print(f'Hour {h}: {\"█\"*c[h]} ({c[h]})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Percentile-Based Anomaly Detection",
+          "description": "Use 95th percentile instead of StdDev for anomaly detection.",
+          "difficulty": "advanced",
+          "category": "Statistical Analysis & Anomaly Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's find anomalies! This exercise: percentile-based anomaly detection. Statistical baselines are how real SOCs spot zero-day attacks!",
+          "starter_code": "def percentile_check(historical, new_data):\n    # TODO: Use 95th percentile as threshold\n    pass\n\nhist=sorted([500+i*2 for i in range(-25,26)])\nnew=[505,510,4800,490,15,510]\npercentile_check(hist,new)",
+          "expected_output": "P95 threshold: 548\nHour 1:   505 ✅\nHour 2:   510 ✅\nHour 3:  4800 🚨 ABOVE P95\nHour 4:   490 ✅\nHour 5:    15 ✅\nHour 6:   510 ✅",
+          "hints": [
+            {
+              "message": "Sort data, P95 index = int(len(data)*0.95)"
+            },
+            {
+              "message": "p95 = sorted(historical)[int(len(historical)*0.95)]"
+            },
+            {
+              "message": "def percentile_check(hist,new):\n    s=sorted(hist); p95=s[int(len(s)*0.95)]\n    print(f'P95 threshold: {p95}')\n    for i,v in enumerate(new,1):\n        print(f'Hour {i}: {v:5.0f} {\"🚨 ABOVE P95\" if v>p95 else \"✅\"}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Rolling Average Baseline",
+          "description": "Implement a dynamic baseline using rolling average of last N values.",
+          "difficulty": "advanced",
+          "category": "Statistical Analysis & Anomaly Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's find anomalies! This exercise: rolling average baseline. Statistical baselines are how real SOCs spot zero-day attacks!",
+          "starter_code": "def rolling_monitor(data, window=5):\n    # TODO: Use rolling average of last N values as baseline\n    pass\n\ndata=[500,510,490,505,515,520,4800,500,510,490]\nrolling_monitor(data, window=5)",
+          "expected_output": "Val 6:   520 ✅ (avg: 504)\nVal 7:  4800 🚨 (avg: 508)\nVal 8:   500 ✅ (avg: 1327)\nVal 9:   510 ✅ (avg: 1266)\nVal 10:  490 ✅ (avg: 1060)",
+          "hints": [
+            {
+              "message": "For each value after the first window, compute mean of previous N."
+            },
+            {
+              "message": "avg = sum(data[i-window:i])/window"
+            },
+            {
+              "message": "def rolling_monitor(data,w=5):\n    import statistics\n    for i in range(w,len(data)):\n        window=data[i-w:i]; avg=statistics.mean(window); s=max(statistics.stdev(window),1)\n        v=data[i]; flag='🚨' if abs(v-avg)>2*s else '✅'\n        print(f'Val {i+1}: {v:5.0f} {flag} (avg: {avg:.0f})')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Multi-Metric Dashboard",
+          "description": "Monitor multiple metrics simultaneously (requests, errors, latency).",
+          "difficulty": "advanced",
+          "category": "Statistical Analysis & Anomaly Detection",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's find anomalies! This exercise: multi-metric dashboard. Statistical baselines are how real SOCs spot zero-day attacks!",
+          "starter_code": "def dashboard(metrics):\n    # metrics = {'requests':(hist,new), 'errors':(hist,new), ...}\n    # TODO: Check each metric against its baseline\n    pass\n\ndashboard({\n    'requests': ([500]*10, [505,4800,490]),\n    'errors': ([5]*10, [4,85,6]),\n    'latency_ms': ([100]*10, [95,105,2000]),\n})",
+          "expected_output": "=== SECURITY DASHBOARD ===\nrequests:   505 ✅ | 4800 🚨 | 490 ✅\nerrors:     4 ✅ | 85 🚨 | 6 ✅\nlatency_ms: 95 ✅ | 105 ✅ | 2000 🚨",
+          "hints": [
+            {
+              "message": "For each metric, compute baseline from hist, check new values."
+            },
+            {
+              "message": "Loop metrics.items(), compute mean/stdev per metric."
+            },
+            {
+              "message": "def dashboard(metrics):\n    import statistics\n    print('=== SECURITY DASHBOARD ===')\n    for name,(hist,new) in metrics.items():\n        m=statistics.mean(hist); s=max(statistics.stdev(hist) if len(hist)>1 else 1,1)\n        hi,lo=m+2*s,m-2*s\n        vals=[f'{v} {\"🚨\" if v>hi or v<lo else \"✅\"}' for v in new]\n        print(f'{name+\":\":12s} {\" | \".join(vals)}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Calculate SHA-256 Hash of a File",
+          "description": "Use hashlib to compute the SHA-256 hash of a log file for integrity.",
+          "difficulty": "beginner",
+          "category": "Reporting & Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write up our findings! This exercise: calculate sha-256 hash of a file. Good reporting is what makes analysis actionable!",
+          "starter_code": "import hashlib\ndef hash_file(filepath):\n    # TODO: Return SHA-256 hex digest\n    pass\n\nwith open('test.log','w') as f: f.write('Evidence line 1\\nEvidence line 2\\n')\nprint(f'SHA-256: {hash_file(\"test.log\")[:32]}...')",
+          "expected_output": "SHA-256: <32 hex characters>...",
+          "hints": [
+            {
+              "message": "Open file in binary mode ('rb'), read chunks, update sha256."
+            },
+            {
+              "message": "sha=hashlib.sha256(); for chunk in iter(lambda:f.read(8192),b''): sha.update(chunk)"
+            },
+            {
+              "message": "def hash_file(fp):\n    sha=hashlib.sha256()\n    with open(fp,'rb') as f:\n        for c in iter(lambda:f.read(8192),b''): sha.update(c)\n    return sha.hexdigest()"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Verify File Integrity",
+          "description": "Compare current hash against a stored hash to detect tampering.",
+          "difficulty": "beginner",
+          "category": "Reporting & Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write up our findings! This exercise: verify file integrity. Good reporting is what makes analysis actionable!",
+          "starter_code": "import hashlib\ndef verify(filepath, expected_hash):\n    # TODO: Return True if hash matches\n    pass\n\nwith open('ev.log','w') as f: f.write('Original data\\n')\nsha=hashlib.sha256(b'Original data\\n').hexdigest()\nprint(f'Before: {verify(\"ev.log\",sha)}')\nwith open('ev.log','w') as f: f.write('Tampered!\\n')\nprint(f'After: {verify(\"ev.log\",sha)}')",
+          "expected_output": "Before: True\nAfter: False",
+          "hints": [
+            {
+              "message": "Compute current hash, compare with expected."
+            },
+            {
+              "message": "current = hash_file(filepath); return current == expected_hash"
+            },
+            {
+              "message": "def verify(fp,expected):\n    import hashlib; sha=hashlib.sha256()\n    with open(fp,'rb') as f:\n        for c in iter(lambda:f.read(8192),b''): sha.update(c)\n    return sha.hexdigest()==expected"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Generate Executive Summary",
+          "description": "Create a one-paragraph summary from analysis stats.",
+          "difficulty": "beginner",
+          "category": "Reporting & Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write up our findings! This exercise: generate executive summary. Good reporting is what makes analysis actionable!",
+          "starter_code": "def exec_summary(total, threats, critical, ips):\n    # TODO: Return formatted summary string\n    pass\n\nprint(exec_summary(10000, 47, 3, 5))",
+          "expected_output": "EXECUTIVE SUMMARY: Analysed 10,000 log entries. Detected 47 security threats (3 CRITICAL) from 5 unique source IPs. Immediate action required.",
+          "hints": [
+            {
+              "message": "Use f-string with :, for thousands separator."
+            },
+            {
+              "message": "f'Analysed {total:,} log entries. Detected {threats} threats ({critical} CRITICAL) from {ips} IPs.'"
+            },
+            {
+              "message": "def exec_summary(total,threats,crit,ips):\n    return f'EXECUTIVE SUMMARY: Analysed {total:,} log entries. Detected {threats} security threats ({crit} CRITICAL) from {ips} unique source IPs. Immediate action required.'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Create Threat Findings List",
+          "description": "Format a list of findings sorted by severity.",
+          "difficulty": "intermediate",
+          "category": "Reporting & Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write up our findings! This exercise: create threat findings list. Good reporting is what makes analysis actionable!",
+          "starter_code": "def format_findings(threats):\n    # threats = [{'sev':..,'type':..,'ip':..,'desc':..}]\n    # TODO: Sort by severity, format as numbered list\n    pass\n\nthreats=[{'sev':'HIGH','type':'BruteForce','ip':'10.0.0.55','desc':'47 failures'},{'sev':'CRITICAL','type':'SQLi','ip':'10.0.0.55','desc':'UNION payload'},{'sev':'MEDIUM','type':'DirEnum','ip':'10.0.0.99','desc':'Admin scanning'}]\nprint(format_findings(threats))",
+          "expected_output": "FINDINGS:\n  #1 [CRITICAL] SQLi from 10.0.0.55: UNION payload\n  #2 [HIGH] BruteForce from 10.0.0.55: 47 failures\n  #3 [MEDIUM] DirEnum from 10.0.0.99: Admin scanning",
+          "hints": [
+            {
+              "message": "Sort by severity order: CRITICAL=0, HIGH=1, MEDIUM=2, LOW=3."
+            },
+            {
+              "message": "sev_order = {'CRITICAL':0,'HIGH':1,'MEDIUM':2,'LOW':3}; sorted(threats, key=...)"
+            },
+            {
+              "message": "def format_findings(t):\n    o={'CRITICAL':0,'HIGH':1,'MEDIUM':2,'LOW':3}\n    s=sorted(t,key=lambda x:o.get(x['sev'],99))\n    lines=['FINDINGS:']\n    for i,f in enumerate(s,1): lines.append(f'  #{i} [{f[\"sev\"]}] {f[\"type\"]} from {f[\"ip\"]}: {f[\"desc\"]}')\n    return '\\n'.join(lines)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Build Recommendations Section",
+          "description": "Generate prioritised recommendations (P1/P2/P3) from findings.",
+          "difficulty": "intermediate",
+          "category": "Reporting & Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write up our findings! This exercise: build recommendations section. Good reporting is what makes analysis actionable!",
+          "starter_code": "def recommendations(threats):\n    # TODO: Auto-generate recommendations based on threat types\n    pass\n\nthreats=[{'type':'SQLi'},{'type':'BruteForce'},{'type':'PathTraversal'}]\nfor r in recommendations(threats): print(r)",
+          "expected_output": "[P1] Enable WAF SQL injection filtering\n[P1] Block attacking IPs at firewall\n[P2] Implement account lockout after 5 failures\n[P2] Restrict file access paths, disable directory traversal",
+          "hints": [
+            {
+              "message": "Map each threat type to relevant recommendations."
+            },
+            {
+              "message": "rec_map = {'SQLi': ['P1 Enable WAF...'], 'BruteForce': ['P2 Implement lockout...']}"
+            },
+            {
+              "message": "def recommendations(threats):\n    m={'SQLi':[('[P1]','Enable WAF SQL injection filtering'),('[P1]','Block attacking IPs at firewall')],'BruteForce':[('[P2]','Implement account lockout after 5 failures')],'PathTraversal':[('[P2]','Restrict file access paths, disable directory traversal')]}\n    recs=[]\n    for t in threats:\n        for p,a in m.get(t['type'],[]):\n            r=f'{p} {a}'\n            if r not in recs: recs.append(r)\n    return sorted(recs)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Save Report to Text File",
+          "description": "Write a complete report to a .txt file.",
+          "difficulty": "beginner",
+          "category": "Reporting & Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write up our findings! This exercise: save report to text file. Good reporting is what makes analysis actionable!",
+          "starter_code": "def save_report(filepath, content):\n    # TODO: Write content to file, confirm with message\n    pass\n\nreport = 'SECURITY REPORT\\n================\\nThreats: 5\\nRisk: HIGH'\nsave_report('report.txt', report)\n\n# Verify\nwith open('report.txt') as f: print(f.read())",
+          "expected_output": "Report saved to report.txt (63 bytes)\nSECURITY REPORT\n================\nThreats: 5\nRisk: HIGH",
+          "hints": [
+            {
+              "message": "Use open(filepath, 'w') and write the content."
+            },
+            {
+              "message": "with open(fp,'w') as f: f.write(content); size=len(content)"
+            },
+            {
+              "message": "def save_report(fp,content):\n    with open(fp,'w') as f: f.write(content)\n    print(f'Report saved to {fp} ({len(content)} bytes)')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Export Findings as JSON",
+          "description": "Convert findings to JSON and save to file.",
+          "difficulty": "intermediate",
+          "category": "Reporting & Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write up our findings! This exercise: export findings as json. Good reporting is what makes analysis actionable!",
+          "starter_code": "import json\ndef export_json(findings, filepath):\n    # TODO: Save findings as formatted JSON\n    pass\n\nfindings=[{'type':'SQLi','ip':'10.0.0.55','severity':'CRITICAL'},{'type':'XSS','ip':'10.0.0.55','severity':'HIGH'}]\nexport_json(findings,'findings.json')\nwith open('findings.json') as f: print(f.read()[:100]+'...')",
+          "expected_output": "Exported 2 findings to findings.json\n[\\n  {\\n    \"type\": \"SQLi\",\\n    \"ip\": \"10.0.0.55\",\\n    \"severity\": \"CRITICAL\"\\n  },\\n...",
+          "hints": [
+            {
+              "message": "Use json.dump with indent=2."
+            },
+            {
+              "message": "with open(fp,'w') as f: json.dump(findings, f, indent=2)"
+            },
+            {
+              "message": "def export_json(findings,fp):\n    import json\n    with open(fp,'w') as f: json.dump(findings,f,indent=2)\n    print(f'Exported {len(findings)} findings to {fp}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Build CSV Report from Log Stats",
+          "description": "Export IP activity stats as a CSV file.",
+          "difficulty": "intermediate",
+          "category": "Reporting & Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write up our findings! This exercise: build csv report from log stats. Good reporting is what makes analysis actionable!",
+          "starter_code": "import csv\ndef export_csv(ip_stats, filepath):\n    # ip_stats = [(ip, requests, failures, threat_level)]\n    # TODO: Write CSV with headers\n    pass\n\nstats=[('10.0.0.55',85,47,'CRITICAL'),('10.0.0.99',12,8,'HIGH'),('192.168.1.100',200,0,'LOW')]\nexport_csv(stats,'report.csv')\nwith open('report.csv') as f: print(f.read())",
+          "expected_output": "IP,Requests,Failures,Threat_Level\n10.0.0.55,85,47,CRITICAL\n10.0.0.99,12,8,HIGH\n192.168.1.100,200,0,LOW",
+          "hints": [
+            {
+              "message": "Use csv.writer to write rows."
+            },
+            {
+              "message": "writer = csv.writer(f); writer.writerow(headers); writer.writerows(data)"
+            },
+            {
+              "message": "def export_csv(stats,fp):\n    import csv\n    with open(fp,'w',newline='') as f:\n        w=csv.writer(f); w.writerow(['IP','Requests','Failures','Threat_Level']); w.writerows(stats)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Complete Report Pipeline",
+          "description": "Combine all reporting functions into one pipeline: summary + findings + recs + save.",
+          "difficulty": "advanced",
+          "category": "Reporting & Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write up our findings! This exercise: complete report pipeline. Good reporting is what makes analysis actionable!",
+          "starter_code": "def full_report(analysis):\n    # analysis = {'total':N, 'threats':[...], 'ips':set}\n    # TODO: Build complete report and print it\n    pass\n\nanalysis={'total':10000,'threats':[{'sev':'CRITICAL','type':'SQLi','ip':'10.0.0.55','desc':'UNION SELECT'},{'sev':'HIGH','type':'BruteForce','ip':'10.0.0.55','desc':'47 failures'}],'ips':{'10.0.0.55','10.0.0.99'}}\nfull_report(analysis)",
+          "expected_output": "============================\n  SECURITY ANALYSIS REPORT\n============================\nTotal entries: 10,000\nThreats found: 2\nSource IPs: 2\nRisk: CRITICAL\n\n#1 [CRITICAL] SQLi from 10.0.0.55\n#2 [HIGH] BruteForce from 10.0.0.55",
+          "hints": [
+            {
+              "message": "Combine summary, findings, and recommendations into one output."
+            },
+            {
+              "message": "Sort threats by severity, format each section."
+            },
+            {
+              "message": "def full_report(a):\n    crit=sum(1 for t in a['threats'] if t['sev']=='CRITICAL')\n    risk='CRITICAL' if crit else 'HIGH' if a['threats'] else 'LOW'\n    print('='*28+'\\n  SECURITY ANALYSIS REPORT\\n'+'='*28)\n    print(f'Total entries: {a[\"total\"]:,}\\nThreats found: {len(a[\"threats\"])}\\nSource IPs: {len(a[\"ips\"])}\\nRisk: {risk}\\n')\n    o={'CRITICAL':0,'HIGH':1,'MEDIUM':2,'LOW':3}\n    for i,t in enumerate(sorted(a['threats'],key=lambda x:o.get(x['sev'],9)),1):\n        print(f'#{i} [{t[\"sev\"]}] {t[\"type\"]} from {t[\"ip\"]}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Forensic Evidence Packager",
+          "description": "Hash multiple files, create inventory, save as evidence package.",
+          "difficulty": "advanced",
+          "category": "Reporting & Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write up our findings! This exercise: forensic evidence packager. Good reporting is what makes analysis actionable!",
+          "starter_code": "import hashlib, os, json\ndef package_evidence(files):\n    # TODO: Hash each file, create inventory JSON\n    pass\n\nfor name in ['web.log','auth.log']:\n    with open(name,'w') as f: f.write(f'Sample {name} content\\n')\n\npackage_evidence(['web.log','auth.log'])",
+          "expected_output": "=== EVIDENCE PACKAGE ===\nFiles: 2\n  web.log: sha256=<hash>... (21 bytes)\n  auth.log: sha256=<hash>... (22 bytes)\nInventory saved to evidence_inventory.json",
+          "hints": [
+            {
+              "message": "Hash each file, record hash + size, save inventory."
+            },
+            {
+              "message": "for each file: compute hash, get size, add to inventory list"
+            },
+            {
+              "message": "def package_evidence(files):\n    import hashlib,os,json; inv=[]\n    print(f'=== EVIDENCE PACKAGE ===\\nFiles: {len(files)}')\n    for fp in files:\n        sha=hashlib.sha256()\n        with open(fp,'rb') as f:\n            for c in iter(lambda:f.read(8192),b''): sha.update(c)\n        h=sha.hexdigest(); sz=os.path.getsize(fp)\n        inv.append({'file':fp,'sha256':h,'size':sz})\n        print(f'  {fp}: sha256={h[:16]}... ({sz} bytes)')\n    with open('evidence_inventory.json','w') as f: json.dump(inv,f,indent=2)\n    print('Inventory saved to evidence_inventory.json')"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

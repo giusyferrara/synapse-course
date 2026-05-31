@@ -1,0 +1,1586 @@
+{
+  "course_id": "py_capstone_forensics",
+  "title": "Python Digital Forensics & Capstone Investigation",
+  "description": "Apply all Python skills to digital forensics: evidence collection, encoding analysis, timeline reconstruction, network forensics, and professional reporting.",
+  "difficulty": "ADVANCED",
+  "estimated_hours": 12,
+  "prerequisites": [
+    "Python fundamentals",
+    "Log analysis basics",
+    "Security automation basics"
+  ],
+  "learning_outcomes": [
+    "Collect and preserve digital evidence with proper chain of custody using Python",
+    "Identify file types by magic bytes and extract forensic metadata",
+    "Detect and decode Base64, hex, XOR, and URL-encoded data",
+    "Parse email headers to trace origin and detect spoofing",
+    "Build forensic timelines merging events from multiple sources",
+    "Analyse network connections to identify data exfiltration",
+    "Perform forensic keyword searching across evidence files",
+    "Generate professional forensic investigation reports",
+    "Apply steganography detection and simple cipher cracking",
+    "Execute complete end-to-end digital forensic investigations"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses detective/mystery analogies. Never judges. Celebrates every clue found. Makes forensics feel like solving an exciting mystery case.",
+    "intervention_triggers": {
+      "idle_40_seconds": "Digital forensics involves lots of details — totally normal to pause and think! You're like a detective examining a crime scene. What evidence are you looking at? Let me help focus your investigation! 🔬",
+      "idle_90_seconds": "Still investigating? Great detectives are thorough! Remember: collect → examine → analyse → report. Which phase are you in? I can walk through it step by step.",
+      "idle_180_seconds": "No worries! Forensics is methodical work. Let's break this down: what's the ONE thing your code needs to do right now? Start there, and we'll build from it. Every investigation starts with one clue! 🕵️",
+      "first_error": "Almost cracked the case! Check your logic — forensics requires precision. Is your hash using 'rb' mode? Are your regex patterns correct? Let's debug together!",
+      "repeated_errors": "Let me try a different approach. Think of this like a recipe: Step 1 (input), Step 2 (process), Step 3 (output). Which step is failing? I'll show you a template...",
+      "after_success": "Case cracked! 🎉 You just performed real digital forensics — law enforcement teams use these exact techniques. Your investigation skills are impressive!"
+    },
+    "encouragement_phrases": [
+      "You're becoming a cyber detective! 🕵️",
+      "Evidence doesn't lie — and you found it!",
+      "That's forensic-grade precision!",
+      "Real investigators would be impressed!",
+      "Every byte tells a story — you're reading it!",
+      "Your chain of custody is solid! 🔒",
+      "Great analytical thinking!",
+      "The timeline is coming together beautifully!",
+      "That's exactly how DFIR teams work!",
+      "You cracked the code! Literally! 🔓",
+      "Evidence collected, integrity verified — professional work!",
+      "Your forensics toolkit is growing fast!"
+    ],
+    "explanation_styles": {
+      "analogy": "Digital forensics is CSI for computers — every file is a fingerprint, every log is a witness statement, every timestamp is an alibi to verify.",
+      "visual": "Picture a crime board with red string connecting evidence: files → timestamps → IPs → users. Your Python script IS the red string.",
+      "step_by_step": "1. Collect evidence (hash + copy). 2. Examine (identify, extract metadata). 3. Analyse (search, correlate, timeline). 4. Report (findings + recommendations).",
+      "code_trace": "data=open('ev.txt','rb').read() → sha256.update(data) → hexdigest gives unique fingerprint → compare later to prove integrity.",
+      "comparison": "Manual forensics = reading every page of every book in a library. Python forensics = Ctrl+F across all books simultaneously with pattern matching."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "py_capstone_forensics_lesson_1",
+      "title": "Python Digital Forensics & Capstone Investigation",
+      "theory": {
+        "introduction": "Imagine a crime has been committed — but instead of fingerprints and DNA, the evidence is digital. Files were deleted, logs were tampered with, emails were sent, and data was stolen. Your job as a digital forensics investigator is to recover that evidence, prove what happened, and present your findings in a way that holds up in court.\n\nDigital forensics is the science of collecting, preserving, analysing, and presenting digital evidence. It's used in criminal investigations (cybercrime, fraud, theft), civil cases (contract disputes, intellectual property), corporate investigations (insider threats, policy violations), and incident response (understanding what an attacker did after a breach).\n\nPython is the forensics investigator's best friend. With Python, you can recover deleted files from disk images, extract metadata from documents and images (who created it, when, where), analyse network traffic captures, parse email headers to trace senders, decode encoded data (Base64, hex, XOR), crack simple ciphers, build timelines from multiple evidence sources, and generate court-ready reports.\n\nThis capstone module brings together EVERYTHING you've learned — file handling, regex, data structures, hashing, log analysis, and automation — and applies it to real forensics scenarios. You'll work through complete investigations: from evidence collection to final report. Think of yourself as a cyber detective — every byte tells a story, and Python helps you read it.\n\nBy the end of this module, you'll have built a complete digital forensics toolkit in Python. These are the exact skills used by law enforcement cyber units, corporate incident response teams, and forensics consultants worldwide. Let's solve some digital mysteries! 🔍🔬",
+        "why_important": "Digital forensics is one of the highest-paid specialisations in cybersecurity. Forensics analysts earn 15-25% more than general security roles, and demand is growing as cybercrime increases by 15% annually. Every major data breach requires forensic investigation — someone has to figure out what happened, how it happened, and what was affected.\n\nBeyond career prospects, forensics skills make you a better security professional overall. Understanding how investigations work helps you build better defences (you know what evidence to preserve), write better incident response plans (you know what investigators need), and think like both attacker and defender.\n\nPython forensics skills are particularly valuable because they're transferable. The same techniques that analyse malware samples also analyse legitimate software. The same metadata extraction that finds evidence also organises photo libraries. The same timeline analysis that reconstructs attacks also debugs complex system failures. You're not just learning forensics — you're mastering advanced Python data processing that applies everywhere.\n\nRegulatory requirements (GDPR, HIPAA, PCI-DSS, SOX) increasingly mandate forensic readiness — the ability to conduct investigations when incidents occur. Companies need people who can do this, and Python makes it accessible without expensive commercial tools.",
+        "key_concepts": [
+          {
+            "concept": "Digital Evidence and Chain of Custody",
+            "explanation": "Digital evidence is any data stored or transmitted in digital form that can be used in an investigation. This includes files, emails, logs, network traffic, memory dumps, and metadata. The chain of custody is a documented trail showing who collected the evidence, when, how it was stored, and who had access. Breaking the chain means evidence may be inadmissible in court. In Python, we maintain chain of custody by: hashing evidence immediately upon collection (SHA-256), working on copies never originals, logging every action our scripts take, and timestamping everything. Think of it like a sealed evidence bag — once sealed, any tampering is detectable.",
+            "example": "import hashlib\nfrom datetime import datetime\n\ndef collect_evidence(filepath):\n    \"\"\"Collect digital evidence with proper chain of custody.\"\"\"\n    record = {\n        'file': filepath,\n        'collected_by': 'Investigator',\n        'collected_at': datetime.now().isoformat(),\n        'actions': []\n    }\n    # Hash original before touching anything\n    sha = hashlib.sha256()\n    with open(filepath, 'rb') as f:\n        data = f.read()\n        sha.update(data)\n    record['original_hash'] = sha.hexdigest()\n    record['file_size'] = len(data)\n    record['actions'].append(f'{datetime.now():%H:%M:%S} Original hashed')\n    \n    # Create working copy\n    copy_path = filepath + '.evidence_copy'\n    with open(copy_path, 'wb') as f:\n        f.write(data)\n    record['actions'].append(f'{datetime.now():%H:%M:%S} Working copy created')\n    \n    print(f'Evidence collected: {filepath}')\n    print(f'SHA-256: {record[\"original_hash\"][:32]}...')\n    print(f'Working copy: {copy_path}')\n    return record\n\n# Demo\nwith open('suspect_file.txt', 'w') as f:\n    f.write('Secret meeting at 3pm. Delete after reading.')\nrecord = collect_evidence('suspect_file.txt')",
+            "ai_hint": "Chain of custody is like a sealed evidence bag — hash everything, work on copies, log every action. If the seal is broken, evidence is worthless!"
+          },
+          {
+            "concept": "File Metadata Extraction",
+            "explanation": "Every file contains hidden metadata — data about the data. Images store EXIF data (camera model, GPS coordinates, date taken). Documents store author names, creation dates, revision history. PDFs embed creator software and modification dates. Even simple text files have filesystem metadata (created, modified, accessed timestamps). Python's os.stat() reads filesystem metadata, and specialised libraries extract format-specific metadata. This metadata often reveals more than the file content itself — like finding the photographer's GPS coordinates in a blackmail photo.",
+            "example": "import os\nfrom datetime import datetime\n\ndef extract_metadata(filepath):\n    stat = os.stat(filepath)\n    meta = {\n        'filename': os.path.basename(filepath),\n        'size_bytes': stat.st_size,\n        'created': datetime.fromtimestamp(stat.st_ctime).isoformat(),\n        'modified': datetime.fromtimestamp(stat.st_mtime).isoformat(),\n        'accessed': datetime.fromtimestamp(stat.st_atime).isoformat(),\n        'permissions': oct(stat.st_mode)[-3:],\n        'extension': os.path.splitext(filepath)[1],\n    }\n    # Check for suspicious indicators\n    if meta['extension'] in ['.exe','.bat','.ps1','.vbs']:\n        meta['risk'] = 'EXECUTABLE - potential malware'\n    elif meta['extension'] in ['.zip','.rar','.7z','.tar']:\n        meta['risk'] = 'ARCHIVE - may contain hidden files'\n    else:\n        meta['risk'] = 'Low risk'\n    return meta\n\nwith open('report.docx', 'w') as f: f.write('Confidential report')\nmeta = extract_metadata('report.docx')\nfor k, v in meta.items():\n    print(f'  {k}: {v}')",
+            "ai_hint": "Metadata is the file's fingerprint — creation date, author, GPS location. Sometimes the metadata is more revealing than the content itself!"
+          },
+          {
+            "concept": "Recovering Deleted Data Patterns",
+            "explanation": "When a file is 'deleted', the operating system usually just marks the space as available — the actual data remains on disk until overwritten. Forensics tools can recover this data by scanning for file signatures (magic bytes). Every file type has a unique header: JPEG starts with FF D8 FF, PNG with 89 50 4E 47, PDF with 25 50 44 46, ZIP with 50 4B 03 04. Python can scan raw data (or disk images) for these signatures to find and recover deleted files. This technique is called file carving. It's like finding torn-up letters in a bin — the pieces are still there if you look carefully.",
+            "example": "# File signature (magic bytes) database\nFILE_SIGNATURES = {\n    b'\\xff\\xd8\\xff': ('JPEG image', '.jpg'),\n    b'\\x89PNG': ('PNG image', '.png'),\n    b'%PDF': ('PDF document', '.pdf'),\n    b'PK\\x03\\x04': ('ZIP archive', '.zip'),\n    b'\\x7fELF': ('Linux executable', '.elf'),\n    b'MZ': ('Windows executable', '.exe'),\n    b'GIF8': ('GIF image', '.gif'),\n    b'\\x1f\\x8b': ('GZIP archive', '.gz'),\n}\n\ndef identify_file(filepath):\n    with open(filepath, 'rb') as f:\n        header = f.read(8)\n    for sig, (name, ext) in FILE_SIGNATURES.items():\n        if header[:len(sig)] == sig:\n            return {'type': name, 'extension': ext, 'signature': sig.hex()}\n    return {'type': 'Unknown', 'extension': '', 'signature': header[:4].hex()}\n\n# Create test files\nwith open('mystery1', 'wb') as f: f.write(b'%PDF-1.4 fake pdf content')\nwith open('mystery2', 'wb') as f: f.write(b'PK\\x03\\x04 fake zip content')\nwith open('mystery3', 'wb') as f: f.write(b'Just plain text')\n\nfor fname in ['mystery1', 'mystery2', 'mystery3']:\n    result = identify_file(fname)\n    print(f'{fname}: {result[\"type\"]} (sig: {result[\"signature\"]})')",
+            "ai_hint": "Magic bytes are like file DNA — even without an extension, the first few bytes reveal what the file truly is!"
+          },
+          {
+            "concept": "Base64 and Encoding Analysis",
+            "explanation": "Attackers often encode data to hide it: Base64 converts binary to text (useful for embedding files in emails or scripts), hexadecimal encoding represents bytes as hex pairs, URL encoding replaces special characters with %XX, and XOR encoding uses a key to scramble data. A forensics analyst must recognise encoded data and decode it. Base64 is recognisable by its character set (A-Z, a-z, 0-9, +, /) and padding (= at end). Python's base64 module handles encoding/decoding. Finding Base64 in a script or log often reveals hidden commands, stolen data, or malware payloads.",
+            "example": "import base64\nimport binascii\n\ndef analyse_encoding(data):\n    results = []\n    # Try Base64\n    try:\n        decoded = base64.b64decode(data)\n        if decoded.isascii() or len(decoded) > 0:\n            results.append(('Base64', decoded))\n    except Exception:\n        pass\n    # Try Hex\n    try:\n        decoded = binascii.unhexlify(data)\n        if decoded.isascii():\n            results.append(('Hex', decoded))\n    except Exception:\n        pass\n    # Check if already plaintext\n    if isinstance(data, str) and data.isprintable():\n        results.append(('Plaintext', data.encode()))\n    return results\n\n# Test with encoded data\nsamples = [\n    base64.b64encode(b'Secret password: Admin123!').decode(),\n    binascii.hexlify(b'Hidden message').decode(),\n    'Normal text',\n]\nfor s in samples:\n    print(f'Input: {s[:40]}...' if len(s)>40 else f'Input: {s}')\n    for encoding, decoded in analyse_encoding(s):\n        print(f'  → {encoding}: {decoded.decode(\"utf-8\", errors=\"replace\")}')",
+            "ai_hint": "Base64 looks like random letters ending with = signs. When you spot it in logs or scripts, always decode it — attackers love to hide commands this way!"
+          },
+          {
+            "concept": "Email Header Forensics",
+            "explanation": "Email headers contain a wealth of forensic information: the complete path the email took (Received headers), the actual sender (not just the displayed From), authentication results (SPF, DKIM, DMARC), the sending mail server's IP address, timestamps at each hop, and the email client used. Attackers can forge the 'From' field, but Received headers are harder to fake because each mail server adds its own. Reading headers bottom-to-top shows the email's journey. Python can parse these headers to trace the true origin of phishing emails, identify spoofed senders, and build communication timelines.",
+            "example": "import re\nfrom datetime import datetime\n\ndef parse_email_headers(header_text):\n    results = {'received_hops': [], 'from': '', 'to': '', 'subject': '', 'date': ''}\n    \n    # Extract key headers\n    for line in header_text.split('\\n'):\n        if line.startswith('From:'): results['from'] = line[5:].strip()\n        elif line.startswith('To:'): results['to'] = line[3:].strip()\n        elif line.startswith('Subject:'): results['subject'] = line[8:].strip()\n        elif line.startswith('Date:'): results['date'] = line[5:].strip()\n        elif line.startswith('Received:'):\n            ip_match = re.search(r'\\[(\\d+\\.\\d+\\.\\d+\\.\\d+)\\]', line)\n            ip = ip_match.group(1) if ip_match else 'unknown'\n            results['received_hops'].append({'raw': line[9:].strip()[:60], 'ip': ip})\n    \n    return results\n\nheaders = \"\"\"Received: from mail.example.com [203.0.113.50] by mx.target.com\nReceived: from suspicious.server [10.0.0.55] by mail.example.com\nFrom: CEO <ceo@company.com>\nTo: finance@company.com\nSubject: Urgent Wire Transfer\nDate: Mon, 10 Jan 2025 14:23:00 +0000\"\"\"\n\nresult = parse_email_headers(headers)\nprint(f'From: {result[\"from\"]}')\nprint(f'Subject: {result[\"subject\"]}')\nprint(f'\\nEmail path (bottom = origin):')\nfor i, hop in enumerate(reversed(result['received_hops']), 1):\n    print(f'  Hop {i}: IP {hop[\"ip\"]}')",
+            "ai_hint": "Email headers are like postal stamps — each server that handles the email adds its stamp. Read bottom-to-top to trace the real origin!"
+          },
+          {
+            "concept": "Network Traffic Analysis",
+            "explanation": "Network forensics examines captured network traffic (packet captures or PCAPs) to understand what was communicated. Python can parse network logs to identify: which hosts communicated, what protocols were used, how much data was transferred, DNS queries (what domains were looked up), HTTP requests (what websites were visited), and suspicious patterns (data exfiltration, command-and-control traffic). Even without decrypting HTTPS, metadata (who talked to whom, when, how much) reveals a lot. It's like analysing phone records — you can't hear the conversation, but you know who called whom and for how long.",
+            "example": "from collections import Counter, defaultdict\n\ndef analyse_connections(netlog):\n    \"\"\"Analyse network connection log entries.\"\"\"\n    src_dst = Counter()\n    bytes_out = defaultdict(int)\n    protocols = Counter()\n    dns_queries = []\n    \n    for entry in netlog:\n        src_dst[(entry['src'], entry['dst'])] += 1\n        bytes_out[entry['src']] += entry.get('bytes', 0)\n        protocols[entry['protocol']] += 1\n        if entry['protocol'] == 'DNS':\n            dns_queries.append(entry.get('query', ''))\n    \n    print('=== NETWORK ANALYSIS ===')\n    print(f'Total connections: {sum(src_dst.values())}')\n    print(f'\\nTop talkers:')\n    for (s, d), c in src_dst.most_common(3):\n        print(f'  {s} → {d}: {c} connections')\n    print(f'\\nData transfer:')\n    for src, b in sorted(bytes_out.items(), key=lambda x: -x[1])[:3]:\n        print(f'  {src}: {b:,} bytes sent')\n    if dns_queries:\n        print(f'\\nDNS queries: {\", \".join(dns_queries[:5])}')\n\nnetlog = [\n    {'src':'192.168.1.100','dst':'10.0.0.55','protocol':'TCP','bytes':1500},\n    {'src':'192.168.1.100','dst':'10.0.0.55','protocol':'TCP','bytes':45000},\n    {'src':'192.168.1.100','dst':'8.8.8.8','protocol':'DNS','bytes':100,'query':'evil-c2.com'},\n    {'src':'192.168.1.200','dst':'93.184.216.34','protocol':'HTTPS','bytes':2000},\n    {'src':'192.168.1.100','dst':'10.0.0.55','protocol':'TCP','bytes':980000},\n]\nanalyse_connections(netlog)",
+            "ai_hint": "Network analysis is like reading phone records — who called whom, how long, how often. Large transfers to unusual IPs = possible data theft!"
+          },
+          {
+            "concept": "Timeline Analysis and Event Correlation",
+            "explanation": "A forensic timeline merges events from ALL sources — file timestamps, log entries, email dates, network connections, login records — into a single chronological view. This reveals the complete story of an incident: the attacker logged in at 14:23, accessed the database at 14:25, exported data at 14:27, deleted logs at 14:30. Without a timeline, you see disconnected fragments. With a timeline, you see the attack chain. Python's datetime module and sorting capabilities make timeline construction straightforward. The key is normalising timestamps from different formats into comparable datetime objects.",
+            "example": "from datetime import datetime\n\nclass ForensicTimeline:\n    def __init__(self):\n        self.events = []\n    \n    def add(self, timestamp, source, event, severity='INFO'):\n        if isinstance(timestamp, str):\n            for fmt in ['%Y-%m-%d %H:%M:%S', '%d/%b/%Y:%H:%M:%S', '%b %d %H:%M:%S']:\n                try:\n                    timestamp = datetime.strptime(timestamp, fmt)\n                    if timestamp.year == 1900: timestamp = timestamp.replace(year=2025)\n                    break\n                except ValueError: continue\n        self.events.append({'time': timestamp, 'source': source, 'event': event, 'severity': severity})\n    \n    def display(self):\n        self.events.sort(key=lambda e: e['time'])\n        icons = {'INFO': '🔵', 'WARNING': '🟡', 'HIGH': '🟠', 'CRITICAL': '🔴'}\n        print('📅 FORENSIC TIMELINE')\n        print('=' * 60)\n        for e in self.events:\n            icon = icons.get(e['severity'], '⚪')\n            print(f'  {e[\"time\"]:%H:%M:%S} {icon} [{e[\"source\"]:8s}] {e[\"event\"]}')\n\ntl = ForensicTimeline()\ntl.add('2025-01-10 14:23:01', 'AUTH', 'SSH login from 10.0.0.55', 'WARNING')\ntl.add('2025-01-10 14:25:30', 'DATABASE', 'SELECT * FROM users', 'CRITICAL')\ntl.add('2025-01-10 14:27:15', 'NETWORK', '980KB sent to 10.0.0.55', 'CRITICAL')\ntl.add('2025-01-10 14:30:00', 'SYSTEM', 'auth.log truncated', 'CRITICAL')\ntl.add('2025-01-10 14:23:00', 'FIREWALL', 'Connection from 10.0.0.55 allowed', 'INFO')\ntl.display()",
+            "ai_hint": "A forensic timeline is like a movie replay of the attack — every scene in order, from every camera angle. Without it, you only have random snapshots!"
+          },
+          {
+            "concept": "String and Keyword Searching",
+            "explanation": "Forensic keyword searching means scanning files, disk images, or memory dumps for specific strings: passwords, email addresses, credit card numbers, domain names, IP addresses, or any term relevant to the investigation. Python can search through binary data, handle different encodings (UTF-8, UTF-16, ASCII), use regex for pattern matching, and report the context around each hit. This is how investigators find hidden evidence — searching a 100GB disk image for 'password' might reveal credentials stored in unexpected places. It's like using a metal detector on a beach — systematic scanning reveals buried treasures.",
+            "example": "import re\n\ndef forensic_search(data, patterns):\n    \"\"\"Search data for forensic patterns.\"\"\"\n    findings = []\n    for name, pattern in patterns.items():\n        matches = re.findall(pattern, data)\n        if matches:\n            findings.append({'type': name, 'count': len(matches), 'samples': list(set(matches))[:5]})\n    return findings\n\nPATTERNS = {\n    'Email': r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}',\n    'IPv4': r'\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b',\n    'Credit Card': r'\\b(?:4\\d{3}|5[1-5]\\d{2}|3[47]\\d{2})[- ]?\\d{4}[- ]?\\d{4}[- ]?\\d{4}\\b',\n    'URL': r'https?://[^\\s<>\"]+',\n    'Password-like': r'(?:password|passwd|pwd)\\s*[:=]\\s*\\S+',\n}\n\ntest_data = '''Meeting notes: Contact admin@evil.com for details.\nServer at 10.0.0.55 was compromised. Attacker used password: S3cr3t!23\nData sent to https://exfil.evil.com/upload\nCard: 4111-1111-1111-1111 was found in the database dump.\nAlso found admin@company.com in the logs.'''\n\nresults = forensic_search(test_data, PATTERNS)\nfor r in results:\n    print(f'🔍 {r[\"type\"]}: {r[\"count\"]} found → {r[\"samples\"]}')",
+            "ai_hint": "Keyword searching is like a metal detector for data — systematically scan for emails, IPs, passwords, and card numbers buried in gigabytes of evidence!"
+          },
+          {
+            "concept": "Hash-Based Evidence Verification",
+            "explanation": "Cryptographic hashes are the foundation of digital forensics integrity. Every piece of evidence gets hashed at collection time, and the hash is verified before analysis and before court presentation. If even one bit changes, the hash is completely different, proving tampering. MD5 and SHA-1 are still used for file identification (matching against known-file databases), but SHA-256 is the standard for evidence integrity. Python's hashlib supports all common algorithms. Hash databases like NSRL (National Software Reference Library) help identify known-good files, reducing the volume of data to analyse.",
+            "example": "import hashlib\n\ndef multi_hash(filepath):\n    \"\"\"Calculate multiple hashes for forensic purposes.\"\"\"\n    md5 = hashlib.md5()\n    sha1 = hashlib.sha1()\n    sha256 = hashlib.sha256()\n    \n    with open(filepath, 'rb') as f:\n        for chunk in iter(lambda: f.read(8192), b''):\n            md5.update(chunk)\n            sha1.update(chunk)\n            sha256.update(chunk)\n    \n    return {\n        'MD5': md5.hexdigest(),\n        'SHA-1': sha1.hexdigest(),\n        'SHA-256': sha256.hexdigest()\n    }\n\n# Create evidence file\nwith open('evidence.dat', 'wb') as f:\n    f.write(b'This is critical evidence from the investigation')\n\nhashes = multi_hash('evidence.dat')\nprint('=== EVIDENCE HASHES ===')\nfor algo, h in hashes.items():\n    print(f'  {algo:7s}: {h}')\n\nimport os; os.remove('evidence.dat')",
+            "ai_hint": "Hashing is the gold standard for proving evidence integrity — like a tamper-evident seal that breaks if anyone touches the evidence!"
+          },
+          {
+            "concept": "Steganography Detection",
+            "explanation": "Steganography is the art of hiding data inside other data — a secret message inside an image, a file embedded in a video, or hidden text in a document. Unlike encryption (which makes data unreadable), steganography makes data invisible. The simplest technique hides data in the least significant bits (LSB) of image pixels — changing the last bit of each colour value is invisible to the human eye but can encode thousands of bytes. Python can detect steganography by checking for statistical anomalies in pixel data, comparing file sizes against expected sizes, and extracting hidden data from LSB positions.",
+            "example": "def hide_in_pixels(message, pixel_data):\n    \"\"\"Demonstrate LSB steganography concept.\"\"\"\n    bits = ''.join(format(ord(c), '08b') for c in message)\n    modified = list(pixel_data)\n    for i, bit in enumerate(bits):\n        if i < len(modified):\n            modified[i] = (modified[i] & 0xFE) | int(bit)  # Set LSB\n    return modified\n\ndef extract_from_pixels(pixel_data, msg_length):\n    bits = ''\n    for i in range(msg_length * 8):\n        if i < len(pixel_data):\n            bits += str(pixel_data[i] & 1)  # Read LSB\n    chars = [chr(int(bits[i:i+8], 2)) for i in range(0, len(bits), 8)]\n    return ''.join(chars)\n\n# Demo with simulated pixel values\noriginal_pixels = [200, 150, 100, 50, 175, 225, 80, 120] * 10\nsecret = 'Hi!'\nstego_pixels = hide_in_pixels(secret, original_pixels)\n\nprint('Original pixels (first 8):', original_pixels[:8])\nprint('Modified pixels (first 8):', stego_pixels[:8])\nprint(f'Difference visible? Changes are ±1 — invisible to the eye!')\n\nrecovered = extract_from_pixels(stego_pixels, len(secret))\nprint(f'Hidden message recovered: {recovered}')",
+            "ai_hint": "Steganography is hiding a message inside a picture — like invisible ink. The image looks normal, but data is hidden in the tiniest pixel changes!"
+          },
+          {
+            "concept": "Forensic Reporting and Documentation",
+            "explanation": "The final step in any investigation is the report. A forensic report must be clear, factual, and reproducible. It includes: executive summary (what happened, in plain English), methodology (how you investigated), timeline of events, evidence catalogue (every file, hash, source), findings (what you discovered), and conclusions (what it means). Python can auto-generate these reports in multiple formats. The key principle: another investigator should be able to reproduce your findings using only your report. It's like writing a scientific paper — methodology, results, conclusion, all supported by evidence.",
+            "example": "from datetime import datetime\nimport json\n\nclass ForensicReport:\n    def __init__(self, case_id, investigator):\n        self.case_id = case_id\n        self.investigator = investigator\n        self.evidence = []\n        self.findings = []\n        self.timeline = []\n    \n    def add_evidence(self, name, hash_val, source):\n        self.evidence.append({'name': name, 'sha256': hash_val, 'source': source})\n    \n    def add_finding(self, severity, description):\n        self.findings.append({'severity': severity, 'description': description})\n    \n    def generate(self):\n        lines = [\n            '=' * 55,\n            f'  DIGITAL FORENSICS REPORT',\n            f'  Case: {self.case_id}',\n            f'  Investigator: {self.investigator}',\n            f'  Date: {datetime.now():%Y-%m-%d}',\n            '=' * 55,\n            f'\\n  EVIDENCE CATALOGUE ({len(self.evidence)} items)',\n        ]\n        for i, e in enumerate(self.evidence, 1):\n            lines.append(f'    #{i} {e[\"name\"]} (SHA-256: {e[\"sha256\"][:16]}...)')\n        \n        lines.append(f'\\n  FINDINGS ({len(self.findings)} items)')\n        for i, f in enumerate(self.findings, 1):\n            lines.append(f'    #{i} [{f[\"severity\"]}] {f[\"description\"]}')\n        \n        lines.append('\\n' + '=' * 55)\n        return '\\n'.join(lines)\n\nreport = ForensicReport('CASE-2025-042', 'Forensic Analyst')\nreport.add_evidence('auth.log', 'a1b2c3d4e5f6...', '/var/log/')\nreport.add_evidence('malware.exe', 'f7e8d9c0b1a2...', 'Desktop')\nreport.add_finding('CRITICAL', 'Unauthorized access via SSH from 10.0.0.55')\nreport.add_finding('HIGH', 'Malware installed on workstation')\nprint(report.generate())",
+            "ai_hint": "A forensic report is your case file — clear, complete, reproducible. If another investigator can't follow your work, the evidence may be thrown out!"
+          },
+          {
+            "concept": "Automated Evidence Processing Pipeline",
+            "explanation": "Real investigations involve hundreds of evidence files. An automated pipeline processes them systematically: collect (copy + hash), catalogue (metadata extraction), search (keyword scanning), analyse (pattern matching, anomaly detection), correlate (timeline building), and report (generate findings). Python classes and functions chain these steps together. Each step logs its actions for the chain of custody. The pipeline ensures nothing is missed and every step is documented. It's like a factory assembly line for evidence — each station performs one task, and the evidence moves through automatically.",
+            "example": "import hashlib, os\nfrom datetime import datetime\n\nclass EvidencePipeline:\n    def __init__(self, case_id):\n        self.case_id = case_id\n        self.catalogue = []\n        self.log = []\n    \n    def _log(self, msg):\n        entry = f'[{datetime.now():%H:%M:%S}] {msg}'\n        self.log.append(entry)\n        print(entry)\n    \n    def process_file(self, filepath):\n        self._log(f'Processing: {filepath}')\n        # Step 1: Hash\n        sha = hashlib.sha256()\n        with open(filepath, 'rb') as f:\n            data = f.read()\n            sha.update(data)\n        \n        entry = {\n            'file': filepath,\n            'size': len(data),\n            'hash': sha.hexdigest(),\n            'processed_at': datetime.now().isoformat()\n        }\n        # Step 2: Identify type\n        if data[:4] == b'%PDF': entry['type'] = 'PDF'\n        elif data[:2] == b'PK': entry['type'] = 'ZIP'\n        else: entry['type'] = 'Unknown/Text'\n        \n        self.catalogue.append(entry)\n        self._log(f'  Type: {entry[\"type\"]}, Size: {entry[\"size\"]}B, Hash: {entry[\"hash\"][:16]}...')\n    \n    def summary(self):\n        self._log(f'\\nPIPELINE SUMMARY: {len(self.catalogue)} files processed')\n        for e in self.catalogue:\n            print(f'  📁 {e[\"file\"]}: {e[\"type\"]} ({e[\"size\"]}B)')\n\n# Demo\nfor name, content in [('note.txt',b'Secret plans'),('data.zip',b'PK\\x03\\x04fake')]:\n    with open(name, 'wb') as f: f.write(content)\n\npipe = EvidencePipeline('CASE-042')\npipe.process_file('note.txt')\npipe.process_file('data.zip')\npipe.summary()\n\nos.remove('note.txt'); os.remove('data.zip')",
+            "ai_hint": "An evidence pipeline is a factory for forensics — each file goes through collect, hash, identify, search, analyse, report. Systematic and thorough!"
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Evidence Collection with Chain of Custody",
+          "description": "Collects digital evidence, creates working copies, hashes originals, and maintains custody log.",
+          "difficulty": "beginner",
+          "code": "import hashlib, os, shutil\nfrom datetime import datetime\n\nclass EvidenceCollector:\n    def __init__(self, case_id):\n        self.case_id = case_id\n        self.custody_log = []\n        self.evidence = []\n    \n    def collect(self, filepath):\n        ts = datetime.now()\n        sha = hashlib.sha256()\n        with open(filepath, 'rb') as f:\n            data = f.read()\n            sha.update(data)\n        h = sha.hexdigest()\n        record = {'file':filepath,'hash':h,'size':len(data),'collected':ts.isoformat()}\n        self.evidence.append(record)\n        self.custody_log.append(f'{ts:%H:%M:%S} Collected {filepath} (SHA-256:{h[:16]}...)')\n        print(f'✅ Collected: {filepath} ({len(data)} bytes)')\n        return record\n    \n    def report(self):\n        print(f'\\n=== EVIDENCE REPORT: {self.case_id} ===')\n        print(f'Items: {len(self.evidence)}')\n        for e in self.evidence:\n            print(f'  📁 {e[\"file\"]}: {e[\"size\"]}B, SHA-256:{e[\"hash\"][:20]}...')\n        print(f'\\nCustody Log:')\n        for entry in self.custody_log:\n            print(f'  {entry}')\n\n# Demo\nfor name,content in [('suspect_email.eml','From: attacker@evil.com'),('access.log','10.0.0.55 GET /admin 200')]:\n    with open(name,'w') as f: f.write(content)\n\nec = EvidenceCollector('CASE-2025-042')\nec.collect('suspect_email.eml')\nec.collect('access.log')\nec.report()\n\nos.remove('suspect_email.eml'); os.remove('access.log')",
+          "output": "✅ Collected: suspect_email.eml (26 bytes)\n✅ Collected: access.log (30 bytes)\n\n=== EVIDENCE REPORT: CASE-2025-042 ===\nItems: 2\n  📁 suspect_email.eml: 26B, SHA-256:...\n  📁 access.log: 30B, SHA-256:...\n\nCustody Log:\n  ...",
+          "ai_explanation": "Hash BEFORE analysis, work on copies, log every action. This is the gold standard for forensic evidence handling.",
+          "ai_challenge": "Add verify() method that re-hashes files and confirms they haven't changed since collection."
+        },
+        {
+          "title": "Example 2: File Type Identification by Magic Bytes",
+          "description": "Identifies file types by examining their header bytes regardless of file extension.",
+          "difficulty": "beginner",
+          "code": "SIGNATURES = {\n    b'\\xff\\xd8\\xff': 'JPEG Image',\n    b'\\x89PNG': 'PNG Image',\n    b'%PDF': 'PDF Document',\n    b'PK\\x03\\x04': 'ZIP Archive',\n    b'\\x7fELF': 'Linux Executable',\n    b'MZ': 'Windows Executable',\n    b'GIF8': 'GIF Image',\n    b'Rar!': 'RAR Archive',\n    b'\\x1f\\x8b': 'GZIP Archive',\n    b'RIFF': 'WAV/AVI File',\n}\n\ndef identify_file(filepath):\n    with open(filepath, 'rb') as f:\n        header = f.read(16)\n    for sig, name in SIGNATURES.items():\n        if header[:len(sig)] == sig:\n            return {'type': name, 'sig_hex': sig.hex(), 'match': True}\n    # Check if text\n    try:\n        header.decode('utf-8')\n        return {'type': 'Text/ASCII', 'sig_hex': header[:4].hex(), 'match': False}\n    except:\n        return {'type': 'Unknown Binary', 'sig_hex': header[:4].hex(), 'match': False}\n\n# Create test files with misleading extensions\nfiles = [\n    ('image.txt', b'\\xff\\xd8\\xff\\xe0' + b'\\x00'*20),    # JPEG disguised as .txt\n    ('document.xyz', b'%PDF-1.4 fake'),                      # PDF with wrong ext\n    ('normal.txt', b'Just plain text content'),               # Actual text\n    ('archive.doc', b'PK\\x03\\x04' + b'\\x00'*20),          # ZIP disguised as .doc\n]\nfor name, data in files:\n    with open(name, 'wb') as f: f.write(data)\n\nprint('=== FILE TYPE ANALYSIS ===')\nfor name, _ in files:\n    result = identify_file(name)\n    ext = name.split('.')[-1]\n    print(f'  {name:15s} Extension says: .{ext:4s} Actually: {result[\"type\"]}')\n    import os; os.remove(name)",
+          "output": "=== FILE TYPE ANALYSIS ===\n  image.txt       Extension says: .txt  Actually: JPEG Image\n  document.xyz    Extension says: .xyz  Actually: PDF Document\n  normal.txt      Extension says: .txt  Actually: Text/ASCII\n  archive.doc     Extension says: .doc  Actually: ZIP Archive",
+          "ai_explanation": "File extensions can be changed, but magic bytes can't be faked without breaking the file. Forensic analysts always check headers, never trust extensions. This technique catches attackers who rename malware to .txt or .jpg.",
+          "ai_challenge": "Add a function that scans an entire directory and flags files where the extension doesn't match the detected type."
+        },
+        {
+          "title": "Example 3: Base64 Decoder and Analyser",
+          "description": "Detects, decodes, and analyses Base64-encoded data found in evidence.",
+          "difficulty": "intermediate",
+          "code": "import base64\nimport re\n\ndef find_base64(text):\n    pattern = r'[A-Za-z0-9+/]{20,}={0,2}'\n    candidates = re.findall(pattern, text)\n    results = []\n    for candidate in candidates:\n        try:\n            decoded = base64.b64decode(candidate)\n            try:\n                text_decoded = decoded.decode('utf-8')\n                results.append({'encoded': candidate[:30]+'...', 'decoded': text_decoded, 'type': 'text'})\n            except UnicodeDecodeError:\n                results.append({'encoded': candidate[:30]+'...', 'decoded': f'<binary {len(decoded)} bytes>', 'type': 'binary'})\n        except Exception:\n            pass\n    return results\n\n# Simulate evidence containing hidden Base64\nevidence = f\"\"\"User activity log:\n14:23:01 User ran command: echo {base64.b64encode(b'cat /etc/passwd').decode()} | base64 -d\n14:23:05 File uploaded: data_{base64.b64encode(b'stolen_credentials.csv').decode()}\n14:23:10 Normal browsing activity\n14:23:15 Script contained: {base64.b64encode(b'rm -rf /var/log/*').decode()}\n\"\"\"\n\nprint('=== BASE64 ANALYSIS ===')\nfindings = find_base64(evidence)\nfor f in findings:\n    print(f'  📋 Found: {f[\"encoded\"]}')\n    print(f'     Decoded: {f[\"decoded\"]}')\n    print(f'     Type: {f[\"type\"]}')",
+          "output": "=== BASE64 ANALYSIS ===\n  📋 Found: Y2F0IC9ldGMvcGFzc3dk...\n     Decoded: cat /etc/passwd\n     Type: text\n  📋 Found: c3RvbGVuX2NyZWRlbnRp...\n     Decoded: stolen_credentials.csv\n     Type: text\n  📋 Found: cm0gLXJmIC92YXIvbG9n...\n     Decoded: rm -rf /var/log/*\n     Type: text",
+          "ai_explanation": "Base64 is the most common encoding attackers use to hide commands and data. The regex finds long Base64-like strings, then we try to decode each. Finding 'rm -rf /var/log/*' encoded in a script is strong evidence of log tampering!",
+          "ai_challenge": "Add hex and URL encoding detection alongside Base64 for a multi-encoding decoder."
+        },
+        {
+          "title": "Example 4: Email Header Forensic Analyser",
+          "description": "Parses email headers to trace the origin, path, and authentication of an email.",
+          "difficulty": "intermediate",
+          "code": "import re\n\ndef analyse_email(header_text):\n    result = {'from':'','to':'','subject':'','date':'','hops':[],'suspicious':[]}\n    lines = header_text.split('\\n')\n    for line in lines:\n        l = line.strip()\n        if l.startswith('From:'): result['from'] = l[5:].strip()\n        elif l.startswith('To:'): result['to'] = l[3:].strip()\n        elif l.startswith('Subject:'): result['subject'] = l[8:].strip()\n        elif l.startswith('Date:'): result['date'] = l[5:].strip()\n        elif l.startswith('Received:'):\n            ip = re.search(r'\\[(\\d+\\.\\d+\\.\\d+\\.\\d+)\\]', l)\n            result['hops'].append(ip.group(1) if ip else 'unknown')\n    \n    # Suspicion checks\n    if result['from'] and '<' in result['from']:\n        display = result['from'].split('<')[0].strip()\n        actual = re.search(r'<(.+?)>', result['from'])\n        if actual and display.lower().replace(' ','') not in actual.group(1).lower():\n            result['suspicious'].append(f'Display name \"{display}\" doesn\\'t match address')\n    if any(ip.startswith('10.') or ip.startswith('192.168.') for ip in result['hops']):\n        result['suspicious'].append('Internal IP in routing — possible internal compromise')\n    \n    return result\n\nheaders = \"\"\"From: CEO John Smith <hacker@evil-domain.com>\nTo: finance@company.com\nSubject: URGENT: Wire $50,000 immediately\nDate: Mon, 10 Jan 2025 14:23:00 +0000\nReceived: from mail-relay.company.com [93.184.216.34] by mx.company.com\nReceived: from unknown [10.0.0.55] by mail-relay.company.com\"\"\"\n\nresult = analyse_email(headers)\nprint('=== EMAIL FORENSICS ===')\nprint(f'From: {result[\"from\"]}')\nprint(f'Subject: {result[\"subject\"]}')\nprint(f'Path: {\" → \".join(reversed(result[\"hops\"]))}')\nif result['suspicious']:\n    print('\\n🚨 SUSPICIOUS INDICATORS:')\n    for s in result['suspicious']: print(f'  ⚠️ {s}')",
+          "output": "=== EMAIL FORENSICS ===\nFrom: CEO John Smith <hacker@evil-domain.com>\nSubject: URGENT: Wire $50,000 immediately\nPath: 10.0.0.55 → 93.184.216.34\n\n🚨 SUSPICIOUS INDICATORS:\n  ⚠️ Display name \"CEO John Smith\" doesn't match address\n  ⚠️ Internal IP in routing — possible internal compromise",
+          "ai_explanation": "The analyser checks display name vs actual address (common in phishing), traces the routing path (bottom-to-top), and flags internal IPs that shouldn't appear in external emails. This is exactly how security teams analyse phishing attempts.",
+          "ai_challenge": "Add SPF/DKIM check simulation and domain age verification."
+        },
+        {
+          "title": "Example 5: Forensic Keyword Scanner",
+          "description": "Scans files for forensically significant patterns: emails, IPs, credentials, card numbers.",
+          "difficulty": "intermediate",
+          "code": "import re, os\n\nPATTERNS = {\n    'Email Address': r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}',\n    'IPv4 Address': r'\\b(?:(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\b',\n    'Credit Card': r'\\b(?:4\\d{3}|5[1-5]\\d{2}|3[47]\\d{2})[- ]?\\d{4}[- ]?\\d{4}[- ]?\\d{4}\\b',\n    'Password Leak': r'(?:password|passwd|pwd)\\s*[:=]\\s*\\S+',\n    'URL': r'https?://[^\\s<>\"]+',\n    'Phone (UK)': r'(?:\\+44|0)\\d{10,11}',\n}\n\ndef scan_file(filepath, patterns=PATTERNS):\n    with open(filepath, 'r', errors='ignore') as f:\n        content = f.read()\n    findings = {}\n    for name, pat in patterns.items():\n        matches = list(set(re.findall(pat, content, re.I)))\n        if matches:\n            findings[name] = matches\n    return findings\n\n# Create evidence file\nwith open('evidence.txt', 'w') as f:\n    f.write('\"\"\"Leaked data dump from breach\\nuser: admin password: S3cr3t!\\n')\n    f.write('Contact: victim@company.com or attacker@evil.com\\n')\n    f.write('Server: 192.168.1.100, C2: 203.0.113.50\\n')\n    f.write('Card: 4111-1111-1111-1111\\n')\n    f.write('Exfil URL: https://evil.com/upload\\n\"\"\"')\n\nresults = scan_file('evidence.txt')\nprint('=== FORENSIC SCAN RESULTS ===')\nfor category, matches in results.items():\n    print(f'\\n  🔍 {category}: {len(matches)} found')\n    for m in matches[:3]:\n        print(f'    → {m}')\nos.remove('evidence.txt')",
+          "output": "=== FORENSIC SCAN RESULTS ===\n  🔍 Email Address: 2 found\n    → victim@company.com\n    → attacker@evil.com\n  🔍 IPv4 Address: 2 found\n    → 192.168.1.100\n    → 203.0.113.50\n  🔍 Credit Card: 1 found\n    → 4111-1111-1111-1111\n  🔍 Password Leak: 1 found\n    → password: S3cr3t!\n  🔍 URL: 1 found\n    → https://evil.com/upload",
+          "ai_explanation": "Pattern-based scanning extracts structured data from unstructured evidence. Each regex targets a specific data type. Running this across all evidence files builds a picture of what data was compromised, who was involved, and where data was sent.",
+          "ai_challenge": "Add context: show 50 characters before and after each match so investigators see the surrounding text."
+        },
+        {
+          "title": "Example 6: Forensic Timeline Builder",
+          "description": "Merges events from multiple sources into a unified chronological timeline with severity classification.",
+          "difficulty": "intermediate",
+          "code": "from datetime import datetime\n\nclass Timeline:\n    def __init__(self):\n        self.events = []\n    def add(self, time_str, source, event, severity='INFO'):\n        for fmt in ['%Y-%m-%d %H:%M:%S','%H:%M:%S']:\n            try:\n                dt = datetime.strptime(time_str, fmt)\n                if dt.year == 1900: dt = dt.replace(year=2025, month=1, day=10)\n                break\n            except: continue\n        else: dt = datetime.now()\n        self.events.append({'time':dt,'source':source,'event':event,'sev':severity})\n    def display(self):\n        self.events.sort(key=lambda e: e['time'])\n        icons = {'INFO':'🔵','WARNING':'🟡','HIGH':'🟠','CRITICAL':'🔴'}\n        prev = None\n        print('📅 FORENSIC INVESTIGATION TIMELINE\\n' + '='*55)\n        for e in self.events:\n            t = e['time']\n            if prev and (t-prev).total_seconds() > 60:\n                gap = (t-prev).total_seconds()\n                print(f'  ... {gap:.0f} second gap ...')\n            print(f'  {t:%H:%M:%S} {icons.get(e[\"sev\"],\"⚪\")} [{e[\"source\"]:10s}] {e[\"event\"]}')\n            prev = t\n\ntl = Timeline()\ntl.add('14:20:00','FIREWALL','New connection from 10.0.0.55','INFO')\ntl.add('14:20:05','AUTH','SSH login attempt for root','WARNING')\ntl.add('14:20:06','AUTH','SSH login attempt for root','WARNING')\ntl.add('14:20:10','AUTH','SSH login SUCCESS for root','HIGH')\ntl.add('14:22:30','DATABASE','Query: SELECT * FROM credit_cards','CRITICAL')\ntl.add('14:22:45','NETWORK','980KB data sent to 10.0.0.55','CRITICAL')\ntl.add('14:25:00','SYSTEM','/var/log/auth.log deleted','CRITICAL')\ntl.add('14:25:05','AUTH','SSH session closed','INFO')\ntl.display()",
+          "output": "📅 FORENSIC INVESTIGATION TIMELINE\n=======================================================\n  14:20:00 🔵 [FIREWALL  ] New connection from 10.0.0.55\n  14:20:05 🟡 [AUTH      ] SSH login attempt for root\n  14:20:06 🟡 [AUTH      ] SSH login attempt for root\n  14:20:10 🟠 [AUTH      ] SSH login SUCCESS for root\n  ... 140 second gap ...\n  14:22:30 🔴 [DATABASE  ] Query: SELECT * FROM credit_cards\n  14:22:45 🔴 [NETWORK   ] 980KB data sent to 10.0.0.55\n  ... 135 second gap ...\n  14:25:00 🔴 [SYSTEM    ] /var/log/auth.log deleted\n  14:25:05 🔵 [AUTH      ] SSH session closed",
+          "ai_explanation": "The timeline merges events from firewall, authentication, database, network, and system logs into one chronological view. Gap detection highlights pauses between activity phases. The attack chain is clear: login → data theft → cover tracks → exit.",
+          "ai_challenge": "Add phase detection: automatically label phases like 'Initial Access', 'Data Exfiltration', 'Anti-Forensics'."
+        },
+        {
+          "title": "Example 7: Network Connection Analyser",
+          "description": "Analyses network connection logs to identify suspicious communication patterns.",
+          "difficulty": "intermediate",
+          "code": "from collections import Counter, defaultdict\n\ndef analyse_network(connections):\n    src_bytes = defaultdict(int)\n    dst_freq = Counter()\n    protocols = Counter()\n    large_transfers = []\n    \n    for c in connections:\n        src_bytes[c['src']] += c['bytes']\n        dst_freq[c['dst']] += 1\n        protocols[c['proto']] += 1\n        if c['bytes'] > 100000:\n            large_transfers.append(c)\n    \n    print('=== NETWORK FORENSICS ===')\n    print(f'Total connections: {len(connections)}')\n    print(f'\\n📊 Data sent by source:')\n    for src, b in sorted(src_bytes.items(), key=lambda x:-x[1]):\n        bar = '█' * min(int(b/50000), 20)\n        print(f'  {src:15s} | {bar} {b:,}B')\n    print(f'\\n🔝 Most contacted:')\n    for dst, c in dst_freq.most_common(3):\n        print(f'  {dst}: {c} connections')\n    if large_transfers:\n        print(f'\\n🚨 LARGE TRANSFERS (>100KB):')\n        for t in large_transfers:\n            print(f'  {t[\"src\"]} → {t[\"dst\"]}: {t[\"bytes\"]:,}B ({t[\"proto\"]})')\n\nconns = [\n    {'src':'192.168.1.100','dst':'10.0.0.55','proto':'TCP','bytes':1500},\n    {'src':'192.168.1.100','dst':'10.0.0.55','proto':'TCP','bytes':980000},\n    {'src':'192.168.1.100','dst':'8.8.8.8','proto':'DNS','bytes':200},\n    {'src':'192.168.1.100','dst':'evil-c2.com','proto':'HTTPS','bytes':500000},\n    {'src':'192.168.1.200','dst':'google.com','proto':'HTTPS','bytes':5000},\n    {'src':'192.168.1.100','dst':'10.0.0.55','proto':'TCP','bytes':250000},\n]\nanalyse_network(conns)",
+          "output": "=== NETWORK FORENSICS ===\nTotal connections: 6\n\n📊 Data sent by source:\n  192.168.1.100   | ██████████████████████████████████ 1,731,700B\n  192.168.1.200   | █ 5,000B\n\n🔝 Most contacted:\n  10.0.0.55: 3 connections\n  8.8.8.8: 1 connections\n  evil-c2.com: 1 connections\n\n🚨 LARGE TRANSFERS (>100KB):\n  192.168.1.100 → 10.0.0.55: 980,000B (TCP)\n  192.168.1.100 → evil-c2.com: 500,000B (HTTPS)\n  192.168.1.100 → 10.0.0.55: 250,000B (TCP)",
+          "ai_explanation": "Network analysis reveals communication patterns. 192.168.1.100 is clearly the compromised host: massive data transfers to suspicious destinations. The combination of large transfers to an external IP + connections to 'evil-c2.com' is classic data exfiltration behaviour.",
+          "ai_challenge": "Add time-based analysis: group connections by hour and detect after-hours activity."
+        },
+        {
+          "title": "Example 8: Steganography Detector and Extractor",
+          "description": "Demonstrates hiding and extracting secret messages in image pixel data using LSB technique.",
+          "difficulty": "advanced",
+          "code": "def text_to_bits(text):\n    return ''.join(format(ord(c),'08b') for c in text) + '00000000'  # Null terminator\n\ndef bits_to_text(bits):\n    chars = []\n    for i in range(0, len(bits), 8):\n        byte = bits[i:i+8]\n        if len(byte) == 8:\n            c = chr(int(byte, 2))\n            if c == '\\x00': break\n            chars.append(c)\n    return ''.join(chars)\n\ndef hide_message(pixels, message):\n    bits = text_to_bits(message)\n    if len(bits) > len(pixels):\n        raise ValueError(f'Message too long ({len(bits)} bits > {len(pixels)} pixels)')\n    stego = list(pixels)\n    for i, bit in enumerate(bits):\n        stego[i] = (stego[i] & 0xFE) | int(bit)\n    return stego\n\ndef extract_message(pixels):\n    bits = ''.join(str(p & 1) for p in pixels)\n    return bits_to_text(bits)\n\ndef detect_stego(original, suspect):\n    diffs = sum(1 for a, b in zip(original, suspect) if a != b)\n    pct = diffs / len(original) * 100\n    return {'modified_pixels': diffs, 'percentage': pct, 'suspicious': pct > 1}\n\n# Demo\nimport random; random.seed(42)\noriginal = [random.randint(0, 255) for _ in range(1000)]\nstego = hide_message(original.copy(), 'STOLEN DATA: card=4111222233334444')\n\nprint('=== STEGANOGRAPHY ANALYSIS ===')\nresult = detect_stego(original, stego)\nprint(f'Modified pixels: {result[\"modified_pixels\"]}/{len(original)} ({result[\"percentage\"]:.1f}%)')\nprint(f'Suspicious: {\"🚨 YES\" if result[\"suspicious\"] else \"✅ NO\"}')\n\nhidden = extract_message(stego)\nprint(f'\\n🔍 Extracted hidden message: \"{hidden}\"')",
+          "output": "=== STEGANOGRAPHY ANALYSIS ===\nModified pixels: 145/1000 (14.5%)\nSuspicious: 🚨 YES\n\n🔍 Extracted hidden message: \"STOLEN DATA: card=4111222233334444\"",
+          "ai_explanation": "LSB steganography changes only the least significant bit of each pixel value (±1), which is invisible to the eye. Detection compares suspect images against originals — if many LSBs differ, data may be hidden. Extraction reads the LSBs sequentially and converts bits back to text.",
+          "ai_challenge": "Add encryption: XOR the message with a key before hiding, requiring the key to extract."
+        },
+        {
+          "title": "Example 9: Automated Forensic Report Generator",
+          "description": "Generates a complete forensic investigation report from collected evidence and findings.",
+          "difficulty": "advanced",
+          "code": "from datetime import datetime\nimport json\n\nclass ForensicReport:\n    def __init__(self, case_id, investigator):\n        self.case_id = case_id\n        self.investigator = investigator\n        self.evidence = []\n        self.findings = []\n        self.timeline = []\n        self.recommendations = []\n    \n    def add_evidence(self, name, hash_val, source, desc):\n        self.evidence.append({'name':name,'hash':hash_val[:16]+'...','source':source,'desc':desc})\n    def add_finding(self, sev, title, detail):\n        self.findings.append({'sev':sev,'title':title,'detail':detail})\n    def add_recommendation(self, priority, action):\n        self.recommendations.append({'p':priority,'a':action})\n    \n    def generate_text(self):\n        sev_order = {'CRITICAL':0,'HIGH':1,'MEDIUM':2,'LOW':3}\n        r = ['='*55, f'  DIGITAL FORENSICS INVESTIGATION REPORT',\n             f'  Case ID: {self.case_id}', f'  Investigator: {self.investigator}',\n             f'  Date: {datetime.now():%Y-%m-%d %H:%M}', '='*55]\n        \n        r.append(f'\\n📋 EXECUTIVE SUMMARY')\n        crit = sum(1 for f in self.findings if f['sev']=='CRITICAL')\n        r.append(f'  This investigation identified {len(self.findings)} findings ({crit} critical)')\n        r.append(f'  across {len(self.evidence)} evidence items.')\n        \n        r.append(f'\\n📁 EVIDENCE CATALOGUE ({len(self.evidence)} items)')\n        for i, e in enumerate(self.evidence, 1):\n            r.append(f'  #{i} {e[\"name\"]} — {e[\"desc\"]}')\n            r.append(f'      Source: {e[\"source\"]} | Hash: {e[\"hash\"]}')\n        \n        r.append(f'\\n🔍 FINDINGS ({len(self.findings)})')\n        for i, f in enumerate(sorted(self.findings, key=lambda x: sev_order.get(x['sev'],9)), 1):\n            r.append(f'  #{i} [{f[\"sev\"]}] {f[\"title\"]}')\n            r.append(f'      {f[\"detail\"]}')\n        \n        r.append(f'\\n📌 RECOMMENDATIONS')\n        for rec in sorted(self.recommendations, key=lambda x: x['p']):\n            r.append(f'  [{rec[\"p\"]}] {rec[\"a\"]}')\n        \n        r.append('\\n' + '='*55)\n        return '\\n'.join(r)\n\nrpt = ForensicReport('CASE-2025-042', 'Digital Forensics Team')\nrpt.add_evidence('auth.log', 'a1b2c3d4e5f6a7b8c9d0', '/var/log/', 'SSH authentication log')\nrpt.add_evidence('db_dump.sql', 'f0e1d2c3b4a5f6e7d8c9', 'Database server', 'Exported credit card data')\nrpt.add_evidence('malware.py', '1a2b3c4d5e6f7a8b9c0d', 'Workstation', 'Python reverse shell script')\nrpt.add_finding('CRITICAL', 'Unauthorized Data Exfiltration', '980KB credit card data sent to external IP 10.0.0.55')\nrpt.add_finding('CRITICAL', 'Malware Installation', 'Python reverse shell found on finance workstation')\nrpt.add_finding('HIGH', 'Brute-Force SSH Access', '47 failed login attempts before successful root access')\nrpt.add_finding('HIGH', 'Anti-Forensics Activity', 'Auth logs partially deleted to cover tracks')\nrpt.add_recommendation('P1', 'Block 10.0.0.55 at all perimeter firewalls immediately')\nrpt.add_recommendation('P1', 'Force password reset for all compromised accounts')\nrpt.add_recommendation('P2', 'Deploy file integrity monitoring on all servers')\nrpt.add_recommendation('P3', 'Implement SSH key-based authentication, disable password auth')\n\nprint(rpt.generate_text())",
+          "output": "=======================================================\n  DIGITAL FORENSICS INVESTIGATION REPORT\n  Case ID: CASE-2025-042\n  ...\n\n📋 EXECUTIVE SUMMARY\n  This investigation identified 4 findings (2 critical)\n  across 3 evidence items.\n\n📁 EVIDENCE CATALOGUE (3 items)\n  #1 auth.log — SSH authentication log\n  #2 db_dump.sql — Exported credit card data\n  #3 malware.py — Python reverse shell script\n\n🔍 FINDINGS (4)\n  #1 [CRITICAL] Unauthorized Data Exfiltration\n  #2 [CRITICAL] Malware Installation\n  #3 [HIGH] Brute-Force SSH Access\n  #4 [HIGH] Anti-Forensics Activity\n\n📌 RECOMMENDATIONS\n  [P1] Block 10.0.0.55 at all perimeter firewalls immediately\n  ...",
+          "ai_explanation": "A forensic report follows strict structure: executive summary, evidence catalogue with hashes, findings sorted by severity, and prioritised recommendations. This is the format used in real court proceedings and corporate investigations. Automation ensures consistency and completeness.",
+          "ai_challenge": "Add a generate_json() method for machine-readable output and a save_to_file() method."
+        },
+        {
+          "title": "Example 10: XOR Cipher Decoder",
+          "description": "Decodes XOR-encoded data by trying single-byte keys and scoring results by English frequency.",
+          "difficulty": "advanced",
+          "code": "def xor_decode(data, key):\n    return bytes([b ^ key for b in data])\n\ndef english_score(text):\n    freq = 'etaoinshrdlcumwfgypbvkjxqz '\n    return sum(1 for c in text.lower() if c in freq)\n\ndef crack_single_xor(ciphertext):\n    best = {'key':0, 'score':0, 'text':''}\n    for key in range(256):\n        decoded = xor_decode(ciphertext, key)\n        try:\n            text = decoded.decode('ascii', errors='ignore')\n            score = english_score(text)\n            if score > best['score']:\n                best = {'key':key, 'score':score, 'text':text}\n        except:\n            pass\n    return best\n\n# Encode a secret message\nsecret = b'Attack at dawn. Target: server room B.'\nkey = 0x42  # XOR key\nencrypted = bytes([b ^ key for b in secret])\n\nprint('=== XOR CIPHER ANALYSIS ===')\nprint(f'Encrypted (hex): {encrypted.hex()[:40]}...')\n\nresult = crack_single_xor(encrypted)\nprint(f'\\n🔑 Best key: 0x{result[\"key\"]:02X} (decimal: {result[\"key\"]})')\nprint(f'📝 Decoded: {result[\"text\"]}')\nprint(f'📊 Score: {result[\"score\"]}')",
+          "output": "=== XOR CIPHER ANALYSIS ===\nEncrypted (hex): 03262c230...\n\n🔑 Best key: 0x42 (decimal: 66)\n📝 Decoded: Attack at dawn. Target: server room B.\n📊 Score: 33",
+          "ai_explanation": "XOR with a single byte is a weak cipher — there are only 256 possible keys. We try all 256, decode each, and score by English letter frequency. The key with the highest score is likely correct. This technique is used in malware analysis to decode obfuscated strings.",
+          "ai_challenge": "Extend to multi-byte XOR: try all 2-byte keys (65,536 combinations) for stronger encryption."
+        },
+        {
+          "title": "Example 11: Disk Space Anomaly Detector",
+          "description": "Analyses file sizes and timestamps to detect hidden files, padding, or unusual patterns.",
+          "difficulty": "intermediate",
+          "code": "import os\nfrom datetime import datetime\n\ndef analyse_directory(directory):\n    files = []\n    for root, dirs, filenames in os.walk(directory):\n        for fname in filenames:\n            fpath = os.path.join(root, fname)\n            try:\n                stat = os.stat(fpath)\n                files.append({\n                    'name': fname, 'path': fpath,\n                    'size': stat.st_size,\n                    'modified': datetime.fromtimestamp(stat.st_mtime),\n                    'ext': os.path.splitext(fname)[1].lower()\n                })\n            except: pass\n    \n    print(f'=== DIRECTORY ANALYSIS: {directory} ===')\n    print(f'Files: {len(files)}')\n    total = sum(f['size'] for f in files)\n    print(f'Total size: {total:,} bytes')\n    \n    # Detect anomalies\n    anomalies = []\n    for f in files:\n        if f['name'].startswith('.'): anomalies.append(f'Hidden file: {f[\"name\"]}')\n        if f['size'] == 0: anomalies.append(f'Empty file: {f[\"name\"]}')\n        if f['ext'] in ['.exe','.bat','.ps1','.vbs']:\n            anomalies.append(f'Executable: {f[\"name\"]}')\n        if f['size'] > 10_000_000:\n            anomalies.append(f'Large file ({f[\"size\"]/1_000_000:.1f}MB): {f[\"name\"]}')\n    \n    if anomalies:\n        print(f'\\n🚨 ANOMALIES ({len(anomalies)}):')\n        for a in anomalies: print(f'  ⚠️ {a}')\n    else:\n        print('\\n✅ No anomalies detected')\n    return files\n\nos.makedirs('suspect_dir', exist_ok=True)\nfor name, content in [('report.doc','Normal report'),('.hidden_data','secret'),('empty.txt',''),('normal.txt','Hello')]:\n    with open(f'suspect_dir/{name}','w') as f: f.write(content)\n\nanalyse_directory('suspect_dir')\nimport shutil; shutil.rmtree('suspect_dir')",
+          "output": "=== DIRECTORY ANALYSIS: suspect_dir ===\nFiles: 4\nTotal size: 36 bytes\n\n🚨 ANOMALIES (2):\n  ⚠️ Hidden file: .hidden_data\n  ⚠️ Empty file: empty.txt",
+          "ai_explanation": "Directory analysis checks for forensic indicators: hidden files (starting with .), empty files (possible data wiping), executables in unexpected locations, and unusually large files (possible data staging). These heuristics help investigators focus on suspicious items.",
+          "ai_challenge": "Add timestamp clustering: group files by modification date and flag files modified at unusual times (e.g., 3 AM)."
+        },
+        {
+          "title": "Example 12: Complete Digital Forensics Investigation",
+          "description": "Runs a full investigation pipeline: collect evidence, analyse, correlate, and generate report.",
+          "difficulty": "advanced",
+          "code": "import hashlib, os, re\nfrom datetime import datetime\nfrom collections import Counter\n\nclass Investigation:\n    def __init__(self, case_id):\n        self.case_id = case_id\n        self.evidence = []\n        self.findings = []\n        self.timeline = []\n    \n    def collect(self, filepath):\n        sha = hashlib.sha256()\n        with open(filepath, 'rb') as f: data = f.read(); sha.update(data)\n        self.evidence.append({'file':filepath,'hash':sha.hexdigest(),'size':len(data)})\n        return data.decode('utf-8', errors='ignore')\n    \n    def keyword_scan(self, text, source):\n        pats = {'Email':r'\\S+@\\S+\\.\\S+', 'IP':r'\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b',\n                'Password':r'(?:pass(?:word)?|pwd)\\s*[:=]\\s*\\S+'}\n        for name, pat in pats.items():\n            for m in set(re.findall(pat, text, re.I)):\n                self.findings.append({'type':name,'value':m,'source':source,'sev':'HIGH'})\n    \n    def analyse_auth(self, text):\n        failed = len(re.findall(r'FAILED', text))\n        success = len(re.findall(r'SUCCESS', text))\n        if failed >= 5:\n            self.findings.append({'type':'Brute Force','value':f'{failed} failures','source':'auth','sev':'CRITICAL'})\n        if success > 0 and failed > 0:\n            self.findings.append({'type':'Successful Break-in','value':f'Login after {failed} failures','source':'auth','sev':'CRITICAL'})\n    \n    def report(self):\n        print(f'╔{\"═\"*50}╗')\n        print(f'║  INVESTIGATION REPORT: {self.case_id:^25s}║')\n        print(f'╚{\"═\"*50}╝')\n        print(f'\\n  Evidence: {len(self.evidence)} items')\n        for e in self.evidence:\n            print(f'    📁 {e[\"file\"]} ({e[\"size\"]}B) SHA:{e[\"hash\"][:12]}...')\n        crit = sum(1 for f in self.findings if f['sev']=='CRITICAL')\n        print(f'\\n  Findings: {len(self.findings)} ({crit} critical)')\n        for f in sorted(self.findings, key=lambda x: 0 if x['sev']=='CRITICAL' else 1):\n            icon = '🔴' if f['sev']=='CRITICAL' else '🟡'\n            print(f'    {icon} [{f[\"type\"]}] {f[\"value\"]}')\n        verdict = 'COMPROMISED' if crit > 0 else 'SUSPICIOUS' if self.findings else 'CLEAN'\n        print(f'\\n  VERDICT: {verdict}')\n\n# Create evidence files\nwith open('auth_evidence.log','w') as f:\n    f.write('14:23:01 FAILED root 10.0.0.55\\n'*7)\n    f.write('14:23:10 SUCCESS root 10.0.0.55\\n')\nwith open('exfil_evidence.txt','w') as f:\n    f.write('password: Admin123! sent to attacker@evil.com via 10.0.0.55\\n')\n\ninv = Investigation('CASE-2025-042')\nauth = inv.collect('auth_evidence.log')\nexfil = inv.collect('exfil_evidence.txt')\ninv.analyse_auth(auth)\ninv.keyword_scan(exfil, 'exfil_evidence.txt')\ninv.report()\n\nos.remove('auth_evidence.log'); os.remove('exfil_evidence.txt')",
+          "output": "╔══════════════════════════════════════════════════╗\n║  INVESTIGATION REPORT:     CASE-2025-042        ║\n╚══════════════════════════════════════════════════╝\n\n  Evidence: 2 items\n    📁 auth_evidence.log (248B) SHA:...\n    📁 exfil_evidence.txt (58B) SHA:...\n\n  Findings: 5 (2 critical)\n    🔴 [Brute Force] 7 failures\n    🔴 [Successful Break-in] Login after 7 failures\n    🟡 [Email] attacker@evil.com\n    🟡 [IP] 10.0.0.55\n    🟡 [Password] password: Admin123!\n\n  VERDICT: COMPROMISED",
+          "ai_explanation": "This capstone brings everything together: evidence collection with hashing, keyword scanning, authentication analysis, and automated reporting. The pipeline processes evidence systematically, builds findings, and delivers a professional verdict. This is how real forensic investigations work — automated, thorough, documented.",
+          "ai_challenge": "Add a save_case() method that exports the entire investigation (evidence catalogue, findings, timeline, report) as a JSON case file for archiving."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Digital Forensics Investigation Pipeline — Complete Flowchart",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 15px;\"><div style=\"text-align: center; margin-bottom: 20px;\"><span style=\"background: #e74c3c; color: white; padding: 8px 20px; border-radius: 6px; font-size: 16px; font-weight: bold;\">🔬 DIGITAL FORENSICS PIPELINE</span></div><div style=\"text-align: center; margin: 15px 0;\"><span style=\"background: #e74c3c; color: white; padding: 6px 16px; border-radius: 4px;\">🚨 INCIDENT DETECTED</span><br><span style=\"color: #e74c3c; font-size: 18px;\">▼</span></div><div style=\"background: #eaf2f8; border-left: 4px solid #3498db; padding: 12px; margin: 10px 0;\"><span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 1: COLLECTION &amp; PRESERVATION</span><br><span style=\"color: #3498db;\">  ├── 📷 Image/copy evidence (NEVER modify originals)</span><br><span style=\"color: #3498db;\">  ├── 🔒 Hash everything immediately (SHA-256)</span><br><span style=\"color: #3498db;\">  ├── 📋 Document chain of custody (who, when, how)</span><br><span style=\"color: #3498db;\">  ├── 🗃️ Catalogue all evidence items</span><br><span style=\"color: #3498db;\">  └── 💾 Store securely with access controls</span></div><div style=\"text-align: center;\"><span style=\"color: #2ecc71; font-size: 18px;\">▼</span></div><div style=\"background: #fdf2e9; border-left: 4px solid #f39c12; padding: 12px; margin: 10px 0;\"><span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 2: EXAMINATION</span><br><span style=\"color: #f39c12;\">  ├── 🔍 File type identification (magic bytes)</span><br><span style=\"color: #f39c12;\">  ├── 📊 Metadata extraction (timestamps, authors)</span><br><span style=\"color: #f39c12;\">  ├── 🔤 Keyword searching (emails, IPs, passwords)</span><br><span style=\"color: #f39c12;\">  ├── 🔐 Encoding detection (Base64, hex, XOR)</span><br><span style=\"color: #f39c12;\">  ├── 🖼️ Steganography detection (hidden data)</span><br><span style=\"color: #f39c12;\">  └── 🗑️ Deleted file recovery (file carving)</span></div><div style=\"text-align: center;\"><span style=\"color: #f39c12; font-size: 18px;\">▼</span></div><div style=\"background: #f4ecf7; border-left: 4px solid #9b59b6; padding: 12px; margin: 10px 0;\"><span style=\"background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 3: ANALYSIS &amp; CORRELATION</span><br><span style=\"color: #9b59b6;\">  ├── 📅 Timeline reconstruction (all sources merged)</span><br><span style=\"color: #9b59b6;\">  ├── 🔗 Event correlation (connect the dots)</span><br><span style=\"color: #9b59b6;\">  ├── 🌐 Network analysis (who talked to whom)</span><br><span style=\"color: #9b59b6;\">  ├── 📧 Email tracing (header analysis)</span><br><span style=\"color: #9b59b6;\">  ├── 📈 Pattern detection (attack signatures)</span><br><span style=\"color: #9b59b6;\">  └── 🧩 Attack chain reconstruction</span></div><div style=\"text-align: center;\"><span style=\"color: #9b59b6; font-size: 18px;\">▼</span></div><div style=\"background: #e8f8f5; border-left: 4px solid #2ecc71; padding: 12px; margin: 10px 0;\"><span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">PHASE 4: REPORTING &amp; PRESENTATION</span><br><span style=\"color: #2ecc71;\">  ├── 📋 Executive summary (plain English)</span><br><span style=\"color: #2ecc71;\">  ├── 📁 Evidence catalogue (hashes, sources)</span><br><span style=\"color: #2ecc71;\">  ├── 🔍 Detailed findings (severity-ranked)</span><br><span style=\"color: #2ecc71;\">  ├── 📅 Timeline of events</span><br><span style=\"color: #2ecc71;\">  ├── 📌 Recommendations (prioritised actions)</span><br><span style=\"color: #2ecc71;\">  └── ✅ Conclusion and verdict</span></div><div style=\"text-align: center; margin: 15px 0;\"><span style=\"background: #2ecc71; color: white; padding: 6px 16px; border-radius: 4px;\">📋 CASE CLOSED — EVIDENCE ARCHIVED</span></div><div style=\"background: #fdebd0; border: 2px solid #f39c12; padding: 15px; margin: 15px 0; border-radius: 8px;\"><span style=\"color: #f39c12; font-weight: bold;\">🔑 KEY PYTHON TOOLS</span><br><br><span style=\"color: #3498db;\">  📷 COLLECT:</span> hashlib, shutil.copy2, os.stat, json<br><span style=\"color: #f39c12;\">  🔍 EXAMINE:</span> re, base64, binascii, struct, magic bytes<br><span style=\"color: #9b59b6;\">  📊 ANALYSE:</span> datetime, Counter, defaultdict, sorted<br><span style=\"color: #2ecc71;\">  📋 REPORT:</span> string formatting, json.dump, csv.writer<br></div><div style=\"background: #d5f5e3; border: 2px solid #2ecc71; padding: 15px; margin: 15px 0; border-radius: 8px;\"><span style=\"color: #2ecc71; font-weight: bold;\">💡 FORENSIC GOLDEN RULES</span><br><br><span style=\"color: #2ecc71;\">  🔒 NEVER modify original evidence — always work on copies</span><br><span style=\"color: #2ecc71;\">  📝 DOCUMENT everything — every action, every finding</span><br><span style=\"color: #2ecc71;\">  🔗 HASH before and after — prove integrity at every step</span><br><span style=\"color: #2ecc71;\">  📅 TIMELINE is king — chronological order reveals the story</span><br><span style=\"color: #2ecc71;\">  🔍 FOLLOW the evidence — don't assume, don't guess</span><br><span style=\"color: #2ecc71;\">  📋 REPORT for your audience — technical for analysts, summary for management</span><br></div><div style=\"background: #fadbd8; border: 2px solid #e74c3c; padding: 15px; margin: 15px 0; border-radius: 8px;\"><span style=\"color: #e74c3c; font-weight: bold;\">⚠️ COMMON MISTAKES</span><br><br><span style=\"color: #e74c3c;\">  ❌ Working on original evidence — ALWAYS use copies</span><br><span style=\"color: #e74c3c;\">  ❌ Forgetting to hash at collection — evidence integrity lost</span><br><span style=\"color: #e74c3c;\">  ❌ Not documenting your steps — findings may be inadmissible</span><br><span style=\"color: #e74c3c;\">  ❌ Tunnel vision — investigate ALL leads, not just the obvious</span><br><span style=\"color: #e74c3c;\">  ❌ Contaminating timestamps — mount evidence read-only</span><br></div></div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Hash a File with SHA-256",
+          "description": "Compute the SHA-256 hash of a file for forensic integrity.",
+          "difficulty": "beginner",
+          "category": "Evidence Collection & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's collect evidence! Hash a File with SHA-256. Chain of custody starts here!",
+          "starter_code": "import hashlib\ndef hash_file(fp):\n    # TODO\n    pass\n\nwith open('ev.txt','w') as f: f.write('Critical evidence data')\nprint(hash_file('ev.txt')[:32]+'...')",
+          "expected_output": "<32 hex chars>...",
+          "hints": [
+            {
+              "message": "Open in 'rb', read chunks, update sha256."
+            },
+            {
+              "message": "sha=hashlib.sha256(); for chunk: sha.update(chunk); return sha.hexdigest()"
+            },
+            {
+              "message": "def hash_file(fp):\n    sha=hashlib.sha256()\n    with open(fp,'rb') as f:\n        for c in iter(lambda:f.read(8192),b''): sha.update(c)\n    return sha.hexdigest()"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Calculate Multiple Hashes",
+          "description": "Return MD5, SHA-1, and SHA-256 for one file.",
+          "difficulty": "beginner",
+          "category": "Evidence Collection & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's collect evidence! Calculate Multiple Hashes. Chain of custody starts here!",
+          "starter_code": "import hashlib\ndef multi_hash(fp):\n    # TODO: Return dict with all three hashes\n    pass\n\nwith open('ev.txt','w') as f: f.write('test')\nfor algo,h in multi_hash('ev.txt').items(): print(f'{algo}: {h[:20]}...')",
+          "expected_output": "MD5: 098f6bcd4621d373...\nSHA-1: a94a8fe5ccb19ba6...\nSHA-256: 9f86d081884c7d65...",
+          "hints": [
+            {
+              "message": "Create all 3 hashlib objects, update together in one read loop."
+            },
+            {
+              "message": "md5=hashlib.md5(); sha1=hashlib.sha1(); sha256=hashlib.sha256()"
+            },
+            {
+              "message": "def multi_hash(fp):\n    m,s1,s2=hashlib.md5(),hashlib.sha1(),hashlib.sha256()\n    with open(fp,'rb') as f:\n        for c in iter(lambda:f.read(8192),b''): m.update(c);s1.update(c);s2.update(c)\n    return {'MD5':m.hexdigest(),'SHA-1':s1.hexdigest(),'SHA-256':s2.hexdigest()}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Verify Evidence Integrity",
+          "description": "Compare current hash against stored hash, return True/False.",
+          "difficulty": "beginner",
+          "category": "Evidence Collection & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's collect evidence! Verify Evidence Integrity. Chain of custody starts here!",
+          "starter_code": "import hashlib\ndef verify(fp, expected):\n    # TODO\n    pass\n\nwith open('ev.txt','w') as f: f.write('Original')\nimport hashlib; exp=hashlib.sha256(b'Original').hexdigest()\nprint(verify('ev.txt',exp))\nwith open('ev.txt','w') as f: f.write('Tampered')\nprint(verify('ev.txt',exp))",
+          "expected_output": "True\nFalse",
+          "hints": [
+            {
+              "message": "Compute current hash, compare to expected."
+            },
+            {
+              "message": "return hash_file(fp) == expected"
+            },
+            {
+              "message": "def verify(fp,exp):\n    sha=hashlib.sha256()\n    with open(fp,'rb') as f:\n        for c in iter(lambda:f.read(8192),b''): sha.update(c)\n    return sha.hexdigest()==exp"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Create Evidence Custody Log",
+          "description": "Record collection details: file, hash, timestamp, collector.",
+          "difficulty": "beginner",
+          "category": "Evidence Collection & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's collect evidence! Create Evidence Custody Log. Chain of custody starts here!",
+          "starter_code": "from datetime import datetime\ndef log_collection(filepath, collector):\n    # TODO: Return custody record dict\n    pass\n\nwith open('ev.txt','w') as f: f.write('Evidence')\nrec = log_collection('ev.txt','Analyst')\nfor k,v in rec.items(): print(f'{k}: {v}')",
+          "expected_output": "file: ev.txt\nhash: <hash>\nsize: 8\ncollector: Analyst\ntimestamp: 2025-...",
+          "hints": [
+            {
+              "message": "Build dict with file, hash, size, collector, timestamp."
+            },
+            {
+              "message": "import hashlib,os; record={'file':filepath,'hash':hash,'size':os.path.getsize(fp),...}"
+            },
+            {
+              "message": "def log_collection(fp,who):\n    import hashlib,os\n    sha=hashlib.sha256()\n    with open(fp,'rb') as f:\n        for c in iter(lambda:f.read(8192),b''): sha.update(c)\n    return {'file':fp,'hash':sha.hexdigest(),'size':os.path.getsize(fp),'collector':who,'timestamp':datetime.now().isoformat()}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Hash All Files in Directory",
+          "description": "Walk a directory and hash every file, return dict.",
+          "difficulty": "intermediate",
+          "category": "Evidence Collection & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's collect evidence! Hash All Files in Directory. Chain of custody starts here!",
+          "starter_code": "import hashlib, os\ndef hash_directory(directory):\n    # TODO: Return {filepath: sha256_hash}\n    pass\n\nos.makedirs('test_ev',exist_ok=True)\nfor f in ['a.txt','b.log']: \n    with open(f'test_ev/{f}','w') as fh: fh.write(f'Content {f}')\nresults = hash_directory('test_ev')\nfor fp,h in sorted(results.items()): print(f'{os.path.basename(fp)}: {h[:16]}...')\nimport shutil; shutil.rmtree('test_ev')",
+          "expected_output": "a.txt: <hash>...\nb.log: <hash>...",
+          "hints": [
+            {
+              "message": "Use os.walk() to traverse, hash each file."
+            },
+            {
+              "message": "for root,_,files in os.walk(d): for f in files: hash it"
+            },
+            {
+              "message": "def hash_directory(d):\n    import hashlib,os; r={}\n    for root,_,files in os.walk(d):\n        for f in files:\n            fp=os.path.join(root,f); sha=hashlib.sha256()\n            with open(fp,'rb') as fh:\n                for c in iter(lambda:fh.read(8192),b''): sha.update(c)\n            r[fp]=sha.hexdigest()\n    return r"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Compare Two Directory Snapshots",
+          "description": "Find modified, new, and deleted files between two snapshots.",
+          "difficulty": "intermediate",
+          "category": "Evidence Collection & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's collect evidence! Compare Two Directory Snapshots. Chain of custody starts here!",
+          "starter_code": "def compare_snapshots(old, new):\n    # TODO: Return {'modified':[], 'new':[], 'deleted':[]}\n    pass\n\nold={'a.txt':'h1','b.txt':'h2','c.txt':'h3'}\nnew={'a.txt':'CHANGED','b.txt':'h2','d.txt':'h4'}\nfor k,v in compare_snapshots(old,new).items(): print(f'{k}: {v}')",
+          "expected_output": "modified: ['a.txt']\nnew: ['d.txt']\ndeleted: ['c.txt']",
+          "hints": [
+            {
+              "message": "Use set operations for new/deleted, hash comparison for modified."
+            },
+            {
+              "message": "mod=[f for f in old if f in new and old[f]!=new[f]]"
+            },
+            {
+              "message": "def compare_snapshots(old,new):\n    return {'modified':sorted(f for f in old if f in new and old[f]!=new[f]),'new':sorted(set(new)-set(old)),'deleted':sorted(set(old)-set(new))}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Get File Metadata for Forensics",
+          "description": "Extract size, timestamps, and permissions using os.stat.",
+          "difficulty": "beginner",
+          "category": "Evidence Collection & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's collect evidence! Get File Metadata for Forensics. Chain of custody starts here!",
+          "starter_code": "import os\nfrom datetime import datetime\ndef get_metadata(fp):\n    # TODO: Return dict with forensic metadata\n    pass\n\nwith open('ev.txt','w') as f: f.write('test data')\nmeta = get_metadata('ev.txt')\nfor k,v in meta.items(): print(f'{k}: {v}')",
+          "expected_output": "filename: ev.txt\nsize: 9\nextension: .txt\nmodified: 2025-...\npermissions: 644",
+          "hints": [
+            {
+              "message": "os.stat gives st_size, st_mtime, st_mode."
+            },
+            {
+              "message": "stat=os.stat(fp); datetime.fromtimestamp(stat.st_mtime)"
+            },
+            {
+              "message": "def get_metadata(fp):\n    import os; from datetime import datetime\n    s=os.stat(fp)\n    return {'filename':os.path.basename(fp),'size':s.st_size,'extension':os.path.splitext(fp)[1],'modified':datetime.fromtimestamp(s.st_mtime).isoformat(),'permissions':oct(s.st_mode)[-3:]}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Create Evidence Manifest JSON",
+          "description": "Save a list of evidence items (with hashes) to a JSON manifest.",
+          "difficulty": "intermediate",
+          "category": "Evidence Collection & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's collect evidence! Create Evidence Manifest JSON. Chain of custody starts here!",
+          "starter_code": "import json\ndef create_manifest(evidence_list, filepath):\n    # TODO: Save manifest with case metadata\n    pass\n\nevidence = [{'file':'a.log','hash':'abc123','size':1024},{'file':'b.img','hash':'def456','size':5000}]\ncreate_manifest(evidence,'manifest.json')\nwith open('manifest.json') as f: print(f.read()[:80])",
+          "expected_output": "Manifest saved: 2 items\n{\"case_id\": \"FORENSIC-CASE\", \"created\": \"2025...",
+          "hints": [
+            {
+              "message": "Build dict with case info + evidence list, json.dump."
+            },
+            {
+              "message": "data={'case_id':'FORENSIC-CASE','evidence':evidence_list,'created':now}"
+            },
+            {
+              "message": "def create_manifest(evs,fp):\n    import json; from datetime import datetime\n    d={'case_id':'FORENSIC-CASE','created':datetime.now().isoformat(),'evidence':evs}\n    with open(fp,'w') as f: json.dump(d,f,indent=2)\n    print(f'Manifest saved: {len(evs)} items')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Detect File Type by Magic Bytes",
+          "description": "Identify file type from first bytes, ignoring extension.",
+          "difficulty": "intermediate",
+          "category": "Evidence Collection & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's collect evidence! Detect File Type by Magic Bytes. Chain of custody starts here!",
+          "starter_code": "def identify_type(fp):\n    # TODO: Return file type string\n    pass\n\nfor name,data in [('a',b'%PDF-1.4'),('b',b'PK\\x03\\x04'),('c',b'plain text')]:\n    with open(name,'wb') as f: f.write(data)\n    print(f'{name}: {identify_type(name)}')\n    import os; os.remove(name)",
+          "expected_output": "a: PDF\nb: ZIP\nc: Text/Unknown",
+          "hints": [
+            {
+              "message": "Read first 8 bytes, check against signature dict."
+            },
+            {
+              "message": "sigs={b'%PDF':'PDF',b'PK\\x03\\x04':'ZIP',b'\\xff\\xd8\\xff':'JPEG',...}"
+            },
+            {
+              "message": "def identify_type(fp):\n    with open(fp,'rb') as f: h=f.read(8)\n    sigs={b'%PDF':'PDF',b'PK\\x03\\x04':'ZIP',b'\\xff\\xd8\\xff':'JPEG',b'\\x89PNG':'PNG',b'MZ':'EXE',b'\\x7fELF':'ELF'}\n    for sig,name in sigs.items():\n        if h[:len(sig)]==sig: return name\n    return 'Text/Unknown'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Build Evidence Collection Report",
+          "description": "Combine collection log, hashes, and metadata into a formatted report.",
+          "difficulty": "intermediate",
+          "category": "Evidence Collection & Hashing",
+          "estimated_minutes": 4,
+          "ai_intro": "Let's collect evidence! Build Evidence Collection Report. Chain of custody starts here!",
+          "starter_code": "def collection_report(items):\n    # items = [{'file':..,'hash':..,'size':..,'collector':..}]\n    # TODO: Print formatted report\n    pass\n\nitems=[{'file':'auth.log','hash':'a1b2c3','size':2048,'collector':'Analyst'},{'file':'mail.eml','hash':'d4e5f6','size':512,'collector':'Analyst'}]\ncollection_report(items)",
+          "expected_output": "=== EVIDENCE COLLECTION REPORT ===\nItems: 2\n  #1 auth.log (2048B) SHA:a1b2c3\n  #2 mail.eml (512B) SHA:d4e5f6\nCollected by: Analyst",
+          "hints": [
+            {
+              "message": "Loop items with enumerate, format each."
+            },
+            {
+              "message": "for i,item in enumerate(items,1): print(f'  #{i} {item[\"file\"]}...')"
+            },
+            {
+              "message": "def collection_report(items):\n    print('=== EVIDENCE COLLECTION REPORT ===')\n    print(f'Items: {len(items)}')\n    for i,it in enumerate(items,1): print(f'  #{i} {it[\"file\"]} ({it[\"size\"]}B) SHA:{it[\"hash\"]}')\n    print(f'Collected by: {items[0][\"collector\"] if items else \"N/A\"}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Base64 Encode a String",
+          "description": "Encode text to Base64.",
+          "difficulty": "beginner",
+          "category": "Encoding & Decoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to decode hidden data! Base64 Encode a String. Attackers love to encode their tracks!",
+          "starter_code": "import base64\ndef encode_b64(text):\n    # TODO\n    pass\n\nprint(encode_b64('Hello World'))",
+          "expected_output": "SGVsbG8gV29ybGQ=",
+          "hints": [
+            {
+              "message": "base64.b64encode(text.encode()).decode()"
+            },
+            {
+              "message": "return base64.b64encode(text.encode()).decode()"
+            },
+            {
+              "message": "def encode_b64(t): return base64.b64encode(t.encode()).decode()"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Base64 Decode a String",
+          "description": "Decode Base64 back to plaintext.",
+          "difficulty": "beginner",
+          "category": "Encoding & Decoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to decode hidden data! Base64 Decode a String. Attackers love to encode their tracks!",
+          "starter_code": "import base64\ndef decode_b64(encoded):\n    # TODO\n    pass\n\nprint(decode_b64('U2VjcmV0IERhdGE='))",
+          "expected_output": "Secret Data",
+          "hints": [
+            {
+              "message": "base64.b64decode(encoded).decode()"
+            },
+            {
+              "message": "return base64.b64decode(encoded).decode('utf-8')"
+            },
+            {
+              "message": "def decode_b64(e): return base64.b64decode(e).decode('utf-8')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Hex Encode and Decode",
+          "description": "Convert text to hex and back.",
+          "difficulty": "beginner",
+          "category": "Encoding & Decoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to decode hidden data! Hex Encode and Decode. Attackers love to encode their tracks!",
+          "starter_code": "import binascii\ndef to_hex(text):\n    # TODO\n    pass\ndef from_hex(hex_str):\n    # TODO\n    pass\n\nh = to_hex('Secret')\nprint(f'Hex: {h}')\nprint(f'Decoded: {from_hex(h)}')",
+          "expected_output": "Hex: 536563726574\nDecoded: Secret",
+          "hints": [
+            {
+              "message": "binascii.hexlify and unhexlify"
+            },
+            {
+              "message": "to_hex: binascii.hexlify(text.encode()).decode()"
+            },
+            {
+              "message": "def to_hex(t): return binascii.hexlify(t.encode()).decode()\ndef from_hex(h): return binascii.unhexlify(h).decode()"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: XOR Encrypt/Decrypt with Single Byte",
+          "description": "XOR each byte with a key.",
+          "difficulty": "intermediate",
+          "category": "Encoding & Decoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to decode hidden data! XOR Encrypt/Decrypt with Single Byte. Attackers love to encode their tracks!",
+          "starter_code": "def xor_crypt(data, key):\n    # TODO: Return XOR'd bytes\n    pass\n\nplain = b'Secret Message'\nkey = 0x42\nenc = xor_crypt(plain, key)\nprint(f'Encrypted: {enc.hex()[:20]}...')\ndec = xor_crypt(enc, key)\nprint(f'Decrypted: {dec.decode()}')",
+          "expected_output": "Encrypted: 11272f30252b...\nDecrypted: Secret Message",
+          "hints": [
+            {
+              "message": "bytes([b ^ key for b in data])"
+            },
+            {
+              "message": "return bytes([b ^ key for b in data])"
+            },
+            {
+              "message": "def xor_crypt(data,key): return bytes([b^key for b in data])"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Detect Base64 in Text",
+          "description": "Find Base64-encoded strings in a block of text.",
+          "difficulty": "intermediate",
+          "category": "Encoding & Decoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to decode hidden data! Detect Base64 in Text. Attackers love to encode their tracks!",
+          "starter_code": "import re\ndef find_base64(text):\n    # TODO: Return list of Base64 candidates\n    pass\n\ntext = 'Normal text. Data: SGVsbG8gV29ybGQ= end. More: dGVzdA== done.'\nfor b in find_base64(text): print(f'Found: {b}')",
+          "expected_output": "Found: SGVsbG8gV29ybGQ=\nFound: dGVzdA==",
+          "hints": [
+            {
+              "message": "Regex: r'[A-Za-z0-9+/]{16,}={0,2}'"
+            },
+            {
+              "message": "re.findall(pattern, text)"
+            },
+            {
+              "message": "def find_base64(t):\n    import re; return re.findall(r'[A-Za-z0-9+/]{4,}={0,2}',t)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Auto-Decode Base64 Findings",
+          "description": "Find and decode all Base64 strings in evidence.",
+          "difficulty": "intermediate",
+          "category": "Encoding & Decoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to decode hidden data! Auto-Decode Base64 Findings. Attackers love to encode their tracks!",
+          "starter_code": "import base64, re\ndef decode_all_b64(text):\n    # TODO: Find, decode, return [(encoded, decoded)]\n    pass\n\ntext = f'cmd: {base64.b64encode(b\"cat /etc/passwd\").decode()} end'\nfor enc,dec in decode_all_b64(text): print(f'{enc[:20]}... → {dec}')",
+          "expected_output": "Y2F0IC9ldGMvcGFzc3... → cat /etc/passwd",
+          "hints": [
+            {
+              "message": "Find candidates, try b64decode on each, keep successful ones."
+            },
+            {
+              "message": "for candidate: try: decoded=base64.b64decode(candidate).decode()"
+            },
+            {
+              "message": "def decode_all_b64(t):\n    import base64,re; r=[]\n    for c in re.findall(r'[A-Za-z0-9+/]{8,}={0,2}',t):\n        try: d=base64.b64decode(c).decode('utf-8'); r.append((c,d))\n        except: pass\n    return r"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Crack Single-Byte XOR",
+          "description": "Try all 256 keys and score by English frequency.",
+          "difficulty": "advanced",
+          "category": "Encoding & Decoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to decode hidden data! Crack Single-Byte XOR. Attackers love to encode their tracks!",
+          "starter_code": "def crack_xor(ciphertext):\n    # TODO: Return (key, decoded_text)\n    pass\n\nplain = b'The secret plan is hidden here'\nenc = bytes([b^0x7A for b in plain])\nkey, text = crack_xor(enc)\nprint(f'Key: 0x{key:02X} → {text}')",
+          "expected_output": "Key: 0x7A → The secret plan is hidden here",
+          "hints": [
+            {
+              "message": "Try keys 0-255, decode, score by counting common English letters."
+            },
+            {
+              "message": "best_key=max(range(256), key=lambda k: score(xor(data,k)))"
+            },
+            {
+              "message": "def crack_xor(ct):\n    def score(t): return sum(1 for c in t.lower() if c in 'etaoinshrdlu ')\n    best=(0,0,'')\n    for k in range(256):\n        d=bytes([b^k for b in ct])\n        try:\n            t=d.decode('ascii',errors='ignore'); s=score(t)\n            if s>best[1]: best=(k,s,t)\n        except: pass\n    return (best[0],best[2])"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: URL Decode Suspicious Strings",
+          "description": "Decode URL-encoded strings found in web logs.",
+          "difficulty": "beginner",
+          "category": "Encoding & Decoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to decode hidden data! URL Decode Suspicious Strings. Attackers love to encode their tracks!",
+          "starter_code": "from urllib.parse import unquote\ndef url_decode(encoded):\n    # TODO\n    pass\n\nfor s in ['%2e%2e%2f%2e%2e%2fetc%2fpasswd','normal-path',\"'%20OR%20'1'%3D'1\"]:\n    print(f'{s[:30]:30s} → {url_decode(s)}')",
+          "expected_output": "../../etc/passwd                → ../../etc/passwd\nnormal-path                    → normal-path\n' OR '1'='1                    → ' OR '1'='1",
+          "hints": [
+            {
+              "message": "urllib.parse.unquote handles URL decoding."
+            },
+            {
+              "message": "return unquote(encoded)"
+            },
+            {
+              "message": "def url_decode(e): from urllib.parse import unquote; return unquote(e)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Multi-Encoding Detector",
+          "description": "Try Base64, hex, and URL decoding on unknown data.",
+          "difficulty": "advanced",
+          "category": "Encoding & Decoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to decode hidden data! Multi-Encoding Detector. Attackers love to encode their tracks!",
+          "starter_code": "def detect_encoding(data):\n    # TODO: Try multiple decodings, return results\n    pass\n\nfor d in ['SGVsbG8=','48656c6c6f','Hello%20World','JustPlainText']:\n    print(f'{d:20s} → {detect_encoding(d)}')",
+          "expected_output": "SGVsbG8=             → [('Base64', 'Hello')]\n48656c6c6f           → [('Hex', 'Hello')]\nHello%20World        → [('URL', 'Hello World')]\nJustPlainText        → [('Plaintext', 'JustPlainText')]",
+          "hints": [
+            {
+              "message": "Try each decoding in try/except, collect successes."
+            },
+            {
+              "message": "results=[]; try b64decode, try unhexlify, try unquote"
+            },
+            {
+              "message": "def detect_encoding(d):\n    import base64,binascii; from urllib.parse import unquote\n    r=[]\n    try:\n        dec=base64.b64decode(d).decode('utf-8')\n        if dec.isprintable(): r.append(('Base64',dec))\n    except: pass\n    try:\n        dec=binascii.unhexlify(d).decode('utf-8')\n        if dec.isprintable(): r.append(('Hex',dec))\n    except: pass\n    ud=unquote(d)\n    if ud!=d: r.append(('URL',ud))\n    if not r: r.append(('Plaintext',d))\n    return r"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Generate Encoding Analysis Report",
+          "description": "Scan evidence for encoded data and produce a decoded findings report.",
+          "difficulty": "advanced",
+          "category": "Encoding & Decoding",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to decode hidden data! Generate Encoding Analysis Report. Attackers love to encode their tracks!",
+          "starter_code": "import base64\ndef encoding_report(text):\n    # TODO: Find and decode all encodings, print report\n    pass\n\nev = f'Payload: {base64.b64encode(b\"rm -rf /\").decode()} sent via %2e%2e%2f path'\nencoding_report(ev)",
+          "expected_output": "=== ENCODING ANALYSIS ===\n  🔍 Base64 found: cm0gLXJmIC8= → rm -rf /\n  🔍 URL-encoded: %2e%2e%2f → ../\nTotal encoded items: 2",
+          "hints": [
+            {
+              "message": "Combine find_base64 and URL pattern detection."
+            },
+            {
+              "message": "Find Base64 candidates, decode each. Find %XX patterns, decode."
+            },
+            {
+              "message": "def encoding_report(t):\n    import base64,re; from urllib.parse import unquote\n    print('=== ENCODING ANALYSIS ===')\n    count=0\n    for c in re.findall(r'[A-Za-z0-9+/]{8,}={0,2}',t):\n        try:\n            d=base64.b64decode(c).decode(); count+=1\n            print(f'  🔍 Base64 found: {c} → {d}')\n        except: pass\n    for m in re.findall(r'(?:%[0-9A-Fa-f]{2})+',t):\n        d=unquote(m); count+=1\n        print(f'  🔍 URL-encoded: {m} → {d}')\n    print(f'Total encoded items: {count}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Find All Email Addresses",
+          "description": "Extract emails from text using regex.",
+          "difficulty": "beginner",
+          "category": "Keyword & Pattern Searching",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's search for evidence! Find All Email Addresses. Keyword scanning finds the needles in the haystack!",
+          "starter_code": "import re\ndef find_emails(text):\n    # TODO\n    pass\n\ntext='Contact admin@company.com or support@evil.org for info'\nfor e in find_emails(text): print(e)",
+          "expected_output": "admin@company.com\nsupport@evil.org",
+          "hints": [
+            {
+              "message": "r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}'"
+            },
+            {
+              "message": "return re.findall(pattern, text)"
+            },
+            {
+              "message": "def find_emails(t): return re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}',t)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Find All IP Addresses",
+          "description": "Extract IPv4 addresses from text.",
+          "difficulty": "beginner",
+          "category": "Keyword & Pattern Searching",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's search for evidence! Find All IP Addresses. Keyword scanning finds the needles in the haystack!",
+          "starter_code": "import re\ndef find_ips(text):\n    # TODO\n    pass\n\ntext='Server 192.168.1.100 connected to 10.0.0.55 and 8.8.8.8'\nfor ip in find_ips(text): print(ip)",
+          "expected_output": "192.168.1.100\n10.0.0.55\n8.8.8.8",
+          "hints": [
+            {
+              "message": "r'\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b'"
+            },
+            {
+              "message": "return re.findall(pattern, text)"
+            },
+            {
+              "message": "def find_ips(t): return re.findall(r'\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b',t)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Find Password Patterns",
+          "description": "Detect 'password=xxx' or 'pwd: xxx' patterns.",
+          "difficulty": "intermediate",
+          "category": "Keyword & Pattern Searching",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's search for evidence! Find Password Patterns. Keyword scanning finds the needles in the haystack!",
+          "starter_code": "import re\ndef find_passwords(text):\n    # TODO\n    pass\n\ntext='Login with password=S3cr3t! or try pwd: Admin123'\nfor p in find_passwords(text): print(f'🚨 {p}')",
+          "expected_output": "🚨 password=S3cr3t!\n🚨 pwd: Admin123",
+          "hints": [
+            {
+              "message": "r'(?:password|passwd|pwd)\\s*[:=]\\s*\\S+'"
+            },
+            {
+              "message": "return re.findall(pattern, text, re.I)"
+            },
+            {
+              "message": "def find_passwords(t): return re.findall(r'(?:password|passwd|pwd)\\s*[:=]\\s*\\S+',t,re.I)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Find Credit Card Numbers",
+          "description": "Detect Visa/MC/Amex card patterns.",
+          "difficulty": "intermediate",
+          "category": "Keyword & Pattern Searching",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's search for evidence! Find Credit Card Numbers. Keyword scanning finds the needles in the haystack!",
+          "starter_code": "import re\ndef find_cards(text):\n    # TODO\n    pass\n\ntext='Card 4111-1111-1111-1111 and 5500 0000 0000 0004 found'\nfor c in find_cards(text): print(f'💳 {c}')",
+          "expected_output": "💳 4111-1111-1111-1111\n💳 5500 0000 0000 0004",
+          "hints": [
+            {
+              "message": "Pattern: r'\\b(?:4\\d{3}|5[1-5]\\d{2})[- ]?\\d{4}[- ]?\\d{4}[- ]?\\d{4}\\b'"
+            },
+            {
+              "message": "Match Visa(4xxx), MC(51-55xx), with optional separators."
+            },
+            {
+              "message": "def find_cards(t): return re.findall(r'\\b(?:4\\d{3}|5[1-5]\\d{2}|3[47]\\d{2})[- ]?\\d{4}[- ]?\\d{4}[- ]?\\d{4}\\b',t)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Find URLs in Evidence",
+          "description": "Extract http/https URLs from text.",
+          "difficulty": "beginner",
+          "category": "Keyword & Pattern Searching",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's search for evidence! Find URLs in Evidence. Keyword scanning finds the needles in the haystack!",
+          "starter_code": "import re\ndef find_urls(text):\n    # TODO\n    pass\n\ntext='Visit https://evil.com/payload and http://c2.attacker.org/upload'\nfor u in find_urls(text): print(u)",
+          "expected_output": "https://evil.com/payload\nhttp://c2.attacker.org/upload",
+          "hints": [
+            {
+              "message": "r'https?://[^\\s<>\"]+' captures URLs"
+            },
+            {
+              "message": "return re.findall(r'https?://[^\\s]+', text)"
+            },
+            {
+              "message": "def find_urls(t): return re.findall(r'https?://[^\\s<>\"]+',t)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Search with Context Window",
+          "description": "Show N characters before/after each match for context.",
+          "difficulty": "intermediate",
+          "category": "Keyword & Pattern Searching",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's search for evidence! Search with Context Window. Keyword scanning finds the needles in the haystack!",
+          "starter_code": "import re\ndef search_context(text, pattern, window=30):\n    # TODO: Return [(match, before, after)]\n    pass\n\ntext='Normal activity. Then password=Secret123 was leaked. More normal text.'\nfor m,b,a in search_context(text, r'password\\s*=\\s*\\S+'):\n    print(f'Match: {m}')\n    print(f'Context: ...{b}>>>{m}<<<{a}...')",
+          "expected_output": "Match: password=Secret123\nContext: ...activity. Then >>>password=Secret123<<< was leaked. More...",
+          "hints": [
+            {
+              "message": "Use re.finditer to get match positions, slice text around each."
+            },
+            {
+              "message": "for m in re.finditer(pattern,text): start,end=m.span()"
+            },
+            {
+              "message": "def search_context(t,pat,w=30):\n    r=[]\n    for m in re.finditer(pat,t):\n        s,e=m.span()\n        r.append((m.group(),t[max(0,s-w):s],t[e:e+w]))\n    return r"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Count Pattern Occurrences",
+          "description": "Count how many times each pattern type appears in evidence.",
+          "difficulty": "beginner",
+          "category": "Keyword & Pattern Searching",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's search for evidence! Count Pattern Occurrences. Keyword scanning finds the needles in the haystack!",
+          "starter_code": "import re\nfrom collections import Counter\ndef count_patterns(text):\n    # TODO: Return Counter of pattern types\n    pass\n\ntext='admin@co.com 10.0.0.55 pwd=x user@evil.com 8.8.8.8 password=y'\nc=count_patterns(text)\nfor t,n in c.most_common(): print(f'{t}: {n}')",
+          "expected_output": "IP: 2\nEmail: 2\nPassword: 2",
+          "hints": [
+            {
+              "message": "Define patterns dict, findall each, count."
+            },
+            {
+              "message": "for name,pat: counts[name]=len(re.findall(pat,text))"
+            },
+            {
+              "message": "def count_patterns(t):\n    import re; from collections import Counter\n    pats={'Email':r'\\S+@\\S+\\.\\S+','IP':r'\\b\\d{1,3}(?:\\.\\d{1,3}){3}\\b','Password':r'(?:password|pwd)\\s*[:=]\\s*\\S+'}\n    return Counter({n:len(re.findall(p,t,re.I)) for n,p in pats.items()})"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Scan Multiple Files for Keywords",
+          "description": "Search all files in a directory for a keyword.",
+          "difficulty": "intermediate",
+          "category": "Keyword & Pattern Searching",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's search for evidence! Scan Multiple Files for Keywords. Keyword scanning finds the needles in the haystack!",
+          "starter_code": "import os\ndef search_files(directory, keyword):\n    # TODO: Return [(filepath, line_num, line)]\n    pass\n\nos.makedirs('ev_dir',exist_ok=True)\nwith open('ev_dir/a.txt','w') as f: f.write('Normal line\\npassword=secret\\nMore text')\nwith open('ev_dir/b.txt','w') as f: f.write('No matches here')\nfor fp,num,line in search_files('ev_dir','password'):\n    print(f'{os.path.basename(fp)}:{num}: {line}')\nimport shutil; shutil.rmtree('ev_dir')",
+          "expected_output": "a.txt:2: password=secret",
+          "hints": [
+            {
+              "message": "Walk directory, open each file, search line by line."
+            },
+            {
+              "message": "for root,_,files: for f: for i,line in enumerate(open,1): if keyword in line"
+            },
+            {
+              "message": "def search_files(d,kw):\n    r=[]\n    for root,_,files in os.walk(d):\n        for f in files:\n            fp=os.path.join(root,f)\n            try:\n                with open(fp,errors='ignore') as fh:\n                    for i,l in enumerate(fh,1):\n                        if kw.lower() in l.lower(): r.append((fp,i,l.strip()))\n            except: pass\n    return r"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Extract All Unique Domains",
+          "description": "Find unique domain names from email addresses and URLs.",
+          "difficulty": "intermediate",
+          "category": "Keyword & Pattern Searching",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's search for evidence! Extract All Unique Domains. Keyword scanning finds the needles in the haystack!",
+          "starter_code": "import re\ndef extract_domains(text):\n    # TODO: Return sorted unique domains\n    pass\n\ntext='user@evil.com visited https://malware.org/payload and admin@evil.com'\nfor d in extract_domains(text): print(d)",
+          "expected_output": "evil.com\nmalware.org",
+          "hints": [
+            {
+              "message": "Extract from emails (@domain) and URLs (://domain/)."
+            },
+            {
+              "message": "domains from emails + domains from URLs, dedupe with set()"
+            },
+            {
+              "message": "def extract_domains(t):\n    import re\n    email_doms=re.findall(r'@([a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})',t)\n    url_doms=re.findall(r'https?://([a-zA-Z0-9.-]+)',t)\n    return sorted(set(email_doms+url_doms))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Generate Forensic Search Report",
+          "description": "Scan evidence and produce a categorised findings report.",
+          "difficulty": "advanced",
+          "category": "Keyword & Pattern Searching",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's search for evidence! Generate Forensic Search Report. Keyword scanning finds the needles in the haystack!",
+          "starter_code": "def forensic_search_report(text):\n    # TODO: Find all pattern types, generate report\n    pass\n\nev='Login: admin@co.com pwd=Secret from 10.0.0.55. Card: 4111111111111111. URL: https://evil.com/data'\nforensic_search_report(ev)",
+          "expected_output": "=== FORENSIC SEARCH REPORT ===\n  🔍 Email: 1 found\n    → admin@co.com\n  🔍 IP: 1 found\n    → 10.0.0.55\n  🔍 Password: 1 found\n    → pwd=Secret\n  🔍 URL: 1 found\n    → https://evil.com/data\nTotal indicators: 4",
+          "hints": [
+            {
+              "message": "Combine all pattern types, format output."
+            },
+            {
+              "message": "For each category: find matches, print count and samples."
+            },
+            {
+              "message": "def forensic_search_report(t):\n    import re\n    pats={'Email':r'[\\w.+-]+@[\\w.-]+\\.[a-zA-Z]{2,}','IP':r'\\b\\d{1,3}(?:\\.\\d{1,3}){3}\\b','Password':r'(?:password|pwd)\\s*[:=]\\s*\\S+','URL':r'https?://[^\\s]+'}\n    print('=== FORENSIC SEARCH REPORT ===')\n    total=0\n    for name,pat in pats.items():\n        m=list(set(re.findall(pat,t,re.I)))\n        if m:\n            print(f'  🔍 {name}: {len(m)} found')\n            for x in m[:3]: print(f'    → {x}')\n            total+=len(m)\n    print(f'Total indicators: {total}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Parse a Timestamp",
+          "description": "Convert a string timestamp to datetime object.",
+          "difficulty": "beginner",
+          "category": "Timeline Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's reconstruct the timeline! Parse a Timestamp. Timelines reveal the complete attack story!",
+          "starter_code": "from datetime import datetime\ndef parse_ts(s):\n    # TODO\n    pass\n\ndt = parse_ts('2025-01-10 14:23:01')\nprint(f'Year: {dt.year}, Hour: {dt.hour}')",
+          "expected_output": "Year: 2025, Hour: 14",
+          "hints": [
+            {
+              "message": "datetime.strptime(s, '%Y-%m-%d %H:%M:%S')"
+            },
+            {
+              "message": "return datetime.strptime(s,'%Y-%m-%d %H:%M:%S')"
+            },
+            {
+              "message": "def parse_ts(s): return datetime.strptime(s,'%Y-%m-%d %H:%M:%S')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Calculate Time Between Events",
+          "description": "Return seconds between two timestamps.",
+          "difficulty": "beginner",
+          "category": "Timeline Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's reconstruct the timeline! Calculate Time Between Events. Timelines reveal the complete attack story!",
+          "starter_code": "from datetime import datetime\ndef time_gap(ts1, ts2):\n    # TODO: Return seconds between them\n    pass\n\nprint(f'Gap: {time_gap(\"14:23:01\",\"14:25:30\")} seconds')",
+          "expected_output": "Gap: 149 seconds",
+          "hints": [
+            {
+              "message": "Parse both, subtract, .total_seconds()"
+            },
+            {
+              "message": "(dt2-dt1).total_seconds()"
+            },
+            {
+              "message": "def time_gap(t1,t2):\n    from datetime import datetime\n    d1=datetime.strptime(t1,'%H:%M:%S');d2=datetime.strptime(t2,'%H:%M:%S')\n    return int((d2-d1).total_seconds())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Sort Events Chronologically",
+          "description": "Sort a list of events by timestamp.",
+          "difficulty": "beginner",
+          "category": "Timeline Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's reconstruct the timeline! Sort Events Chronologically. Timelines reveal the complete attack story!",
+          "starter_code": "def sort_events(events):\n    # events = [{'time':'HH:MM:SS', 'event':'...'}]\n    # TODO: Return sorted list\n    pass\n\nevts=[{'time':'14:25:00','event':'C'},{'time':'14:20:00','event':'A'},{'time':'14:23:00','event':'B'}]\nfor e in sort_events(evts): print(f'{e[\"time\"]}: {e[\"event\"]}')",
+          "expected_output": "14:20:00: A\n14:23:00: B\n14:25:00: C",
+          "hints": [
+            {
+              "message": "sorted(events, key=lambda e: e['time'])"
+            },
+            {
+              "message": "return sorted(events, key=lambda e: e['time'])"
+            },
+            {
+              "message": "def sort_events(e): return sorted(e,key=lambda x:x['time'])"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Detect Time Gaps Over Threshold",
+          "description": "Flag gaps larger than N seconds between consecutive events.",
+          "difficulty": "intermediate",
+          "category": "Timeline Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's reconstruct the timeline! Detect Time Gaps Over Threshold. Timelines reveal the complete attack story!",
+          "starter_code": "from datetime import datetime\ndef find_gaps(events, threshold=60):\n    # TODO: Return list of gaps\n    pass\n\nevts=[{'time':'14:20:00'},{'time':'14:20:05'},{'time':'14:25:00'},{'time':'14:25:10'}]\nfor g in find_gaps(evts,60): print(f'⏸️ {g[\"gap\"]}s gap between {g[\"before\"]} and {g[\"after\"]}')",
+          "expected_output": "⏸️ 295s gap between 14:20:05 and 14:25:00",
+          "hints": [
+            {
+              "message": "Parse times, compare consecutive pairs, flag if diff > threshold."
+            },
+            {
+              "message": "for i in range(1,len(events)): gap=(dt2-dt1).total_seconds()"
+            },
+            {
+              "message": "def find_gaps(evts,th=60):\n    from datetime import datetime; r=[]\n    s=sorted(evts,key=lambda x:x['time'])\n    for i in range(1,len(s)):\n        t1=datetime.strptime(s[i-1]['time'],'%H:%M:%S')\n        t2=datetime.strptime(s[i]['time'],'%H:%M:%S')\n        gap=(t2-t1).total_seconds()\n        if gap>th: r.append({'gap':int(gap),'before':s[i-1]['time'],'after':s[i]['time']})\n    return r"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Merge Events from Multiple Sources",
+          "description": "Combine events from auth, web, and network logs into one timeline.",
+          "difficulty": "intermediate",
+          "category": "Timeline Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's reconstruct the timeline! Merge Events from Multiple Sources. Timelines reveal the complete attack story!",
+          "starter_code": "def merge_sources(sources):\n    # sources = {'auth':[events], 'web':[events], ...}\n    # TODO: Merge and sort all events\n    pass\n\nsources={'auth':[{'time':'14:23:05','event':'Login'}],'web':[{'time':'14:23:01','event':'GET /admin'}],'net':[{'time':'14:23:10','event':'Data sent'}]}\nfor e in merge_sources(sources): print(f'{e[\"time\"]} [{e[\"source\"]}] {e[\"event\"]}')",
+          "expected_output": "14:23:01 [web] GET /admin\n14:23:05 [auth] Login\n14:23:10 [net] Data sent",
+          "hints": [
+            {
+              "message": "Flatten all sources into one list with source tag, sort by time."
+            },
+            {
+              "message": "all_events=[{**e,'source':src} for src,evts in sources.items() for e in evts]"
+            },
+            {
+              "message": "def merge_sources(srcs):\n    a=[]\n    for src,evts in srcs.items():\n        for e in evts: a.append({**e,'source':src})\n    return sorted(a,key=lambda x:x['time'])"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Label Attack Phases",
+          "description": "Auto-label events as Recon, Access, Exfil, Cleanup based on keywords.",
+          "difficulty": "intermediate",
+          "category": "Timeline Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's reconstruct the timeline! Label Attack Phases. Timelines reveal the complete attack story!",
+          "starter_code": "def label_phase(event):\n    # TODO: Return phase name\n    pass\n\nfor ev in ['Port scan','SSH login','SELECT * FROM','Data sent to','Log deleted','GET /admin']:\n    print(f'{ev:20s} → {label_phase(ev)}')",
+          "expected_output": "Port scan            → Reconnaissance\nSSH login            → Initial Access\nSELECT * FROM        → Data Access\nData sent to         → Exfiltration\nLog deleted          → Anti-Forensics\nGET /admin           → Reconnaissance",
+          "hints": [
+            {
+              "message": "Map keywords to phases: 'scan'→Recon, 'login'→Access, etc."
+            },
+            {
+              "message": "if 'scan' in ev.lower() or 'admin' in ev.lower(): return 'Reconnaissance'"
+            },
+            {
+              "message": "def label_phase(ev):\n    e=ev.lower()\n    if any(k in e for k in ['scan','admin','enum']): return 'Reconnaissance'\n    if any(k in e for k in ['login','ssh','auth']): return 'Initial Access'\n    if any(k in e for k in ['select','query','read']): return 'Data Access'\n    if any(k in e for k in ['sent','upload','exfil']): return 'Exfiltration'\n    if any(k in e for k in ['delet','truncat','wipe']): return 'Anti-Forensics'\n    return 'Unknown'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Build Timeline with Severity Colours",
+          "description": "Display timeline with coloured severity icons.",
+          "difficulty": "beginner",
+          "category": "Timeline Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's reconstruct the timeline! Build Timeline with Severity Colours. Timelines reveal the complete attack story!",
+          "starter_code": "def display_timeline(events):\n    # events = [{'time':..,'event':..,'severity':..}]\n    # TODO: Print with icons\n    pass\n\nevts=[{'time':'14:20','event':'Scan started','severity':'INFO'},{'time':'14:23','event':'Root login','severity':'HIGH'},{'time':'14:25','event':'Data stolen','severity':'CRITICAL'}]\ndisplay_timeline(evts)",
+          "expected_output": "📅 TIMELINE\n  14:20 🔵 Scan started\n  14:23 🟠 Root login\n  14:25 🔴 Data stolen",
+          "hints": [
+            {
+              "message": "Map severity to icons: INFO→🔵, HIGH→🟠, CRITICAL→🔴"
+            },
+            {
+              "message": "icons={'INFO':'🔵','WARNING':'🟡','HIGH':'🟠','CRITICAL':'🔴'}"
+            },
+            {
+              "message": "def display_timeline(evts):\n    icons={'INFO':'🔵','WARNING':'🟡','HIGH':'🟠','CRITICAL':'🔴'}\n    print('📅 TIMELINE')\n    for e in sorted(evts,key=lambda x:x['time']):\n        print(f'  {e[\"time\"]} {icons.get(e[\"severity\"],\"⚪\")} {e[\"event\"]}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Calculate Attack Duration",
+          "description": "Find total time from first to last event.",
+          "difficulty": "beginner",
+          "category": "Timeline Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's reconstruct the timeline! Calculate Attack Duration. Timelines reveal the complete attack story!",
+          "starter_code": "from datetime import datetime\ndef attack_duration(events):\n    # TODO: Return formatted duration string\n    pass\n\nevts=[{'time':'14:20:01'},{'time':'14:23:05'},{'time':'14:30:00'}]\nprint(f'Duration: {attack_duration(evts)}')",
+          "expected_output": "Duration: 9 minutes 59 seconds",
+          "hints": [
+            {
+              "message": "Parse first and last timestamps, calculate difference."
+            },
+            {
+              "message": "sorted_times, first-last, format as min+sec"
+            },
+            {
+              "message": "def attack_duration(evts):\n    from datetime import datetime\n    times=sorted(datetime.strptime(e['time'],'%H:%M:%S') for e in evts)\n    diff=(times[-1]-times[0]).total_seconds()\n    return f'{int(diff//60)} minutes {int(diff%60)} seconds'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Export Timeline to JSON",
+          "description": "Save timeline with metadata to JSON file.",
+          "difficulty": "intermediate",
+          "category": "Timeline Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's reconstruct the timeline! Export Timeline to JSON. Timelines reveal the complete attack story!",
+          "starter_code": "import json\ndef export_timeline(events, case_id, filepath):\n    # TODO\n    pass\n\nevts=[{'time':'14:20','source':'auth','event':'Login','severity':'HIGH'}]\nexport_timeline(evts,'CASE-042','timeline.json')\nwith open('timeline.json') as f: print(f.read()[:60])",
+          "expected_output": "Timeline saved: 1 events\n{\"case_id\": \"CASE-042\", \"events\": [{\"time\": \"14:...",
+          "hints": [
+            {
+              "message": "Build dict with case_id + events, json.dump."
+            },
+            {
+              "message": "data={'case_id':case_id,'events':events}"
+            },
+            {
+              "message": "def export_timeline(evts,case_id,fp):\n    import json\n    with open(fp,'w') as f: json.dump({'case_id':case_id,'events':evts},f,indent=2)\n    print(f'Timeline saved: {len(evts)} events')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Complete Investigation Timeline",
+          "description": "Build a full annotated timeline with phases, gaps, and duration.",
+          "difficulty": "advanced",
+          "category": "Timeline Analysis",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's reconstruct the timeline! Complete Investigation Timeline. Timelines reveal the complete attack story!",
+          "starter_code": "def full_timeline(events):\n    # TODO: Sort, label phases, detect gaps, show duration\n    pass\n\nevts=[{'time':'14:20:01','event':'Port scan from 10.0.0.55','sev':'INFO'},{'time':'14:23:05','event':'SSH root login','sev':'HIGH'},{'time':'14:25:30','event':'SELECT * FROM users','sev':'CRITICAL'},{'time':'14:27:00','event':'980KB sent externally','sev':'CRITICAL'},{'time':'14:30:00','event':'auth.log deleted','sev':'CRITICAL'}]\nfull_timeline(evts)",
+          "expected_output": "📅 INVESTIGATION TIMELINE\n=== Duration: 9 min 59 sec ===\n  14:20:01 🔵 [Recon] Port scan from 10.0.0.55\n  ... 184s gap ...\n  14:23:05 🟠 [Access] SSH root login\n  14:25:30 🔴 [Data] SELECT * FROM users\n  14:27:00 🔴 [Exfil] 980KB sent externally\n  14:30:00 🔴 [Cleanup] auth.log deleted",
+          "hints": [
+            {
+              "message": "Combine sort, phase labeling, gap detection, duration calculation."
+            },
+            {
+              "message": "Sort events, label each, check gaps between consecutive, calculate total duration."
+            },
+            {
+              "message": "def full_timeline(evts):\n    from datetime import datetime\n    def phase(e):\n        el=e.lower()\n        if 'scan' in el: return 'Recon'\n        if 'login' in el or 'ssh' in el: return 'Access'\n        if 'select' in el: return 'Data'\n        if 'sent' in el: return 'Exfil'\n        if 'delet' in el: return 'Cleanup'\n        return '?'\n    icons={'INFO':'🔵','WARNING':'🟡','HIGH':'🟠','CRITICAL':'🔴'}\n    s=sorted(evts,key=lambda x:x['time'])\n    times=[datetime.strptime(e['time'],'%H:%M:%S') for e in s]\n    dur=(times[-1]-times[0]).total_seconds()\n    print(f'📅 INVESTIGATION TIMELINE\\n=== Duration: {int(dur//60)} min {int(dur%60)} sec ===')\n    for i,e in enumerate(s):\n        if i>0:\n            gap=(times[i]-times[i-1]).total_seconds()\n            if gap>60: print(f'  ... {int(gap)}s gap ...')\n        print(f'  {e[\"time\"]} {icons.get(e[\"sev\"],\"⚪\")} [{phase(e[\"event\"])}] {e[\"event\"]}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Extract IPs from Connection Log",
+          "description": "Parse source and destination IPs from network entries.",
+          "difficulty": "beginner",
+          "category": "Network & Email Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's trace network activity! Extract IPs from Connection Log. Network evidence shows who talked to whom!",
+          "starter_code": "def extract_connections(logs):\n    # logs = ['src_ip dst_ip bytes',...]\n    # TODO: Return [(src,dst,bytes)]\n    pass\n\nlogs=['192.168.1.100 10.0.0.55 1500','192.168.1.100 8.8.8.8 200']\nfor s,d,b in extract_connections(logs): print(f'{s} → {d}: {b}B')",
+          "expected_output": "192.168.1.100 → 10.0.0.55: 1500B\n192.168.1.100 → 8.8.8.8: 200B",
+          "hints": [
+            {
+              "message": "Split each line."
+            },
+            {
+              "message": "parts=line.split(); return (parts[0],parts[1],int(parts[2]))"
+            },
+            {
+              "message": "def extract_connections(logs):\n    r=[]\n    for l in logs: p=l.split(); r.append((p[0],p[1],int(p[2])))\n    return r"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Calculate Total Bytes Per Source IP",
+          "description": "Sum bytes sent by each source IP.",
+          "difficulty": "beginner",
+          "category": "Network & Email Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's trace network activity! Calculate Total Bytes Per Source IP. Network evidence shows who talked to whom!",
+          "starter_code": "from collections import defaultdict\ndef bytes_per_ip(connections):\n    # connections = [(src,dst,bytes),...]\n    # TODO: Return {ip: total_bytes}\n    pass\n\nconns=[('10.0.0.55','x',1000),('10.0.0.55','y',5000),('192.168.1.1','z',200)]\nfor ip,b in sorted(bytes_per_ip(conns).items(),key=lambda x:-x[1]): print(f'{ip}: {b:,}B')",
+          "expected_output": "10.0.0.55: 6,000B\n192.168.1.1: 200B",
+          "hints": [
+            {
+              "message": "defaultdict(int); totals[src]+=bytes"
+            },
+            {
+              "message": "for s,d,b: totals[s]+=b"
+            },
+            {
+              "message": "def bytes_per_ip(conns):\n    from collections import defaultdict; t=defaultdict(int)\n    for s,d,b in conns: t[s]+=b\n    return dict(t)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Detect Large Data Transfers",
+          "description": "Flag transfers over a threshold (possible exfiltration).",
+          "difficulty": "intermediate",
+          "category": "Network & Email Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's trace network activity! Detect Large Data Transfers. Network evidence shows who talked to whom!",
+          "starter_code": "def find_large(connections, threshold=100000):\n    # TODO: Return transfers over threshold\n    pass\n\nconns=[('a','b',1500),('a','c',980000),('d','e',200),('a','f',500000)]\nfor s,d,b in find_large(conns): print(f'🚨 {s}→{d}: {b:,}B')",
+          "expected_output": "🚨 a→c: 980,000B\n🚨 a→f: 500,000B",
+          "hints": [
+            {
+              "message": "Filter: [(s,d,b) for s,d,b in conns if b>=threshold]"
+            },
+            {
+              "message": "return [(s,d,b) for s,d,b in conns if b>=threshold]"
+            },
+            {
+              "message": "def find_large(conns,th=100000): return [(s,d,b) for s,d,b in conns if b>=th]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Parse Email From Header",
+          "description": "Extract display name and actual email address.",
+          "difficulty": "beginner",
+          "category": "Network & Email Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's trace network activity! Parse Email From Header. Network evidence shows who talked to whom!",
+          "starter_code": "import re\ndef parse_from(header):\n    # 'Display Name <actual@email.com>'\n    # TODO: Return (display_name, email)\n    pass\n\nprint(parse_from('CEO John <hacker@evil.com>'))\nprint(parse_from('admin@company.com'))",
+          "expected_output": "('CEO John', 'hacker@evil.com')\n('', 'admin@company.com')",
+          "hints": [
+            {
+              "message": "If '<' in header: split. Else: just email."
+            },
+            {
+              "message": "re.search(r'(.+?)\\s*<(.+?)>',header)"
+            },
+            {
+              "message": "def parse_from(h):\n    import re; m=re.search(r'(.+?)\\s*<(.+?)>',h)\n    return (m.group(1).strip(),m.group(2)) if m else ('',h.strip())"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Detect Email Spoofing",
+          "description": "Flag when display name doesn't match email domain.",
+          "difficulty": "intermediate",
+          "category": "Network & Email Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's trace network activity! Detect Email Spoofing. Network evidence shows who talked to whom!",
+          "starter_code": "def check_spoof(from_header):\n    # TODO: Return True if possibly spoofed\n    pass\n\nprint(check_spoof('CEO John <hacker@evil.com>'))\nprint(check_spoof('Admin <admin@company.com>'))",
+          "expected_output": "True\nFalse",
+          "hints": [
+            {
+              "message": "Extract display name and domain. Check if name relates to domain."
+            },
+            {
+              "message": "If display has words not in the domain → suspicious."
+            },
+            {
+              "message": "def check_spoof(h):\n    import re; m=re.search(r'(.+?)\\s*<(.+?)>',h)\n    if not m: return False\n    name=m.group(1).lower(); email=m.group(2).lower()\n    domain=email.split('@')[1].split('.')[0]\n    return domain not in name.replace(' ','')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Trace Email Routing Path",
+          "description": "Extract IPs from Received headers (bottom=origin).",
+          "difficulty": "intermediate",
+          "category": "Network & Email Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's trace network activity! Trace Email Routing Path. Network evidence shows who talked to whom!",
+          "starter_code": "import re\ndef trace_route(headers):\n    # TODO: Return list of IPs (origin first)\n    pass\n\nhdrs='Received: from mx [93.184.216.34]\\nReceived: from origin [10.0.0.55]'\nfor i,ip in enumerate(trace_route(hdrs),1): print(f'Hop {i}: {ip}')",
+          "expected_output": "Hop 1: 10.0.0.55\nHop 2: 93.184.216.34",
+          "hints": [
+            {
+              "message": "findall IPs in Received lines, reverse order."
+            },
+            {
+              "message": "ips=re.findall(r'\\[(\\d+\\.\\d+\\.\\d+\\.\\d+)\\]',headers); ips.reverse()"
+            },
+            {
+              "message": "def trace_route(h):\n    import re; ips=re.findall(r'\\[(\\d+\\.\\d+\\.\\d+\\.\\d+)\\]',h)\n    return list(reversed(ips))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Count Connections Per Destination",
+          "description": "Find most-contacted destinations.",
+          "difficulty": "beginner",
+          "category": "Network & Email Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's trace network activity! Count Connections Per Destination. Network evidence shows who talked to whom!",
+          "starter_code": "from collections import Counter\ndef top_destinations(connections, n=3):\n    # TODO: Return top N destinations\n    pass\n\nconns=[('a','evil.com'),('a','evil.com'),('a','google.com'),('b','evil.com'),('a','safe.org')]\nfor dst,c in top_destinations(conns): print(f'{dst}: {c}')",
+          "expected_output": "evil.com: 3\ngoogle.com: 1\nsafe.org: 1",
+          "hints": [
+            {
+              "message": "Counter(dst for src,dst in connections)"
+            },
+            {
+              "message": "return Counter(d for _,d in conns).most_common(n)"
+            },
+            {
+              "message": "def top_destinations(conns,n=3):\n    from collections import Counter\n    return Counter(d for _,d in conns).most_common(n)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Detect After-Hours Activity",
+          "description": "Flag connections outside business hours (9-17).",
+          "difficulty": "intermediate",
+          "category": "Network & Email Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's trace network activity! Detect After-Hours Activity. Network evidence shows who talked to whom!",
+          "starter_code": "def after_hours(connections):\n    # connections = [{'time':'HH:MM','src':..,'dst':..}]\n    # TODO: Return after-hours connections\n    pass\n\nconns=[{'time':'14:00','src':'a','dst':'b'},{'time':'03:00','src':'a','dst':'evil.com'},{'time':'23:30','src':'c','dst':'d'}]\nfor c in after_hours(conns): print(f'🌙 {c[\"time\"]}: {c[\"src\"]}→{c[\"dst\"]}')",
+          "expected_output": "🌙 03:00: a→evil.com\n🌙 23:30: c→d",
+          "hints": [
+            {
+              "message": "Parse hour from time, check if <9 or >17."
+            },
+            {
+              "message": "hour=int(c['time'].split(':')[0]); if hour<9 or hour>=17"
+            },
+            {
+              "message": "def after_hours(conns):\n    return [c for c in conns if int(c['time'].split(':')[0]) not in range(9,17)]"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Build Connection Graph",
+          "description": "Show which IPs communicated with which.",
+          "difficulty": "intermediate",
+          "category": "Network & Email Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's trace network activity! Build Connection Graph. Network evidence shows who talked to whom!",
+          "starter_code": "from collections import defaultdict\ndef connection_graph(connections):\n    # TODO: Print adjacency list\n    pass\n\nconns=[('a','b'),('a','c'),('b','c'),('a','b'),('d','a')]\nconnection_graph(conns)",
+          "expected_output": "=== CONNECTION GRAPH ===\n  a → b(2), c(1)\n  b → c(1)\n  d → a(1)",
+          "hints": [
+            {
+              "message": "defaultdict(Counter) to count connections per src-dst pair."
+            },
+            {
+              "message": "graph=defaultdict(Counter); for s,d: graph[s][d]+=1"
+            },
+            {
+              "message": "def connection_graph(conns):\n    from collections import defaultdict,Counter\n    g=defaultdict(Counter)\n    for s,d in conns: g[s][d]+=1\n    print('=== CONNECTION GRAPH ===')\n    for src in sorted(g):\n        dsts=', '.join(f'{d}({c})' for d,c in g[src].most_common())\n        print(f'  {src} → {dsts}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Full Network Forensics Report",
+          "description": "Combine all network analysis into one report.",
+          "difficulty": "advanced",
+          "category": "Network & Email Forensics",
+          "estimated_minutes": 5,
+          "ai_intro": "Let's trace network activity! Full Network Forensics Report. Network evidence shows who talked to whom!",
+          "starter_code": "def network_report(connections):\n    # connections = [{'src':..,'dst':..,'bytes':..,'time':..}]\n    # TODO: Full report\n    pass\n\nconns=[{'src':'192.168.1.100','dst':'10.0.0.55','bytes':980000,'time':'03:00'},{'src':'192.168.1.100','dst':'8.8.8.8','bytes':200,'time':'14:00'},{'src':'192.168.1.200','dst':'google.com','bytes':5000,'time':'10:00'}]\nnetwork_report(conns)",
+          "expected_output": "=== NETWORK FORENSICS REPORT ===\nConnections: 3\nUnique sources: 2\nTotal data: 985,200B\n\n🚨 Large transfers:\n  192.168.1.100→10.0.0.55: 980,000B\n\n🌙 After-hours:\n  03:00: 192.168.1.100→10.0.0.55",
+          "hints": [
+            {
+              "message": "Combine bytes_per_ip, large transfers, after-hours detection."
+            },
+            {
+              "message": "Calculate totals, filter large, filter after-hours."
+            },
+            {
+              "message": "def network_report(conns):\n    print('=== NETWORK FORENSICS REPORT ===')\n    print(f'Connections: {len(conns)}')\n    print(f'Unique sources: {len(set(c[\"src\"] for c in conns))}')\n    total=sum(c['bytes'] for c in conns)\n    print(f'Total data: {total:,}B')\n    large=[c for c in conns if c['bytes']>=100000]\n    if large:\n        print('\\n🚨 Large transfers:')\n        for c in large: print(f'  {c[\"src\"]}→{c[\"dst\"]}: {c[\"bytes\"]:,}B')\n    after=[c for c in conns if int(c['time'].split(':')[0]) not in range(9,17)]\n    if after:\n        print('\\n🌙 After-hours:')\n        for c in after: print(f'  {c[\"time\"]}: {c[\"src\"]}→{c[\"dst\"]}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Write Executive Summary",
+          "description": "Generate a one-paragraph summary from investigation stats.",
+          "difficulty": "beginner",
+          "category": "Forensic Reporting & Capstone",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write the final report! Write Executive Summary. Your findings need to be clear and actionable!",
+          "starter_code": "def exec_summary(evidence_count, findings, critical):\n    # TODO\n    pass\n\nprint(exec_summary(5, 8, 3))",
+          "expected_output": "EXECUTIVE SUMMARY: Investigation analysed 5 evidence items and identified 8 findings (3 critical). Immediate action is required.",
+          "hints": [
+            {
+              "message": "Use f-string to format all parameters."
+            },
+            {
+              "message": "return f'EXECUTIVE SUMMARY: Investigation analysed {evidence_count}...'"
+            },
+            {
+              "message": "def exec_summary(ev,f,c):\n    return f'EXECUTIVE SUMMARY: Investigation analysed {ev} evidence items and identified {f} findings ({c} critical). Immediate action is required.'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Format Evidence Catalogue",
+          "description": "Number and format evidence items with hashes.",
+          "difficulty": "beginner",
+          "category": "Forensic Reporting & Capstone",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write the final report! Format Evidence Catalogue. Your findings need to be clear and actionable!",
+          "starter_code": "def evidence_catalogue(items):\n    # items = [{'name':..,'hash':..,'source':..}]\n    # TODO: Print formatted catalogue\n    pass\n\nitems=[{'name':'auth.log','hash':'abc123','source':'/var/log'},{'name':'malware.py','hash':'def456','source':'Desktop'}]\nevidence_catalogue(items)",
+          "expected_output": "EVIDENCE CATALOGUE (2 items)\n  #1 auth.log (Source: /var/log)\n     SHA-256: abc123\n  #2 malware.py (Source: Desktop)\n     SHA-256: def456",
+          "hints": [
+            {
+              "message": "Loop with enumerate(items,1), format each."
+            },
+            {
+              "message": "for i,item in enumerate(items,1): print(...)"
+            },
+            {
+              "message": "def evidence_catalogue(items):\n    print(f'EVIDENCE CATALOGUE ({len(items)} items)')\n    for i,it in enumerate(items,1):\n        print(f'  #{i} {it[\"name\"]} (Source: {it[\"source\"]})')\n        print(f'     SHA-256: {it[\"hash\"]}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Sort Findings by Severity",
+          "description": "Order findings CRITICAL first, then HIGH, MEDIUM, LOW.",
+          "difficulty": "beginner",
+          "category": "Forensic Reporting & Capstone",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write the final report! Sort Findings by Severity. Your findings need to be clear and actionable!",
+          "starter_code": "def sort_findings(findings):\n    # TODO: Return sorted list\n    pass\n\nfindings=[{'sev':'MEDIUM','desc':'Weak password'},{'sev':'CRITICAL','desc':'Data stolen'},{'sev':'HIGH','desc':'Brute force'}]\nfor f in sort_findings(findings): print(f'[{f[\"sev\"]}] {f[\"desc\"]}')",
+          "expected_output": "[CRITICAL] Data stolen\n[HIGH] Brute force\n[MEDIUM] Weak password",
+          "hints": [
+            {
+              "message": "Define order dict: {'CRITICAL':0,'HIGH':1,...}"
+            },
+            {
+              "message": "sorted(findings, key=lambda x: order[x['sev']])"
+            },
+            {
+              "message": "def sort_findings(f):\n    o={'CRITICAL':0,'HIGH':1,'MEDIUM':2,'LOW':3}\n    return sorted(f,key=lambda x:o.get(x['sev'],9))"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Generate Recommendations from Findings",
+          "description": "Auto-generate prioritised recommendations based on finding types.",
+          "difficulty": "intermediate",
+          "category": "Forensic Reporting & Capstone",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write the final report! Generate Recommendations from Findings. Your findings need to be clear and actionable!",
+          "starter_code": "def generate_recs(findings):\n    # TODO: Return list of recommendations\n    pass\n\nfindings=[{'type':'data_exfil'},{'type':'brute_force'},{'type':'malware'}]\nfor r in generate_recs(findings): print(r)",
+          "expected_output": "[P1] Block external data transfer destinations\n[P1] Isolate infected systems and scan for malware\n[P2] Implement account lockout after failed attempts",
+          "hints": [
+            {
+              "message": "Map finding types to recommendation strings."
+            },
+            {
+              "message": "rec_map={'data_exfil':[('P1','Block external...')], ...}"
+            },
+            {
+              "message": "def generate_recs(findings):\n    m={'data_exfil':[('P1','Block external data transfer destinations')],'brute_force':[('P2','Implement account lockout after failed attempts')],'malware':[('P1','Isolate infected systems and scan for malware')]}\n    r=[]\n    for f in findings:\n        for p,a in m.get(f['type'],[]):\n            rec=f'[{p}] {a}'\n            if rec not in r: r.append(rec)\n    return sorted(r)"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Calculate Investigation Metrics",
+          "description": "Compute key metrics: evidence count, finding severity distribution, etc.",
+          "difficulty": "intermediate",
+          "category": "Forensic Reporting & Capstone",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write the final report! Calculate Investigation Metrics. Your findings need to be clear and actionable!",
+          "starter_code": "from collections import Counter\ndef metrics(evidence, findings):\n    # TODO: Return metrics dict\n    pass\n\nev=[{'name':'a'},{'name':'b'},{'name':'c'}]\nfinds=[{'sev':'CRITICAL'},{'sev':'CRITICAL'},{'sev':'HIGH'},{'sev':'MEDIUM'}]\nm=metrics(ev,finds)\nfor k,v in m.items(): print(f'{k}: {v}')",
+          "expected_output": "evidence_count: 3\ntotal_findings: 4\ncritical: 2\nhigh: 1\nmedium: 1\nrisk_level: CRITICAL",
+          "hints": [
+            {
+              "message": "Count evidence, count by severity, determine risk level."
+            },
+            {
+              "message": "risk='CRITICAL' if any sev=='CRITICAL' else 'HIGH' etc"
+            },
+            {
+              "message": "def metrics(ev,finds):\n    from collections import Counter\n    sc=Counter(f['sev'] for f in finds)\n    risk='CRITICAL' if sc.get('CRITICAL',0)>0 else 'HIGH' if sc.get('HIGH',0)>0 else 'MEDIUM'\n    return {'evidence_count':len(ev),'total_findings':len(finds),'critical':sc.get('CRITICAL',0),'high':sc.get('HIGH',0),'medium':sc.get('MEDIUM',0),'risk_level':risk}"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Save Report as JSON",
+          "description": "Export complete report data to JSON file.",
+          "difficulty": "beginner",
+          "category": "Forensic Reporting & Capstone",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write the final report! Save Report as JSON. Your findings need to be clear and actionable!",
+          "starter_code": "import json\ndef save_report(report_data, filepath):\n    # TODO\n    pass\n\ndata={'case':'C-042','findings':3,'verdict':'COMPROMISED'}\nsave_report(data,'report.json')\nwith open('report.json') as f: print(f.read()[:50])",
+          "expected_output": "Saved report to report.json\n{\"case\": \"C-042\", \"findings\": 3, \"verdict\":",
+          "hints": [
+            {
+              "message": "json.dump with indent=2"
+            },
+            {
+              "message": "with open(fp,'w') as f: json.dump(data,f,indent=2)"
+            },
+            {
+              "message": "def save_report(d,fp):\n    import json\n    with open(fp,'w') as f: json.dump(d,f,indent=2)\n    print(f'Saved report to {fp}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Determine Case Verdict",
+          "description": "Return COMPROMISED, SUSPICIOUS, or CLEAN based on findings.",
+          "difficulty": "beginner",
+          "category": "Forensic Reporting & Capstone",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write the final report! Determine Case Verdict. Your findings need to be clear and actionable!",
+          "starter_code": "def verdict(findings):\n    # TODO\n    pass\n\nprint(verdict([{'sev':'CRITICAL'}]))\nprint(verdict([{'sev':'MEDIUM'}]))\nprint(verdict([]))",
+          "expected_output": "COMPROMISED\nSUSPICIOUS\nCLEAN",
+          "hints": [
+            {
+              "message": "If any CRITICAL: COMPROMISED. If any findings: SUSPICIOUS. Else: CLEAN."
+            },
+            {
+              "message": "if any: COMPROMISED; elif findings: SUSPICIOUS; else: CLEAN"
+            },
+            {
+              "message": "def verdict(f):\n    if any(x['sev']=='CRITICAL' for x in f): return 'COMPROMISED'\n    if f: return 'SUSPICIOUS'\n    return 'CLEAN'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Build Case Summary Dashboard",
+          "description": "Show counts, severity bars, and verdict in dashboard format.",
+          "difficulty": "intermediate",
+          "category": "Forensic Reporting & Capstone",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write the final report! Build Case Summary Dashboard. Your findings need to be clear and actionable!",
+          "starter_code": "def case_dashboard(case_id, evidence, findings):\n    # TODO: Print visual dashboard\n    pass\n\ncase_dashboard('C-042',[{'name':'a'},{'name':'b'}],[{'sev':'CRITICAL','desc':'X'},{'sev':'HIGH','desc':'Y'},{'sev':'HIGH','desc':'Z'}])",
+          "expected_output": "╔══════════════════════════╗\n║   CASE: C-042            ║\n╚══════════════════════════╝\n  Evidence: 2 items\n  Findings: 3 total\n    CRITICAL: █ (1)\n    HIGH:     ██ (2)\n  Verdict: COMPROMISED",
+          "hints": [
+            {
+              "message": "Combine metrics, format with box drawing chars."
+            },
+            {
+              "message": "Count severities, build visual bars."
+            },
+            {
+              "message": "def case_dashboard(cid,ev,finds):\n    from collections import Counter\n    sc=Counter(f['sev'] for f in finds)\n    v='COMPROMISED' if sc.get('CRITICAL',0)>0 else 'SUSPICIOUS' if finds else 'CLEAN'\n    print(f'╔{\"═\"*26}╗\\n║   CASE: {cid:16s}║\\n╚{\"═\"*26}╝')\n    print(f'  Evidence: {len(ev)} items\\n  Findings: {len(finds)} total')\n    for s in ['CRITICAL','HIGH','MEDIUM','LOW']:\n        c=sc.get(s,0)\n        if c: print(f'    {s+\":\":10s} {\"█\"*c} ({c})')\n    print(f'  Verdict: {v}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Complete Investigation Report",
+          "description": "Generate full report with all sections.",
+          "difficulty": "advanced",
+          "category": "Forensic Reporting & Capstone",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write the final report! Complete Investigation Report. Your findings need to be clear and actionable!",
+          "starter_code": "def full_report(case_id, evidence, findings, timeline):\n    # TODO: Complete report\n    pass\n\nev=[{'name':'auth.log','hash':'abc','source':'server'}]\nfinds=[{'sev':'CRITICAL','type':'data_exfil','desc':'Data stolen'}]\ntl=[{'time':'14:23','event':'Root login'},{'time':'14:25','event':'Data exported'}]\nfull_report('CASE-042',ev,finds,tl)",
+          "expected_output": "=== FORENSIC REPORT: CASE-042 ===\n\nEvidence: 1 items\n  #1 auth.log (SHA:abc)\n\nFindings: 1\n  #1 [CRITICAL] Data stolen\n\nTimeline:\n  14:23 → Root login\n  14:25 → Data exported\n\nVerdict: COMPROMISED",
+          "hints": [
+            {
+              "message": "Combine all report sections."
+            },
+            {
+              "message": "Print each section: evidence, findings, timeline, verdict."
+            },
+            {
+              "message": "def full_report(cid,ev,finds,tl):\n    print(f'=== FORENSIC REPORT: {cid} ===\\n')\n    print(f'Evidence: {len(ev)} items')\n    for i,e in enumerate(ev,1): print(f'  #{i} {e[\"name\"]} (SHA:{e[\"hash\"]})')\n    print(f'\\nFindings: {len(finds)}')\n    o={'CRITICAL':0,'HIGH':1,'MEDIUM':2}\n    for i,f in enumerate(sorted(finds,key=lambda x:o.get(x['sev'],9)),1):\n        print(f'  #{i} [{f[\"sev\"]}] {f[\"desc\"]}')\n    print('\\nTimeline:')\n    for e in sorted(tl,key=lambda x:x['time']): print(f'  {e[\"time\"]} → {e[\"event\"]}')\n    v='COMPROMISED' if any(f['sev']=='CRITICAL' for f in finds) else 'SUSPICIOUS' if finds else 'CLEAN'\n    print(f'\\nVerdict: {v}')"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: End-to-End Forensics Pipeline",
+          "description": "Run complete investigation: collect→examine→analyse→report.",
+          "difficulty": "advanced",
+          "category": "Forensic Reporting & Capstone",
+          "estimated_minutes": 5,
+          "ai_intro": "Time to write the final report! End-to-End Forensics Pipeline. Your findings need to be clear and actionable!",
+          "starter_code": "import hashlib, re, os\ndef investigate(case_id, evidence_files):\n    # TODO: Full pipeline\n    pass\n\nwith open('suspect.txt','w') as f:\n    f.write('14:23 FAILED root 10.0.0.55\\n'*5)\n    f.write('14:23 SUCCESS root 10.0.0.55\\n')\n    f.write('password=Admin123 sent to evil@attacker.com\\n')\n\ninvestigate('CASE-2025-FINAL', ['suspect.txt'])\nos.remove('suspect.txt')",
+          "expected_output": "╔════════════════════════════╗\n║  CASE: CASE-2025-FINAL     ║\n╚════════════════════════════╝\n\n📁 Evidence: 1 files collected\n🔍 Indicators found: ...\n📅 Verdict: COMPROMISED",
+          "hints": [
+            {
+              "message": "Chain: hash files → keyword scan → analyse patterns → generate report."
+            },
+            {
+              "message": "Collect, scan for patterns, determine verdict, format report."
+            },
+            {
+              "message": "def investigate(cid,files):\n    import hashlib,re,os\n    print(f'╔{\"═\"*28}╗\\n║  CASE: {cid:20s}║\\n╚{\"═\"*28}╝\\n')\n    ev=[]\n    for fp in files:\n        sha=hashlib.sha256()\n        with open(fp,'rb') as f: d=f.read(); sha.update(d)\n        ev.append({'file':fp,'hash':sha.hexdigest()[:16],'content':d.decode('utf-8',errors='ignore')})\n    print(f'📁 Evidence: {len(ev)} files collected')\n    indicators=[]\n    for e in ev:\n        indicators.extend(re.findall(r'\\S+@\\S+\\.\\S+',e['content']))\n        indicators.extend(re.findall(r'(?:password|pwd)\\s*[:=]\\s*\\S+',e['content'],re.I))\n    crit=any('FAILED' in e['content'] and 'SUCCESS' in e['content'] for e in ev)\n    print(f'🔍 Indicators found: {len(set(indicators))}')\n    for ind in set(indicators): print(f'  → {ind}')\n    v='COMPROMISED' if crit else 'SUSPICIOUS' if indicators else 'CLEAN'\n    print(f'📅 Verdict: {v}')"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

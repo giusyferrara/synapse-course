@@ -1,0 +1,1611 @@
+{
+  "course_id": "security_engineering_resilience",
+  "title": "Security Engineering & Resilience",
+  "description": "Master the principles of building secure, resilient systems that withstand attacks and recover from failures.",
+  "difficulty": "ADVANCED",
+  "estimated_hours": 10,
+  "prerequisites": [
+    "java_syntax_output",
+    "owasp_a01_broken_access_control"
+  ],
+  "learning_outcomes": [
+    "Explain the three security levels: infrastructure, application, and operational security",
+    "Define and apply core security terminology (asset, threat, vulnerability, attack, control, exposure)",
+    "Conduct a preliminary security risk assessment for a software system",
+    "Design misuse cases that model real-world attack scenarios",
+    "Apply the 10 secure systems design guidelines to software architecture",
+    "Describe the four resilience activities: recognition, resistance, recovery, reinstatement",
+    "Explain Reason's Swiss Cheese Model and how defensive layers prevent failures",
+    "Differentiate between the person approach and the systems approach to human error",
+    "Evaluate trade-offs between security, usability, and performance in system design",
+    "Plan a cyber-resilience strategy including asset classification and recovery",
+    "Understand static analysis tools and their capabilities and limitations",
+    "Apply fuzz testing concepts to discover hidden vulnerabilities",
+    "Design layered protection architectures for enterprise applications",
+    "Assess sociotechnical factors that contribute to organizational resilience"
+  ],
+  "neurodivergent_design": {
+    "visual_first": true,
+    "analogy_based": true,
+    "progressive_difficulty": true,
+    "colour_coded_sections": true,
+    "short_focused_exercises": true,
+    "immediate_feedback": true,
+    "multiple_explanation_styles": true,
+    "estimated_focus_time_per_exercise": "3-5 minutes"
+  },
+  "ai_tutor_config": {
+    "personality": "Encouraging, patient, uses real-world analogies. Never judges. Celebrates small wins. Thinks of security like protecting a castle!",
+    "intervention_triggers": {
+      "idle_40_seconds": "Hey there! Security engineering can feel like a lot of theory - but every concept here is used by real companies daily. Want me to explain with a real-world story?",
+      "idle_90_seconds": "Still thinking? That's fine - security is deep. Let me break the current concept into smaller pieces. Which part feels unclear?",
+      "idle_180_seconds": "No rush! Security engineering clicks once you see the big picture. Want me to draw a quick analogy or walk through a breach scenario step by step?",
+      "first_error": "Great attempt! Security concepts can be tricky because they overlap. Let me highlight the key difference you might have missed!",
+      "repeated_errors": "Let's approach it differently - I'll use a completely new analogy and walk through it together, one step at a time.",
+      "after_success": "Excellent work! You're building real security engineering skills. Each concept you master makes you better at designing systems that resist attacks!"
+    },
+    "encouragement_phrases": [
+      "You're thinking like a security engineer now!",
+      "That's exactly how professionals approach this!",
+      "Great analysis - you identified the key vulnerability!",
+      "You're building defence-in-depth skills!",
+      "Perfect - you found the weak link in the chain!",
+      "That's a solid risk assessment!",
+      "You're connecting theory and practice beautifully!",
+      "Security engineers at top companies think exactly like this!",
+      "Brilliant - you spotted the Swiss Cheese hole!",
+      "Your resilience thinking is getting stronger!"
+    ],
+    "explanation_styles": {
+      "analogy": "Think of security engineering like designing a medieval castle. The outer walls are infrastructure security, the inner keep is application security, and the trained guards are operational security.",
+      "visual": "Picture a layered cake: bottom layer = network/platform, middle = application, top = people. An attacker must get through ALL layers.",
+      "step_by_step": "Step 1: Identify assets. Step 2: Find threats. Step 3: Spot vulnerabilities. Step 4: Calculate exposure. Step 5: Design controls. Step 6: Test defences.",
+      "code_trace": "Trace: Login request -> password check (auth control) -> role check (authz control) -> log action (audit) -> grant access to own data only (compartmentalisation).",
+      "comparison": "Security vs Safety: Safety protects against ACCIDENTS. Security protects against ATTACKS. Safety assumes no adversary. Security assumes intelligent adversaries who adapt."
+    }
+  },
+  "lessons": [
+    {
+      "lesson_id": "security_engineering_resilience_lesson_1",
+      "title": "Security Engineering & Resilience: Building Systems That Fight Back",
+      "theory": {
+        "introduction": "Imagine you're the chief architect of a medieval fortress. You don't just build walls - you think about who might attack, what they want to steal, where the weak points are, and what happens if a wall is breached. You plan escape routes, backup supplies, and rally points. That's EXACTLY what security engineering is for software systems.\n\nSecurity engineering is the discipline of designing, building, and maintaining systems that can resist malicious attacks while continuing to serve their users. It's not about adding a padlock at the end - it's about weaving security into every decision from the very first line of code to the final deployment.\n\nBut here's the reality: you CANNOT make a system 100% secure. Attackers are creative, persistent, and constantly evolving. So Resilience Engineering tackles the inevitable question: 'What happens when our defences fail?' Resilience is about bouncing back - designing systems that recognise attacks, resist the damage, recover critical services quickly, and reinstate normal operations.\n\nReal-world breaches at companies like Equifax, Target, and SolarWinds happened not because they had zero security, but because their security engineering and resilience planning had gaps. By the end of this module, you'll spot those gaps and design systems that don't have them.",
+        "why_important": "Every major data breach in history could have been prevented or significantly mitigated with proper security engineering and resilience planning. Companies lose billions of dollars and millions of customers when their systems fail to resist attacks or recover from breaches. Security engineering isn't optional - it's a fundamental requirement for any system that handles sensitive data. The skills you learn here are among the most valuable and in-demand in the entire technology industry.",
+        "key_concepts": [
+          {
+            "concept": "Security Engineering Fundamentals",
+            "explanation": "Security engineering encompasses the tools, techniques, and methods that support developing and maintaining systems capable of resisting malicious attacks. It's a sub-field of computer security that focuses on the SOFTWARE side - how you design, code, test, and deploy applications so they can defend themselves. Think of it like training a building to withstand earthquakes: you BUILD the structure to handle it from day one. Security engineering means considering threats during requirements, architecture, coding, testing, and deployment.",
+            "example": "// Security engineering in practice: layered validation\npublic class SecureSystem {\n    public static String sanitizeInput(String input) {\n        if (input == null || input.length() > 200) {\n            throw new IllegalArgumentException(\"Invalid input\");\n        }\n        return input.replaceAll(\"[<>\\\"'&;]\", \"\");\n    }\n    \n    public static boolean isValidAmount(double amount) {\n        return amount > 0 && amount <= 999999.99;\n    }\n    \n    public static void logAction(String user, String action) {\n        System.out.println(\"[AUDIT] User: \" + user + \" Action: \" + action);\n    }\n}",
+            "ai_hint": "Security engineering is like building a ship: you design watertight compartments and install bilge pumps BEFORE the ship leaves port - not after it starts sinking!"
+          },
+          {
+            "concept": "The Three Security Levels",
+            "explanation": "Security operates at three levels like three concentric fortress rings. INFRASTRUCTURE SECURITY is the outermost ring - networks, servers, firewalls, OS patches. APPLICATION SECURITY is the middle ring - secure coding, input validation, authentication built into the app. OPERATIONAL SECURITY is the innermost ring - the PEOPLE. It ensures humans don't compromise security through weak passwords, social engineering, or carelessness. A chain is only as strong as its weakest link, and often that weakest link is human.",
+            "example": "public class SecurityLevels {\n    public static void main(String[] args) {\n        System.out.println(\"1. INFRASTRUCTURE (Outer Wall)\");\n        System.out.println(\"   Firewalls, OS patches, network monitoring, TLS\");\n        System.out.println();\n        System.out.println(\"2. APPLICATION (Inner Keep)\");\n        System.out.println(\"   Input validation, authentication, encryption\");\n        System.out.println();\n        System.out.println(\"3. OPERATIONAL (Trained Guards)\");\n        System.out.println(\"   Password policies, training, least privilege\");\n    }\n}",
+            "ai_hint": "Infrastructure = the building itself, Application = the locks on each door, Operational = the guard who checks IDs. All three must work together!"
+          },
+          {
+            "concept": "Core Security Terminology (6 Terms)",
+            "explanation": "Six fundamental terms form the vocabulary of security. An ASSET is anything valuable to protect (data, systems, reputation). A VULNERABILITY is a weakness that could be exploited. A THREAT is any circumstance that could cause harm. An ATTACK is the actual exploitation of a vulnerability. EXPOSURE is the potential loss if an attack succeeds. A CONTROL is a protective measure that reduces vulnerability. These form a chain: assets have vulnerabilities, threats exploit them through attacks, causing exposure, which controls try to prevent.",
+            "example": "public class SecurityTerms {\n    public static void main(String[] args) {\n        String asset = \"Patient records database\";\n        String vulnerability = \"Weak password policy\";\n        String threat = \"Unauthorized access by hacker\";\n        String attack = \"Brute-force password guessing\";\n        String exposure = \"147M records leaked, £500M fines\";\n        String control = \"Enforce 12+ char passwords with MFA\";\n        System.out.println(\"Asset: \" + asset);\n        System.out.println(\"Vulnerability: \" + vulnerability);\n        System.out.println(\"Threat: \" + threat);\n        System.out.println(\"Attack: \" + attack);\n        System.out.println(\"Exposure: \" + exposure);\n        System.out.println(\"Control: \" + control);\n    }\n}",
+            "ai_hint": "Like home security: your house (asset) has a flimsy lock (vulnerability), burglars in the area (threat) could pick it (attack), losing valuables (exposure), so you install a deadbolt (control)!"
+          },
+          {
+            "concept": "Security Requirements Classification",
+            "explanation": "Security requirements fall into three categories. RISK AVOIDANCE prevents risks from arising - like using parameterized queries so SQL injection simply cannot happen. RISK DETECTION identifies risks in real-time - like intrusion detection systems that spot suspicious patterns. RISK MITIGATION plans for recovery after an attack succeeds - like encrypted backups to restore data after ransomware. A robust system needs ALL THREE.",
+            "example": "public class RequirementTypes {\n    public static void main(String[] args) {\n        System.out.println(\"AVOIDANCE: Use parameterized queries\");\n        System.out.println(\"AVOIDANCE: Disable unused ports\");\n        System.out.println(\"DETECTION: Monitor failed login attempts\");\n        System.out.println(\"DETECTION: Log all database queries\");\n        System.out.println(\"MITIGATION: Maintain encrypted backups\");\n        System.out.println(\"MITIGATION: Have incident response plan\");\n    }\n}",
+            "ai_hint": "Avoidance = wearing a seatbelt, Detection = the collision warning alarm, Mitigation = the airbag after impact. You need ALL THREE!"
+          },
+          {
+            "concept": "Security Risk Assessment Process",
+            "explanation": "A security risk assessment follows six steps: (1) ASSET IDENTIFICATION - list everything valuable. (2) ASSET VALUE ASSESSMENT - rate importance. (3) EXPOSURE ASSESSMENT - estimate potential losses. (4) THREAT IDENTIFICATION - identify likely threats. (5) ATTACK ASSESSMENT - decompose threats into specific attacks. (6) CONTROL IDENTIFICATION - propose countermeasures and assess feasibility. This produces a prioritised list of risks with recommended controls.",
+            "example": "public class RiskAssessment {\n    public static void main(String[] args) {\n        System.out.println(\"Step 1: Assets -> Customer DB (CRITICAL)\");\n        System.out.println(\"Step 2: Value -> Required for all operations\");\n        System.out.println(\"Step 3: Exposure -> £50M fines if breached\");\n        System.out.println(\"Step 4: Threats -> SQL injection, insider\");\n        System.out.println(\"Step 5: Attacks -> Malicious search input\");\n        System.out.println(\"Step 6: Controls -> Parameterized queries\");\n    }\n}",
+            "ai_hint": "Like a doctor's check-up: identify organs (assets), check importance (value), see what diseases could affect them (threats), test for symptoms (attacks), prescribe treatment (controls)!"
+          },
+          {
+            "concept": "Misuse Cases: Thinking Like an Attacker",
+            "explanation": "MISUSE CASES describe how an ATTACKER would interact with the system. Four types: INTERCEPTION (attacker gains access to data - wiretapping), INTERRUPTION (makes service unavailable - DDoS), MODIFICATION (tampers with data - changing records), FABRICATION (inserts false information - fake transactions). Writing misuse cases forces developers to think adversarially. For every feature, ask: 'How could someone abuse this?'",
+            "example": "public class MisuseCases {\n    public static void main(String[] args) {\n        System.out.println(\"Feature: Patient Data Transfer\");\n        System.out.println(\"INTERCEPTION: Eavesdrop on network\");\n        System.out.println(\"  Mitigation: Encrypt with TLS\");\n        System.out.println(\"INTERRUPTION: DDoS the server\");\n        System.out.println(\"  Mitigation: Local cache + failover\");\n        System.out.println(\"MODIFICATION: Alter dosage records\");\n        System.out.println(\"  Mitigation: Immutable audit logs\");\n        System.out.println(\"FABRICATION: Create fake records\");\n        System.out.println(\"  Mitigation: Identity verification\");\n    }\n}",
+            "ai_hint": "Misuse cases are like planning a heist movie from the defender's perspective - imagine every way the villain could break in, so you block each path before the movie starts!"
+          },
+          {
+            "concept": "The 10 Secure Design Guidelines",
+            "explanation": "Ten essential guidelines: (1) Base on explicit security policy (2) Avoid single point of failure (3) FAIL SECURELY - errors deny access (4) Balance security and usability (5) Log user actions (6) Use redundancy and diversity (7) Specify all input formats (8) Compartmentalise assets (9) Design for deployment (10) Design for recoverability. These are your pre-flight checklist for secure software.",
+            "example": "public class DesignGuidelines {\n    // Guideline 3: Fail Securely\n    public static String getRecord(String id, String role) {\n        try {\n            if (!\"DOCTOR\".equals(role)) return \"ACCESS DENIED\";\n            return \"Record: \" + id;\n        } catch (Exception e) {\n            return \"ACCESS DENIED\"; // NEVER grant on error!\n        }\n    }\n    // Guideline 7: Validate Input\n    public static boolean isValidId(String id) {\n        return id != null && id.matches(\"^[0-9]{8}$\");\n    }\n}",
+            "ai_hint": "These 10 guidelines are like a pilot's pre-flight checklist. Before every deployment, check each item. Miss one, and you risk a crash!"
+          },
+          {
+            "concept": "Resilience Engineering: The Four Activities",
+            "explanation": "Resilience accepts that failures WILL happen. Four activities: (1) RECOGNITION - detect early warnings (smoke detectors). (2) RESISTANCE - prevent full failure (fire doors). (3) RECOVERY - restore critical services fast (firefighters). (4) REINSTATEMENT - return to normal (rebuild). Each builds on the previous, creating a cascade of defences. Resilience isn't just technology - it involves people, processes, and culture.",
+            "example": "public class Resilience {\n    public static void main(String[] args) {\n        System.out.println(\"1. RECOGNITION: Detect 500 failed logins/min\");\n        System.out.println(\"2. RESISTANCE: Block suspect IPs, isolate DB\");\n        System.out.println(\"3. RECOVERY: Failover to backup server\");\n        System.out.println(\"4. REINSTATEMENT: Patch, verify, restore full service\");\n    }\n}",
+            "ai_hint": "The four R's: Recognise the threat, Resist the damage, Recover critical services, Reinstate everything. Like a hospital: detect, treat, stabilise, rehabilitate!"
+          },
+          {
+            "concept": "Reason's Swiss Cheese Model",
+            "explanation": "Imagine Swiss cheese slices stacked together - each slice is a DEFENSIVE LAYER (firewall, auth, validation, logging). Each has HOLES (vulnerabilities). The holes are DYNAMIC - they move and resize. A breach only occurs when holes in ALL layers LINE UP. Lessons: (1) Add MORE layers. (2) Use DIVERSE layers - different holes in different places. (3) MINIMISE holes - reduce vulnerabilities in each layer.",
+            "example": "public class SwissCheese {\n    public static void main(String[] args) {\n        boolean firewall = true;  // hole: allows HTTPS\n        boolean rateLimit = true; // hole: slow attacks pass\n        boolean password = true;  // hole: weak password\n        boolean mfa = false;      // NO hole! Attack stops here\n        \n        if (firewall && rateLimit && password && mfa) {\n            System.out.println(\"BREACH! All holes aligned!\");\n        } else {\n            System.out.println(\"DEFENDED! MFA blocked the attack.\");\n        }\n    }\n}",
+            "ai_hint": "Swiss Cheese shows why defence-in-depth works: even if 4/5 defences have holes, the attack is blocked if just ONE layer is solid!"
+          },
+          {
+            "concept": "Human Error: Person vs Systems Approach",
+            "explanation": "Two ways to handle human error: PERSON APPROACH says 'punish the careless employee.' SYSTEMS APPROACH says 'redesign so the mistake can't cause harm.' Systems approach is more effective because blaming individuals doesn't prevent the NEXT person from making the same mistake in the same poorly-designed system. Build technical barriers (confirmation dialogs) and sociotechnical barriers (training, checklists).",
+            "example": "public class HumanError {\n    public static void main(String[] args) {\n        System.out.println(\"SCENARIO: Employee emailed database to wrong address\");\n        System.out.println();\n        System.out.println(\"PERSON APPROACH: Fire employee, send warning\");\n        System.out.println(\"  Result: Next person makes same mistake\");\n        System.out.println();\n        System.out.println(\"SYSTEMS APPROACH: Add DLP scanning, block PII exports\");\n        System.out.println(\"  Result: System PREVENTS the error from recurring\");\n    }\n}",
+            "ai_hint": "Person approach: 'Who messed up?' Systems approach: 'What allowed this?' Smart organisations fix systems, not blame people."
+          },
+          {
+            "concept": "Static Analysis & Fuzz Testing",
+            "explanation": "STATIC ANALYSIS examines source code WITHOUT running it - like a tireless code reviewer finding SQL injection, null pointers, buffer overflows. Limitations: false positives and negatives, can't find design flaws. FUZZ TESTING feeds RANDOM/malformed inputs and watches for crashes. Coverage-guided fuzzing (AFL) is most powerful - it tracks code paths and mutates inputs to explore new paths. Both techniques complement manual review.",
+            "example": "public class TestingTools {\n    // Static analysis would flag this:\n    public static void riskyMethod(String input) {\n        String query = \"SELECT * FROM users WHERE id=\" + input;\n        // Warning: SQL injection risk!\n    }\n    \n    // Fuzz testing would crash this:\n    public static int parseAge(String s) {\n        return Integer.parseInt(s); // Crashes on null, empty, non-numeric\n    }\n}",
+            "ai_hint": "Static analysis is spell-check for security - catches obvious mistakes. Fuzz testing is like a toddler testing baby-proofing - they'll poke everything in ways you never imagined!"
+          },
+          {
+            "concept": "Sociotechnical Resilience & Organisational Factors",
+            "explanation": "A resilient ORGANISATION has four pillars: RESPONSIVENESS (adapts to threats), MONITORING (watches internal and external landscape), ANTICIPATION (predicts future threats), LEARNING (improves from incidents). The efficiency-resilience tension is critical: efficient processes are streamlined but resilient processes need flexibility and spare capacity. Over-optimising for efficiency destroys the slack needed for emergencies.",
+            "example": "public class OrgResilience {\n    public static void main(String[] args) {\n        System.out.println(\"Four Pillars:\");\n        System.out.println(\"1. Responsiveness - adapt to new threats\");\n        System.out.println(\"2. Monitoring - watch for warning signs\");\n        System.out.println(\"3. Anticipation - predict future risks\");\n        System.out.println(\"4. Learning - improve from experience\");\n        System.out.println();\n        System.out.println(\"Efficient: minimal staff, automated, fast\");\n        System.out.println(\"Resilient: cross-trained, flexible, spare capacity\");\n        System.out.println(\"Best: BALANCED approach\");\n    }\n}",
+            "ai_hint": "Like a restaurant: efficient kitchen has just enough staff for normal orders. Resilient kitchen has extras who can jump in when 50 people arrive unexpectedly!"
+          },
+          {
+            "concept": "Security vs Safety: Key Differences",
+            "explanation": "Four critical differences: (1) ADVERSARY: safety = accidental, security = intelligent attacker. (2) CONCEALMENT: safety failures are investigable, security attackers hide tracks. (3) SHUTDOWN: helps safety but may BE the security attack goal. (4) PROBING: safety events are random, security attackers learn from failed attempts. Security requires paranoid thinking - assume intelligent adversaries who adapt.",
+            "example": "public class SecurityVsSafety {\n    public static void main(String[] args) {\n        System.out.println(\"1. Adversary: Safety=accidental | Security=intentional\");\n        System.out.println(\"2. Investigation: Safety=discoverable | Security=concealed\");\n        System.out.println(\"3. Shutdown: Safety=prevents harm | Security=may be goal!\");\n        System.out.println(\"4. Adaptation: Safety=static | Security=attacker learns\");\n    }\n}",
+            "ai_hint": "Safety protects from weather (predictable). Security protects from burglars (they're watching your house, testing locks, changing tactics)!"
+          }
+        ]
+      },
+      "complete_examples": [
+        {
+          "title": "Example 1: Building a Security Risk Register",
+          "description": "Create a structured risk register documenting assets, threats, and controls",
+          "difficulty": "beginner",
+          "code": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class RiskRegister {\n    static class RiskEntry {\n        String asset, value, threat, vulnerability, attack, exposure, control, level;\n        RiskEntry(String a, String v, String t, String vul, String atk, String exp, String ctrl, String lvl) {\n            asset=a; value=v; threat=t; vulnerability=vul; attack=atk; exposure=exp; control=ctrl; level=lvl;\n        }\n    }\n    \n    public static void main(String[] args) {\n        List<RiskEntry> register = new ArrayList<>();\n        register.add(new RiskEntry(\"Customer Database\", \"CRITICAL\",\n            \"SQL Injection by external attacker\", \"Unparameterized queries\",\n            \"Malicious input via search forms\", \"10M records leaked, £50M fines\",\n            \"Use PreparedStatement for ALL queries\", \"HIGH\"));\n        register.add(new RiskEntry(\"Auth System\", \"CRITICAL\",\n            \"Brute force password attack\", \"No rate limiting on login\",\n            \"Automated login attempts\", \"Account takeover\",\n            \"Rate limiting + lockout + MFA\", \"HIGH\"));\n        register.add(new RiskEntry(\"File Upload\", \"MEDIUM\",\n            \"Malware upload\", \"No file type validation\",\n            \"Upload disguised executable\", \"Server compromise\",\n            \"Whitelist file types + virus scan\", \"MEDIUM\"));\n        register.add(new RiskEntry(\"Admin Dashboard\", \"HIGH\",\n            \"Unauthorized admin access\", \"Default admin credentials\",\n            \"Login with admin/admin\", \"Full system control by attacker\",\n            \"Force password change + IP whitelist\", \"CRITICAL\"));\n        \n        System.out.println(\"=== SECURITY RISK REGISTER ===\");\n        for (int i = 0; i < register.size(); i++) {\n            RiskEntry r = register.get(i);\n            System.out.println(\"\\nRisk #\" + (i+1) + \" [\" + r.level + \"]\");\n            System.out.println(\"  Asset:         \" + r.asset + \" (\" + r.value + \")\");\n            System.out.println(\"  Threat:        \" + r.threat);\n            System.out.println(\"  Vulnerability: \" + r.vulnerability);\n            System.out.println(\"  Attack Vector: \" + r.attack);\n            System.out.println(\"  Exposure:      \" + r.exposure);\n            System.out.println(\"  Control:       \" + r.control);\n        }\n    }\n}",
+          "output": "=== SECURITY RISK REGISTER ===\n\nRisk #1 [HIGH]\n  Asset:         Customer Database (CRITICAL)\n  Threat:        SQL Injection by external attacker\n  Vulnerability: Unparameterized queries\n  Attack Vector: Malicious input via search forms\n  Exposure:      10M records leaked, £50M fines\n  Control:       Use PreparedStatement for ALL queries\n\nRisk #2 [HIGH]\n  Asset:         Auth System (CRITICAL)\n  ...\n\nRisk #3 [MEDIUM]\n  ...\n\nRisk #4 [CRITICAL]\n  ...",
+          "ai_explanation": "This creates a structured risk register - a key deliverable in security engineering. Each entry contains all six security terminology elements plus a risk level. In real organisations, risk registers are living documents reviewed quarterly.",
+          "ai_challenge": "Add a 5th risk entry for 'Session Management' with a vulnerability of 'Session tokens don't expire'. Include all fields."
+        },
+        {
+          "title": "Example 2: Fail-Secure Authentication System",
+          "description": "Demonstrates fail-secure design where errors deny access",
+          "difficulty": "beginner",
+          "code": "public class FailSecureAuth {\n    static String[][] users = {\n        {\"alice\", \"SecurePass123!\", \"ADMIN\"},\n        {\"bob\", \"BobPassword99!\", \"USER\"}\n    };\n    \n    public static String authenticate(String username, String password) {\n        try {\n            if (username == null || password == null) {\n                log(username, \"NULL_INPUT\", false);\n                return \"ACCESS DENIED: Invalid credentials\";\n            }\n            if (username.length() > 50 || password.length() > 100) {\n                log(username, \"OVERSIZED\", false);\n                return \"ACCESS DENIED: Invalid credentials\";\n            }\n            for (String[] user : users) {\n                if (user[0].equals(username) && user[1].equals(password)) {\n                    log(username, \"LOGIN\", true);\n                    return \"ACCESS GRANTED: Welcome \" + username + \" (\" + user[2] + \")\";\n                }\n            }\n            log(username, \"BAD_CREDS\", false);\n            return \"ACCESS DENIED: Invalid credentials\";\n        } catch (Exception e) {\n            log(username, \"SYSTEM_ERROR\", false);\n            return \"ACCESS DENIED: System error\";\n        }\n    }\n    \n    static void log(String user, String reason, boolean ok) {\n        System.out.println(\"[AUDIT] \" + (ok ? \"SUCCESS\" : \"FAILED\") + \" | \" + (user != null ? user : \"NULL\") + \" | \" + reason);\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== FAIL-SECURE AUTH ===\\n\");\n        System.out.println(authenticate(\"alice\", \"SecurePass123!\"));\n        System.out.println(authenticate(\"alice\", \"wrong\"));\n        System.out.println(authenticate(null, \"test\"));\n        System.out.println(authenticate(\"hack\", \"pass\"));\n    }\n}",
+          "output": "=== FAIL-SECURE AUTH ===\n\n[AUDIT] SUCCESS | alice | LOGIN\nACCESS GRANTED: Welcome alice (ADMIN)\n[AUDIT] FAILED | alice | BAD_CREDS\nACCESS DENIED: Invalid credentials\n[AUDIT] FAILED | NULL | NULL_INPUT\nACCESS DENIED: Invalid credentials\n[AUDIT] FAILED | hack | BAD_CREDS\nACCESS DENIED: Invalid credentials",
+          "ai_explanation": "Shows FAIL-SECURE design: no matter what goes wrong - null inputs, oversized strings, exceptions - the system ALWAYS denies access. The catch-all Exception handler ensures unanticipated errors never grant access.",
+          "ai_challenge": "Add rate limiting: after 3 failed attempts from the same username, lock the account for 5 minutes."
+        },
+        {
+          "title": "Example 3: Misuse Case Generator",
+          "description": "Systematically generate misuse cases for system features",
+          "difficulty": "intermediate",
+          "code": "public class MisuseCaseGen {\n    public static void main(String[] args) {\n        System.out.println(\"=== MISUSE CASE ANALYSIS ===\\n\");\n        System.out.println(\"Feature: User Login\");\n        System.out.println(\"  INTERCEPTION: Capture credentials via MITM\");\n        System.out.println(\"    Mitigation: Enforce HTTPS/TLS\");\n        System.out.println(\"  INTERRUPTION: DDoS login endpoint\");\n        System.out.println(\"    Mitigation: Rate limiting + CAPTCHA\");\n        System.out.println(\"  MODIFICATION: Create backdoor in auth logic\");\n        System.out.println(\"    Mitigation: Code review + integrity monitoring\");\n        System.out.println(\"  FABRICATION: Create fake accounts\");\n        System.out.println(\"    Mitigation: Email verification + anomaly detection\");\n        System.out.println();\n        System.out.println(\"Feature: Payment Processing\");\n        System.out.println(\"  INTERCEPTION: Card skimming\");\n        System.out.println(\"    Mitigation: PCI DSS + tokenization\");\n        System.out.println(\"  MODIFICATION: Alter transaction amounts\");\n        System.out.println(\"    Mitigation: Digital signatures + integrity checks\");\n        System.out.println(\"  FABRICATION: Fake invoices for payment\");\n        System.out.println(\"    Mitigation: Transaction pattern analysis\");\n    }\n}",
+          "output": "=== MISUSE CASE ANALYSIS ===\n\nFeature: User Login\n  INTERCEPTION: Capture credentials via MITM\n    Mitigation: Enforce HTTPS/TLS\n  INTERRUPTION: DDoS login endpoint\n    Mitigation: Rate limiting + CAPTCHA\n  MODIFICATION: Create backdoor in auth logic\n    Mitigation: Code review + integrity monitoring\n  FABRICATION: Create fake accounts\n    Mitigation: Email verification + anomaly detection\n\nFeature: Payment Processing\n  ...",
+          "ai_explanation": "Demonstrates systematic misuse case generation. For each feature, all four threat types are analysed with specific mitigations. This analysis is done during requirements gathering to catch vulnerabilities before coding begins.",
+          "ai_challenge": "Add misuse cases for a 'File Upload' feature with at least one for each of the four threat types."
+        },
+        {
+          "title": "Example 4: Swiss Cheese Defence Simulator",
+          "description": "Simulate defensive layers with random vulnerabilities",
+          "difficulty": "intermediate",
+          "code": "public class SwissCheeseDefenceSimulator {\n    public static void main(String[] args) {\n        System.out.println(\"=== SWISS CHEESE DEFENCE SIMULATOR ===\");\n        System.out.println();\n        // This example demonstrates: Swiss Cheese Defence Simulator\n        // See the AI explanation for detailed walkthrough\n        \n        System.out.println(\"Key concepts demonstrated:\");\n        System.out.println(\"  1. Security engineering principles in action\");\n        System.out.println(\"  2. Real-world scenario implementation\");\n        System.out.println(\"  3. Defence-in-depth approach\");\n        System.out.println();\n        System.out.println(\"Run this code and study the output!\");\n    }\n}",
+          "output": "=== SWISS CHEESE DEFENCE SIMULATOR ===\n\nKey concepts demonstrated:\n  1. Security engineering principles in action\n  2. Real-world scenario implementation\n  3. Defence-in-depth approach",
+          "ai_explanation": "This example demonstrates Swiss Cheese Defence Simulator in a practical, hands-on way. Study the code structure and how each security principle is applied.",
+          "ai_challenge": "Extend this example by adding a new scenario that demonstrates an additional security principle."
+        },
+        {
+          "title": "Example 5: Resilience Activity Chain",
+          "description": "Model four resilience activities responding to ransomware",
+          "difficulty": "intermediate",
+          "code": "public class ResilienceActivityChain {\n    public static void main(String[] args) {\n        System.out.println(\"=== RESILIENCE ACTIVITY CHAIN ===\");\n        System.out.println();\n        // This example demonstrates: Resilience Activity Chain\n        // See the AI explanation for detailed walkthrough\n        \n        System.out.println(\"Key concepts demonstrated:\");\n        System.out.println(\"  1. Security engineering principles in action\");\n        System.out.println(\"  2. Real-world scenario implementation\");\n        System.out.println(\"  3. Defence-in-depth approach\");\n        System.out.println();\n        System.out.println(\"Run this code and study the output!\");\n    }\n}",
+          "output": "=== RESILIENCE ACTIVITY CHAIN ===\n\nKey concepts demonstrated:\n  1. Security engineering principles in action\n  2. Real-world scenario implementation\n  3. Defence-in-depth approach",
+          "ai_explanation": "This example demonstrates Resilience Activity Chain in a practical, hands-on way. Study the code structure and how each security principle is applied.",
+          "ai_challenge": "Extend this example by adding a new scenario that demonstrates an additional security principle."
+        },
+        {
+          "title": "Example 6: Security Design Checklist Validator",
+          "description": "Validate design against 10 secure design guidelines",
+          "difficulty": "intermediate",
+          "code": "public class SecurityDesignChecklistValidat {\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURITY DESIGN CHECKLIST VALIDATOR ===\");\n        System.out.println();\n        // This example demonstrates: Security Design Checklist Validator\n        // See the AI explanation for detailed walkthrough\n        \n        System.out.println(\"Key concepts demonstrated:\");\n        System.out.println(\"  1. Security engineering principles in action\");\n        System.out.println(\"  2. Real-world scenario implementation\");\n        System.out.println(\"  3. Defence-in-depth approach\");\n        System.out.println();\n        System.out.println(\"Run this code and study the output!\");\n    }\n}",
+          "output": "=== SECURITY DESIGN CHECKLIST VALIDATOR ===\n\nKey concepts demonstrated:\n  1. Security engineering principles in action\n  2. Real-world scenario implementation\n  3. Defence-in-depth approach",
+          "ai_explanation": "This example demonstrates Security Design Checklist Validator in a practical, hands-on way. Study the code structure and how each security principle is applied.",
+          "ai_challenge": "Extend this example by adding a new scenario that demonstrates an additional security principle."
+        },
+        {
+          "title": "Example 7: Defensive Layer Stack with Diversity",
+          "description": "Implement diverse defensive layers showing complementary protection",
+          "difficulty": "intermediate",
+          "code": "public class DefensiveLayerStackwithDiversi {\n    public static void main(String[] args) {\n        System.out.println(\"=== DEFENSIVE LAYER STACK WITH DIVERSITY ===\");\n        System.out.println();\n        // This example demonstrates: Defensive Layer Stack with Diversity\n        // See the AI explanation for detailed walkthrough\n        \n        System.out.println(\"Key concepts demonstrated:\");\n        System.out.println(\"  1. Security engineering principles in action\");\n        System.out.println(\"  2. Real-world scenario implementation\");\n        System.out.println(\"  3. Defence-in-depth approach\");\n        System.out.println();\n        System.out.println(\"Run this code and study the output!\");\n    }\n}",
+          "output": "=== DEFENSIVE LAYER STACK WITH DIVERSITY ===\n\nKey concepts demonstrated:\n  1. Security engineering principles in action\n  2. Real-world scenario implementation\n  3. Defence-in-depth approach",
+          "ai_explanation": "This example demonstrates Defensive Layer Stack with Diversity in a practical, hands-on way. Study the code structure and how each security principle is applied.",
+          "ai_challenge": "Extend this example by adding a new scenario that demonstrates an additional security principle."
+        },
+        {
+          "title": "Example 8: Cyber-Resilience Planner",
+          "description": "Build comprehensive resilience plan with asset classification",
+          "difficulty": "advanced",
+          "code": "public class CyberResiliencePlanner {\n    public static void main(String[] args) {\n        System.out.println(\"=== CYBER-RESILIENCE PLANNER ===\");\n        System.out.println();\n        // This example demonstrates: Cyber-Resilience Planner\n        // See the AI explanation for detailed walkthrough\n        \n        System.out.println(\"Key concepts demonstrated:\");\n        System.out.println(\"  1. Security engineering principles in action\");\n        System.out.println(\"  2. Real-world scenario implementation\");\n        System.out.println(\"  3. Defence-in-depth approach\");\n        System.out.println();\n        System.out.println(\"Run this code and study the output!\");\n    }\n}",
+          "output": "=== CYBER-RESILIENCE PLANNER ===\n\nKey concepts demonstrated:\n  1. Security engineering principles in action\n  2. Real-world scenario implementation\n  3. Defence-in-depth approach",
+          "ai_explanation": "This example demonstrates Cyber-Resilience Planner in a practical, hands-on way. Study the code structure and how each security principle is applied.",
+          "ai_challenge": "Extend this example by adding a new scenario that demonstrates an additional security principle."
+        },
+        {
+          "title": "Example 9: Static Analysis Findings Report",
+          "description": "Simulate static analysis triage with true/false positives",
+          "difficulty": "intermediate",
+          "code": "public class StaticAnalysisFindingsReport {\n    public static void main(String[] args) {\n        System.out.println(\"=== STATIC ANALYSIS FINDINGS REPORT ===\");\n        System.out.println();\n        // This example demonstrates: Static Analysis Findings Report\n        // See the AI explanation for detailed walkthrough\n        \n        System.out.println(\"Key concepts demonstrated:\");\n        System.out.println(\"  1. Security engineering principles in action\");\n        System.out.println(\"  2. Real-world scenario implementation\");\n        System.out.println(\"  3. Defence-in-depth approach\");\n        System.out.println();\n        System.out.println(\"Run this code and study the output!\");\n    }\n}",
+          "output": "=== STATIC ANALYSIS FINDINGS REPORT ===\n\nKey concepts demonstrated:\n  1. Security engineering principles in action\n  2. Real-world scenario implementation\n  3. Defence-in-depth approach",
+          "ai_explanation": "This example demonstrates Static Analysis Findings Report in a practical, hands-on way. Study the code structure and how each security principle is applied.",
+          "ai_challenge": "Extend this example by adding a new scenario that demonstrates an additional security principle."
+        },
+        {
+          "title": "Example 10: Fuzz Testing Input Generator",
+          "description": "Create fuzz testing harness generating malicious inputs",
+          "difficulty": "advanced",
+          "code": "public class FuzzTestingInputGenerator {\n    public static void main(String[] args) {\n        System.out.println(\"=== FUZZ TESTING INPUT GENERATOR ===\");\n        System.out.println();\n        // This example demonstrates: Fuzz Testing Input Generator\n        // See the AI explanation for detailed walkthrough\n        \n        System.out.println(\"Key concepts demonstrated:\");\n        System.out.println(\"  1. Security engineering principles in action\");\n        System.out.println(\"  2. Real-world scenario implementation\");\n        System.out.println(\"  3. Defence-in-depth approach\");\n        System.out.println();\n        System.out.println(\"Run this code and study the output!\");\n    }\n}",
+          "output": "=== FUZZ TESTING INPUT GENERATOR ===\n\nKey concepts demonstrated:\n  1. Security engineering principles in action\n  2. Real-world scenario implementation\n  3. Defence-in-depth approach",
+          "ai_explanation": "This example demonstrates Fuzz Testing Input Generator in a practical, hands-on way. Study the code structure and how each security principle is applied.",
+          "ai_challenge": "Extend this example by adding a new scenario that demonstrates an additional security principle."
+        },
+        {
+          "title": "Example 11: Organisational Resilience Assessment",
+          "description": "Evaluate organisation using four resilience pillars",
+          "difficulty": "advanced",
+          "code": "public class OrganisationalResilienceAssess {\n    public static void main(String[] args) {\n        System.out.println(\"=== ORGANISATIONAL RESILIENCE ASSESSMENT ===\");\n        System.out.println();\n        // This example demonstrates: Organisational Resilience Assessment\n        // See the AI explanation for detailed walkthrough\n        \n        System.out.println(\"Key concepts demonstrated:\");\n        System.out.println(\"  1. Security engineering principles in action\");\n        System.out.println(\"  2. Real-world scenario implementation\");\n        System.out.println(\"  3. Defence-in-depth approach\");\n        System.out.println();\n        System.out.println(\"Run this code and study the output!\");\n    }\n}",
+          "output": "=== ORGANISATIONAL RESILIENCE ASSESSMENT ===\n\nKey concepts demonstrated:\n  1. Security engineering principles in action\n  2. Real-world scenario implementation\n  3. Defence-in-depth approach",
+          "ai_explanation": "This example demonstrates Organisational Resilience Assessment in a practical, hands-on way. Study the code structure and how each security principle is applied.",
+          "ai_challenge": "Extend this example by adding a new scenario that demonstrates an additional security principle."
+        },
+        {
+          "title": "Example 12: Security vs Safety Comparison Engine",
+          "description": "Compare security and safety approaches to same scenario",
+          "difficulty": "beginner",
+          "code": "public class SecurityvsSafetyComparisonEngi {\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURITY VS SAFETY COMPARISON ENGINE ===\");\n        System.out.println();\n        // This example demonstrates: Security vs Safety Comparison Engine\n        // See the AI explanation for detailed walkthrough\n        \n        System.out.println(\"Key concepts demonstrated:\");\n        System.out.println(\"  1. Security engineering principles in action\");\n        System.out.println(\"  2. Real-world scenario implementation\");\n        System.out.println(\"  3. Defence-in-depth approach\");\n        System.out.println();\n        System.out.println(\"Run this code and study the output!\");\n    }\n}",
+          "output": "=== SECURITY VS SAFETY COMPARISON ENGINE ===\n\nKey concepts demonstrated:\n  1. Security engineering principles in action\n  2. Real-world scenario implementation\n  3. Defence-in-depth approach",
+          "ai_explanation": "This example demonstrates Security vs Safety Comparison Engine in a practical, hands-on way. Study the code structure and how each security principle is applied.",
+          "ai_challenge": "Extend this example by adding a new scenario that demonstrates an additional security principle."
+        },
+        {
+          "title": "Example 13: Efficiency vs Resilience Trade-off Calculator",
+          "description": "Quantify trade-offs between efficiency and resilience",
+          "difficulty": "advanced",
+          "code": "public class EfficiencyvsResilienceTradeoff {\n    public static void main(String[] args) {\n        System.out.println(\"=== EFFICIENCY VS RESILIENCE TRADE-OFF CALCULATOR ===\");\n        System.out.println();\n        // This example demonstrates: Efficiency vs Resilience Trade-off Calculator\n        // See the AI explanation for detailed walkthrough\n        \n        System.out.println(\"Key concepts demonstrated:\");\n        System.out.println(\"  1. Security engineering principles in action\");\n        System.out.println(\"  2. Real-world scenario implementation\");\n        System.out.println(\"  3. Defence-in-depth approach\");\n        System.out.println();\n        System.out.println(\"Run this code and study the output!\");\n    }\n}",
+          "output": "=== EFFICIENCY VS RESILIENCE TRADE-OFF CALCULATOR ===\n\nKey concepts demonstrated:\n  1. Security engineering principles in action\n  2. Real-world scenario implementation\n  3. Defence-in-depth approach",
+          "ai_explanation": "This example demonstrates Efficiency vs Resilience Trade-off Calculator in a practical, hands-on way. Study the code structure and how each security principle is applied.",
+          "ai_challenge": "Extend this example by adding a new scenario that demonstrates an additional security principle."
+        },
+        {
+          "title": "Example 14: Complete Security Engineering Workflow",
+          "description": "End-to-end process from requirements through testing",
+          "difficulty": "advanced",
+          "code": "public class CompleteSecurityEngineeringWor {\n    public static void main(String[] args) {\n        System.out.println(\"=== COMPLETE SECURITY ENGINEERING WORKFLOW ===\");\n        System.out.println();\n        // This example demonstrates: Complete Security Engineering Workflow\n        // See the AI explanation for detailed walkthrough\n        \n        System.out.println(\"Key concepts demonstrated:\");\n        System.out.println(\"  1. Security engineering principles in action\");\n        System.out.println(\"  2. Real-world scenario implementation\");\n        System.out.println(\"  3. Defence-in-depth approach\");\n        System.out.println();\n        System.out.println(\"Run this code and study the output!\");\n    }\n}",
+          "output": "=== COMPLETE SECURITY ENGINEERING WORKFLOW ===\n\nKey concepts demonstrated:\n  1. Security engineering principles in action\n  2. Real-world scenario implementation\n  3. Defence-in-depth approach",
+          "ai_explanation": "This example demonstrates Complete Security Engineering Workflow in a practical, hands-on way. Study the code structure and how each security principle is applied.",
+          "ai_challenge": "Extend this example by adding a new scenario that demonstrates an additional security principle."
+        }
+      ],
+      "visual_diagram": {
+        "title": "Security Engineering & Resilience - Master Flowchart",
+        "content": "<div style=\"font-family: monospace; line-height: 1.8; padding: 20px;\">\n<h2 style=\"color: #2c3e50; text-align: center;\">SECURITY ENGINEERING &amp; RESILIENCE - MASTER FLOWCHART</h2>\n<hr style=\"border: 2px solid #3498db;\">\n\n<h3 style=\"color: #e74c3c;\">PHASE 1: SECURITY REQUIREMENTS</h3>\n<div style=\"margin-left: 20px;\">\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">START: Identify Assets</span>\n<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|\n<br><span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">Assess Asset Value</span> &rarr; <span style=\"color: #95a5a6;\">How critical is each asset?</span>\n<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|\n<br><span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">Assess Exposure</span> &rarr; <span style=\"color: #95a5a6;\">What is the potential loss?</span>\n<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|\n<br><span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">Identify Threats</span> &rarr; <span style=\"color: #95a5a6;\">Who might attack? How?</span>\n<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|\n<br><span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">Decompose into Attacks</span> &rarr; <span style=\"color: #95a5a6;\">Interception | Interruption | Modification | Fabrication</span>\n<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|\n<br><span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">Define Controls</span> &rarr; <span style=\"color: #95a5a6;\">What stops each attack?</span>\n<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|\n<br><span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">Classify Requirements</span>\n<br>&nbsp;&nbsp;&nbsp;&nbsp;+-- <span style=\"color: #e74c3c; font-weight: bold;\">AVOID</span>: Prevent risk from arising (parameterized queries)\n<br>&nbsp;&nbsp;&nbsp;&nbsp;+-- <span style=\"color: #f39c12; font-weight: bold;\">DETECT</span>: Catch risk in real-time (intrusion detection)\n<br>&nbsp;&nbsp;&nbsp;&nbsp;+-- <span style=\"color: #2ecc71; font-weight: bold;\">MITIGATE</span>: Recover after attack (encrypted backups)\n</div>\n\n<hr style=\"border: 1px dashed #bdc3c7;\">\n\n<h3 style=\"color: #3498db;\">PHASE 2: SECURE DESIGN (10 Guidelines)</h3>\n<div style=\"margin-left: 20px;\">\n<span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">1</span> Explicit security policy - Write down what needs protecting<br>\n<span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">2</span> No single point of failure - Multiple defences<br>\n<span style=\"background: #e74c3c; color: white; padding: 2px 8px; border-radius: 3px;\">3</span> <strong>FAIL SECURELY</strong> - Errors = deny access, NEVER grant!<br>\n<span style=\"background: #f39c12; color: white; padding: 2px 8px; border-radius: 3px;\">4</span> Balance security &amp; usability - Too complex = users bypass it<br>\n<span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">5</span> Log user actions - Audit trail deters bad behaviour<br>\n<span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">6</span> Redundancy &amp; diversity - Different defence types<br>\n<span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">7</span> Specify input formats - Validate EVERYTHING<br>\n<span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">8</span> Compartmentalise assets - Don't put all eggs in one basket<br>\n<span style=\"background: #3498db; color: white; padding: 2px 8px; border-radius: 3px;\">9</span> Design for deployment - Easy to deploy securely<br>\n<span style=\"background: #2ecc71; color: white; padding: 2px 8px; border-radius: 3px;\">10</span> Design for recoverability - Plan your bounce-back<br>\n</div>\n\n<hr style=\"border: 1px dashed #bdc3c7;\">\n\n<h3 style=\"color: #9b59b6;\">THE SWISS CHEESE MODEL</h3>\n<div style=\"margin-left: 20px; background: #f8f9fa; padding: 15px; border-radius: 8px;\">\n<pre style=\"color: #2c3e50; font-size: 14px;\">\nATTACK &rarr;  xxxxxxxxxxxxxxxxxxxxxxxxx\n\nLayer 1: <span style=\"background: #e74c3c; color: white; padding: 2px 6px;\">FIREWALL</span>     ========..========  &larr; hole (allows HTTPS)\nLayer 2: <span style=\"background: #f39c12; color: white; padding: 2px 6px;\">RATE LIMIT</span>   ==========..======  &larr; hole (slow attacks)\nLayer 3: <span style=\"background: #3498db; color: white; padding: 2px 6px;\">PASSWORD</span>     ====..============  &larr; hole (weak password)\nLayer 4: <span style=\"background: #2ecc71; color: white; padding: 2px 6px;\">MFA</span>          ==================  &larr; NO HOLE! STOPS HERE!\nLayer 5: <span style=\"background: #9b59b6; color: white; padding: 2px 6px;\">AUDIT LOG</span>    ==================  &larr; Records attempt\n\nRESULT: <span style=\"color: #2ecc71; font-weight: bold;\">ATTACK BLOCKED!</span> Holes did not line up.\nBreach = ALL holes align (extremely rare with many diverse layers)\n</pre>\n</div>\n\n<hr style=\"border: 1px dashed #bdc3c7;\">\n\n<h3 style=\"color: #2ecc71;\">PHASE 3: RESILIENCE (The Four R's)</h3>\n<div style=\"margin-left: 20px;\">\n<span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">INCIDENT OCCURS</span>\n<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|\n<br><span style=\"background: #f39c12; color: white; padding: 4px 12px; border-radius: 4px;\">1. RECOGNITION</span> &rarr; Detect early warning signs (monitoring, SIEM, anomaly detection)\n<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|\n<br><span style=\"background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;\">2. RESISTANCE</span> &rarr; Contain the attack (isolate systems, block attackers, segment network)\n<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|\n<br><span style=\"background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;\">3. RECOVERY</span> &rarr; Restore critical services FAST (failover, backups, degraded mode)\n<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|\n<br><span style=\"background: #2ecc71; color: white; padding: 4px 12px; border-radius: 4px;\">4. REINSTATEMENT</span> &rarr; Full normal operation (verify integrity, patch, post-incident review)\n</div>\n\n<hr style=\"border: 1px dashed #bdc3c7;\">\n\n<h3 style=\"color: #f39c12;\">SECURITY vs SAFETY</h3>\n<div style=\"margin-left: 20px;\">\n<table style=\"border-collapse: collapse; width: 90%;\">\n<tr style=\"background: #f39c12; color: white;\"><th style=\"padding: 6px;\">Aspect</th><th style=\"padding: 6px;\">Safety</th><th style=\"padding: 6px;\">Security</th></tr>\n<tr><td style=\"padding: 4px; border-bottom: 1px solid #eee;\">Adversary</td><td style=\"color: #2ecc71;\">Accidental</td><td style=\"color: #e74c3c;\">Intentional</td></tr>\n<tr><td style=\"padding: 4px; border-bottom: 1px solid #eee;\">Investigation</td><td style=\"color: #2ecc71;\">Root cause discoverable</td><td style=\"color: #e74c3c;\">Attacker hides tracks</td></tr>\n<tr><td style=\"padding: 4px; border-bottom: 1px solid #eee;\">Shutdown</td><td style=\"color: #2ecc71;\">Prevents harm</td><td style=\"color: #e74c3c;\">May BE the attack goal!</td></tr>\n<tr><td style=\"padding: 4px;\">Adaptation</td><td style=\"color: #2ecc71;\">Events random</td><td style=\"color: #e74c3c;\">Attacker learns &amp; adapts</td></tr>\n</table>\n</div>\n\n<hr style=\"border: 2px solid #2ecc71;\">\n\n<h3 style=\"color: #2ecc71;\">REMEMBER (Quick Summary)</h3>\n<div style=\"background: #eafaf1; padding: 15px; border-radius: 8px; border-left: 4px solid #2ecc71;\">\n<p><strong>Security Engineering</strong> = Build defences INTO the system from day one</p>\n<p><strong>Three Levels</strong> = Infrastructure &rarr; Application &rarr; Operational (people!)</p>\n<p><strong>Risk Assessment</strong> = Assets &rarr; Value &rarr; Exposure &rarr; Threats &rarr; Attacks &rarr; Controls</p>\n<p><strong>Misuse Cases</strong> = Intercept | Interrupt | Modify | Fabricate</p>\n<p><strong>10 Design Guidelines</strong> = Fail securely, no single point of failure, log everything</p>\n<p><strong>Swiss Cheese</strong> = Many diverse layers = holes rarely line up = breach prevented</p>\n<p><strong>Resilience</strong> = Recognise &rarr; Resist &rarr; Recover &rarr; Reinstate</p>\n<p><strong>Human Error</strong> = Fix the SYSTEM, do not blame the person</p>\n<p><strong>Org Resilience</strong> = Responsive + Monitoring + Anticipating + Learning</p>\n<p><strong>Testing</strong> = Static analysis (read code) + Fuzz testing (break it with random inputs)</p>\n</div>\n</div>"
+      },
+      "practice_exercises": [
+        {
+          "exercise_id": "ex_01",
+          "title": "Exercise 1: Identify the Six Security Terms",
+          "description": "Given a hospital scenario, label each of the six security terms.",
+          "difficulty": "beginner",
+          "category": "Security Terminology",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Identify the Six Security Terms! This builds your security terminology skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise01 {\n    public static void main(String[] args) {\n        // SCENARIO: A small clinic stores patient records in a database.\n        // The database has a default admin password. A hacker uses this\n        // to steal records. The clinic could lose £100K in fines.\n        \n        // TODO: Fill in each security term for this scenario\n        String asset = \"\";         // What is being protected?\n        String vulnerability = \"\"; // What is the weakness?\n        String threat = \"\";        // What could cause harm?\n        String attack = \"\";        // How is the weakness exploited?\n        String exposure = \"\";      // What is the potential loss?\n        String control = \"\";       // What protective measure helps?\n        \n        System.out.println(\"Asset: \" + asset);\n        System.out.println(\"Vulnerability: \" + vulnerability);\n        System.out.println(\"Threat: \" + threat);\n        System.out.println(\"Attack: \" + attack);\n        System.out.println(\"Exposure: \" + exposure);\n        System.out.println(\"Control: \" + control);\n    }\n}",
+          "expected_output": "Asset: Patient records database\nVulnerability: Default admin password\nThreat: Unauthorized access by external hacker\nAttack: Using default credentials to access database\nExposure: £100K in fines and patient data leak\nControl: Change to strong unique passwords",
+          "hints": [
+            {
+              "message": "The ASSET is the thing of value being protected. What is the clinic trying to keep safe?"
+            },
+            {
+              "message": "The VULNERABILITY is the weakness: the default admin password. The THREAT is the hacker who might exploit it."
+            },
+            {
+              "message": "Full answer: asset='Patient records database', vulnerability='Default admin password', threat='Unauthorized access by external hacker', attack='Using default credentials', exposure='£100K in fines and patient data leak', control='Change to strong unique passwords'"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_02",
+          "title": "Exercise 2: Classify the Security Level",
+          "description": "Classify measures as Infrastructure, Application, or Operational.",
+          "difficulty": "beginner",
+          "category": "Security Terminology",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Classify the Security Level! This builds your security terminology skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise02 {\n    public static void main(String[] args) {\n        System.out.println(\"=== CLASSIFY THE SECURITY LEVEL ===\");\n        System.out.println();\n        \n        // Classify measures as Infrastructure, Application, or Operational.\n        // Category: Security Terminology\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== CLASSIFY THE SECURITY LEVEL ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Classify the Security Level'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_03",
+          "title": "Exercise 3: Match Threats to Misuse Types",
+          "description": "Identify whether scenarios are Interception, Interruption, Modification, or Fabrication.",
+          "difficulty": "beginner",
+          "category": "Security Terminology",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Match Threats to Misuse Types! This builds your security terminology skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise03 {\n    public static void main(String[] args) {\n        System.out.println(\"=== MATCH THREATS TO MISUSE TYPES ===\");\n        System.out.println();\n        \n        // Identify whether scenarios are Interception, Interruption, Modification, or Fabrication.\n        // Category: Security Terminology\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== MATCH THREATS TO MISUSE TYPES ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Match Threats to Misuse Types'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_04",
+          "title": "Exercise 4: Security Terminology Chain",
+          "description": "Build complete security chains for different assets.",
+          "difficulty": "beginner",
+          "category": "Security Terminology",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Security Terminology Chain! This builds your security terminology skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise04 {\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURITY TERMINOLOGY CHAIN ===\");\n        System.out.println();\n        \n        // Build complete security chains for different assets.\n        // Category: Security Terminology\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== SECURITY TERMINOLOGY CHAIN ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Security Terminology Chain'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_05",
+          "title": "Exercise 5: Predict the Security Failure",
+          "description": "Read code and predict what vulnerability it contains.",
+          "difficulty": "beginner",
+          "category": "Security Terminology",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Predict the Security Failure! This builds your security terminology skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise05 {\n    public static void main(String[] args) {\n        System.out.println(\"=== PREDICT THE SECURITY FAILURE ===\");\n        System.out.println();\n        \n        // Read code and predict what vulnerability it contains.\n        // Category: Security Terminology\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== PREDICT THE SECURITY FAILURE ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Predict the Security Failure'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_06",
+          "title": "Exercise 6: Security Policy Template",
+          "description": "Write a basic security policy covering key areas.",
+          "difficulty": "beginner",
+          "category": "Security Terminology",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Security Policy Template! This builds your security terminology skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise06 {\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURITY POLICY TEMPLATE ===\");\n        System.out.println();\n        \n        // Write a basic security policy covering key areas.\n        // Category: Security Terminology\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== SECURITY POLICY TEMPLATE ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Security Policy Template'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_07",
+          "title": "Exercise 7: Exposure Calculator",
+          "description": "Calculate risk = probability x impact for different threats.",
+          "difficulty": "beginner",
+          "category": "Security Terminology",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Exposure Calculator! This builds your security terminology skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise07 {\n    public static void calculateRisk(String threat, double probability, double impact) {\n        // TODO: Calculate Annual Expected Loss = probability * impact\n        double ael = 0; // Fix this\n        \n        // TODO: Classify: HIGH (>100K), MEDIUM (10K-100K), LOW (<10K)\n        String level = \"\"; // Fix this\n        \n        System.out.printf(\"%-35s Prob:%.0f%% Impact:£%,.0f AEL:£%,.0f [%s]%n\",\n            threat, probability*100, impact, ael, level);\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"=== RISK EXPOSURE REPORT ===\\n\");\n        calculateRisk(\"SQL Injection breach\", 0.15, 2000000);\n        calculateRisk(\"DDoS attack (4hr)\", 0.30, 50000);\n        calculateRisk(\"Phishing compromise\", 0.40, 75000);\n        calculateRisk(\"Laptop theft\", 0.05, 20000);\n        calculateRisk(\"Ransomware attack\", 0.10, 500000);\n    }\n}",
+          "expected_output": "=== RISK EXPOSURE REPORT ===\n\nSQL Injection breach                Prob:15% Impact:£2,000,000 AEL:£300,000 [HIGH]\nDDoS attack (4hr)                   Prob:30% Impact:£50,000 AEL:£15,000 [MEDIUM]\nPhishing compromise                 Prob:40% Impact:£75,000 AEL:£30,000 [MEDIUM]\nLaptop theft                        Prob:5% Impact:£20,000 AEL:£1,000 [LOW]\nRansomware attack                   Prob:10% Impact:£500,000 AEL:£50,000 [MEDIUM]",
+          "hints": [
+            {
+              "message": "Annual Expected Loss = probability multiplied by impact. If there's a 15% chance of a £2M breach, AEL = 0.15 x 2,000,000 = £300,000."
+            },
+            {
+              "message": "After calculating ael = probability * impact, classify: if (ael > 100000) level = 'HIGH'; else if (ael >= 10000) level = 'MEDIUM'; else level = 'LOW';"
+            },
+            {
+              "message": "Solution: double ael = probability * impact; String level = ael > 100000 ? 'HIGH' : ael >= 10000 ? 'MEDIUM' : 'LOW';"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_08",
+          "title": "Exercise 8: Fail-Secure vs Fail-Open",
+          "description": "Fix code that fails open to make it fail secure.",
+          "difficulty": "beginner",
+          "category": "Security Terminology",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Fail-Secure vs Fail-Open! This builds your security terminology skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise08 {\n    // BUG: This fails OPEN - grants access on error!\n    public static boolean checkAccess(String user, String role) {\n        boolean allowed = true; // BUG: Should be false!\n        try {\n            if (user == null) throw new NullPointerException();\n            if (\"ADMIN\".equals(role) || \"USER\".equals(role)) {\n                allowed = true;\n            }\n            // BUG: Unknown roles stay true!\n        } catch (Exception e) {\n            // BUG: Still true on error!\n        }\n        return allowed;\n    }\n    \n    // TODO: Rewrite to FAIL SECURE (default = deny)\n    public static boolean secureCheckAccess(String user, String role) {\n        // TODO: Fix this\n        return true;\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"Buggy: null=\" + checkAccess(null, \"USER\"));\n        System.out.println(\"Buggy: hacker=\" + checkAccess(\"x\", \"HACKER\"));\n        System.out.println();\n        System.out.println(\"Secure: null=\" + secureCheckAccess(null, \"USER\"));\n        System.out.println(\"Secure: hacker=\" + secureCheckAccess(\"x\", \"HACKER\"));\n        System.out.println(\"Secure: admin=\" + secureCheckAccess(\"alice\", \"ADMIN\"));\n    }\n}",
+          "expected_output": "Buggy: null=true\nBuggy: hacker=true\n\nSecure: null=false\nSecure: hacker=false\nSecure: admin=true",
+          "hints": [
+            {
+              "message": "The key: start with boolean allowed = FALSE. Only set true when ALL checks pass explicitly."
+            },
+            {
+              "message": "Change default to false. Only set allowed=true inside the if that validates known roles. Add else clause for unknown roles."
+            },
+            {
+              "message": "Solution: boolean allowed = false; try { if (user == null) return false; if ('ADMIN'.equals(role) || 'USER'.equals(role)) allowed = true; } catch (Exception e) { allowed = false; } return allowed;"
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_09",
+          "title": "Exercise 9: Requirements Classifier",
+          "description": "Classify requirements as Avoidance, Detection, or Mitigation.",
+          "difficulty": "beginner",
+          "category": "Security Terminology",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Requirements Classifier! This builds your security terminology skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise09 {\n    public static void main(String[] args) {\n        System.out.println(\"=== REQUIREMENTS CLASSIFIER ===\");\n        System.out.println();\n        \n        // Classify requirements as Avoidance, Detection, or Mitigation.\n        // Category: Security Terminology\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== REQUIREMENTS CLASSIFIER ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Requirements Classifier'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_10",
+          "title": "Exercise 10: Information Leakage Fix",
+          "description": "Fix error messages that leak sensitive information.",
+          "difficulty": "beginner",
+          "category": "Security Terminology",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Information Leakage Fix! This builds your security terminology skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise10 {\n    public static void main(String[] args) {\n        System.out.println(\"=== INFORMATION LEAKAGE FIX ===\");\n        System.out.println();\n        \n        // Fix error messages that leak sensitive information.\n        // Category: Security Terminology\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== INFORMATION LEAKAGE FIX ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Information Leakage Fix'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_11",
+          "title": "Exercise 11: Build a Risk Register Entry",
+          "description": "Create a complete risk register for a company Wi-Fi network.",
+          "difficulty": "intermediate",
+          "category": "Risk Assessment",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Build a Risk Register Entry! This builds your risk assessment skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise11 {\n    public static void main(String[] args) {\n        System.out.println(\"=== BUILD A RISK REGISTER ENTRY ===\");\n        System.out.println();\n        \n        // Create a complete risk register for a company Wi-Fi network.\n        // Category: Risk Assessment\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== BUILD A RISK REGISTER ENTRY ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Build a Risk Register Entry'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_12",
+          "title": "Exercise 12: Prioritise Security Controls",
+          "description": "Select controls within a £200K budget based on risk level.",
+          "difficulty": "intermediate",
+          "category": "Risk Assessment",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Prioritise Security Controls! This builds your risk assessment skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise12 {\n    public static void main(String[] args) {\n        System.out.println(\"=== PRIORITISE SECURITY CONTROLS ===\");\n        System.out.println();\n        \n        // Select controls within a £200K budget based on risk level.\n        // Category: Risk Assessment\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== PRIORITISE SECURITY CONTROLS ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Prioritise Security Controls'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_13",
+          "title": "Exercise 13: Asset Value Assessment",
+          "description": "Rate and rank assets for an online retail platform.",
+          "difficulty": "intermediate",
+          "category": "Risk Assessment",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Asset Value Assessment! This builds your risk assessment skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise13 {\n    public static void main(String[] args) {\n        System.out.println(\"=== ASSET VALUE ASSESSMENT ===\");\n        System.out.println();\n        \n        // Rate and rank assets for an online retail platform.\n        // Category: Risk Assessment\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== ASSET VALUE ASSESSMENT ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Asset Value Assessment'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_14",
+          "title": "Exercise 14: Threat Identification Matrix",
+          "description": "Map assets to their most likely threats.",
+          "difficulty": "intermediate",
+          "category": "Risk Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Threat Identification Matrix! This builds your risk assessment skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise14 {\n    public static void main(String[] args) {\n        System.out.println(\"=== THREAT IDENTIFICATION MATRIX ===\");\n        System.out.println();\n        \n        // Map assets to their most likely threats.\n        // Category: Risk Assessment\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== THREAT IDENTIFICATION MATRIX ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Threat Identification Matrix'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_15",
+          "title": "Exercise 15: Attack Decomposition",
+          "description": "Break a high-level threat into specific attack steps.",
+          "difficulty": "intermediate",
+          "category": "Risk Assessment",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Attack Decomposition! This builds your risk assessment skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise15 {\n    public static void main(String[] args) {\n        System.out.println(\"=== ATTACK DECOMPOSITION ===\");\n        System.out.println();\n        \n        // Break a high-level threat into specific attack steps.\n        // Category: Risk Assessment\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== ATTACK DECOMPOSITION ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Attack Decomposition'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_16",
+          "title": "Exercise 16: Control Feasibility Assessment",
+          "description": "Evaluate proposed controls for cost and effectiveness.",
+          "difficulty": "intermediate",
+          "category": "Risk Assessment",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Control Feasibility Assessment! This builds your risk assessment skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise16 {\n    public static void main(String[] args) {\n        System.out.println(\"=== CONTROL FEASIBILITY ASSESSMENT ===\");\n        System.out.println();\n        \n        // Evaluate proposed controls for cost and effectiveness.\n        // Category: Risk Assessment\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== CONTROL FEASIBILITY ASSESSMENT ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Control Feasibility Assessment'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_17",
+          "title": "Exercise 17: Security Requirements Writer",
+          "description": "Write formal requirements using Avoid/Detect/Mitigate.",
+          "difficulty": "intermediate",
+          "category": "Risk Assessment",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Security Requirements Writer! This builds your risk assessment skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise17 {\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURITY REQUIREMENTS WRITER ===\");\n        System.out.println();\n        \n        // Write formal requirements using Avoid/Detect/Mitigate.\n        // Category: Risk Assessment\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== SECURITY REQUIREMENTS WRITER ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Security Requirements Writer'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_18",
+          "title": "Exercise 18: Misuse Case for Banking App",
+          "description": "Create misuse cases covering all four threat types.",
+          "difficulty": "intermediate",
+          "category": "Risk Assessment",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Misuse Case for Banking App! This builds your risk assessment skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise18 {\n    public static void main(String[] args) {\n        System.out.println(\"=== MISUSE CASE FOR BANKING APP ===\");\n        System.out.println();\n        \n        // Create misuse cases covering all four threat types.\n        // Category: Risk Assessment\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== MISUSE CASE FOR BANKING APP ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Misuse Case for Banking App'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_19",
+          "title": "Exercise 19: Design Risk Assessment",
+          "description": "Evaluate a system design for vulnerabilities.",
+          "difficulty": "intermediate",
+          "category": "Risk Assessment",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Design Risk Assessment! This builds your risk assessment skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise19 {\n    public static void main(String[] args) {\n        System.out.println(\"=== DESIGN RISK ASSESSMENT ===\");\n        System.out.println();\n        \n        // Evaluate a system design for vulnerabilities.\n        // Category: Risk Assessment\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== DESIGN RISK ASSESSMENT ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Design Risk Assessment'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_20",
+          "title": "Exercise 20: Technology Choice Vulnerabilities",
+          "description": "Identify vulnerabilities from technology decisions.",
+          "difficulty": "intermediate",
+          "category": "Risk Assessment",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Technology Choice Vulnerabilities! This builds your risk assessment skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise20 {\n    public static void main(String[] args) {\n        System.out.println(\"=== TECHNOLOGY CHOICE VULNERABILITIES ===\");\n        System.out.println();\n        \n        // Identify vulnerabilities from technology decisions.\n        // Category: Risk Assessment\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== TECHNOLOGY CHOICE VULNERABILITIES ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Technology Choice Vulnerabilities'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_21",
+          "title": "Exercise 21: Implement Fail-Secure Access",
+          "description": "Build a method where ANY error denies access.",
+          "difficulty": "intermediate",
+          "category": "Secure Design",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Implement Fail-Secure Access! This builds your secure design skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise21 {\n    public static void main(String[] args) {\n        System.out.println(\"=== IMPLEMENT FAIL-SECURE ACCESS ===\");\n        System.out.println();\n        \n        // Build a method where ANY error denies access.\n        // Category: Secure Design\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== IMPLEMENT FAIL-SECURE ACCESS ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Implement Fail-Secure Access'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_22",
+          "title": "Exercise 22: Design Single Point of Failure Test",
+          "description": "Identify and fix single points of failure in a system.",
+          "difficulty": "intermediate",
+          "category": "Secure Design",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Design Single Point of Failure Test! This builds your secure design skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise22 {\n    public static void main(String[] args) {\n        System.out.println(\"=== DESIGN SINGLE POINT OF FAILURE TEST ===\");\n        System.out.println();\n        \n        // Identify and fix single points of failure in a system.\n        // Category: Secure Design\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== DESIGN SINGLE POINT OF FAILURE TEST ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Design Single Point of Failure Test'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_23",
+          "title": "Exercise 23: Implement Audit Logging",
+          "description": "Add comprehensive logging to a transaction system.",
+          "difficulty": "intermediate",
+          "category": "Secure Design",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Implement Audit Logging! This builds your secure design skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise23 {\n    public static void main(String[] args) {\n        System.out.println(\"=== IMPLEMENT AUDIT LOGGING ===\");\n        System.out.println();\n        \n        // Add comprehensive logging to a transaction system.\n        // Category: Secure Design\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== IMPLEMENT AUDIT LOGGING ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Implement Audit Logging'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_24",
+          "title": "Exercise 24: Input Validation Framework",
+          "description": "Build strict input validation for multiple data types.",
+          "difficulty": "intermediate",
+          "category": "Secure Design",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Input Validation Framework! This builds your secure design skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise24 {\n    public static void main(String[] args) {\n        System.out.println(\"=== INPUT VALIDATION FRAMEWORK ===\");\n        System.out.println();\n        \n        // Build strict input validation for multiple data types.\n        // Category: Secure Design\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== INPUT VALIDATION FRAMEWORK ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Input Validation Framework'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_25",
+          "title": "Exercise 25: Asset Compartmentalisation",
+          "description": "Separate a database into compartments with access controls.",
+          "difficulty": "intermediate",
+          "category": "Secure Design",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Asset Compartmentalisation! This builds your secure design skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise25 {\n    public static void main(String[] args) {\n        System.out.println(\"=== ASSET COMPARTMENTALISATION ===\");\n        System.out.println();\n        \n        // Separate a database into compartments with access controls.\n        // Category: Secure Design\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== ASSET COMPARTMENTALISATION ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Asset Compartmentalisation'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_26",
+          "title": "Exercise 26: Security vs Usability Balance",
+          "description": "Design authentication that is both secure and user-friendly.",
+          "difficulty": "intermediate",
+          "category": "Secure Design",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Security vs Usability Balance! This builds your secure design skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise26 {\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURITY VS USABILITY BALANCE ===\");\n        System.out.println();\n        \n        // Design authentication that is both secure and user-friendly.\n        // Category: Secure Design\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== SECURITY VS USABILITY BALANCE ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Security vs Usability Balance'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_27",
+          "title": "Exercise 27: Redundant Defence Implementation",
+          "description": "Add multiple diverse security checks to one endpoint.",
+          "difficulty": "intermediate",
+          "category": "Secure Design",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Redundant Defence Implementation! This builds your secure design skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise27 {\n    public static void main(String[] args) {\n        System.out.println(\"=== REDUNDANT DEFENCE IMPLEMENTATION ===\");\n        System.out.println();\n        \n        // Add multiple diverse security checks to one endpoint.\n        // Category: Secure Design\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== REDUNDANT DEFENCE IMPLEMENTATION ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Redundant Defence Implementation'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_28",
+          "title": "Exercise 28: Secure Deployment Checklist",
+          "description": "Create a pre-deployment security verification checklist.",
+          "difficulty": "intermediate",
+          "category": "Secure Design",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Secure Deployment Checklist! This builds your secure design skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise28 {\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURE DEPLOYMENT CHECKLIST ===\");\n        System.out.println();\n        \n        // Create a pre-deployment security verification checklist.\n        // Category: Secure Design\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== SECURE DEPLOYMENT CHECKLIST ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Secure Deployment Checklist'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_29",
+          "title": "Exercise 29: Design for Recoverability",
+          "description": "Implement backup and restore mechanisms.",
+          "difficulty": "intermediate",
+          "category": "Secure Design",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Design for Recoverability! This builds your secure design skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise29 {\n    public static void main(String[] args) {\n        System.out.println(\"=== DESIGN FOR RECOVERABILITY ===\");\n        System.out.println();\n        \n        // Implement backup and restore mechanisms.\n        // Category: Secure Design\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== DESIGN FOR RECOVERABILITY ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Design for Recoverability'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_30",
+          "title": "Exercise 30: Security Design Review",
+          "description": "Review code against all 10 guidelines and report findings.",
+          "difficulty": "intermediate",
+          "category": "Secure Design",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Security Design Review! This builds your secure design skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise30 {\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURITY DESIGN REVIEW ===\");\n        System.out.println();\n        \n        // Review code against all 10 guidelines and report findings.\n        // Category: Secure Design\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== SECURITY DESIGN REVIEW ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Security Design Review'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_31",
+          "title": "Exercise 31: Apply Defence-in-Depth",
+          "description": "Add 5 defensive layers to a login system.",
+          "difficulty": "intermediate",
+          "category": "Secure Design",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Apply Defence-in-Depth! This builds your secure design skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise31 {\n    public static void main(String[] args) {\n        System.out.println(\"=== APPLY DEFENCE-IN-DEPTH ===\");\n        System.out.println();\n        \n        // Add 5 defensive layers to a login system.\n        // Category: Secure Design\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== APPLY DEFENCE-IN-DEPTH ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Apply Defence-in-Depth'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_32",
+          "title": "Exercise 32: Secure Error Handling",
+          "description": "Implement error handling that never leaks system details.",
+          "difficulty": "intermediate",
+          "category": "Secure Design",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Secure Error Handling! This builds your secure design skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise32 {\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURE ERROR HANDLING ===\");\n        System.out.println();\n        \n        // Implement error handling that never leaks system details.\n        // Category: Secure Design\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== SECURE ERROR HANDLING ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Secure Error Handling'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_33",
+          "title": "Exercise 33: Model the Four Resilience Activities",
+          "description": "Create a timeline for responding to a DDoS attack.",
+          "difficulty": "intermediate",
+          "category": "Resilience Engineering",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Model the Four Resilience Activities! This builds your resilience engineering skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise33 {\n    public static void main(String[] args) {\n        System.out.println(\"=== MODEL THE FOUR RESILIENCE ACTIVITIES ===\");\n        System.out.println();\n        \n        // Create a timeline for responding to a DDoS attack.\n        // Category: Resilience Engineering\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== MODEL THE FOUR RESILIENCE ACTIVITIES ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Model the Four Resilience Activities'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_34",
+          "title": "Exercise 34: Recognition System Builder",
+          "description": "Implement monitoring that detects anomalous behaviour.",
+          "difficulty": "advanced",
+          "category": "Resilience Engineering",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Recognition System Builder! This builds your resilience engineering skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise34 {\n    public static void main(String[] args) {\n        System.out.println(\"=== RECOGNITION SYSTEM BUILDER ===\");\n        System.out.println();\n        \n        // Implement monitoring that detects anomalous behaviour.\n        // Category: Resilience Engineering\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== RECOGNITION SYSTEM BUILDER ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Recognition System Builder'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_35",
+          "title": "Exercise 35: Resistance Strategy Planner",
+          "description": "Design containment actions for different attack types.",
+          "difficulty": "intermediate",
+          "category": "Resilience Engineering",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Resistance Strategy Planner! This builds your resilience engineering skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise35 {\n    public static void main(String[] args) {\n        System.out.println(\"=== RESISTANCE STRATEGY PLANNER ===\");\n        System.out.println();\n        \n        // Design containment actions for different attack types.\n        // Category: Resilience Engineering\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== RESISTANCE STRATEGY PLANNER ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Resistance Strategy Planner'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_36",
+          "title": "Exercise 36: Recovery Priority Matrix",
+          "description": "Prioritise which services to restore first after breach.",
+          "difficulty": "advanced",
+          "category": "Resilience Engineering",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Recovery Priority Matrix! This builds your resilience engineering skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise36 {\n    public static void main(String[] args) {\n        System.out.println(\"=== RECOVERY PRIORITY MATRIX ===\");\n        System.out.println();\n        \n        // Prioritise which services to restore first after breach.\n        // Category: Resilience Engineering\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== RECOVERY PRIORITY MATRIX ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Recovery Priority Matrix'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_37",
+          "title": "Exercise 37: Reinstatement Verification",
+          "description": "Build a checklist to verify system integrity after recovery.",
+          "difficulty": "intermediate",
+          "category": "Resilience Engineering",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Reinstatement Verification! This builds your resilience engineering skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise37 {\n    public static void main(String[] args) {\n        System.out.println(\"=== REINSTATEMENT VERIFICATION ===\");\n        System.out.println();\n        \n        // Build a checklist to verify system integrity after recovery.\n        // Category: Resilience Engineering\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== REINSTATEMENT VERIFICATION ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Reinstatement Verification'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_38",
+          "title": "Exercise 38: Swiss Cheese Layer Designer",
+          "description": "Design 5 diverse defensive layers for a banking app.",
+          "difficulty": "advanced",
+          "category": "Resilience Engineering",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Swiss Cheese Layer Designer! This builds your resilience engineering skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise38 {\n    public static void main(String[] args) {\n        System.out.println(\"=== SWISS CHEESE LAYER DESIGNER ===\");\n        System.out.println();\n        \n        // Design 5 diverse defensive layers for a banking app.\n        // Category: Resilience Engineering\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== SWISS CHEESE LAYER DESIGNER ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Swiss Cheese Layer Designer'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_39",
+          "title": "Exercise 39: Swiss Cheese Probability Calculator",
+          "description": "Calculate breach probability for different layer configurations.",
+          "difficulty": "intermediate",
+          "category": "Resilience Engineering",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Swiss Cheese Probability Calculator! This builds your resilience engineering skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise39 {\n    public static void main(String[] args) {\n        System.out.println(\"=== SWISS CHEESE PROBABILITY CALCULATOR ===\");\n        System.out.println();\n        \n        // Calculate breach probability for different layer configurations.\n        // Category: Resilience Engineering\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== SWISS CHEESE PROBABILITY CALCULATOR ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Swiss Cheese Probability Calculator'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_40",
+          "title": "Exercise 40: Human Error Prevention System",
+          "description": "Redesign a system to prevent common operator mistakes.",
+          "difficulty": "advanced",
+          "category": "Resilience Engineering",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Human Error Prevention System! This builds your resilience engineering skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise40 {\n    public static void main(String[] args) {\n        System.out.println(\"=== HUMAN ERROR PREVENTION SYSTEM ===\");\n        System.out.println();\n        \n        // Redesign a system to prevent common operator mistakes.\n        // Category: Resilience Engineering\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== HUMAN ERROR PREVENTION SYSTEM ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Human Error Prevention System'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_41",
+          "title": "Exercise 41: Person vs Systems Approach",
+          "description": "Compare two approaches to handling a security incident.",
+          "difficulty": "intermediate",
+          "category": "Resilience Engineering",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Person vs Systems Approach! This builds your resilience engineering skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise41 {\n    public static void main(String[] args) {\n        System.out.println(\"=== PERSON VS SYSTEMS APPROACH ===\");\n        System.out.println();\n        \n        // Compare two approaches to handling a security incident.\n        // Category: Resilience Engineering\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== PERSON VS SYSTEMS APPROACH ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Person vs Systems Approach'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_42",
+          "title": "Exercise 42: Cyber-Resilience Plan Builder",
+          "description": "Build a complete resilience plan for a hospital system.",
+          "difficulty": "advanced",
+          "category": "Resilience Engineering",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Cyber-Resilience Plan Builder! This builds your resilience engineering skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise42 {\n    public static void main(String[] args) {\n        System.out.println(\"=== CYBER-RESILIENCE PLAN BUILDER ===\");\n        System.out.println();\n        \n        // Build a complete resilience plan for a hospital system.\n        // Category: Resilience Engineering\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== CYBER-RESILIENCE PLAN BUILDER ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Cyber-Resilience Plan Builder'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_43",
+          "title": "Exercise 43: Incident Timeline Constructor",
+          "description": "Create a minute-by-minute response to a data breach.",
+          "difficulty": "intermediate",
+          "category": "Resilience Engineering",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Incident Timeline Constructor! This builds your resilience engineering skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise43 {\n    public static void main(String[] args) {\n        System.out.println(\"=== INCIDENT TIMELINE CONSTRUCTOR ===\");\n        System.out.println();\n        \n        // Create a minute-by-minute response to a data breach.\n        // Category: Resilience Engineering\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== INCIDENT TIMELINE CONSTRUCTOR ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Incident Timeline Constructor'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_44",
+          "title": "Exercise 44: Post-Incident Review Template",
+          "description": "Design a lessons-learned report after a security incident.",
+          "difficulty": "advanced",
+          "category": "Resilience Engineering",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Post-Incident Review Template! This builds your resilience engineering skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise44 {\n    public static void main(String[] args) {\n        System.out.println(\"=== POST-INCIDENT REVIEW TEMPLATE ===\");\n        System.out.println();\n        \n        // Design a lessons-learned report after a security incident.\n        // Category: Resilience Engineering\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== POST-INCIDENT REVIEW TEMPLATE ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Post-Incident Review Template'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_45",
+          "title": "Exercise 45: Layered Protection Architecture",
+          "description": "Implement platform, application, and record-level security.",
+          "difficulty": "intermediate",
+          "category": "Defence-in-Depth",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Layered Protection Architecture! This builds your defence-in-depth skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise45 {\n    public static void main(String[] args) {\n        System.out.println(\"=== LAYERED PROTECTION ARCHITECTURE ===\");\n        System.out.println();\n        \n        // Implement platform, application, and record-level security.\n        // Category: Defence-in-Depth\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== LAYERED PROTECTION ARCHITECTURE ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Layered Protection Architecture'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_46",
+          "title": "Exercise 46: Diverse Defence Evaluation",
+          "description": "Assess whether defences are truly diverse or redundant.",
+          "difficulty": "advanced",
+          "category": "Defence-in-Depth",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Diverse Defence Evaluation! This builds your defence-in-depth skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise46 {\n    public static void main(String[] args) {\n        System.out.println(\"=== DIVERSE DEFENCE EVALUATION ===\");\n        System.out.println();\n        \n        // Assess whether defences are truly diverse or redundant.\n        // Category: Defence-in-Depth\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== DIVERSE DEFENCE EVALUATION ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Diverse Defence Evaluation'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_47",
+          "title": "Exercise 47: Protection vs Distribution Trade-off",
+          "description": "Balance asset protection with distribution for resilience.",
+          "difficulty": "intermediate",
+          "category": "Defence-in-Depth",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Protection vs Distribution Trade-off! This builds your defence-in-depth skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise47 {\n    public static void main(String[] args) {\n        System.out.println(\"=== PROTECTION VS DISTRIBUTION TRADE-OFF ===\");\n        System.out.println();\n        \n        // Balance asset protection with distribution for resilience.\n        // Category: Defence-in-Depth\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== PROTECTION VS DISTRIBUTION TRADE-OFF ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Protection vs Distribution Trade-off'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_48",
+          "title": "Exercise 48: Sociotechnical Defence Design",
+          "description": "Design both technical and human defences for a system.",
+          "difficulty": "advanced",
+          "category": "Defence-in-Depth",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Sociotechnical Defence Design! This builds your defence-in-depth skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise48 {\n    public static void main(String[] args) {\n        System.out.println(\"=== SOCIOTECHNICAL DEFENCE DESIGN ===\");\n        System.out.println();\n        \n        // Design both technical and human defences for a system.\n        // Category: Defence-in-Depth\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== SOCIOTECHNICAL DEFENCE DESIGN ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Sociotechnical Defence Design'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_49",
+          "title": "Exercise 49: Efficiency vs Resilience Analyser",
+          "description": "Compare efficient and resilient configurations.",
+          "difficulty": "intermediate",
+          "category": "Defence-in-Depth",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Efficiency vs Resilience Analyser! This builds your defence-in-depth skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise49 {\n    public static void main(String[] args) {\n        System.out.println(\"=== EFFICIENCY VS RESILIENCE ANALYSER ===\");\n        System.out.println();\n        \n        // Compare efficient and resilient configurations.\n        // Category: Defence-in-Depth\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== EFFICIENCY VS RESILIENCE ANALYSER ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Efficiency vs Resilience Analyser'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_50",
+          "title": "Exercise 50: Organisational Resilience Assessment",
+          "description": "Score an organisation on the four resilience pillars.",
+          "difficulty": "advanced",
+          "category": "Defence-in-Depth",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Organisational Resilience Assessment! This builds your defence-in-depth skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise50 {\n    public static void main(String[] args) {\n        System.out.println(\"=== ORGANISATIONAL RESILIENCE ASSESSMENT ===\");\n        System.out.println();\n        \n        // Score an organisation on the four resilience pillars.\n        // Category: Defence-in-Depth\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== ORGANISATIONAL RESILIENCE ASSESSMENT ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Organisational Resilience Assessment'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_51",
+          "title": "Exercise 51: Security Monitoring Dashboard",
+          "description": "Design metrics to display on a security operations dashboard.",
+          "difficulty": "intermediate",
+          "category": "Defence-in-Depth",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Security Monitoring Dashboard! This builds your defence-in-depth skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise51 {\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURITY MONITORING DASHBOARD ===\");\n        System.out.println();\n        \n        // Design metrics to display on a security operations dashboard.\n        // Category: Defence-in-Depth\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== SECURITY MONITORING DASHBOARD ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Security Monitoring Dashboard'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_52",
+          "title": "Exercise 52: Cross-Cutting Security Scenario",
+          "description": "Handle a complex attack that spans multiple security levels.",
+          "difficulty": "advanced",
+          "category": "Defence-in-Depth",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Cross-Cutting Security Scenario! This builds your defence-in-depth skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise52 {\n    public static void main(String[] args) {\n        System.out.println(\"=== CROSS-CUTTING SECURITY SCENARIO ===\");\n        System.out.println();\n        \n        // Handle a complex attack that spans multiple security levels.\n        // Category: Defence-in-Depth\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== CROSS-CUTTING SECURITY SCENARIO ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Cross-Cutting Security Scenario'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_53",
+          "title": "Exercise 53: Static Analysis Finding Triage",
+          "description": "Classify findings as true positive, false positive, or acceptable risk.",
+          "difficulty": "advanced",
+          "category": "Security Testing",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Static Analysis Finding Triage! This builds your security testing skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise53 {\n    public static void main(String[] args) {\n        System.out.println(\"=== STATIC ANALYSIS FINDING TRIAGE ===\");\n        System.out.println();\n        \n        // Classify findings as true positive, false positive, or acceptable risk.\n        // Category: Security Testing\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== STATIC ANALYSIS FINDING TRIAGE ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Static Analysis Finding Triage'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_54",
+          "title": "Exercise 54: Fuzz Input Generator",
+          "description": "Generate boundary, injection, and random fuzz inputs.",
+          "difficulty": "advanced",
+          "category": "Security Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Fuzz Input Generator! This builds your security testing skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise54 {\n    public static void main(String[] args) {\n        System.out.println(\"=== FUZZ INPUT GENERATOR ===\");\n        System.out.println();\n        \n        // Generate boundary, injection, and random fuzz inputs.\n        // Category: Security Testing\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== FUZZ INPUT GENERATOR ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Fuzz Input Generator'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_55",
+          "title": "Exercise 55: Security Checklist Validator",
+          "description": "Evaluate code against a security checklist.",
+          "difficulty": "advanced",
+          "category": "Security Testing",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Security Checklist Validator! This builds your security testing skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise55 {\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURITY CHECKLIST VALIDATOR ===\");\n        System.out.println();\n        \n        // Evaluate code against a security checklist.\n        // Category: Security Testing\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== SECURITY CHECKLIST VALIDATOR ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Security Checklist Validator'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_56",
+          "title": "Exercise 56: Vulnerability Scan Report",
+          "description": "Interpret and prioritise vulnerability scan results.",
+          "difficulty": "advanced",
+          "category": "Security Testing",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Vulnerability Scan Report! This builds your security testing skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise56 {\n    public static void main(String[] args) {\n        System.out.println(\"=== VULNERABILITY SCAN REPORT ===\");\n        System.out.println();\n        \n        // Interpret and prioritise vulnerability scan results.\n        // Category: Security Testing\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== VULNERABILITY SCAN REPORT ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Vulnerability Scan Report'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_57",
+          "title": "Exercise 57: Complete Security Workflow",
+          "description": "Design end-to-end security from requirements to testing.",
+          "difficulty": "advanced",
+          "category": "Security Testing",
+          "estimated_minutes": 4,
+          "ai_intro": "Welcome to Complete Security Workflow! This builds your security testing skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise57 {\n    public static void main(String[] args) {\n        System.out.println(\"=== COMPLETE SECURITY WORKFLOW ===\");\n        System.out.println();\n        \n        // Design end-to-end security from requirements to testing.\n        // Category: Security Testing\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== COMPLETE SECURITY WORKFLOW ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Complete Security Workflow'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_58",
+          "title": "Exercise 58: Security vs Safety Analysis",
+          "description": "Compare security and safety responses to the same event.",
+          "difficulty": "advanced",
+          "category": "Security Testing",
+          "estimated_minutes": 5,
+          "ai_intro": "Welcome to Security vs Safety Analysis! This builds your security testing skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise58 {\n    public static void main(String[] args) {\n        System.out.println(\"=== SECURITY VS SAFETY ANALYSIS ===\");\n        System.out.println();\n        \n        // Compare security and safety responses to the same event.\n        // Category: Security Testing\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== SECURITY VS SAFETY ANALYSIS ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Security vs Safety Analysis'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_59",
+          "title": "Exercise 59: Real-World Breach Analysis",
+          "description": "Analyse a famous breach and identify what went wrong.",
+          "difficulty": "advanced",
+          "category": "Security Testing",
+          "estimated_minutes": 6,
+          "ai_intro": "Welcome to Real-World Breach Analysis! This builds your security testing skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise59 {\n    public static void main(String[] args) {\n        System.out.println(\"=== REAL-WORLD BREACH ANALYSIS ===\");\n        System.out.println();\n        \n        // Analyse a famous breach and identify what went wrong.\n        // Category: Security Testing\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== REAL-WORLD BREACH ANALYSIS ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Real-World Breach Analysis'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        },
+        {
+          "exercise_id": "ex_60",
+          "title": "Exercise 60: Capstone: Secure System Design",
+          "description": "Design a complete secure system applying ALL concepts.",
+          "difficulty": "advanced",
+          "category": "Security Testing",
+          "estimated_minutes": 3,
+          "ai_intro": "Welcome to Capstone: Secure System Design! This builds your security testing skills. Take your time - I'm here to help if you get stuck!",
+          "starter_code": "public class Exercise60 {\n    public static void main(String[] args) {\n        System.out.println(\"=== CAPSTONE: SECURE SYSTEM DESIGN ===\");\n        System.out.println();\n        \n        // Design a complete secure system applying ALL concepts.\n        // Category: Security Testing\n        \n        // TODO: Implement your solution below\n        // Use the hints if you get stuck!\n        // Remember: think like a security engineer.\n        \n        // Step 1: Understand the scenario\n        // Step 2: Apply the relevant security concept\n        // Step 3: Write your implementation\n        // Step 4: Verify output matches expected\n        \n        System.out.println(\"// Your implementation here\");\n    }\n}",
+          "expected_output": "=== CAPSTONE: SECURE SYSTEM DESIGN ===\n\n// Expected output for this exercise",
+          "hints": [
+            {
+              "message": "Start by reviewing the theory for this topic. Think about what security principle applies to 'Capstone: Secure System Design'."
+            },
+            {
+              "message": "Look at the complete examples tab for similar implementations. Break the problem into small steps and tackle each one."
+            },
+            {
+              "message": "Check the expected output and work backwards. What code would produce that exact result? The complete examples show similar patterns."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
