@@ -41,6 +41,28 @@ class MCPCoordinator:
             logger.error(f"❌ MCP Coordinator initialization failed: {e}")
             raise
     
+    def get_quiz_ai(self):
+        """Lazily build a singleton QuizAIService that reuses the Claude client.
+
+        On-demand quiz 'explain'/'hint' only. The service owns the per-question
+        cache + per-user rate limit, so state persists across requests. The
+        generation call is synchronous (Anthropic SDK); the aiohttp handler runs
+        explain()/hint() in an executor to avoid blocking the event loop.
+        """
+        if getattr(self, "_quiz_ai", None) is None:
+            from quiz.quiz_ai import QuizAIService, MAX_TOKENS
+
+            def _gen(prompt):
+                resp = self.claude.client.messages.create(
+                    model=self.claude.model,
+                    max_tokens=MAX_TOKENS,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                return resp.content[0].text
+
+            self._quiz_ai = QuizAIService(_gen)
+        return self._quiz_ai
+
     async def generate_complete_lesson(
         self,
         topic: str,

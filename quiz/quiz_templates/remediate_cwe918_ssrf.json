@@ -1,0 +1,28 @@
+{
+  "template_id": "remediate_cwe918_ssrf",
+  "category": "remediate",
+  "skill_tag": "CWE-918",
+  "owasp": "A10",
+  "severity": "high",
+  "difficulty": "intermediate",
+  "prompt": "The server fetches a user-supplied URL. What is the correct fix?",
+  "code_template": "new java.net.URL(request.getParameter(\"{param}\")).openStream();",
+  "variables": {
+    "param": [
+      "url",
+      "target",
+      "endpoint"
+    ]
+  },
+  "correct_option": "Validate the URL against an allow-list of permitted hosts/schemes and block internal/link-local IP ranges",
+  "distractor_pool": [
+    "URL-encode the user-supplied URL",
+    "Follow only the first HTTP redirect",
+    "Set a short connection timeout",
+    "Send the request over HTTPS only"
+  ],
+  "explanation_template": "An allow-list of hosts/schemes plus blocking internal ranges (127.0.0.0/8, 169.254.169.254, RFC1918) stops the server reaching internal targets — the correct fix for SSRF (CWE-918). Timeouts, HTTPS, and URL-encoding don't stop the request reaching an internal address.",
+  "source_reference": "CWE-918; OWASP A10:2021 (Server-Side Request Forgery)",
+  "validation_notes": "Host/scheme allow-list + internal-range blocking.",
+  "variants_expected": 3
+}

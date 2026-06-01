@@ -1,0 +1,28 @@
+{
+  "template_id": "detect_cwe611_xxe",
+  "category": "detect",
+  "skill_tag": "CWE-611",
+  "owasp": "A05",
+  "severity": "high",
+  "difficulty": "advanced",
+  "prompt": "Which vulnerability is most likely present in this code?",
+  "code_template": "// External entity / DTD processing is NOT disabled\n{parser}",
+  "variables": {
+    "parser": [
+      "DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();\nDocument doc = f.newDocumentBuilder().parse(request.getInputStream());",
+      "SAXParserFactory f = SAXParserFactory.newInstance();\nf.newSAXParser().parse(request.getInputStream(), handler);",
+      "XMLInputFactory f = XMLInputFactory.newInstance();\nXMLStreamReader r = f.createXMLStreamReader(request.getInputStream());"
+    ]
+  },
+  "correct_option": "XML External Entity (XXE)",
+  "distractor_pool": [
+    "Insecure Deserialization",
+    "Server-Side Request Forgery (SSRF)",
+    "SQL Injection",
+    "Code Injection"
+  ],
+  "explanation_template": "Untrusted XML is parsed with DTD/external-entity processing left enabled, so a `<!ENTITY ... SYSTEM 'file:///etc/passwd'>` payload makes the parser read local files or fetch URLs — XML External Entity injection (CWE-611). SSRF can be a *consequence* of XXE, but the root weakness is the unsafe XML parser. Fix: disable DTDs and external entities on the factory.",
+  "source_reference": "CWE-611; OWASP A05:2021 (Security Misconfiguration)",
+  "validation_notes": "Untrusted XML parsed without disabling DTD/external entities.",
+  "variants_expected": 3
+}

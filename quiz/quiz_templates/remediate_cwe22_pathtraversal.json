@@ -1,0 +1,28 @@
+{
+  "template_id": "remediate_cwe22_pathtraversal",
+  "category": "remediate",
+  "skill_tag": "CWE-22",
+  "owasp": "A01",
+  "severity": "high",
+  "difficulty": "intermediate",
+  "prompt": "This reads a file named by the user. What is the correct fix?",
+  "code_template": "Path p = Path.of(baseDir, request.getParameter(\"{param}\"));\nFiles.readAllBytes(p);",
+  "variables": {
+    "param": [
+      "file",
+      "doc",
+      "name"
+    ]
+  },
+  "correct_option": "Canonicalise the resolved path and verify it stays within the intended base directory (allow-list)",
+  "distractor_pool": [
+    "Replace the substring \"../\" once",
+    "URL-decode the filename twice before use",
+    "Run the file read as a lower-privileged OS user",
+    "HTML-encode the filename"
+  ],
+  "explanation_template": "Resolving the path and checking it still lives under baseDir (e.g. via toRealPath/normalize + startsWith) reliably stops traversal (CWE-22). A single `../` string replace is trivially bypassed (`....//`, encoding), and HTML-encoding is irrelevant to filesystem access.",
+  "source_reference": "CWE-22; OWASP A01:2021 (Broken Access Control)",
+  "validation_notes": "Canonicalisation + containment check; blacklist replace is bypassable.",
+  "variants_expected": 3
+}

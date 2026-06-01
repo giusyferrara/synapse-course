@@ -1,0 +1,28 @@
+{
+  "template_id": "remediate_cwe78_cmdinjection",
+  "category": "remediate",
+  "skill_tag": "CWE-78",
+  "owasp": "A03",
+  "severity": "high",
+  "difficulty": "intermediate",
+  "prompt": "This runs a shell command built from user input. What is the correct fix?",
+  "code_template": "Runtime.getRuntime().exec(new String[]{\"bash\", \"-c\", \"ping \" + {param}});",
+  "variables": {
+    "param": [
+      "host",
+      "ip",
+      "target"
+    ]
+  },
+  "correct_option": "Avoid the shell: pass the program and arguments as a list to ProcessBuilder, and validate input against an allow-list",
+  "distractor_pool": [
+    "Escape spaces in the input",
+    "Wrap the command string in double quotes",
+    "Run the command with sudo",
+    "HTML-encode the host value"
+  ],
+  "explanation_template": "Invoking the program directly with an argument array (no `bash -c`) means user input is treated as a single data argument, not shell syntax — the correct fix for OS Command Injection (CWE-78). Escaping/quoting is error-prone and bypassable; sudo makes it worse.",
+  "source_reference": "CWE-78; OWASP A03:2021 (Injection)",
+  "validation_notes": "Argument-array execution without a shell, plus allow-list.",
+  "variants_expected": 3
+}

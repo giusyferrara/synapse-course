@@ -1,0 +1,31 @@
+{
+  "template_id": "detect_cwe502_deserialization",
+  "category": "detect",
+  "skill_tag": "CWE-502",
+  "owasp": "A08",
+  "severity": "high",
+  "difficulty": "advanced",
+  "prompt": "Which vulnerability is most likely present in this code?",
+  "code_template": "ObjectInputStream ois = new ObjectInputStream({source});\n{type} obj = ({type}) ois.readObject();",
+  "variables": {
+    "source": [
+      "request.getInputStream()",
+      "socket.getInputStream()"
+    ],
+    "type": [
+      "Object",
+      "UserSession"
+    ]
+  },
+  "correct_option": "Insecure Deserialization",
+  "distractor_pool": [
+    "Code Injection",
+    "XML External Entity (XXE)",
+    "SQL Injection",
+    "Server-Side Request Forgery (SSRF)"
+  ],
+  "explanation_template": "Untrusted bytes from `{source}` are passed to `ObjectInputStream.readObject()`. Crafted objects trigger gadget chains that run during deserialisation — Insecure Deserialization (CWE-502), which can reach remote code execution. It is not Code Injection via eval and not XXE (no XML). Fix: avoid native deserialisation of untrusted data; use a safe format (JSON) with a strict schema, or an allow-list of classes.",
+  "source_reference": "CWE-502; OWASP A08:2021 (Software and Data Integrity Failures)",
+  "validation_notes": "Untrusted stream deserialised via readObject().",
+  "variants_expected": 4
+}

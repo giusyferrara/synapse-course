@@ -1,0 +1,28 @@
+{
+  "template_id": "detect_cwe614_cookie_secure",
+  "category": "detect",
+  "skill_tag": "CWE-614",
+  "owasp": "A05",
+  "severity": "medium",
+  "difficulty": "beginner",
+  "prompt": "Which vulnerability is most likely present in this code?",
+  "code_template": "Cookie c = new Cookie(\"{name}\", value);\nc.setHttpOnly(true);\n// Secure flag not set - cookie may be sent over plain HTTP\nresponse.addCookie(c);",
+  "variables": {
+    "name": [
+      "session",
+      "SID",
+      "auth"
+    ]
+  },
+  "correct_option": "Sensitive Cookie Without Secure Flag",
+  "distractor_pool": [
+    "Sensitive Cookie Without HttpOnly Flag",
+    "Sensitive Cookie with Improper SameSite Attribute",
+    "Cross-Site Request Forgery (CSRF)",
+    "Exposure of Sensitive Information"
+  ],
+  "explanation_template": "The `{name}` cookie is created without the Secure flag, so the browser will send it over unencrypted HTTP where a network attacker can capture it — Sensitive Cookie Without Secure Flag (CWE-614). Note HttpOnly IS set here, so 'without HttpOnly' is wrong. Fix: set Secure so the cookie is only sent over HTTPS.",
+  "source_reference": "CWE-614; OWASP A05:2021 (Security Misconfiguration)",
+  "validation_notes": "HttpOnly is set but Secure is missing — disambiguates from CWE-1004.",
+  "variants_expected": 3
+}

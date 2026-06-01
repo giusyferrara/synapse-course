@@ -1,0 +1,28 @@
+{
+  "template_id": "detect_cwe770_resource_exhaustion",
+  "category": "detect",
+  "skill_tag": "CWE-770",
+  "owasp": null,
+  "severity": "medium",
+  "difficulty": "intermediate",
+  "prompt": "Which vulnerability is most likely present in this code?",
+  "code_template": "int n = Integer.parseInt(request.getParameter(\"{param}\"));\nbyte[] buffer = new byte[n];  // no upper bound enforced on n",
+  "variables": {
+    "param": [
+      "count",
+      "size",
+      "length"
+    ]
+  },
+  "correct_option": "Allocation of Resources Without Limits or Throttling",
+  "distractor_pool": [
+    "Improper Check for Unusual or Exceptional Conditions",
+    "Exposure of Sensitive Information",
+    "SQL Injection",
+    "Insecure Direct Object Reference (IDOR)"
+  ],
+  "explanation_template": "The client fully controls `n` (`{param}`) and the code allocates `new byte[n]` with no cap, so a huge value exhausts memory and crashes the service — Allocation of Resources Without Limits or Throttling (CWE-770), a denial-of-service. Fix: enforce a sane maximum before allocating.",
+  "source_reference": "CWE-770",
+  "validation_notes": "Unbounded allocation driven by client-controlled size.",
+  "variants_expected": 3
+}

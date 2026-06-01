@@ -1,0 +1,28 @@
+{
+  "template_id": "understand_cwe502_deserialization",
+  "category": "understand",
+  "skill_tag": "CWE-502",
+  "owasp": "A08",
+  "severity": "high",
+  "difficulty": "advanced",
+  "prompt": "Why is deserialising untrusted data dangerous here?",
+  "code_template": "Object o = new ObjectInputStream({source}).readObject();",
+  "variables": {
+    "source": [
+      "request.getInputStream()",
+      "socket.getInputStream()",
+      "new FileInputStream(uploaded)"
+    ]
+  },
+  "correct_option": "Crafted objects trigger 'gadget chains' during deserialisation that can run arbitrary code — before any of your validation runs",
+  "distractor_pool": [
+    "It always leaks the database password",
+    "It can only cause a denial of service, nothing more",
+    "It exposes the application's source code to the client",
+    "It is safe as long as the class implements Serializable"
+  ],
+  "explanation_template": "readObject() reconstructs arbitrary object graphs; library 'gadget' classes can be chained so that code executes during deserialisation — potential RCE (CWE-502) — before you can inspect anything. DoS is only one possible outcome, and implementing Serializable does not make it safe.",
+  "source_reference": "CWE-502; OWASP A08:2021 (Software and Data Integrity Failures)",
+  "validation_notes": "Correct = RCE via gadget chains at readObject time.",
+  "variants_expected": 3
+}

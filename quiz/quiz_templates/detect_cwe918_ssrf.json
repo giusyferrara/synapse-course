@@ -1,0 +1,34 @@
+{
+  "template_id": "detect_cwe918_ssrf",
+  "category": "detect",
+  "skill_tag": "CWE-918",
+  "owasp": "A10",
+  "severity": "high",
+  "difficulty": "intermediate",
+  "prompt": "Which vulnerability is most likely present in this server-side code?",
+  "code_template": "String {param} = request.getParameter(\"{param}\");\n{fetch}",
+  "variables": {
+    "param": [
+      "url",
+      "target",
+      "endpoint"
+    ],
+    "fetch": [
+      "new java.net.URL({param}).openStream();",
+      "httpClient.send(HttpRequest.newBuilder(java.net.URI.create({param})).build(), HttpResponse.BodyHandlers.ofString());",
+      "restTemplate.getForObject({param}, String.class);"
+    ]
+  },
+  "correct_option": "Server-Side Request Forgery (SSRF)",
+  "distractor_pool": [
+    "Open Redirect",
+    "Path Traversal",
+    "Cross-Site Request Forgery (CSRF)",
+    "XML External Entity (XXE)",
+    "OS Command Injection"
+  ],
+  "explanation_template": "The value of `{param}` comes straight from request.getParameter and is fetched server-side. Because the server itself makes a request to an attacker-controlled address, this is Server-Side Request Forgery (CWE-918): the attacker can reach internal-only targets such as cloud metadata (169.254.169.254), localhost admin panels, or internal APIs the browser could never reach. It is NOT Open Redirect — the server fetches the URL itself rather than telling the user's browser to navigate. Fix: validate the URL against an allow-list of hosts and schemes, and block requests to internal/link-local IP ranges.",
+  "source_reference": "CWE-918; OWASP A10:2021 (Server-Side Request Forgery)",
+  "validation_notes": "User input flows into a server-side HTTP fetch. Open Redirect is the deliberate near-miss distractor.",
+  "variants_expected": 9
+}

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, Float, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, Float, ForeignKey, JSON, UniqueConstraint
 from sqlalchemy.orm import relationship
 from .config import Base
 import datetime
@@ -371,6 +371,56 @@ class ResearchParticipant(Base):
         self.vuln_unique_count = len(unique_cwes)
         self.vuln_total_score = total_score
         self.vuln_avg_quality = round(total_score / len(findings), 2) if findings else 0
+
+
+# ============================================================================
+# ADAPTIVE QUIZ TELEMETRY — ordinary app usage data (like CourseProgress).
+# DELIBERATELY SEPARATE from ResearchParticipant: keyed by the normal app
+# student_id, NOT by participant_code, and never written to research exports.
+# ============================================================================
+
+class QuizAttempt(Base):
+    """One graded answer. Append-only telemetry for adaptive selection + stats."""
+    __tablename__ = "quiz_attempts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    student_id = Column(String(100), nullable=False, index=True)
+    question_id = Column(String(120), nullable=False, index=True)
+    template_id = Column(String(120), nullable=True)   # null if hand-authored
+    skill_tag = Column(String(40), nullable=False, index=True)
+    category = Column(String(20), nullable=False)
+    severity = Column(String(10), nullable=True)
+    chosen_option = Column(String(4))
+    is_correct = Column(Boolean, nullable=False)
+    time_ms = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
+
+    def __repr__(self):
+        return f"<QuizAttempt(student={self.student_id}, q={self.question_id}, correct={self.is_correct})>"
+
+
+class QuizReview(Base):
+    """Per-(student, question) spaced-repetition state (SM-2 lite)."""
+    __tablename__ = "quiz_reviews"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    student_id = Column(String(100), nullable=False, index=True)
+    question_id = Column(String(120), nullable=False, index=True)
+    skill_tag = Column(String(40), nullable=False, index=True)
+    consecutive_correct = Column(Integer, default=0)
+    ease = Column(Float, default=2.5)
+    interval_days = Column(Float, default=0.0)
+    next_due_at = Column(DateTime, index=True)
+    last_result = Column(Boolean)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow,
+                        onupdate=datetime.datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("student_id", "question_id", name="uq_quiz_review_student_question"),
+    )
+
+    def __repr__(self):
+        return f"<QuizReview(student={self.student_id}, q={self.question_id}, due={self.next_due_at})>"
 
 
 from .london_transport_models import TubeLineModel, TransportStop, TransportArrival, TfLAPIRequest, LondonTransportExercise

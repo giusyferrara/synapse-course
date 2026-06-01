@@ -31,6 +31,7 @@ from database.models import Student, LearningSession, AIResponse, Feedback, Rese
 from web.metrics_handlers import setup_metrics_routes
 from web.auth_handlers import setup_auth_routes
 from web.research_handlers import setup_research_routes as setup_research_api_routes
+from web.quiz_handlers import setup_quiz_routes
 from web.research.research_dashboard_handler import setup_research_routes as setup_research_dashboard_routes
 
 # Advanced MCP Tools Integration
@@ -1122,6 +1123,7 @@ class HybridEducationalServer:
         setup_auth_routes(app)
         setup_research_dashboard_routes(app)
         setup_metrics_routes(app)
+        setup_quiz_routes(app)
 
         # ====================================================================
         # SYNAPSE LABS - Multi-tenant isolated container system

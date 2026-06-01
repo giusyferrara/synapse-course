@@ -1,0 +1,32 @@
+{
+  "template_id": "detect_cwe78_cmdinjection",
+  "category": "detect",
+  "skill_tag": "CWE-78",
+  "owasp": "A03",
+  "severity": "high",
+  "difficulty": "intermediate",
+  "prompt": "Which vulnerability is most likely present in this code?",
+  "code_template": "String {param} = request.getParameter(\"{param}\");\nRuntime.getRuntime().exec(new String[]{\"bash\", \"-c\", \"{cmd} \" + {param}});",
+  "variables": {
+    "param": [
+      "host",
+      "ip",
+      "target"
+    ],
+    "cmd": [
+      "ping",
+      "nslookup"
+    ]
+  },
+  "correct_option": "OS Command Injection",
+  "distractor_pool": [
+    "Code Injection",
+    "Path Traversal",
+    "SQL Injection",
+    "Server-Side Request Forgery (SSRF)"
+  ],
+  "explanation_template": "`{param}` is concatenated into a `bash -c` string, so input like `; rm -rf /` is interpreted by the shell — OS Command Injection (CWE-78). The key near-miss is Code Injection (CWE-94): that runs code in a language interpreter (e.g. eval), whereas here a real OS shell runs the command. Fix: drop the shell and pass arguments as a list, with allow-listed input.",
+  "source_reference": "CWE-78; OWASP A03:2021 (Injection)",
+  "validation_notes": "User input concatenated into a shell command line ('bash -c ...').",
+  "variants_expected": 6
+}

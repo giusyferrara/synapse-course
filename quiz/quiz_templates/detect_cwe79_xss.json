@@ -1,0 +1,32 @@
+{
+  "template_id": "detect_cwe79_xss",
+  "category": "detect",
+  "skill_tag": "CWE-79",
+  "owasp": "A03",
+  "severity": "high",
+  "difficulty": "intermediate",
+  "prompt": "Which vulnerability is most likely present in this code?",
+  "code_template": "String {param} = request.getParameter(\"{param}\");\n{sink};",
+  "variables": {
+    "param": [
+      "name",
+      "comment",
+      "q"
+    ],
+    "sink": [
+      "response.getWriter().write(\"<div>\" + {param} + \"</div>\")",
+      "out.println(\"Hello \" + {param})"
+    ]
+  },
+  "correct_option": "Cross-Site Scripting (XSS)",
+  "distractor_pool": [
+    "SQL Injection",
+    "Path Traversal",
+    "OS Command Injection",
+    "Cross-Site Request Forgery (CSRF)"
+  ],
+  "explanation_template": "`{param}` is written straight into the HTML response with no output encoding, so input like `<script>...</script>` executes in the victim's browser — reflected Cross-Site Scripting (CWE-79). It is not SQLi or command injection: the data reaches a browser, not a database or a shell. Fix: contextually output-encode before rendering.",
+  "source_reference": "CWE-79; OWASP A03:2021 (Injection)",
+  "validation_notes": "Unencoded user input written into the HTML response body.",
+  "variants_expected": 6
+}

@@ -1,0 +1,28 @@
+{
+  "template_id": "detect_cwe1004_cookie_httponly",
+  "category": "detect",
+  "skill_tag": "CWE-1004",
+  "owasp": "A05",
+  "severity": "medium",
+  "difficulty": "beginner",
+  "prompt": "Which vulnerability is most likely present in this code?",
+  "code_template": "Cookie c = new Cookie(\"{name}\", value);\nc.setSecure(true);\n// HttpOnly flag not set\nresponse.addCookie(c);",
+  "variables": {
+    "name": [
+      "session",
+      "SID",
+      "auth"
+    ]
+  },
+  "correct_option": "Sensitive Cookie Without HttpOnly Flag",
+  "distractor_pool": [
+    "Sensitive Cookie Without Secure Flag",
+    "Sensitive Cookie with Improper SameSite Attribute",
+    "Cross-Site Scripting (XSS)",
+    "Session Fixation"
+  ],
+  "explanation_template": "The `{name}` cookie is created without the HttpOnly flag, so client-side JavaScript can read it (e.g. `document.cookie`) and an XSS bug could exfiltrate the session — Sensitive Cookie Without HttpOnly Flag (CWE-1004). Note Secure IS set here, so 'without Secure' is wrong. Fix: set HttpOnly on session cookies.",
+  "source_reference": "CWE-1004; OWASP A05:2021 (Security Misconfiguration)",
+  "validation_notes": "Secure is set but HttpOnly is missing — disambiguates from CWE-614.",
+  "variants_expected": 3
+}

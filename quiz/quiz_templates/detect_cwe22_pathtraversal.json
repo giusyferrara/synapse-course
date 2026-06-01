@@ -1,0 +1,33 @@
+{
+  "template_id": "detect_cwe22_pathtraversal",
+  "category": "detect",
+  "skill_tag": "CWE-22",
+  "owasp": "A01",
+  "severity": "high",
+  "difficulty": "intermediate",
+  "prompt": "Which vulnerability is most likely present in this code?",
+  "code_template": "String {param} = request.getParameter(\"{param}\");\n{sink}(Path.of(baseDir, {param}));",
+  "variables": {
+    "param": [
+      "file",
+      "doc",
+      "report"
+    ],
+    "sink": [
+      "Files.readString",
+      "Files.readAllBytes"
+    ]
+  },
+  "correct_option": "Path Traversal",
+  "distractor_pool": [
+    "SQL Injection",
+    "Cross-Site Request Forgery (CSRF)",
+    "Cross-Site Scripting (XSS)",
+    "Server-Side Request Forgery (SSRF)",
+    "OS Command Injection"
+  ],
+  "explanation_template": "User input `{param}` flows unsanitised into `Path.of(...)` and is read by `{sink}`. A value like `../../../../etc/passwd` escapes baseDir, so this is Path Traversal (CWE-22). The distractors are other ShopSecure CWEs but none fit: nothing here builds a query, reaches a browser, or makes a network request.",
+  "source_reference": "CWE-22; OWASP A01:2021 (Broken Access Control)",
+  "validation_notes": "Unsanitised input reaches a file-read sink via Path.of; ../ escapes the base directory.",
+  "variants_expected": 6
+}

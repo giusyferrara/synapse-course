@@ -1,0 +1,28 @@
+{
+  "template_id": "remediate_cwe89_sqli",
+  "category": "remediate",
+  "skill_tag": "CWE-89",
+  "owasp": "A03",
+  "severity": "high",
+  "difficulty": "beginner",
+  "prompt": "This query concatenates user input. What is the correct fix?",
+  "code_template": "String sql = \"SELECT * FROM {table} WHERE name = '\" + name + \"'\";\nstmt.executeQuery(sql);",
+  "variables": {
+    "table": [
+      "users",
+      "orders",
+      "accounts"
+    ]
+  },
+  "correct_option": "Use a parameterised query (PreparedStatement) with bound parameters",
+  "distractor_pool": [
+    "HTML-encode the input before building the query",
+    "Remove single quotes from the input",
+    "Hash the input before querying",
+    "Add a Content-Security-Policy header"
+  ],
+  "explanation_template": "Parameterised queries send the SQL and the data separately, so user input can never change the query structure — the correct, complete fix for SQL Injection (CWE-89). Stripping quotes is bypassable, and HTML/CSP fixes belong to XSS, not SQLi.",
+  "source_reference": "CWE-89; OWASP A03:2021 (Injection)",
+  "validation_notes": "Only PreparedStatement fully fixes SQLi; distractors are XSS fixes or bypassable blacklisting.",
+  "variants_expected": 3
+}

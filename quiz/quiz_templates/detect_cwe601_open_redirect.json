@@ -1,0 +1,32 @@
+{
+  "template_id": "detect_cwe601_open_redirect",
+  "category": "detect",
+  "skill_tag": "CWE-601",
+  "owasp": "A01",
+  "severity": "medium",
+  "difficulty": "intermediate",
+  "prompt": "Which vulnerability is most likely present in this code?",
+  "code_template": "String {param} = request.getParameter(\"{param}\");\n{redirect}",
+  "variables": {
+    "param": [
+      "next",
+      "url",
+      "returnTo"
+    ],
+    "redirect": [
+      "response.sendRedirect({param});",
+      "return \"redirect:\" + {param};"
+    ]
+  },
+  "correct_option": "Open Redirect",
+  "distractor_pool": [
+    "Server-Side Request Forgery (SSRF)",
+    "Cross-Site Scripting (XSS)",
+    "Path Traversal",
+    "Cross-Site Request Forgery (CSRF)"
+  ],
+  "explanation_template": "A user-controlled value (`{param}`) is used as a redirect target, so a link to your site can bounce the victim to `evil.com` for phishing — Open Redirect (CWE-601). The near-miss is SSRF: there the *server* fetches the URL; here the *browser* is told to navigate. Fix: redirect only to an allow-list of internal paths.",
+  "source_reference": "CWE-601; OWASP A01:2021 (Broken Access Control)",
+  "validation_notes": "User input used as redirect destination. SSRF is the near-miss distractor.",
+  "variants_expected": 6
+}

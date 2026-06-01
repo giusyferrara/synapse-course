@@ -1,0 +1,28 @@
+{
+  "template_id": "remediate_cwe327_broken_crypto",
+  "category": "remediate",
+  "skill_tag": "CWE-327",
+  "owasp": "A02",
+  "severity": "medium",
+  "difficulty": "intermediate",
+  "prompt": "Data is encrypted with {algo}. What is the correct fix?",
+  "code_template": "Cipher c = Cipher.getInstance(\"{algo}\");",
+  "variables": {
+    "algo": [
+      "DES",
+      "AES/ECB/PKCS5Padding",
+      "Blowfish"
+    ]
+  },
+  "correct_option": "Use a modern authenticated cipher such as AES-256-GCM with a unique IV per message",
+  "distractor_pool": [
+    "Increase the DES key length",
+    "Switch to AES in ECB mode",
+    "Apply the cipher twice (double encryption)",
+    "Derive the key with MD5"
+  ],
+  "explanation_template": "AES-256-GCM gives confidentiality AND integrity with a unique IV per message — the correct fix for broken/risky crypto (CWE-327). ECB still leaks patterns, double-encryption with a weak cipher is still weak, and MD5 key derivation is insecure.",
+  "source_reference": "CWE-327; OWASP A02:2021 (Cryptographic Failures)",
+  "validation_notes": "AES-GCM authenticated mode; ECB distractor is still broken.",
+  "variants_expected": 3
+}

@@ -1,0 +1,28 @@
+{
+  "template_id": "detect_cwe200_info_exposure",
+  "category": "detect",
+  "skill_tag": "CWE-200",
+  "owasp": "A01",
+  "severity": "low",
+  "difficulty": "beginner",
+  "prompt": "Which vulnerability is most likely present in this code?",
+  "code_template": "return Map.of(\"name\", user.getName(), {leak});  // serialised into the JSON API response",
+  "variables": {
+    "leak": [
+      "\"passwordHash\", user.getPasswordHash()",
+      "\"ssn\", user.getSsn()",
+      "\"apiToken\", user.getApiToken()"
+    ]
+  },
+  "correct_option": "Exposure of Sensitive Information",
+  "distractor_pool": [
+    "Information Exposure Through an Error Message",
+    "Insecure Direct Object Reference (IDOR)",
+    "Missing Authorization",
+    "Information Exposure Through Directory Listing"
+  ],
+  "explanation_template": "A sensitive field ({leak}) is serialised straight into the API response, exposing data the client should never receive — Exposure of Sensitive Information (CWE-200). The near-miss is CWE-209, but that is specifically about *error messages*; this is a normal response. Fix: return a DTO/view model with only the fields the client needs.",
+  "source_reference": "CWE-200; OWASP A01:2021 (Broken Access Control)",
+  "validation_notes": "Sensitive field serialised into a normal (non-error) response.",
+  "variants_expected": 3
+}

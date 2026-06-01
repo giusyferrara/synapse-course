@@ -1,0 +1,28 @@
+{
+  "template_id": "remediate_cwe601_open_redirect",
+  "category": "remediate",
+  "skill_tag": "CWE-601",
+  "owasp": "A01",
+  "severity": "medium",
+  "difficulty": "intermediate",
+  "prompt": "A redirect target comes from user input ({param}). What is the correct fix?",
+  "code_template": "response.sendRedirect(request.getParameter(\"{param}\"));",
+  "variables": {
+    "param": [
+      "next",
+      "url",
+      "returnTo"
+    ]
+  },
+  "correct_option": "Redirect only to an allow-list of internal paths; never redirect to a raw user-supplied absolute URL",
+  "distractor_pool": [
+    "URL-encode the destination",
+    "Check that the URL contains your domain name as a substring",
+    "Open the redirect in a new tab",
+    "Add rel=noopener to the link"
+  ],
+  "explanation_template": "Mapping the input to an allow-list of known-good internal paths is the reliable fix for Open Redirect (CWE-601). A substring check is bypassable (`https://evil.com/?x=yourdomain.com` or `https://yourdomain.com.evil.com`); encoding and tab/noopener don't stop the redirect.",
+  "source_reference": "CWE-601; OWASP A01:2021 (Broken Access Control)",
+  "validation_notes": "Allow-list of internal paths; substring check is bypassable.",
+  "variants_expected": 3
+}

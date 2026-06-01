@@ -1,0 +1,31 @@
+{
+  "template_id": "detect_cwe94_codeinjection",
+  "category": "detect",
+  "skill_tag": "CWE-94",
+  "owasp": "A03",
+  "severity": "high",
+  "difficulty": "advanced",
+  "prompt": "Which vulnerability is most likely present in this code?",
+  "code_template": "String {param} = request.getParameter(\"{param}\");\nScriptEngine engine = new ScriptEngineManager().getEngineByName(\"{engine}\");\nengine.eval({param});",
+  "variables": {
+    "param": [
+      "expr",
+      "script"
+    ],
+    "engine": [
+      "nashorn",
+      "JavaScript"
+    ]
+  },
+  "correct_option": "Code Injection",
+  "distractor_pool": [
+    "OS Command Injection",
+    "Server-Side Request Forgery (SSRF)",
+    "SQL Injection",
+    "Insecure Deserialization"
+  ],
+  "explanation_template": "`{param}` is passed to `engine.eval(...)`, so an attacker supplies arbitrary script that the interpreter executes — Code Injection (CWE-94). The near-miss is OS Command Injection (CWE-78): that runs shell commands, while this runs code inside a language engine (here a JS engine). Fix: never eval untrusted input; use a safe expression library with an allow-list.",
+  "source_reference": "CWE-94; OWASP A03:2021 (Injection)",
+  "validation_notes": "Untrusted input reaches a scripting-engine eval().",
+  "variants_expected": 4
+}

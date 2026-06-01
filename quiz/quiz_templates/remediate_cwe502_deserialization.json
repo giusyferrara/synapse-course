@@ -1,0 +1,28 @@
+{
+  "template_id": "remediate_cwe502_deserialization",
+  "category": "remediate",
+  "skill_tag": "CWE-502",
+  "owasp": "A08",
+  "severity": "high",
+  "difficulty": "advanced",
+  "prompt": "This deserialises untrusted bytes. What is the correct fix?",
+  "code_template": "Object o = new ObjectInputStream({source}).readObject();",
+  "variables": {
+    "source": [
+      "request.getInputStream()",
+      "socket.getInputStream()",
+      "new FileInputStream(f)"
+    ]
+  },
+  "correct_option": "Avoid native deserialisation of untrusted data; use a safe format (e.g. JSON) with a strict schema, or an allow-list of permitted classes",
+  "distractor_pool": [
+    "Encrypt the serialised bytes before reading them",
+    "Catch and log the deserialisation exception",
+    "Compress the stream before deserialising",
+    "Validate the object's fields after readObject() returns"
+  ],
+  "explanation_template": "Gadget chains execute DURING readObject(), before you ever see the object, so validating fields afterwards is too late (CWE-502). The robust fix is to not natively deserialise untrusted input at all — use JSON with a schema, or restrict to an allow-list of classes.",
+  "source_reference": "CWE-502; OWASP A08:2021 (Software and Data Integrity Failures)",
+  "validation_notes": "Field validation after readObject is too late; safe-format/allow-list is the fix.",
+  "variants_expected": 3
+}

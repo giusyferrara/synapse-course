@@ -1,0 +1,28 @@
+{
+  "template_id": "detect_cwe330_weak_randomness",
+  "category": "detect",
+  "skill_tag": "CWE-330",
+  "owasp": "A02",
+  "severity": "medium",
+  "difficulty": "intermediate",
+  "prompt": "Which vulnerability is most likely present in this code?",
+  "code_template": "String {param} = Long.toHexString(new java.util.Random().nextLong());  // used as a {param}",
+  "variables": {
+    "param": [
+      "sessionToken",
+      "resetToken",
+      "csrfToken"
+    ]
+  },
+  "correct_option": "Use of Insufficiently Random Values",
+  "distractor_pool": [
+    "Use of a Broken or Risky Cryptographic Algorithm",
+    "Use of Hard-coded Credentials",
+    "Session Fixation",
+    "Insecure Direct Object Reference (IDOR)"
+  ],
+  "explanation_template": "`java.util.Random` is a predictable PRNG, so a `{param}` generated from it can be guessed or reconstructed by an attacker — Use of Insufficiently Random Values (CWE-330). Security tokens must be unpredictable. Fix: use `java.security.SecureRandom`.",
+  "source_reference": "CWE-330; OWASP A02:2021 (Cryptographic Failures)",
+  "validation_notes": "Security token derived from non-cryptographic java.util.Random.",
+  "variants_expected": 3
+}

@@ -1,0 +1,28 @@
+{
+  "template_id": "remediate_cwe352_csrf",
+  "category": "remediate",
+  "skill_tag": "CWE-352",
+  "owasp": "A01",
+  "severity": "medium",
+  "difficulty": "intermediate",
+  "prompt": "A state-changing endpoint (/{action}) is authenticated only by the session cookie. What is the correct fix?",
+  "code_template": "@PostMapping(\"/{action}\")  // changes state; no CSRF defence",
+  "variables": {
+    "action": [
+      "transfer",
+      "changeEmail",
+      "deleteAccount"
+    ]
+  },
+  "correct_option": "Require a per-session anti-CSRF (synchroniser) token validated on every state-changing request, and set cookies SameSite=Lax/Strict",
+  "distractor_pool": [
+    "Check the User-Agent header",
+    "Only accept the request over HTTPS",
+    "Add a CAPTCHA to the login page",
+    "Return the response as JSON"
+  ],
+  "explanation_template": "A synchroniser token the attacker's site cannot read, plus SameSite cookies, ensures the request was intentionally issued by your own page — the correct fix for CSRF (CWE-352). User-Agent checks are spoofable, HTTPS doesn't prove intent, and a login CAPTCHA doesn't protect this endpoint.",
+  "source_reference": "CWE-352; OWASP A01:2021 (Broken Access Control)",
+  "validation_notes": "Synchroniser token + SameSite; distractors don't prove request intent.",
+  "variants_expected": 3
+}

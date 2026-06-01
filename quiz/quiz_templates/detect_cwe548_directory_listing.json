@@ -1,0 +1,28 @@
+{
+  "template_id": "detect_cwe548_directory_listing",
+  "category": "detect",
+  "skill_tag": "CWE-548",
+  "owasp": "A05",
+  "severity": "low",
+  "difficulty": "beginner",
+  "prompt": "Which weakness does this web-server configuration introduce?",
+  "code_template": "{config}",
+  "variables": {
+    "config": [
+      "location /files/ {\n    autoindex on;   # nginx\n}",
+      "<Directory /var/www/files>\n    Options +Indexes   # Apache\n</Directory>",
+      "<servlet>listings = true</servlet>   <!-- Tomcat DefaultServlet -->"
+    ]
+  },
+  "correct_option": "Information Exposure Through Directory Listing",
+  "distractor_pool": [
+    "Path Traversal",
+    "Exposure of Sensitive Information",
+    "Protection Mechanism Failure (Missing Security Headers)",
+    "Unrestricted File Upload"
+  ],
+  "explanation_template": "The config enables automatic directory listing, so when no index file is present the server lists every file in the folder — attackers enumerate backups, configs, and source — Information Exposure Through Directory Listing (CWE-548). Fix: disable autoindex / Options Indexes / directory listings.",
+  "source_reference": "CWE-548; OWASP A05:2021 (Security Misconfiguration)",
+  "validation_notes": "Directory listing explicitly enabled.",
+  "variants_expected": 3
+}

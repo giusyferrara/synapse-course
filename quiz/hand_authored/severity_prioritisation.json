@@ -1,0 +1,187 @@
+[
+  {
+    "id": "severity_prioritise_0001",
+    "generated_from_template": null,
+    "category": "severity",
+    "skill_tag": "SEVERITY",
+    "owasp": null,
+    "severity": null,
+    "difficulty": "advanced",
+    "linked_deck": null,
+    "prompt": "On a public, internet-facing app you find all of the following. Which should you remediate FIRST?",
+    "code_snippet": null,
+    "options": [
+      {
+        "id": "A",
+        "text": "Unauthenticated SQL injection on the login page (full DB read/write)",
+        "correct": true
+      },
+      {
+        "id": "B",
+        "text": "Missing X-Content-Type-Options header on static pages",
+        "correct": false
+      },
+      {
+        "id": "C",
+        "text": "A self-XSS that only affects the attacker's own account",
+        "correct": false
+      },
+      {
+        "id": "D",
+        "text": "Verbose error message exposing a stack trace on a 500 page",
+        "correct": false
+      }
+    ],
+    "explanation": "Prioritise by risk = likelihood x impact. Unauthenticated SQLi on an internet-facing endpoint is both easy to exploit and catastrophic (full database compromise), so it goes first. The others are real but lower-risk: a missing header is defence-in-depth, self-XSS harms only the attacker, and a stack trace is information disclosure.",
+    "source_reference": "OWASP Risk Rating Methodology; FIRST CVSS v3.1",
+    "validation_notes": ""
+  },
+  {
+    "id": "severity_prioritise_0002",
+    "generated_from_template": null,
+    "category": "severity",
+    "skill_tag": "SEVERITY",
+    "owasp": null,
+    "severity": null,
+    "difficulty": "advanced",
+    "linked_deck": null,
+    "prompt": "Two findings on an internet-facing app: (1) IDOR exposing other customers' invoices to any logged-in user; (2) clickjacking on the public marketing homepage. Which is higher priority?",
+    "code_snippet": null,
+    "options": [
+      {
+        "id": "A",
+        "text": "The IDOR — it directly exposes other users' data and is trivially exploitable",
+        "correct": true
+      },
+      {
+        "id": "B",
+        "text": "The clickjacking — missing X-Frame-Options is always critical",
+        "correct": false
+      },
+      {
+        "id": "C",
+        "text": "They are identical in severity because both are web bugs",
+        "correct": false
+      },
+      {
+        "id": "D",
+        "text": "Neither needs fixing until a pentest confirms them",
+        "correct": false
+      }
+    ],
+    "explanation": "The IDOR is a confidentiality breach of real customer data, reachable by any authenticated user — high risk. Clickjacking on a static marketing page with no sensitive actions is low impact. Severity depends on data sensitivity and exploitability, not on the vulnerability's name.",
+    "source_reference": "OWASP Risk Rating Methodology; CWE-639; CWE-1021",
+    "validation_notes": ""
+  },
+  {
+    "id": "severity_prioritise_0003",
+    "generated_from_template": null,
+    "category": "severity",
+    "skill_tag": "SEVERITY",
+    "owasp": null,
+    "severity": null,
+    "difficulty": "advanced",
+    "linked_deck": null,
+    "prompt": "A finding has CATASTROPHIC impact but is only exploitable by a fully-authenticated admin on an internal-only host. How should you weigh it against an easy-to-exploit, medium-impact bug on the public internet?",
+    "code_snippet": null,
+    "options": [
+      {
+        "id": "A",
+        "text": "Combine impact AND likelihood — the easy internet-facing bug often warrants faster remediation despite lower impact",
+        "correct": true
+      },
+      {
+        "id": "B",
+        "text": "Always fix the highest-impact bug first, regardless of how it is exploited",
+        "correct": false
+      },
+      {
+        "id": "C",
+        "text": "Impact is irrelevant; only exploitability matters",
+        "correct": false
+      },
+      {
+        "id": "D",
+        "text": "Internal-only bugs never need fixing",
+        "correct": false
+      }
+    ],
+    "explanation": "Risk is a function of BOTH impact and likelihood/exploitability. A bug requiring admin access on an internal host has low likelihood, so an easily exploitable internet-facing medium-impact bug can present more real-world risk. (Internal bugs still matter for defence-in-depth and insider/lateral-movement scenarios.)",
+    "source_reference": "FIRST CVSS v3.1 (Exploitability vs Impact); OWASP Risk Rating Methodology",
+    "validation_notes": ""
+  },
+  {
+    "id": "severity_compensating_0004",
+    "generated_from_template": null,
+    "category": "severity",
+    "skill_tag": "SEVERITY",
+    "owasp": null,
+    "severity": null,
+    "difficulty": "intermediate",
+    "linked_deck": null,
+    "prompt": "Which factor most legitimately LOWERS the practical severity of a vulnerability in production?",
+    "code_snippet": null,
+    "options": [
+      {
+        "id": "A",
+        "text": "An effective compensating control (e.g. the endpoint is reachable only via VPN with MFA)",
+        "correct": true
+      },
+      {
+        "id": "B",
+        "text": "The vulnerability having a high CWE number",
+        "correct": false
+      },
+      {
+        "id": "C",
+        "text": "The code being written in a memory-safe language",
+        "correct": false
+      },
+      {
+        "id": "D",
+        "text": "The bug being found by a senior engineer",
+        "correct": false
+      }
+    ],
+    "explanation": "Compensating controls and reduced exposure lower real-world likelihood, and therefore practical severity — this is the 'Environmental' dimension in CVSS. The CWE number, the language, and who found it do not change how exploitable or impactful the bug is.",
+    "source_reference": "FIRST CVSS v3.1 (Environmental metrics); OWASP Risk Rating Methodology",
+    "validation_notes": ""
+  },
+  {
+    "id": "severity_cwe209_context_0005",
+    "generated_from_template": null,
+    "category": "severity",
+    "skill_tag": "CWE-209",
+    "owasp": null,
+    "severity": null,
+    "difficulty": "intermediate",
+    "linked_deck": null,
+    "prompt": "App A's error page leaks a full SQL query and DB schema; App B's leaks a generic message with a random trace id. Which is higher severity and why?",
+    "code_snippet": null,
+    "options": [
+      {
+        "id": "A",
+        "text": "App A — it reveals information (SQL, schema) that directly helps an attacker plan further attacks",
+        "correct": true
+      },
+      {
+        "id": "B",
+        "text": "App B — random trace ids are always sensitive",
+        "correct": false
+      },
+      {
+        "id": "C",
+        "text": "They are equal because both return an error page",
+        "correct": false
+      },
+      {
+        "id": "D",
+        "text": "App B — returning any error at all is the real problem",
+        "correct": false
+      }
+    ],
+    "explanation": "The severity of information exposure (CWE-209) depends on WHAT leaks. App A hands an attacker the database structure and queries (very useful for SQLi/recon); App B's opaque trace id reveals nothing actionable. Same CWE, very different severity — context decides.",
+    "source_reference": "CWE-209; OWASP Risk Rating Methodology",
+    "validation_notes": ""
+  }
+]

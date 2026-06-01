@@ -1,0 +1,28 @@
+{
+  "template_id": "understand_cwe287_improper_auth",
+  "category": "understand",
+  "skill_tag": "CWE-287",
+  "owasp": "A07",
+  "severity": "high",
+  "difficulty": "intermediate",
+  "prompt": "What is the core weakness in this login logic?",
+  "code_template": "{scenario}",
+  "variables": {
+    "scenario": [
+      "if (username != null) { login(username); }   // password is never checked",
+      "boolean ok = valid || debugMode;\nif (ok) login();   // debug bypass left enabled",
+      "if (submittedToken != null) { login(); }   // token presence checked, validity not"
+    ]
+  },
+  "correct_option": "Authentication is improperly implemented — identity is not actually verified, so anyone can authenticate",
+  "distractor_pool": [
+    "The user lacks permission for a specific resource (an authorisation problem)",
+    "The session token is predictable",
+    "The password is hashed with a weak algorithm",
+    "The login form is missing a CSRF token"
+  ],
+  "explanation_template": "The code lets a caller through without genuinely verifying who they are (no real password/token check) — Improper Authentication (CWE-287). This is distinct from authorisation (CWE-862), which is about what an already-identified user may do.",
+  "source_reference": "CWE-287; OWASP A07:2021 (Identification and Authentication Failures)",
+  "validation_notes": "Correct = identity not verified; contrasts with authorisation.",
+  "variants_expected": 3
+}

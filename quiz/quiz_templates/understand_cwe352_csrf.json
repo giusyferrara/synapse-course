@@ -1,0 +1,28 @@
+{
+  "template_id": "understand_cwe352_csrf",
+  "category": "understand",
+  "skill_tag": "CWE-352",
+  "owasp": "A01",
+  "severity": "medium",
+  "difficulty": "intermediate",
+  "prompt": "Why can an attacker abuse this form from another website?",
+  "code_template": "<form action=\"/{action}\" method=\"POST\"> ... </form>\n<!-- no anti-CSRF token; relies on the session cookie -->",
+  "variables": {
+    "action": [
+      "transfer",
+      "change-email",
+      "delete"
+    ]
+  },
+  "correct_option": "The browser auto-attaches the session cookie to cross-site requests, so a forged request from another site executes as the victim",
+  "distractor_pool": [
+    "The input is not sanitised, allowing script injection",
+    "The server fetches an attacker-controlled URL",
+    "The id parameter can be incremented to reach other records",
+    "The stored password hash is too weak"
+  ],
+  "explanation_template": "Cookies are sent automatically on cross-site requests, so an attacker's page can submit this state-changing form and the victim's authenticated cookie makes it succeed — Cross-Site Request Forgery (CWE-352). This is about *ambient cookie authority*, not script injection (XSS) or object ids (IDOR).",
+  "source_reference": "CWE-352; OWASP A01:2021 (Broken Access Control)",
+  "validation_notes": "Correct = ambient cookie authority on cross-site requests.",
+  "variants_expected": 3
+}

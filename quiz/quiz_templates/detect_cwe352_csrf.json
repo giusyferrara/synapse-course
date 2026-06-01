@@ -1,0 +1,29 @@
+{
+  "template_id": "detect_cwe352_csrf",
+  "category": "detect",
+  "skill_tag": "CWE-352",
+  "owasp": "A01",
+  "severity": "medium",
+  "difficulty": "intermediate",
+  "prompt": "This endpoint changes state and is authenticated only by the session cookie. Which vulnerability is most likely present?",
+  "code_template": "// State-changing POST, authenticated by the session cookie only.\n// No anti-CSRF token (synchroniser token) is validated.\n{endpoint}",
+  "variables": {
+    "endpoint": [
+      "@PostMapping(\"/transfer\")\npublic void transfer(@RequestParam(\"amount\") int amount) {\n    accountService.transfer(amount);\n}",
+      "@PostMapping(\"/changeEmail\")\npublic void changeEmail(@RequestParam(\"email\") String email) {\n    accountService.changeEmail(email);\n}",
+      "@PostMapping(\"/deleteAccount\")\npublic void deleteAccount() {\n    accountService.deleteAccount(currentUserId());\n}"
+    ]
+  },
+  "correct_option": "Cross-Site Request Forgery (CSRF)",
+  "distractor_pool": [
+    "Cross-Site Scripting (XSS)",
+    "SQL Injection",
+    "Insecure Direct Object Reference (IDOR)",
+    "Server-Side Request Forgery (SSRF)",
+    "Missing Authorization"
+  ],
+  "explanation_template": "The endpoint performs a state-changing action and trusts the session cookie alone, with no anti-CSRF token. Because browsers automatically attach the session cookie to requests triggered by other sites, an attacker can host a page that auto-submits this POST and the victim's browser executes it as them — Cross-Site Request Forgery (CWE-352). It is not XSS (no script is reflected), not SQLi (no query), not IDOR (the issue isn't a guessable object id), not SSRF (no outbound request), and not Missing Authorization — the user IS authorised; the request just isn't proven to be intentional. Fix: validate a per-session synchroniser token on every state-changing request and set cookies SameSite=Lax/Strict.",
+  "source_reference": "CWE-352; OWASP A01:2021 (Broken Access Control)",
+  "validation_notes": "State-changing request with cookie-only auth and no anti-CSRF token. Endpoint signature co-varies with the action (amount/email/no-arg). Missing Authorization is the key near-miss: authorised-but-not-intentional (CSRF) vs not-authorised (CWE-862).",
+  "variants_expected": 3
+}

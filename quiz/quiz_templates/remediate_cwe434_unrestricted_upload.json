@@ -1,0 +1,28 @@
+{
+  "template_id": "remediate_cwe434_unrestricted_upload",
+  "category": "remediate",
+  "skill_tag": "CWE-434",
+  "owasp": "A04",
+  "severity": "high",
+  "difficulty": "intermediate",
+  "prompt": "This stores an uploaded file. What is the correct fix?",
+  "code_template": "Files.copy(filePart.getInputStream(), Path.of(\"{dir}\", filePart.getSubmittedFileName()));",
+  "variables": {
+    "dir": [
+      "/var/www/uploads",
+      "webapps/app/uploads",
+      "public/files"
+    ]
+  },
+  "correct_option": "Validate the file type/content, generate a server-side filename, and store outside the web root with no execute permission",
+  "distractor_pool": [
+    "Append a .txt suffix only in the displayed URL",
+    "Reject filenames containing the word \"shell\"",
+    "Set the upload size limit to 10 MB",
+    "Base64-encode the file before storing it"
+  ],
+  "explanation_template": "Validating type/content + a server-generated name + storage outside an executable web root prevents an attacker turning an upload into a runnable web shell (CWE-434). A size limit is good hygiene but does not stop a malicious file type; the others are cosmetic.",
+  "source_reference": "CWE-434; OWASP A04:2021 (Insecure Design)",
+  "validation_notes": "Type validation + non-executable storage is the real fix.",
+  "variants_expected": 3
+}

@@ -1,0 +1,28 @@
+{
+  "template_id": "remediate_cwe611_xxe",
+  "category": "remediate",
+  "skill_tag": "CWE-611",
+  "owasp": "A05",
+  "severity": "high",
+  "difficulty": "advanced",
+  "prompt": "This parses untrusted XML. What is the correct fix?",
+  "code_template": "DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();\nDocument d = dbf.newDocumentBuilder().parse(untrustedXml);",
+  "variables": {
+    "flavour": [
+      "document",
+      "SAX",
+      "stream"
+    ]
+  },
+  "correct_option": "Disable DTDs and external entity resolution on the parser factory (e.g. disallow-doctype-decl = true)",
+  "distractor_pool": [
+    "Validate the XML against an XSD after parsing",
+    "Encrypt the XML payload in transit",
+    "Increase the parser's memory limit",
+    "HTML-encode the XML before parsing"
+  ],
+  "explanation_template": "Turning off DTD processing and external entities on the factory removes the XXE attack surface entirely (CWE-611). Validating against an XSD happens after the entities already resolved, so it is too late; transport encryption and memory limits don't address entity expansion.",
+  "source_reference": "CWE-611; OWASP A05:2021 (Security Misconfiguration)",
+  "validation_notes": "Disable DTD/external entities at the factory.",
+  "variants_expected": 3
+}

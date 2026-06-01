@@ -1,0 +1,28 @@
+{
+  "template_id": "detect_cwe209_error_leak",
+  "category": "detect",
+  "skill_tag": "CWE-209",
+  "owasp": "A04",
+  "severity": "medium",
+  "difficulty": "beginner",
+  "prompt": "Which vulnerability is most likely present in this code?",
+  "code_template": "try {\n    process(request);\n} catch (Exception e) {\n    response.getWriter().write({leak});\n}",
+  "variables": {
+    "leak": [
+      "e.toString()",
+      "e.getMessage()",
+      "stackTraceToString(e)"
+    ]
+  },
+  "correct_option": "Information Exposure Through an Error Message",
+  "distractor_pool": [
+    "Exposure of Sensitive Information",
+    "Improper Check for Unusual or Exceptional Conditions",
+    "SQL Injection",
+    "Cross-Site Scripting (XSS)"
+  ],
+  "explanation_template": "The raw exception detail (`{leak}`) is written into the HTTP response, leaking stack traces, SQL fragments, framework versions, or file paths that help an attacker — Information Exposure Through an Error Message (CWE-209). Fix: log the detail server-side and return a generic message with an error id.",
+  "source_reference": "CWE-209; OWASP A04:2021 (Insecure Design)",
+  "validation_notes": "Exception detail returned to the client.",
+  "variants_expected": 3
+}

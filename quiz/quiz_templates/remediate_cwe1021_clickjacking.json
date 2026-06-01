@@ -1,0 +1,28 @@
+{
+  "template_id": "remediate_cwe1021_clickjacking",
+  "category": "remediate",
+  "skill_tag": "CWE-1021",
+  "owasp": "A05",
+  "severity": "low",
+  "difficulty": "beginner",
+  "prompt": "{context} can be loaded inside an <iframe> on any external site, enabling clickjacking. Which change best mitigates this?",
+  "code_template": "HTTP/1.1 200 OK\nContent-Type: text/html\nSet-Cookie: session=abc123; HttpOnly; Secure\n(no framing-protection header is sent)",
+  "variables": {
+    "context": [
+      "A page served by this Java servlet",
+      "A response from the aiohttp web server",
+      "The application's default HTTP responses"
+    ]
+  },
+  "correct_option": "Send `X-Frame-Options: DENY` (or `Content-Security-Policy: frame-ancestors 'none'`)",
+  "distractor_pool": [
+    "Set the `HttpOnly` flag on the session cookie",
+    "Add a per-request anti-CSRF token to forms",
+    "Enable HTTP Strict-Transport-Security (HSTS)",
+    "Set `X-Content-Type-Options: nosniff`"
+  ],
+  "explanation_template": "Clickjacking (CWE-1021) happens when your pages can be framed by any origin: an attacker overlays an invisible iframe of your site over decoy UI and tricks the user into clicking real buttons. The fix is to tell the browser who may frame you - `X-Frame-Options: DENY` (legacy) or, preferably, `Content-Security-Policy: frame-ancestors 'none'` (modern). The other options are all genuine security improvements but solve different problems: HttpOnly mitigates cookie theft via XSS (CWE-1004), anti-CSRF tokens stop CSRF (CWE-352), HSTS prevents protocol-downgrade (CWE-319), and nosniff adds MIME-sniffing protection. None of them stop framing. Note: clickjacking is typically low severity, but real severity is context-dependent - on a page with one-click money transfer it can be serious.",
+  "source_reference": "CWE-1021; OWASP A05:2021 (Security Misconfiguration); OWASP Clickjacking Defense Cheat Sheet",
+  "validation_notes": "Single correct option covers both equivalent mechanisms (XFO DENY / CSP frame-ancestors 'none'). Distractors are real headers/fixes for OTHER problems. nosniff is described without pinning a CWE (per review).",
+  "variants_expected": 3
+}

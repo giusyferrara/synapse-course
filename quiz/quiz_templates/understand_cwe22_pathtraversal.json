@@ -1,0 +1,29 @@
+{
+  "template_id": "understand_cwe22_pathtraversal",
+  "category": "understand",
+  "skill_tag": "CWE-22",
+  "owasp": "A01",
+  "severity": "high",
+  "difficulty": "intermediate",
+  "prompt": "Given this code, what can an attacker most directly achieve?",
+  "code_template": "String {param} = request.getParameter(\"{param}\");\nPath p = Path.of(\"/var/app/data\", {param});\nreturn Files.readString(p);",
+  "variables": {
+    "param": [
+      "file",
+      "doc",
+      "report"
+    ]
+  },
+  "correct_option": "Read files outside /var/app/data (e.g. ../../etc/passwd or the app's config/secrets) by injecting ../ sequences",
+  "distractor_pool": [
+    "Execute arbitrary OS commands on the server",
+    "Run attacker JavaScript in another user's browser",
+    "Make the server send requests to internal-only services",
+    "Inject SQL into the backend database",
+    "Embed the page inside a malicious iframe"
+  ],
+  "explanation_template": "`{param}` is concatenated into a filesystem path with no validation, so input like `../../../../etc/passwd` walks out of /var/app/data and `Files.readString` returns whatever it points to — Path Traversal (CWE-22). The direct impact is unauthorised reading of arbitrary files (OS files, app config, secrets). It is not OS command execution, XSS, SSRF, or SQL injection: nothing here runs a shell, reaches a browser, makes a network request, or touches a database. (With a file *write* sink, traversal could escalate toward code execution, but the direct impact of this read is information disclosure.)",
+  "source_reference": "CWE-22; OWASP A01:2021 (Broken Access Control)",
+  "validation_notes": "Correct = arbitrary file read; distractors are the impacts of CWE-78/79/918/89/1021.",
+  "variants_expected": 3
+}

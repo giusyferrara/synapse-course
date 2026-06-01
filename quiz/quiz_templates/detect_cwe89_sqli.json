@@ -1,0 +1,32 @@
+{
+  "template_id": "detect_cwe89_sqli",
+  "category": "detect",
+  "skill_tag": "CWE-89",
+  "owasp": "A03",
+  "severity": "high",
+  "difficulty": "intermediate",
+  "prompt": "Which vulnerability is most likely present in this code?",
+  "code_template": "String {param} = request.getParameter(\"{param}\");\nString sql = \"SELECT * FROM {table} WHERE name = '\" + {param} + \"'\";\nstmt.executeQuery(sql);",
+  "variables": {
+    "param": [
+      "name",
+      "user",
+      "q"
+    ],
+    "table": [
+      "users",
+      "accounts"
+    ]
+  },
+  "correct_option": "SQL Injection",
+  "distractor_pool": [
+    "Cross-Site Scripting (XSS)",
+    "Path Traversal",
+    "Insecure Direct Object Reference (IDOR)",
+    "OS Command Injection"
+  ],
+  "explanation_template": "`{param}` is concatenated into the SQL string, so `' OR '1'='1` (and worse) changes the query's meaning — SQL Injection (CWE-89). The data flows into a database query, not a browser (XSS) or a shell (command injection). Fix: use a parameterised query (PreparedStatement) with bound parameters.",
+  "source_reference": "CWE-89; OWASP A03:2021 (Injection)",
+  "validation_notes": "User input concatenated into a SQL string passed to executeQuery.",
+  "variants_expected": 6
+}

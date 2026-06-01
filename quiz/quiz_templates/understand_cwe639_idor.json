@@ -1,0 +1,28 @@
+{
+  "template_id": "understand_cwe639_idor",
+  "category": "understand",
+  "skill_tag": "CWE-639",
+  "owasp": "A01",
+  "severity": "high",
+  "difficulty": "intermediate",
+  "prompt": "Why is this endpoint exploitable?",
+  "code_template": "GET /api/{resource}?id=1004   // returns the record without checking ownership",
+  "variables": {
+    "resource": [
+      "invoice",
+      "message",
+      "profile"
+    ]
+  },
+  "correct_option": "An attacker can change the id to read other users' records because no ownership/authorisation check is performed",
+  "distractor_pool": [
+    "The id is not URL-encoded",
+    "The database query is not parameterised",
+    "The response is missing a Content-Security-Policy header",
+    "The session cookie lacks the HttpOnly flag"
+  ],
+  "explanation_template": "The record is selected purely by a client-supplied id with no check that it belongs to the caller, so incrementing the id walks through other users' data — Insecure Direct Object Reference (CWE-639). Encoding, parameterisation, CSP, and HttpOnly are unrelated to the missing ownership check.",
+  "source_reference": "CWE-639; OWASP A01:2021 (Broken Access Control)",
+  "validation_notes": "Correct = missing object-level ownership check.",
+  "variants_expected": 3
+}
