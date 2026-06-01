@@ -1081,6 +1081,11 @@ class HybridEducationalServer:
                 return web.Response(text="About page not found.", status=404)
 
         async def serve_flashcards(request):
+            user_cookie = request.cookies.get('synapse_user')
+            participant_code = request.query.get('participant') or request.cookies.get('participant_code')
+            admin_key = request.query.get('admin')
+            if not user_cookie and not participant_code and admin_key != os.getenv('ADMIN_KEY', ''):
+                raise web.HTTPFound('/login?next=/flashcards')
             return web.FileResponse('templates/flashcards.html')
 
         app.router.add_get('/about', serve_about)
