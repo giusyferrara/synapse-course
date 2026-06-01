@@ -31,6 +31,7 @@ app = web.Application()
 setup_quiz_routes(app)
 # the real app serves /static via its own route; the minimal demo needs it too
 app.router.add_static("/static/", path=os.path.join(ROOT, "static"))
+app.router.add_static("/icons/", path=os.path.join(ROOT, "icons"))
 
 # Inject a fake AI service so explain/hint work offline (tight limits to show 429).
 _FAKE = "Demo elaboration: the untrusted input flows into the sink, which is why the marked answer is correct. (This text is a stand-in for the real Claude output.)"

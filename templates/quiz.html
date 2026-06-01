@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Synapse · Adaptive Security Quiz</title>
   <link rel="stylesheet" href="/static/synapse_a11y.css?v=19">
+  <link rel="stylesheet" href="/static/synapse_a11y_toolbar.css?v=1">
+  <link rel="stylesheet" href="/static/focus_assistant.css">
   <style>
     :root{
       --bg:#f6f7fb; --card:#ffffff; --ink:#1f2430; --ink-soft:#5b6472;
@@ -76,47 +78,11 @@
     .prog-pct{flex:0 0 3em;text-align:right;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
     .hidden{display:none!important;}
     @media (prefers-reduced-motion: reduce){*{transition:none!important;}}
-    /* ---- Accessibility menu (self-contained; also drives the synapse_a11y suite) ---- */
-    #a11yFab{position:fixed;top:14px;right:14px;z-index:1000;width:48px;height:48px;border-radius:50%;
-      border:2px solid var(--accent);background:var(--accent);color:#fff;font-size:1.4rem;line-height:1;
-      cursor:pointer;box-shadow:0 2px 8px rgba(20,30,50,.18);}
-    #a11yFab:focus-visible{outline:3px solid var(--ink);outline-offset:2px;}
-    #a11yPanel{position:fixed;top:70px;right:14px;z-index:1000;width:236px;background:var(--card);
-      border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 24px rgba(20,30,50,.18);
-      padding:12px;display:none;}
-    #a11yPanel.open{display:block;}
-    #a11yPanel h2{font-size:.95rem;margin:.1em 0 .6em;text-align:center;}
-    .a11y-btn{display:flex;align-items:center;gap:9px;width:100%;text-align:left;font:inherit;font-size:.9rem;
-      background:#fff;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;margin:5px 0;
-      cursor:pointer;color:var(--ink);}
-    .a11y-btn:hover{border-color:var(--accent);background:var(--accent-soft);}
-    .a11y-btn[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:600;}
-    .a11y-btn.reset{border-color:#e2b4b4;color:#9a3b3b;}
-    /* modes */
-    body.dark-mode{--bg:#11151c;--card:#1b212b;--ink:#e7ecf3;--ink-soft:#9aa6b6;--line:#2b333f;
-      --accent:#5b9bd5;--accent-soft:#1f2a36;--ok-soft:#16291f;--warn-soft:#2c2415;}
-    body.dark-mode .a11y-btn,body.dark-mode .opt{background:#1b212b;}
-    body.dys-font{font-family:"Comic Sans MS","OpenDyslexic",Verdana,sans-serif;letter-spacing:.03em;word-spacing:.08em;}
-    body.larger-text{font-size:21px;}
-    body.high-contrast{--bg:#fff;--card:#fff;--ink:#000;--ink-soft:#222;--line:#000;--accent:#0033cc;}
-    body.high-contrast.dark-mode{--bg:#000;--card:#000;--ink:#fff;--line:#fff;--accent:#66aaff;}
   </style>
 </head>
 <body>
-  <button id="a11yFab" type="button" aria-label="Accessibility options" aria-haspopup="true" aria-expanded="false" aria-controls="a11yPanel">&#9855;</button>
-  <div id="a11yPanel" role="dialog" aria-label="Accessibility options">
-    <h2>Accessibility</h2>
-    <button class="a11y-btn" type="button" aria-pressed="false" data-mode="dark-mode">🌙 Dark mode</button>
-    <button class="a11y-btn" type="button" aria-pressed="false" data-mode="dys-font">📖 Dyslexia-friendly font</button>
-    <button class="a11y-btn" type="button" aria-pressed="false" data-mode="larger-text">🔠 Larger text</button>
-    <button class="a11y-btn" type="button" aria-pressed="false" data-mode="high-contrast">◐ High contrast</button>
-    <button class="a11y-btn" type="button" onclick="window.synapseToggleReadingMask&&synapseToggleReadingMask()">▭ Reading mask</button>
-    <button class="a11y-btn" type="button" onclick="window.synapseToggleLineSpacing&&synapseToggleLineSpacing()">↕ Line spacing</button>
-    <button class="a11y-btn" type="button" onclick="window.synapseToggleColorOverlay&&synapseToggleColorOverlay()">🎨 Colour overlay</button>
-    <button class="a11y-btn" type="button" onclick="window.synapseToggleCursorHighlight&&synapseToggleCursorHighlight()">🟡 Cursor highlight</button>
-    <button class="a11y-btn" type="button" onclick="window.synapseToggleCalmMode&&synapseToggleCalmMode()">🧘 Calm mode</button>
-    <button class="a11y-btn reset" type="button" id="a11yReset">↺ Reset</button>
-  </div>
+  <!-- The shared platform accessibility toolbar (synapse_a11y_toolbar.js) will be
+       injected here once that module is built and approved. -->
   <div class="wrap">
     <header class="qh">
       <h1>Adaptive Security Quiz</h1>
@@ -164,36 +130,9 @@
     <div id="summary" class="card center summary hidden"></div>
   </div>
 
-  <script>
-  (function(){
-    var fab=document.getElementById('a11yFab'),panel=document.getElementById('a11yPanel');
-    var MODES=['dark-mode','dys-font','larger-text','high-contrast'];
-    function load(){try{return JSON.parse(localStorage.getItem('quizA11y')||'{}')}catch(e){return{}}}
-    function save(s){try{localStorage.setItem('quizA11y',JSON.stringify(s))}catch(e){}}
-    var st=load();
-    MODES.forEach(function(m){
-      if(st[m])document.body.classList.add(m);
-      var b=document.querySelector('.a11y-btn[data-mode="'+m+'"]');
-      if(!b)return;
-      b.setAttribute('aria-pressed',st[m]?'true':'false');
-      b.addEventListener('click',function(){
-        var on=document.body.classList.toggle(m);
-        b.setAttribute('aria-pressed',on?'true':'false');st[m]=on;save(st);});
-    });
-    fab.addEventListener('click',function(){
-      var open=panel.classList.toggle('open');
-      fab.setAttribute('aria-expanded',open?'true':'false');});
-    document.addEventListener('keydown',function(e){
-      if(e.key==='Escape'){panel.classList.remove('open');fab.setAttribute('aria-expanded','false');}});
-    var rb=document.getElementById('a11yReset');
-    if(rb)rb.addEventListener('click',function(){
-      MODES.forEach(function(m){document.body.classList.remove(m);
-        var b=document.querySelector('.a11y-btn[data-mode="'+m+'"]');if(b)b.setAttribute('aria-pressed','false');});
-      st={};save(st);
-      if(window.synapseToast)synapseToast('Accessibility reset');});
-  })();
-  </script>
   <script src="/static/quiz.js?v=1"></script>
+  <script src="/static/focus_assistant.js"></script>
+  <script src="/static/synapse_a11y_toolbar.js?v=1"></script>
   <script src="/static/synapse_a11y.js?v=12"></script>
 </body>
 </html>
