@@ -1250,10 +1250,42 @@
 <style>
 /* Mission page: show the accessibility menu (already built + wired); hide Java Course — the menu takes its place */
 #javaCourseBtn { display: none !important; }
-/* Anchor the accessibility dropdown directly below the butterfly button.
-   The shared rule positioned it top:0/right:56px (tuned for a different navbar),
-   which opened it inside/behind the sticky header so it looked like it wasn't opening. */
-#accessMenuInline { top: calc(100% + 8px) !important; right: 0 !important; left: auto !important; bottom: auto !important; }
+/* Butterfly accessibility menu — open as a single INLINE horizontal row inside the
+   top bar (not a dropdown). The butterfly was wedged between ShopSecure and Check My
+   Answers with no room, so we move it to the far right of the action cluster and let
+   the icon row expand LEFTWARD into the empty centre of the bar.
+
+   .top-bar-actions has margin-left:auto (right-pinned), so growing the wrap inline
+   pushes the cluster left into empty space instead of off-screen.
+   The shared synapse_a11y.css collapses .access-menu-inline to max-width:0/opacity:0
+   and reveals it via an .open class; this page opens it with style.display='grid', so
+   we override the OPEN state only (ID+attr beats the shared !important rules). When
+   closed (display:none) these selectors don't match, so the menu stays hidden. */
+.access-toggle-wrap {
+    order: 99 !important;                 /* push the butterfly to the far right */
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+#accessMenuInline { order: -1 !important; }   /* row sits to the LEFT of the butterfly */
+
+#accessMenuInline[style*="display: grid"],
+#accessMenuInline[style*="display:grid"] {
+    display: flex !important;
+    position: static !important;          /* in-flow → expands the bar inline */
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    width: auto !important;
+    max-width: none !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    gap: 8px !important;
+    top: auto !important;
+    right: auto !important;
+    left: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+}
 </style>
 <style>
 /* Mission page: dark-mode support — readable text and panels */
