@@ -5,6 +5,8 @@
 
 /* leave room for the fixed 56px navbar the module injects */
 body.synapse-has-toolbar { padding-top: 56px; }
+/* keep a host page's own fixed top control (e.g. flashcards .theme-toggle) clear of the navbar */
+body.synapse-has-toolbar .theme-toggle { top: 68px !important; }
 
 /* ===== Dark mode ===== */
 body.dark-mode {
@@ -14,12 +16,22 @@ body.dark-mode {
 }
 body.dark-mode .card, body.dark-mode .opt { background:#1b212b; }
 
-/* ===== High contrast ===== */
+/* ===== High contrast — genuine black/white/yellow, overrides hard-coded colours ===== */
 body.high-contrast {
-  background:#fff; color:#000;
-  --bg:#fff; --card:#fff; --ink:#000; --ink-soft:#222; --line:#000; --accent:#0033cc;
+  background:#000 !important; color:#fff !important;
+  --bg:#000; --card:#000; --ink:#fff; --ink-soft:#fff; --line:#fff;
+  --accent:#ffff00; --accent-soft:#000; --ok:#00ff00; --ok-soft:#000; --warn:#ffff00; --warn-soft:#000;
 }
-body.high-contrast .card, body.high-contrast .opt { border-color:#000 !important; }
+body.high-contrast .card, body.high-contrast .opt,
+body.high-contrast .feedback, body.high-contrast .ai-box {
+  background:#000 !important; color:#fff !important; border:2px solid #fff !important;
+}
+body.high-contrast pre.code { background:#000 !important; color:#fff !important; border:2px solid #fff !important; }
+body.high-contrast .chip { background:#000 !important; color:#ff0 !important; border:1px solid #ff0 !important; }
+body.high-contrast a, body.high-contrast .opt .k, body.high-contrast .feedback .src { color:#ff0 !important; }
+body.high-contrast button.btn { background:#000 !important; color:#ff0 !important; border:2px solid #ff0 !important; }
+body.high-contrast #synapseA11yNav { background:#000 !important; border-bottom:2px solid #fff; }
+body.high-contrast #synapseA11yNav button { background:#111 !important; }
 
 /* ===== Dyslexia-friendly font ===== */
 body.dyslexia-font-active, body.dyslexia-font-active .card, body.dyslexia-font-active .opt {
@@ -70,3 +82,9 @@ body.reduce-motion * { animation:none !important; transition:none !important; }
   position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9998; pointer-events:none; display:none;
 }
 #synapseFocusOverlay.active { display:block; }
+#synapseFocusHint {
+  position:fixed; top:68px; left:50%; transform:translateX(-50%); z-index:10003;
+  background:linear-gradient(135deg,#10b981,#059669); color:#fff; padding:10px 18px; border-radius:10px;
+  font:600 14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif; box-shadow:0 8px 24px rgba(16,185,129,.4);
+  max-width:90%; text-align:center;
+}

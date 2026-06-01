@@ -23,7 +23,8 @@
 
   // ---------- private state ----------
   var fontPct = 100, ttsEnabled = false, pointerActive = false,
-      voiceRecognition = null, isRecording = false, focusModeActive = false;
+      voiceRecognition = null, isRecording = false,
+      focusModeActive = false, focusAssistActive = false, spotEl = null, spotPrev = null;
 
   function toast(msg) { if (window.synapseToast) window.synapseToast(msg); else console.log(msg); }
   function setActive(id, on) { var b = document.getElementById(id); if (b) b.classList.toggle("active", on); }
@@ -170,18 +171,33 @@
       voiceRecognition.onend = function () { isRecording = false; if (btn) btn.classList.remove("active"); };
       voiceRecognition.start();
     },
+    // 🎯 Focus Mode = spotlight follows the pointer (hover); only the hovered area is lit.
     toggleFocusMode: function () {
       focusModeActive = !focusModeActive;
-      var ov = document.getElementById("synapseFocusOverlay");
-      if (ov) ov.classList.toggle("active", focusModeActive);
-      document.body.classList.toggle("focus-mode", focusModeActive);
       setActive("focusModeBtn", focusModeActive);
+      if (focusModeActive) {
+        if (focusAssistActive) api.toggleFocusAssistant();   // mutually exclusive
+        showOverlay(true);
+        document.addEventListener("mousemove", hoverSpot);
+        showHint("🔦 Spotlight follows your pointer. Click 🎯 again to exit.");
+      } else {
+        document.removeEventListener("mousemove", hoverSpot);
+        deactivateSpotlight();
+      }
     },
+    // 💡 Focus Assistant = click an area to pin the spotlight; click again elsewhere to move it.
     toggleFocusAssistant: function () {
-      if (typeof window.toggleFocusAssistant === "function" && window.toggleFocusAssistant !== api.toggleFocusAssistant) {
-        window.toggleFocusAssistant();
-      } else { toast("Focus assistant isn't available on this page."); }
-      setActive("focusAssistantBtn", document.body.classList.contains("focus-assistant-active"));
+      focusAssistActive = !focusAssistActive;
+      setActive("focusAssistantBtn", focusAssistActive);
+      if (focusAssistActive) {
+        if (focusModeActive) api.toggleFocusMode();          // mutually exclusive
+        showOverlay(true);
+        document.addEventListener("click", clickSpot, true);
+        showHint("💡 Click any area to spotlight it. Click 💡 again to exit.");
+      } else {
+        document.removeEventListener("click", clickSpot, true);
+        deactivateSpotlight();
+      }
     },
     toggleCalmingAudio: function () {
       var audio = document.getElementById("synapseCalmAudio");
@@ -199,7 +215,10 @@
       document.body.classList.remove("dark-mode", "high-contrast", "dyslexia-font-active", "reduce-motion", "focus-mode", "synapse-calm-mode");
       fontPct = 100; applyFont();
       ["darkModeBtn", "highContrastBtn", "dyslexiaBtn", "readingPointerBtn", "textToSpeechBtn", "reduceMotionBtn", "focusModeBtn", "focusAssistantBtn", "voiceBtn"].forEach(function (id) { setActive(id, false); });
-      var ov = document.getElementById("synapseFocusOverlay"); if (ov) ov.classList.remove("active");
+      focusModeActive = false; focusAssistActive = false;
+      document.removeEventListener("mousemove", hoverSpot);
+      document.removeEventListener("click", clickSpot, true);
+      deactivateSpotlight();
       var line = document.getElementById("synapseReadingPointerLine"); if (line) line.classList.remove("active");
       pointerActive = false; document.removeEventListener("mousemove", movePointer);
       ttsEnabled = false; if (window.speechSynthesis) window.speechSynthesis.cancel(); document.removeEventListener("click", speak);
@@ -234,6 +253,56 @@
       if (localStorage.getItem("highContrast") === "true") api.toggleHighContrast();
       if (localStorage.getItem("dyslexiaFont") === "true") api.toggleDyslexiaFont();
     } catch (e) {}
+  }
+
+  // ---------- focus spotlight (self-contained; no focus_assistant.js dependency) ----------
+  function showOverlay(on) {
+    var ov = document.getElementById("synapseFocusOverlay");
+    if (ov) ov.classList.toggle("active", !!on);
+  }
+  function nearestContainer(el) {
+    if (!el || !el.closest) return el;
+    return el.closest('.card,.opt,section,article,[class*="container"],[class*="content"],[class*="panel"]') || el;
+  }
+  function spotlightTarget(el) {
+    if (!el || el === spotEl || (el.closest && el.closest("#synapseA11yNav"))) return;
+    clearSpotlight();
+    spotPrev = { position: el.style.position, zIndex: el.style.zIndex, boxShadow: el.style.boxShadow };
+    if (getComputedStyle(el).position === "static") el.style.position = "relative";
+    el.style.zIndex = "9999";  // above the .6 overlay (9998), below the navbar (10001)
+    el.style.boxShadow = "0 0 0 4px rgba(16,185,129,.9), 0 0 40px rgba(16,185,129,.55)";
+    spotEl = el;
+  }
+  function clearSpotlight() {
+    if (!spotEl) return;
+    spotEl.style.position = (spotPrev && spotPrev.position) || "";
+    spotEl.style.zIndex = (spotPrev && spotPrev.zIndex) || "";
+    spotEl.style.boxShadow = (spotPrev && spotPrev.boxShadow) || "";
+    spotEl = null; spotPrev = null;
+  }
+  function deactivateSpotlight() { clearSpotlight(); showOverlay(false); hideHint(); }
+  function hoverSpot(e) {
+    if (!focusModeActive) return;
+    if (e.target.closest && e.target.closest("#synapseA11yNav")) return;  // keep toolbar usable
+    spotlightTarget(nearestContainer(e.target));
+  }
+  function clickSpot(e) {
+    if (!focusAssistActive) return;
+    if (e.target.closest && e.target.closest("#synapseA11yNav")) return;  // never swallow toolbar clicks
+    e.preventDefault(); e.stopPropagation();                              // a click only re-aims the spotlight
+    spotlightTarget(nearestContainer(e.target));
+  }
+  var hintTimer = null;
+  function showHint(text) {
+    hideHint();
+    var h = document.createElement("div");
+    h.id = "synapseFocusHint"; h.textContent = text;
+    document.body.appendChild(h);
+    hintTimer = setTimeout(function () { var el = document.getElementById("synapseFocusHint"); if (el) el.remove(); }, 4000);
+  }
+  function hideHint() {
+    if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
+    var el = document.getElementById("synapseFocusHint"); if (el) el.remove();
   }
 
   window.synapseToolbar = api;
