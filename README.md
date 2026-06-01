@@ -1,4 +1,14 @@
-# 🦋 SYNAPSE
+<p align="center">
+  <img src="icons/butterfly_logo_bright.svg" alt="SYNAPSE" width="140">
+</p>
+
+<h1 align="center">SYNAPSE</h1>
+
+<p align="center"><strong>An accessibility-first, multi-LLM AI tutor for secure software development education.</strong></p>
+
+<p align="center"><em>Learning designed for focused, creative minds.</em></p>
+
+<p align="center">🔗 <a href="https://synapse-course.com">synapse-course.com</a></p>
 
 **An accessibility-first, multi-LLM AI tutor for secure software development education.**
 
