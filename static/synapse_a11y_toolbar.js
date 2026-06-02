@@ -65,7 +65,6 @@
           btn("", "window.synapseToggleCursorHighlight&&synapseToggleCursorHighlight();this.classList.toggle('active')", "Cursor Highlight", "🟡", 16) +
           btn("", "window.synapseToggleDictionary&&synapseToggleDictionary();this.classList.toggle('active')", "Dictionary", "📚", 16) +
           btn("", "window.synapseToggleCalmMode&&synapseToggleCalmMode();this.classList.toggle('active')", "Calm Mode", "🧘", 16) +
-          btn("", "window.synapseToggleProgressBar&&synapseToggleProgressBar();this.classList.toggle('active')", "Progress Bar", "📊", 16) +
           btn("", "synapseToolbar.reset()", "Reset All", "🔄", 18, false, "rgba(255,107,107,0.6)") +
         '</div>' +
       '</div>' +
