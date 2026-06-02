@@ -50,8 +50,8 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 9998;
+            background: rgba(0, 0, 0, 0.78);
+            z-index: 10040;
             pointer-events: none;
             transition: opacity 0.3s ease;
         `;
@@ -216,10 +216,10 @@
             window.focusAssistantState.focusedElement.style.boxShadow = '';
         }
         
-        // Apply focus with green glow
+        // Apply focus with a crisp green ring + glow (matches the shared toolbar module)
         element.style.position = 'relative';
-        element.style.zIndex = '9999';
-        element.style.boxShadow = '0 0 60px rgba(16, 185, 129, 0.8), 0 0 120px rgba(16, 185, 129, 0.4)';
+        element.style.zIndex = '10042';
+        element.style.boxShadow = '0 0 0 4px rgba(16, 185, 129, .95), 0 0 50px rgba(16, 185, 129, .5)';
         
         // Smooth scroll to element
         element.scrollIntoView({ 
