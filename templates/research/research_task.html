@@ -1250,60 +1250,76 @@
 <style>
 /* Mission page: show the accessibility menu (already built + wired); hide Java Course — the menu takes its place */
 #javaCourseBtn { display: none !important; }
-/* Butterfly accessibility menu — open as a single INLINE horizontal row inside the
-   top bar (not a dropdown). The butterfly was wedged between ShopSecure and Check My
-   Answers with no room, so we move it to the far right of the action cluster and let
-   the icon row expand LEFTWARD into the empty centre of the bar.
+/* Butterfly accessibility menu — opens as a clean DROPDOWN below the action buttons
+   (not a dark floating panel that grows the header / covers the page).
 
-   .top-bar-actions has margin-left:auto (right-pinned), so growing the wrap inline
-   pushes the cluster left into empty space instead of off-screen.
-
-   Open/close is driven by an .is-open CLASS toggled in toggleAccessMenu() — NOT by an
-   inline display string — so it can't be defeated by the shared synapse_a11y.css, which
-   otherwise collapses .access-menu-inline to max-width:0/opacity:0. The ID+class +
-   !important selector below beats every shared rule; when .is-open is absent the menu
-   stays display:none (inline style + the page's [style*="display:none"] rule). */
-/* The AI Tutor side panel is position:fixed, right-docked, z-index:10005 and visible by
-   default; its top edge sits below the bar. When the open menu makes the bar taller it
-   would be covered by that panel (burying the butterfly/close). Raise the header's
-   stacking context so the menu + butterfly always render ABOVE the side panel. */
+   - position:absolute + top:100% → drops BELOW the navbar buttons; the header keeps its
+     normal height (the menu floats over content, it does NOT balloon the navbar).
+   - No dark container: transparent background, no padding box — just the icons.
+   - The icons are white circles, so on light page content they'd be invisible (the
+     flashcards white-on-white trap). Each icon gets a purple border + drop shadow so it
+     stays clearly visible on ANY background (purple header strip or light content).
+   - Open/close via the .is-open CLASS (robust against the shared synapse_a11y.css
+     collapse); when .is-open is absent the menu stays display:none.
+   - header z-index 10006 keeps the dropdown above the fixed AI Tutor side panel (10005). */
 .synapse-header { z-index: 10006 !important; }
-/* Safety nets so nothing is ever pushed off-screen: the bar and the action cluster may
-   wrap, so if the open icon row can't fit beside the buttons the whole cluster drops to
-   a second line instead of overflowing. Closed, everything fits → these are no-ops. */
-.top-bar { flex-wrap: wrap !important; }
-.top-bar-actions { flex-wrap: wrap !important; justify-content: flex-end !important; }
-/* Pin the primary controls — they must NEVER shrink or wrap their text */
+/* Pin the primary controls so they never shrink or wrap their text */
 .top-bar-left,
 #btnShopSecure,
 #submitTaskBtn { flex-shrink: 0 !important; white-space: nowrap !important; }
 
+/* Anchor the dropdown to the FULL-height top bar so top:100% clears it cleanly
+   (the butterfly's little wrap sits mid-bar, which made the menu overlap the buttons). */
+.top-bar { position: relative !important; }
 .access-toggle-wrap {
+    position: static !important;          /* override the base position:relative so the dropdown anchors to .top-bar */
     order: 99 !important;                 /* butterfly stays at the far right */
     display: flex !important;
     align-items: center !important;
-    gap: 8px !important;
-    flex-shrink: 0 !important;            /* butterfly (close) never shrinks/clips */
+    flex-shrink: 0 !important;
 }
-#accessMenuInline { order: -1 !important; }   /* row sits to the LEFT of the butterfly */
 
-/* Open: a compact WRAPPING block of full-size icons — no horizontal overflow at any width */
+/* Open: IN-FLOW row directly below the navbar buttons. Being in normal flow inside the
+   (sticky) header, it grows the header and PUSHES .main-content down — it never floats
+   over or covers the page. Icons right-aligned so they sit under the buttons. No dark box. */
 #accessMenuInline.is-open {
     display: flex !important;
-    position: static !important;          /* in-flow → expands the bar inline */
-    flex-wrap: wrap !important;           /* wrap to a 2nd line instead of overflowing */
+    position: static !important;          /* in-flow → pushes content down (no overlay) */
+    flex-wrap: wrap !important;
     align-items: center !important;
-    justify-content: flex-end !important;
-    width: auto !important;
-    max-width: 560px !important;          /* fits 10 full-size icons/row (incl. 16px padding) → 2 tidy rows */
+    justify-content: flex-end !important; /* icons sit under the buttons (right side) */
+    width: 100% !important;
+    max-width: none !important;
     opacity: 1 !important;
     overflow: visible !important;
     gap: 8px !important;
-    top: auto !important;
-    right: auto !important;
-    left: auto !important;
-    bottom: auto !important;
+    margin: 0 !important;
+    padding: 10px 32px 12px !important;   /* match the navbar's horizontal padding */
+    background: transparent !important;   /* no dark/black panel */
+    border: none !important;
+    box-shadow: none !important;
     transform: none !important;
+}
+
+/* Icons: white circles need a visible edge on ANY background (no container now) */
+#accessMenuInline.is-open .nav-btn-small {
+    box-sizing: border-box !important;    /* keep 44px total so 10 fit per row → 2 rows */
+    background: #ffffff !important;
+    color: #4c1d95 !important;
+    border: 2px solid #7c3aed !important;
+    box-shadow: 0 3px 10px rgba(31,41,55,0.4) !important;
+}
+
+/* ACTIVE (feature ON) — vivid coloured fill so it's obvious at a glance which features
+   are currently on. Overrides the older amber .active rules; the emoji glyph stays and
+   the green fill + ring is the indicator. Reset/one-shot buttons don't get .active. */
+.nav-btn-small.active,
+#accessMenuInline.is-open .nav-btn-small.active {
+    background: #10b981 !important;
+    color: #ffffff !important;
+    border-color: #047857 !important;
+    box-shadow: 0 0 0 3px rgba(16,185,129,0.5), 0 3px 10px rgba(0,0,0,0.3) !important;
+    transform: scale(1.08) !important;
 }
 </style>
 <style>
@@ -1407,32 +1423,34 @@ body.dark-mode .tab-btn {
             <button class="nav-icon-btn" id="butterflyAccessBtn" onclick="toggleAccessMenu()" title="Accessibility Menu">
                 <img src="/icons/access.png" alt="Accessibility" style="width:28px;height:28px;" onerror="this.outerHTML='&#129419;'">
             </button>
-            <div class="access-menu-inline" id="accessMenuInline" style="display:none;">
+        </div>
+        <button class="submit-btn" id="submitTaskBtn" onclick="submitTask()">&#9989; Check My Answers</button>
+    </div>
+</div>
+<!-- Accessibility menu: IN-FLOW row directly below the navbar buttons. When open it grows the
+     header and PUSHES the page content down (never floats over / covers it). Closed = display:none. -->
+<div class="access-menu-inline" id="accessMenuInline" style="display:none;">
                 <button class="nav-btn nav-btn-small" onclick="toggleDarkMode()" title="Dark Mode">&#127769;</button>
                 <button class="nav-btn nav-btn-small" onclick="toggleDyslexiaMode()" title="Dyslexia Font">&#128214;</button>
-                
+
                 <button class="nav-btn nav-btn-small" onclick="increaseTextSize()" title="Larger Text">A+</button>
                 <button class="nav-btn nav-btn-small" onclick="decreaseTextSize()" title="Smaller Text">A-</button>
                 <button class="nav-btn nav-btn-small" onclick="toggleReadingGuidePanel()" title="Reading Guide">&#128205;</button>
                 <button class="nav-btn nav-btn-small" onclick="toggleTextToSpeech()" title="Read Aloud">&#128266;</button>
                 <button class="nav-btn nav-btn-small" onclick="toggleHighContrast()" title="High Contrast">&#9899;&#9898;</button>
                 <button class="nav-btn nav-btn-small" onclick="toggleFocusMode()" title="Focus Mode">&#127919;</button>
-                <button class="nav-btn nav-btn-small" onclick="toggleFocusAssistant()" title="Focus Assistant">&#128161;</button>
+                <button class="nav-btn nav-btn-small" onclick="toggleFocusAssistant();this.classList.toggle('active')" title="Focus Assistant">&#128161;</button>
                 <button class="nav-btn nav-btn-small" onclick="toggleCalmingAudio()" title="Calming Audio">&#127925;</button>
                 <button class="nav-btn nav-btn-small" onclick="toggleVoiceInput()" title="Voice Input">&#127908;</button>
                 <button class="nav-btn nav-btn-small" onclick="(typeof synapseToggleReduceMotion==='function') ? synapseToggleReduceMotion() : (typeof toggleReduceMotion==='function' ? toggleReduceMotion() : null)" title="Reduce Motion">&#9889;</button>
-                <button class="nav-btn nav-btn-small" onclick="synapseToggleLineSpacing()" title="Line Spacing">&#8597;</button>
-                <button class="nav-btn nav-btn-small" onclick="synapseToggleReadingMask()" title="Reading Mask">&#128306;</button>
-                <button class="nav-btn nav-btn-small" onclick="synapseToggleColorOverlay()" title="Color Overlay">&#127912;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleLineSpacing();this.classList.toggle('active')" title="Line Spacing">&#8597;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleReadingMask();this.classList.toggle('active')" title="Reading Mask">&#128306;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleColorOverlay();this.classList.toggle('active')" title="Color Overlay">&#127912;</button>
                 <button class="nav-btn nav-btn-small" style="display:none" title="Cursor Highlight">&#128993;</button>
-                <button class="nav-btn nav-btn-small" onclick="synapseToggleDictionary()" title="Dictionary">&#128218;</button>
-                <button class="nav-btn nav-btn-small" onclick="synapseToggleCalmMode()" title="Calm Mode">&#129496;</button>
-                <button class="nav-btn nav-btn-small" onclick="synapseToggleProgressBar()" title="Progress Bar">&#128202;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleDictionary();this.classList.toggle('active')" title="Dictionary">&#128218;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleCalmMode();this.classList.toggle('active')" title="Calm Mode">&#129496;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleProgressBar();this.classList.toggle('active')" title="Progress Bar">&#128202;</button>
                 <button class="nav-btn nav-btn-small" onclick="resetAccessibility()" title="Reset All" style="background:#991b1b !important;">&#128260;</button>
-            </div>
-        </div>
-        <button class="submit-btn" id="submitTaskBtn" onclick="submitTask()">&#9989; Check My Answers</button>
-    </div>
 </div>
 <div class="header-tabs">
     <button class="task-tab active" data-tab="instructions">&#128203; Instructions</button>

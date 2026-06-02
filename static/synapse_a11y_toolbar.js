@@ -59,13 +59,13 @@
           btn("", "synapseToolbar.toggleCalmingAudio()", "Calming Audio", "🎵", 16) +
           btn("voiceBtn", "synapseToolbar.toggleVoiceInput()", "Voice Input", "🎤", 16) +
           btn("reduceMotionBtn", "synapseToolbar.toggleReduceMotion()", "Reduce Motion", "⚡", 16) +
-          btn("", "window.synapseToggleLineSpacing&&synapseToggleLineSpacing()", "Line Spacing", "↕", 16) +
-          btn("", "window.synapseToggleReadingMask&&synapseToggleReadingMask()", "Reading Mask", "🔲", 16) +
-          btn("", "window.synapseToggleColorOverlay&&synapseToggleColorOverlay()", "Color Overlay", "🎨", 16) +
-          btn("", "window.synapseToggleCursorHighlight&&synapseToggleCursorHighlight()", "Cursor Highlight", "🟡", 16) +
-          btn("", "window.synapseToggleDictionary&&synapseToggleDictionary()", "Dictionary", "📚", 16) +
-          btn("", "window.synapseToggleCalmMode&&synapseToggleCalmMode()", "Calm Mode", "🧘", 16) +
-          btn("", "window.synapseToggleProgressBar&&synapseToggleProgressBar()", "Progress Bar", "📊", 16) +
+          btn("", "window.synapseToggleLineSpacing&&synapseToggleLineSpacing();this.classList.toggle('active')", "Line Spacing", "↕", 16) +
+          btn("", "window.synapseToggleReadingMask&&synapseToggleReadingMask();this.classList.toggle('active')", "Reading Mask", "🔲", 16) +
+          btn("", "window.synapseToggleColorOverlay&&synapseToggleColorOverlay();this.classList.toggle('active')", "Color Overlay", "🎨", 16) +
+          btn("", "window.synapseToggleCursorHighlight&&synapseToggleCursorHighlight();this.classList.toggle('active')", "Cursor Highlight", "🟡", 16) +
+          btn("", "window.synapseToggleDictionary&&synapseToggleDictionary();this.classList.toggle('active')", "Dictionary", "📚", 16) +
+          btn("", "window.synapseToggleCalmMode&&synapseToggleCalmMode();this.classList.toggle('active')", "Calm Mode", "🧘", 16) +
+          btn("", "window.synapseToggleProgressBar&&synapseToggleProgressBar();this.classList.toggle('active')", "Progress Bar", "📊", 16) +
           btn("", "synapseToolbar.reset()", "Reset All", "🔄", 18, false, "rgba(255,107,107,0.6)") +
         '</div>' +
       '</div>' +
