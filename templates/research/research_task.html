@@ -1257,26 +1257,45 @@
 
    .top-bar-actions has margin-left:auto (right-pinned), so growing the wrap inline
    pushes the cluster left into empty space instead of off-screen.
-   The shared synapse_a11y.css collapses .access-menu-inline to max-width:0/opacity:0
-   and reveals it via an .open class; this page opens it with style.display='grid', so
-   we override the OPEN state only (ID+attr beats the shared !important rules). When
-   closed (display:none) these selectors don't match, so the menu stays hidden. */
+
+   Open/close is driven by an .is-open CLASS toggled in toggleAccessMenu() — NOT by an
+   inline display string — so it can't be defeated by the shared synapse_a11y.css, which
+   otherwise collapses .access-menu-inline to max-width:0/opacity:0. The ID+class +
+   !important selector below beats every shared rule; when .is-open is absent the menu
+   stays display:none (inline style + the page's [style*="display:none"] rule). */
+/* The AI Tutor side panel is position:fixed, right-docked, z-index:10005 and visible by
+   default; its top edge sits below the bar. When the open menu makes the bar taller it
+   would be covered by that panel (burying the butterfly/close). Raise the header's
+   stacking context so the menu + butterfly always render ABOVE the side panel. */
+.synapse-header { z-index: 10006 !important; }
+/* Safety nets so nothing is ever pushed off-screen: the bar and the action cluster may
+   wrap, so if the open icon row can't fit beside the buttons the whole cluster drops to
+   a second line instead of overflowing. Closed, everything fits → these are no-ops. */
+.top-bar { flex-wrap: wrap !important; }
+.top-bar-actions { flex-wrap: wrap !important; justify-content: flex-end !important; }
+/* Pin the primary controls — they must NEVER shrink or wrap their text */
+.top-bar-left,
+#btnShopSecure,
+#submitTaskBtn { flex-shrink: 0 !important; white-space: nowrap !important; }
+
 .access-toggle-wrap {
-    order: 99 !important;                 /* push the butterfly to the far right */
+    order: 99 !important;                 /* butterfly stays at the far right */
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
+    flex-shrink: 0 !important;            /* butterfly (close) never shrinks/clips */
 }
 #accessMenuInline { order: -1 !important; }   /* row sits to the LEFT of the butterfly */
 
-#accessMenuInline[style*="display: grid"],
-#accessMenuInline[style*="display:grid"] {
+/* Open: a compact WRAPPING block of full-size icons — no horizontal overflow at any width */
+#accessMenuInline.is-open {
     display: flex !important;
     position: static !important;          /* in-flow → expands the bar inline */
-    flex-wrap: nowrap !important;
+    flex-wrap: wrap !important;           /* wrap to a 2nd line instead of overflowing */
     align-items: center !important;
+    justify-content: flex-end !important;
     width: auto !important;
-    max-width: none !important;
+    max-width: 560px !important;          /* fits 10 full-size icons/row (incl. 16px padding) → 2 tidy rows */
     opacity: 1 !important;
     overflow: visible !important;
     gap: 8px !important;
@@ -2380,11 +2399,8 @@ let currentFontScale=1.0,speechEnabled=false,focusModeActive=false,readingGuideA
 function toggleAccessMenu(){
   var menu=document.getElementById('accessMenuInline');
   if(!menu)return;
-  if(menu.style.display==='grid'){
-    menu.style.display='none';
-  } else {
-    menu.style.display='grid';
-  }
+  // Class-based toggle: robust against the shared synapse_a11y.css collapse rules.
+  menu.classList.toggle('is-open');
 }
 function toggleDarkMode(){
   document.body.classList.toggle('dark-mode');
@@ -2543,7 +2559,7 @@ function resetAccessibility(){document.querySelectorAll('.nav-btn-small.active')
   localStorage.removeItem('fontSize');
   localStorage.removeItem('fontFamily');
   var m=document.getElementById('accessMenuInline');
-  if(m) m.style.display='none';
+  if(m) m.classList.remove('is-open');
   console.log('Reset all');
 }
 
