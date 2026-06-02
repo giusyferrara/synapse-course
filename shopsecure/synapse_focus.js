@@ -13,7 +13,8 @@
     '.focus-mode-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);z-index:9998;display:none;pointer-events:none;transition:opacity .3s ease;}' +
     '.focus-mode-overlay.active{display:block;}' +
     'body.focus-mode main,body.focus-mode .container,body.focus-mode main.container,body.focus-mode .main-content,body.focus-mode .task-panel{position:relative;z-index:9999;}' +
-    'body.focus-mode nav,body.focus-mode .nav{z-index:10001;}' +
+    // toolbar/nav (which holds the focus-off + Reset controls) must stay ABOVE the dim overlay so the off-switch is always visible/reachable. Covers BOTH Focus Mode and Focus Assistant; position:relative makes the z-index actually apply to ShopSecure's static .nav (mirrors index.html's nav at z-index 10001).
+    'body.focus-mode nav,body.focus-mode .nav,body.focus-assistant-active nav,body.focus-assistant-active .nav{position:relative;z-index:10002;}' +
     '#focusModeBtn.active,[title="Focus Mode"].active{background:#6366f1!important;color:#fff!important;box-shadow:0 0 15px rgba(99,102,241,.6)!important;}' +
     '[title="Focus Assistant"].active,#focusAssistBtn.active,#focusAssistBtnVisible.active{background:#f59e0b!important;color:#fff!important;box-shadow:0 0 15px rgba(245,158,11,.6)!important;}';
   var st = document.createElement('style');
@@ -49,6 +50,7 @@
   var focusAssistantActive = false, currentSpotlight = null, focusOverlay = null;
   window.toggleFocusAssistant = function () {
     focusAssistantActive = !focusAssistantActive;
+    document.body.classList.toggle('focus-assistant-active', focusAssistantActive);
     if (focusAssistantActive) {
       focusOverlay = document.createElement('div');
       focusOverlay.id = 'focus-assistant-overlay';
