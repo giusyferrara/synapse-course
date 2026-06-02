@@ -10,6 +10,22 @@
 
 <p align="center">🔗 <a href="https://synapse-course.com">synapse-course.com</a></p>
 
+<p align="center">
+  <a href="https://doi.org/10.5281/zenodo.20480483"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.20480483.svg" alt="DOI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
+  <a href="https://synapse-course.com"><img src="https://img.shields.io/badge/demo-live-brightgreen.svg" alt="Live demo"></a>
+  <a href="https://youtu.be/9R17KC47qQI"><img src="https://img.shields.io/badge/screencast-YouTube-red.svg" alt="Screencast"></a>
+  <a href="https://orcid.org/0009-0005-3669-8396"><img src="https://img.shields.io/badge/ORCID-0009--0005--3669--8396-A6CE39.svg?logo=orcid" alt="ORCID"></a>
+</p>
+
+<p align="center">
+  <strong><a href="https://synapse-course.com">Live platform</a></strong> ·
+  <a href="https://youtu.be/9R17KC47qQI">Screencast</a> ·
+  <a href="https://doi.org/10.5281/zenodo.20480483">Archived release (DOI)</a> ·
+  <a href="CITATION.cff">Cite this work</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a>
+</p>
+
 **An accessibility-first, multi-LLM AI tutor for secure software development education.**
 
 *Learning designed for focused, creative minds.*
