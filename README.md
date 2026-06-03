@@ -99,6 +99,4 @@ A tool-demonstration paper describing SYNAPSE has been submitted to ICSME 2026.
 
 Released under the MIT License — see [LICENSE](LICENSE). © 2026 Giusy Ferrara.
 
-## Acknowledgements
 
-Developed and evaluated under the supervision of Prof. Ashkan Sami, Edinburgh Napier University.
