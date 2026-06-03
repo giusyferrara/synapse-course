@@ -34,6 +34,17 @@
 
 ---
 
+## Evaluating SYNAPSE (for reviewers)
+
+The fastest way to try SYNAPSE is the **live instance — no installation required**:
+
+- 🔗 **Live platform:** https://synapse-course.com
+- ▶️ **Demo video:** https://youtu.be/9R17KC47qQI
+- 🔑 **Reviewer access:** registration is free and open
+
+To run it locally instead, see **Running locally** below. Note that local execution needs
+your own Anthropic, OpenAI and Google API keys; the live instance above needs none.
+
 ## Overview
 
 SYNAPSE is a publicly deployed adaptive tutoring platform for Java programming, Python for cybersecurity and forensics, and secure software development. It pairs hands-on secure-coding practice with a neurodivergent-first interface designed for learners with ADHD and executive-function needs, and a multi-LLM orchestration layer that coordinates several language models behind a single pedagogical workflow.
@@ -75,8 +86,10 @@ Persistent storage uses PostgreSQL.
 1. Clone the repository.
 2. Install dependencies: `pip install -r requirements.txt`
 3. Copy `.env.example` to `.env` and `claude_desktop_config.example.json` to `claude_desktop_config.json`, then fill in your own API keys and database credentials.
-4. Provision a PostgreSQL database (see `database/`).
+4. Create an empty PostgreSQL database (e.g. `createdb security_tutor`), set `DATABASE_URL` in `.env`, then create the tables: `python -m database.init_db`
 5. Start the app: `python app.py`
+
+(OpenJDK 21 and Docker are only needed for the code-execution sandbox and ShopSecure/labs — not to run and explore the tutor.)
 
 ## Citation
 
