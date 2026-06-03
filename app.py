@@ -1096,6 +1096,14 @@ class HybridEducationalServer:
                 raise web.HTTPFound('/login?next=/flashcards')
             return web.FileResponse('templates/flashcards.html')
 
+        async def serve_spot_the_bug(request):
+            user_cookie = request.cookies.get('synapse_user')
+            participant_code = request.query.get('participant') or request.cookies.get('participant_code')
+            admin_key = request.query.get('admin')
+            if not user_cookie and not participant_code and admin_key != os.getenv('ADMIN_KEY', ''):
+                raise web.HTTPFound('/login?next=/spot-the-bug')
+            return web.FileResponse('templates/spot_the_bug.html')
+
         app.router.add_get('/about', serve_about)
         app.router.add_get('/mcp', serve_mcp)
         app.router.add_get('/robots.txt', serve_robots)
@@ -1105,6 +1113,7 @@ class HybridEducationalServer:
         app.router.add_get('/course', serve_course)
         app.router.add_get("/course/java-security", serve_java_security_course)
         app.router.add_get('/flashcards', serve_flashcards)
+        app.router.add_get('/spot-the-bug', serve_spot_the_bug)
 
         # API endpoints
         app.router.add_post('/api/chat', chat_ai)

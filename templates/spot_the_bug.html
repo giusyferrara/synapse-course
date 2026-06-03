@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<!--
+  SYNAPSE · SPOT THE BUG — quick tap game (Detect → Understand → Fix)
+  Sibling of flashcards.html: same shell (a11y toolbar + theme toggle + paper theme).
+  Self-contained: inline challenges + CSS + JS. One stage per screen (mobile-first).
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synapse · Spot the Bug</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #FAF8F3; --paper: #FFFFFF; --ink: #1E3A2F; --ink-soft: #5A6F62;
+      --paper-shadow: rgba(30, 58, 47, 0.08);
+      --accent-again: #B23A1F; --accent-good: #2D6A4F;
+      --border-soft: #E7E2D6; --highlight: #FEF9E7; --code-bg: #F5F2EA;
+      --terminal-bg: #1A2420; --terminal-fg: #D9E7DD; --terminal-prompt: #88C9A3;
+      --green: #2D6A4F; --green-soft: #E6F2EB; --red: #B23A1F; --red-soft: #FBE9E4;
+    }
+    [data-theme="dark"] {
+      --bg: #181C1A; --paper: #242B26; --ink: #F0EBD8; --ink-soft: #B5AD98;
+      --paper-shadow: rgba(0,0,0,0.35); --border-soft: #2F3830;
+      --highlight: #3A3520; --code-bg: #1F2520;
+      --terminal-bg: #0F1612; --terminal-fg: #D9E7DD;
+      --accent-again: #E89070; --accent-good: #88C9A3;
+      --green: #88C9A3; --green-soft: #20312A; --red: #E89070; --red-soft: #3A241D;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Newsreader', Georgia, serif;
+      background: var(--bg); color: var(--ink); min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 28px 20px 96px; line-height: 1.55;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: radial-gradient(circle at 1px 1px, var(--ink-soft) 0.5px, transparent 0);
+      background-size: 28px 28px; opacity: 0.08; pointer-events: none; z-index: 0;
+    }
+
+    /* theme toggle (same as flashcards) */
+    .theme-toggle {
+      position: fixed; top: 16px; right: 16px; background: var(--paper);
+      border: 1px solid var(--border-soft); border-radius: 999px; padding: 8px 14px;
+      cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+      color: var(--ink-soft); z-index: 10;
+    }
+    .theme-toggle:hover { color: var(--ink); }
+
+    .wrap { width: 100%; max-width: 640px; position: relative; z-index: 1; }
+
+    /* header + progress */
+    .sb-head { text-align: center; margin-bottom: 22px; }
+    .sb-back { display: inline-block; float: left; font-size: 0.85rem; color: var(--ink-soft);
+      text-decoration: none; font-family: 'JetBrains Mono', monospace; }
+    .sb-back:hover { color: var(--ink); }
+    .sb-title { font-weight: 700; font-size: clamp(1.5rem, 3vw, 2rem); letter-spacing: -0.02em; }
+    .sb-sub { font-size: 0.92rem; color: var(--ink-soft); font-style: italic; margin-top: 2px; }
+    .sb-bar { height: 7px; border-radius: 999px; background: var(--border-soft);
+      margin: 16px auto 0; overflow: hidden; max-width: 420px; }
+    .sb-bar i { display: block; height: 100%; width: 0%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent-good), var(--terminal-prompt));
+      transition: width 0.45s ease; }
+    .sb-count { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+      color: var(--ink-soft); margin-top: 8px; }
+
+    /* stage card */
+    .stage { background: var(--paper); border: 1px solid var(--border-soft);
+      border-radius: 18px; padding: 22px 20px; box-shadow: 0 6px 22px var(--paper-shadow);
+      animation: rise 0.32s ease; }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .stage.hidden { display: none; }
+    .stage-tag { display: inline-block; font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em; padding: 5px 12px;
+      border-radius: 999px; background: var(--highlight); color: var(--ink);
+      border: 1px solid var(--border-soft); margin-bottom: 12px; }
+    .stage-q { font-size: 1.08rem; font-weight: 600; margin-bottom: 6px; }
+    .stage-hint { font-size: 0.86rem; color: var(--ink-soft); margin-bottom: 14px; }
+    .meta { font-family: 'JetBrains Mono', monospace; font-size: 0.74rem;
+      color: var(--ink-soft); margin-bottom: 10px; }
+
+    /* code block */
+    .code { font-family: 'JetBrains Mono', monospace; font-size: 0.84rem; line-height: 1.7;
+      background: var(--terminal-bg); color: var(--terminal-fg); border-radius: 12px;
+      padding: 12px 6px; overflow-x: auto; }
+    .code .line { display: block; padding: 4px 12px; border-radius: 7px; white-space: pre;
+      cursor: pointer; transition: background 0.12s ease; }
+    .code.tappable .line:hover { background: rgba(255,255,255,0.07); }
+    .code .line.correct { background: rgba(136,201,163,0.22); box-shadow: inset 3px 0 0 var(--terminal-prompt); cursor: default; }
+    .code .line.wrong { background: rgba(178,58,31,0.28); }
+    .code.locked .line { cursor: default; }
+    .code.locked .line:hover { background: none; }
+
+    /* category chips */
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+    .chip { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 11px 14px;
+      border-radius: 12px; border: 1.5px solid var(--border-soft); background: var(--paper);
+      color: var(--ink); cursor: pointer; transition: all 0.12s ease; min-height: 44px; }
+    .chip:hover { border-color: var(--ink-soft); }
+    .chip.correct { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+    .chip.wrong { background: var(--red-soft); border-color: var(--red); color: var(--red); }
+    .chip:disabled { cursor: default; }
+
+    /* why / fix message boxes */
+    .why, .fixmsg { margin-top: 16px; padding: 13px 15px; border-radius: 12px;
+      font-size: 0.92rem; line-height: 1.5; }
+    .why { background: var(--highlight); border: 1px solid var(--border-soft); }
+    .fixmsg.good { background: var(--green-soft); border: 1px solid var(--green); color: var(--green); }
+    .fixmsg.bad { background: var(--red-soft); border: 1px solid var(--red); color: var(--red); }
+    .why.hidden, .fixmsg.hidden { display: none; }
+
+    /* fix stage: code with blanks + token bank */
+    .fix-code { font-family: 'JetBrains Mono', monospace; font-size: 0.84rem; line-height: 2.1;
+      background: var(--code-bg); border: 1px solid var(--border-soft); color: var(--ink);
+      border-radius: 12px; padding: 14px 16px; margin-top: 6px; overflow-x: auto; white-space: pre-wrap; }
+    .slot { display: inline-block; min-width: 64px; text-align: center; padding: 2px 8px;
+      margin: 0 2px; border-radius: 7px; border: 1.5px dashed var(--ink-soft);
+      color: var(--ink-soft); cursor: pointer; -webkit-user-select: none; user-select: none; }
+    .slot.selected { border-style: solid; border-color: var(--accent-good); background: var(--highlight); }
+    .slot.filled { border-style: solid; color: var(--ink); border-color: var(--border-soft); }
+    .slot.ok { border-color: var(--green); background: var(--green-soft); color: var(--green); }
+    .slot.bad { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+    .tokens { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+    .token { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 10px 13px;
+      border-radius: 10px; border: 1.5px solid var(--border-soft); background: var(--paper);
+      color: var(--ink); cursor: pointer; min-height: 42px; transition: all 0.12s ease; }
+    .token:hover { border-color: var(--ink-soft); }
+    .token.used { opacity: 0.32; cursor: default; }
+
+    /* buttons */
+    .btn { font-family: 'JetBrains Mono', monospace; font-size: 0.84rem; font-weight: 500;
+      padding: 13px 24px; border-radius: 12px; border: none; cursor: pointer;
+      background: var(--accent-good); color: #fff; margin-top: 18px; min-height: 48px;
+      transition: transform 0.1s ease, opacity 0.12s ease; }
+    .btn:hover { opacity: 0.92; }
+    .btn:active { transform: scale(0.97); }
+    .btn.ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--border-soft); }
+    .btn.hidden { display: none; }
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+    /* result */
+    #stageResult { text-align: center; }
+    .result-emoji { font-size: 3rem; }
+    #stageResult h2 { font-size: 1.6rem; margin: 8px 0 6px; }
+    #scoreLine { color: var(--ink-soft); font-size: 1rem; }
+
+    .shake { animation: shake 0.35s; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+    /* Mobile: clear the taller a11y navbar (matches the flashcards fix) */
+    @media (max-width: 640px) {
+      body.synapse-has-toolbar #themeToggle { top: 94px !important; }
+      body.synapse-has-toolbar .wrap { margin-top: 46px; }
+      .stage { padding: 20px 16px; }
+      .code, .fix-code { font-size: 0.8rem; }
+    }
+  </style>
+  <link rel="stylesheet" href="/static/synapse_a11y.css?v=19">
+  <link rel="stylesheet" href="/static/synapse_a11y_toolbar.css?v=7">
+</head>
+<body>
+  <button class="theme-toggle" id="themeToggle">◐ theme</button>
+
+  <div class="wrap">
+    <header class="sb-head">
+      <a class="sb-back" href="/m" id="backLink">‹ Back</a>
+      <div class="sb-title">🐞 Spot the Bug</div>
+      <div class="sb-sub">Find it · understand it · fix it</div>
+      <div class="sb-bar"><i id="bar"></i></div>
+      <div class="sb-count" id="count">1 / 6</div>
+    </header>
+
+    <main>
+      <!-- STAGE 1: DETECT -->
+      <section class="stage" id="stageDetect">
+        <span class="stage-tag">🔍 Detect</span>
+        <p class="stage-q">Tap the vulnerable line</p>
+        <p class="stage-hint" id="detectHint">Look for untrusted input used unsafely.</p>
+        <div class="meta" id="snippetMeta"></div>
+        <div class="code tappable" id="codeBlock"></div>
+        <button class="btn hidden" id="detectNext" type="button">Continue →</button>
+      </section>
+
+      <!-- STAGE 2: UNDERSTAND -->
+      <section class="stage hidden" id="stageUnderstand">
+        <span class="stage-tag">🧠 Understand</span>
+        <p class="stage-q">What kind of bug is this?</p>
+        <p class="stage-hint">Tap the vulnerability category.</p>
+        <div class="chips" id="catChips"></div>
+        <div class="why hidden" id="whyBox"></div>
+        <button class="btn hidden" id="understandNext" type="button">Continue →</button>
+      </section>
+
+      <!-- STAGE 3: FIX -->
+      <section class="stage hidden" id="stageFix">
+        <span class="stage-tag">🛠 Fix</span>
+        <p class="stage-q">Patch it</p>
+        <p class="stage-hint">Tap a blank, then tap the token that belongs there.</p>
+        <div class="fix-code" id="fixBlock"></div>
+        <div class="tokens" id="tokenBank"></div>
+        <div class="fixmsg hidden" id="fixMsg"></div>
+        <div class="btn-row">
+          <button class="btn" id="checkFix" type="button">Check fix</button>
+          <button class="btn hidden" id="fixNext" type="button">Next →</button>
+        </div>
+      </section>
+
+      <!-- RESULT -->
+      <section class="stage hidden" id="stageResult">
+        <div class="result-emoji">🎉</div>
+        <h2>Bugs squashed!</h2>
+        <p id="scoreLine"></p>
+        <div class="btn-row" style="justify-content:center">
+          <button class="btn" id="playAgain" type="button">Play again</button>
+          <a class="btn ghost" href="/m" style="text-decoration:none;display:inline-flex;align-items:center">Home</a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    /* ---------------- challenges ---------------- */
+    const CHALLENGES = [
+      {
+        lang: 'Python', ctx: 'login',
+        code: [
+          'def login(username, pw):',
+          '    q = "SELECT * FROM users WHERE name=\'" + username + "\'"',
+          '    row = db.execute(q).fetchone()',
+          '    return check(row, pw)'
+        ],
+        vuln: 1,
+        category: 'SQL Injection',
+        options: ['SQL Injection', 'Cross-Site Scripting', 'Path Traversal', 'Weak Hashing'],
+        why: 'The username is glued straight into the SQL string, so input like  \'\' OR 1=1 --  rewrites the query. Untrusted data must never be concatenated into SQL.',
+        fixLines: [
+          'q = "SELECT * FROM users WHERE name = ___"',
+          'row = db.execute(q, (___,)).fetchone()'
+        ],
+        slots: ['%s', 'username'],
+        tokens: ['%s', 'username', "'+username+'", "'+pw+'"],
+        fixWhy: 'A parameterized query keeps data separate from code — the driver escapes it safely.'
+      },
+      {
+        lang: 'Python', ctx: 'web view',
+        code: [
+          'def comment_html(text):',
+          '    html = "<div class=\'c\'>" + text + "</div>"',
+          '    return Response(html)'
+        ],
+        vuln: 1,
+        category: 'Cross-Site Scripting',
+        options: ['Cross-Site Scripting', 'SQL Injection', 'Hardcoded Secret', 'Command Injection'],
+        why: 'User text is dropped into HTML unescaped, so  <script>…<\/script>  in a comment runs in every viewer\'s browser.',
+        fixLines: [
+          'html = "<div class=\'c\'>" + ___(text) + "</div>"'
+        ],
+        slots: ['escape'],
+        tokens: ['escape', 'str', 'eval', 'render'],
+        fixWhy: 'Escaping turns < > & " into safe HTML entities, so the text shows as text — not markup.'
+      },
+      {
+        lang: 'Python', ctx: 'config',
+        code: [
+          'import requests',
+          'API_KEY = "sk-live-9f3a2bc41d77e0"',
+          'requests.get(url, headers={"Authorization": API_KEY})'
+        ],
+        vuln: 1,
+        category: 'Hardcoded Secret',
+        options: ['Hardcoded Secret', 'SQL Injection', 'Cross-Site Scripting', 'Path Traversal'],
+        why: 'A live secret committed in source leaks to anyone with repo access — and stays in git history forever.',
+        fixLines: [
+          'API_KEY = ___["API_KEY"]'
+        ],
+        slots: ['os.environ'],
+        tokens: ['os.environ', 'globals()', 'config', 'secrets'],
+        fixWhy: 'Read secrets from the environment at runtime; keep them out of the codebase entirely.'
+      },
+      {
+        lang: 'Python', ctx: 'passwords',
+        code: [
+          'import hashlib',
+          'def store(pw):',
+          '    h = hashlib.md5(pw.encode()).hexdigest()',
+          '    db.save_hash(h)'
+        ],
+        vuln: 2,
+        category: 'Weak Hashing',
+        options: ['Weak Hashing', 'SQL Injection', 'Command Injection', 'Cross-Site Scripting'],
+        why: 'MD5 is fast and unsalted, so stolen hashes fall to brute-force / rainbow tables in seconds.',
+        fixLines: [
+          'ph = ___()',
+          'h = ph.hash(pw)'
+        ],
+        slots: ['PasswordHasher'],
+        tokens: ['PasswordHasher', 'hashlib.md5', 'hashlib.sha1', 'base64.b64encode'],
+        fixWhy: 'Argon2id (PasswordHasher) is deliberately slow and salted — the modern standard for passwords.'
+      },
+      {
+        lang: 'Python', ctx: 'tools',
+        code: [
+          'import os',
+          'def ping(host):',
+          '    os.system("ping -c 1 " + host)'
+        ],
+        vuln: 2,
+        category: 'Command Injection',
+        options: ['Command Injection', 'Path Traversal', 'SQL Injection', 'Hardcoded Secret'],
+        why: 'host goes into a shell string, so  8.8.8.8; rm -rf ~  runs your command and the attacker\'s.',
+        fixLines: [
+          'subprocess.run([___, "-c", "1", host])'
+        ],
+        slots: ['"ping"'],
+        tokens: ['"ping"', '"ping "+host', 'host', 'os.system'],
+        fixWhy: 'Passing args as a list (no shell) means metacharacters like ; are treated as plain text.'
+      },
+      {
+        lang: 'Python', ctx: 'files',
+        code: [
+          'def read(name):',
+          '    path = "/var/data/" + name',
+          '    return open(path).read()'
+        ],
+        vuln: 1,
+        category: 'Path Traversal',
+        options: ['Path Traversal', 'Cross-Site Scripting', 'Weak Hashing', 'SQL Injection'],
+        why: 'A name like  ../../etc/passwd  climbs out of /var/data and reads arbitrary files.',
+        fixLines: [
+          'safe = os.path.___(name)',
+          'path = "/var/data/" + safe'
+        ],
+        slots: ['basename'],
+        tokens: ['basename', 'dirname', 'join', 'abspath'],
+        fixWhy: 'basename() strips any directory parts, so the user can only reach files inside /var/data.'
+      }
+    ];
+
+    /* ---------------- state ---------------- */
+    const el = id => document.getElementById(id);
+    let ci = 0, selectedSlot = null, solved = 0;
+    const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    const shakeEl = e => { e.classList.remove('shake'); void e.offsetWidth; e.classList.add('shake'); };
+
+    function showStage(name) {
+      ['Detect', 'Understand', 'Fix', 'Result'].forEach(s =>
+        el('stage' + s).classList.toggle('hidden', s.toLowerCase() !== name));
+    }
+    function setProgress() {
+      el('count').textContent = (ci + 1) + ' / ' + CHALLENGES.length;
+      el('bar').style.width = (ci / CHALLENGES.length * 100) + '%';
+    }
+
+    function render() {
+      const c = CHALLENGES[ci];
+      setProgress();
+      // detect
+      el('snippetMeta').textContent = c.lang + ' · ' + c.ctx;
+      el('detectHint').textContent = 'Look for untrusted input used unsafely.';
+      const code = el('codeBlock');
+      code.className = 'code tappable';
+      code.innerHTML = '';
+      c.code.forEach((ln, i) => {
+        const row = document.createElement('span');
+        row.className = 'line';
+        row.textContent = ln;
+        row.onclick = () => onDetect(i, row);
+        code.appendChild(row);
+      });
+      el('detectNext').classList.add('hidden');
+      // understand
+      const chips = el('catChips');
+      chips.innerHTML = '';
+      shuffle(c.options.slice()).forEach(opt => {
+        const b = document.createElement('button');
+        b.className = 'chip'; b.type = 'button'; b.textContent = opt;
+        b.onclick = () => onUnderstand(opt, b);
+        chips.appendChild(b);
+      });
+      el('whyBox').classList.add('hidden'); el('whyBox').textContent = '';
+      el('understandNext').classList.add('hidden');
+      // fix
+      renderFix(c);
+      el('fixMsg').classList.add('hidden');
+      el('checkFix').classList.remove('hidden');
+      el('fixNext').classList.add('hidden');
+      showStage('detect');
+    }
+
+    function onDetect(i, row) {
+      const c = CHALLENGES[ci];
+      if (i === c.vuln) {
+        row.classList.add('correct');
+        el('codeBlock').className = 'code locked';
+        el('detectHint').textContent = '✅ Found it.';
+        el('detectNext').classList.remove('hidden');
+        el('detectNext').onclick = () => showStage('understand');
+      } else {
+        row.classList.add('wrong'); shakeEl(row);
+        setTimeout(() => row.classList.remove('wrong'), 450);
+        el('detectHint').textContent = 'Not that line — where does user input flow into something dangerous?';
+      }
+    }
+
+    function onUnderstand(opt, b) {
+      const c = CHALLENGES[ci];
+      if (opt === c.category) {
+        b.classList.add('correct');
+        [...el('catChips').children].forEach(x => x.disabled = true);
+        const w = el('whyBox'); w.textContent = c.why; w.classList.remove('hidden');
+        el('understandNext').classList.remove('hidden');
+        el('understandNext').onclick = () => showStage('fix');
+      } else {
+        b.classList.add('wrong'); shakeEl(b);
+        setTimeout(() => b.classList.remove('wrong'), 450);
+      }
+    }
+
+    function renderFix(c) {
+      const block = el('fixBlock');
+      block.innerHTML = '';
+      let idx = 0;
+      c.fixLines.forEach(line => {
+        const div = document.createElement('div');
+        const parts = line.split('___');
+        parts.forEach((part, k) => {
+          div.appendChild(document.createTextNode(part));
+          if (k < parts.length - 1) {
+            const slot = document.createElement('span');
+            slot.className = 'slot'; slot.dataset.idx = idx++; slot.textContent = '____';
+            slot.onclick = () => selectSlot(slot);
+            div.appendChild(slot);
+          }
+        });
+        block.appendChild(div);
+      });
+      const bank = el('tokenBank');
+      bank.innerHTML = '';
+      shuffle(c.tokens.slice()).forEach(tk => {
+        const t = document.createElement('button');
+        t.className = 'token'; t.type = 'button'; t.textContent = tk;
+        t.onclick = () => fillToken(t, tk);
+        bank.appendChild(t);
+      });
+      selectedSlot = null;
+    }
+
+    function selectSlot(slot) {
+      document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+      if (slot.dataset.filled) {
+        const tk = slot.dataset.filled;
+        delete slot.dataset.filled;
+        slot.textContent = '____'; slot.classList.remove('filled', 'ok', 'bad');
+        const t = [...el('tokenBank').children].find(b => b.textContent === tk && b.disabled);
+        if (t) { t.disabled = false; t.classList.remove('used'); }
+      }
+      slot.classList.add('selected'); selectedSlot = slot;
+    }
+
+    function fillToken(t, tk) {
+      if (t.disabled) return;
+      let slot = selectedSlot || document.querySelector('.slot:not(.filled)');
+      if (!slot) return;
+      slot.textContent = tk; slot.dataset.filled = tk;
+      slot.classList.add('filled'); slot.classList.remove('selected', 'ok', 'bad');
+      t.disabled = true; t.classList.add('used');
+      selectedSlot = document.querySelector('.slot:not(.filled)');
+      if (selectedSlot) selectedSlot.classList.add('selected');
+    }
+
+    el('checkFix').onclick = () => {
+      const c = CHALLENGES[ci];
+      const slots = [...el('fixBlock').querySelectorAll('.slot')];
+      const msg = el('fixMsg');
+      if (slots.some(s => !s.dataset.filled)) {
+        msg.className = 'fixmsg bad'; msg.textContent = 'Fill every blank first.';
+        return;
+      }
+      let ok = true;
+      slots.forEach((s, i) => {
+        const good = s.dataset.filled === c.slots[i];
+        s.classList.toggle('ok', good); s.classList.toggle('bad', !good);
+        if (!good) { ok = false; shakeEl(s); }
+      });
+      msg.classList.remove('hidden');
+      if (ok) {
+        msg.className = 'fixmsg good'; msg.textContent = '✅ ' + c.fixWhy;
+        el('checkFix').classList.add('hidden');
+        el('fixNext').classList.remove('hidden');
+        el('fixNext').textContent = ci < CHALLENGES.length - 1 ? 'Next bug →' : 'See results →';
+        solved++;
+      } else {
+        msg.className = 'fixmsg bad'; msg.textContent = 'Close — tap a red blank to swap its token.';
+      }
+    };
+
+    el('fixNext').onclick = () => {
+      ci++;
+      if (ci < CHALLENGES.length) render();
+      else {
+        setProgress(); el('bar').style.width = '100%';
+        el('scoreLine').textContent = solved + ' / ' + CHALLENGES.length + ' bugs fixed first time. Come back tomorrow for more.';
+        showStage('result');
+      }
+    };
+
+    el('playAgain').onclick = () => { ci = 0; solved = 0; render(); };
+
+    /* theme toggle (same behaviour as flashcards) */
+    (function () {
+      const root = document.documentElement, tt = el('themeToggle');
+      try { if (localStorage.getItem('sbTheme') === 'dark') root.setAttribute('data-theme', 'dark'); } catch (e) {}
+      tt.onclick = () => {
+        const dark = root.getAttribute('data-theme') === 'dark';
+        if (dark) { root.removeAttribute('data-theme'); try { localStorage.setItem('sbTheme', 'light'); } catch (e) {} }
+        else { root.setAttribute('data-theme', 'dark'); try { localStorage.setItem('sbTheme', 'dark'); } catch (e) {} }
+      };
+    })();
+
+    render();
+  </script>
+
+  <script src="/static/synapse_a11y_toolbar.js?v=7"></script>
+  <script src="/static/synapse_a11y.js?v=12"></script>
+</body>
+</html>
