@@ -104,7 +104,7 @@
     // on any screen size or however many rows it wraps to.
     var navEl = document.getElementById("synapseA11yNav");
     function reserveToolbarSpace() {
-      if (navEl) document.body.style.paddingTop = navEl.offsetHeight + "px";
+      if (navEl) document.body.style.paddingTop = (navEl.offsetHeight + 20) + "px"; // +20px breathing room
     }
     reserveToolbarSpace();
     setTimeout(reserveToolbarSpace, 300); // after the logo image / fonts settle
