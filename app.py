@@ -1080,6 +1080,14 @@ class HybridEducationalServer:
             except FileNotFoundError:
                 return web.Response(text="About page not found.", status=404)
 
+        async def serve_mcp(request):
+            mcp_path = Path(__file__).parent / 'templates' / 'mcp.html'
+            try:
+                with open(mcp_path, 'r', encoding='utf-8') as f:
+                    return web.Response(text=f.read(), content_type='text/html')
+            except FileNotFoundError:
+                return web.Response(text="MCP page not found.", status=404)
+
         async def serve_flashcards(request):
             user_cookie = request.cookies.get('synapse_user')
             participant_code = request.query.get('participant') or request.cookies.get('participant_code')
@@ -1089,6 +1097,7 @@ class HybridEducationalServer:
             return web.FileResponse('templates/flashcards.html')
 
         app.router.add_get('/about', serve_about)
+        app.router.add_get('/mcp', serve_mcp)
         app.router.add_get('/robots.txt', serve_robots)
         app.router.add_get('/sitemap.xml', serve_sitemap)
         app.router.add_get('/', serve_landing)

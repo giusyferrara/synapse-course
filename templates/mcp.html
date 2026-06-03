@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SYNAPSE & MCP — Multi-LLM AI Tutor on the Model Context Protocol</title>
+  <meta name="description" content="How SYNAPSE uses the Model Context Protocol (MCP) to orchestrate several leading AI models into one accessible AI tutor for Python, Java and secure software development.">
+  <meta name="author" content="Giusy Ferrara">
+  <link rel="canonical" href="https://synapse-course.com/mcp">
+  <!-- OpenGraph -->
+  <meta property="og:title" content="SYNAPSE & MCP — Multi-LLM AI Tutor on the Model Context Protocol">
+  <meta property="og:description" content="How SYNAPSE uses the Model Context Protocol (MCP) to orchestrate several leading AI models into one accessible AI tutor for secure software development.">
+  <meta property="og:url" content="https://synapse-course.com/mcp">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://synapse-course.com/static/synapse_og_image.png">
+  <meta property="og:site_name" content="SYNAPSE">
+  <meta property="og:locale" content="en_GB">
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SYNAPSE & MCP — Multi-LLM AI Tutor">
+  <meta name="twitter:description" content="How SYNAPSE uses the Model Context Protocol (MCP) to orchestrate several leading AI models for secure software development.">
+  <meta name="twitter:image" content="https://synapse-course.com/static/synapse_og_image.png">
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg?v=2">
+  <link rel="icon" type="image/x-icon" href="/icons/favicon.ico?v=2">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+
+  <!-- JSON-LD: TechArticle + Breadcrumb + FAQ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "TechArticle",
+        "@id": "https://synapse-course.com/mcp#article",
+        "headline": "SYNAPSE on the Model Context Protocol (MCP)",
+        "description": "How SYNAPSE uses the Model Context Protocol to orchestrate several leading AI models into one accessible AI tutor for secure software development.",
+        "url": "https://synapse-course.com/mcp",
+        "inLanguage": "en",
+        "author": {
+          "@type": "Person",
+          "name": "Giusy Ferrara",
+          "url": "https://orcid.org/0009-0005-3669-8396"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "SYNAPSE",
+          "url": "https://synapse-course.com/"
+        },
+        "about": [
+          { "@type": "Thing", "name": "Model Context Protocol" },
+          { "@type": "Thing", "name": "Multi-LLM orchestration" },
+          { "@type": "Thing", "name": "Secure software development education" }
+        ],
+        "isPartOf": { "@id": "https://synapse-course.com/#website" }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "SYNAPSE", "item": "https://synapse-course.com/" },
+          { "@type": "ListItem", "position": 2, "name": "MCP", "item": "https://synapse-course.com/mcp" }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is the Model Context Protocol (MCP)?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "MCP is an open standard that lets an application expose a set of tools that AI models can call in a consistent, structured way. SYNAPSE runs an MCP server that publishes seven teaching tools, so the tutor's capabilities are defined explicitly rather than hidden inside one model."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does SYNAPSE use MCP?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "SYNAPSE exposes its teaching capabilities as MCP tools and runs a fixed, multi-step pipeline across several large language models: a primary model leads the Socratic explanation, a second produces worked examples and visual guides, and a third contributes analogies and planning. It is a deliberate, structured pipeline with a fallback, not a model that decides its own routing."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      --bg-deep: #0a0e27;
+      --bg-card: #131836;
+      --bg-card-hover: #1a2147;
+      --border: #2a3160;
+      --text: #f0f2ff;
+      --text-dim: #a8aedc;
+      --text-faint: #6b7299;
+      --accent-1: #667eea;
+      --accent-2: #764ba2;
+      --accent-3: #06b6d4;
+      --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --gradient-cool: linear-gradient(135deg, #06b6d4 0%, #667eea 100%);
+      --shadow-soft: 0 4px 24px rgba(0,0,0,0.2);
+      --shadow-glow: 0 8px 40px rgba(102,126,234,0.25);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      line-height: 1.65;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top navigation */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 14, 39, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .topbar-brand img { width: 36px; height: 36px; }
+
+    .topbar-brand-text {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      background: var(--gradient-cool);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .topbar-nav { display: flex; gap: 24px; align-items: center; }
+
+    .topbar-nav a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .topbar-nav a:hover { color: var(--text); }
+    .topbar-nav a.active { color: var(--accent-3); }
+
+    .btn-primary-small {
+      background: var(--gradient);
+      color: white !important;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-primary-small:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-glow);
+      color: white !important;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 90px 24px 70px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .hero-butterfly {
+      width: 110px;
+      height: 110px;
+      margin: 0 auto 28px;
+      animation: float 5s ease-in-out infinite;
+      filter: drop-shadow(0 8px 30px rgba(102,126,234,0.4));
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .hero-eyebrow {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--accent-3);
+      margin-bottom: 16px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 18px;
+      background: linear-gradient(135deg, #fff 0%, #a8aedc 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-tagline {
+      font-size: 1.2rem;
+      color: var(--text-dim);
+      max-width: 680px;
+      margin: 0 auto;
+      font-weight: 400;
+    }
+
+    .hero-tagline strong { color: var(--text); font-weight: 600; }
+
+    /* Section */
+    .container { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+    section { margin: 60px 0; }
+
+    .section-eyebrow {
+      display: inline-block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+      color: var(--accent-3);
+      margin-bottom: 16px;
+      padding: 6px 14px;
+      background: rgba(6,182,212,0.08);
+      border-radius: 20px;
+      border: 1px solid rgba(6,182,212,0.2);
+    }
+
+    section h2 {
+      font-size: clamp(1.7rem, 3.5vw, 2.3rem);
+      font-weight: 700;
+      margin-bottom: 22px;
+      line-height: 1.25;
+    }
+
+    section p { color: var(--text-dim); font-size: 1.05rem; margin-bottom: 16px; }
+    section p strong { color: var(--text); }
+
+    /* Card */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 36px;
+      box-shadow: var(--shadow-soft);
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .card:hover { border-color: rgba(102,126,234,0.4); box-shadow: var(--shadow-glow); }
+
+    .tech-note {
+      margin-top: 24px;
+      padding: 20px 24px;
+      background: rgba(6,182,212,0.06);
+      border-left: 3px solid var(--accent-3);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: var(--text-dim);
+    }
+
+    .tech-note strong {
+      color: var(--accent-3);
+      font-weight: 600;
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    /* Feature grid */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+      margin-top: 28px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      transition: border-color 0.3s, transform 0.25s, box-shadow 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(102,126,234,0.4);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .feature-card .fc-icon { font-size: 1.6rem; margin-bottom: 12px; }
+
+    .feature-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .feature-card p { font-size: 0.95rem; color: var(--text-dim); margin-bottom: 0; }
+
+    /* Connect grid */
+    .connect-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .connect-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+      text-decoration: none;
+      color: var(--text);
+      transition: all 0.25s;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .connect-card:hover {
+      border-color: var(--accent-3);
+      transform: translateY(-2px);
+      background: var(--bg-card-hover);
+    }
+
+    .connect-icon { font-size: 1.7rem; }
+    .connect-text { display: flex; flex-direction: column; }
+
+    .connect-label {
+      font-size: 0.78rem;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .connect-value {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-top: 2px;
+      word-break: break-word;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 100px;
+      padding: 40px 24px;
+      text-align: center;
+      color: var(--text-faint);
+      font-size: 0.9rem;
+      border-top: 1px solid var(--border);
+    }
+
+    footer a { color: var(--text-dim); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<nav class="topbar">
+    <a href="/" class="topbar-brand">
+        <img src="/icons/butterfly_logo_bright.svg" alt="SYNAPSE">
+        <span class="topbar-brand-text">SYNAPSE</span>
+    </a>
+    <div class="topbar-nav">
+        <a href="/about">About</a>
+        <a href="/login" class="btn-primary-small">Sign in</a>
+    </div>
+</nav>
+
+<header class="hero">
+    <img src="/icons/butterfly_logo_bright.svg" alt="" class="hero-butterfly" aria-hidden="true">
+    <div class="hero-eyebrow">How it works</div>
+    <h1>SYNAPSE on the Model Context Protocol (MCP)</h1>
+    <p class="hero-tagline">A multi-LLM AI tutor for Python, Java, and secure software development — designed first for <strong>neurodivergent learners</strong> (ADHD, dyslexia) and anyone who learns better with focus, structure, and patience. Under the hood, what makes it work is the <strong>Model Context Protocol (MCP)</strong>.</p>
+</header>
+
+<main class="container">
+
+    <!-- What is MCP -->
+    <section>
+        <span class="section-eyebrow">The standard</span>
+        <h2>What is the Model Context Protocol?</h2>
+        <p>MCP is an open standard for connecting AI models to tools. Instead of hiding everything inside a single model and hoping it does the right thing, an application can publish a clear set of <strong>tools</strong> — well-defined operations with names, inputs, and outputs — that a Large Language Model (LLM) can call. Think of it as a common socket between the model and the things it can actually <em>do</em>.</p>
+        <p>That distinction matters for teaching. A general chatbot gives you whatever it happens to produce. An MCP-based tutor exposes specific, purpose-built capabilities — explain this code, check it for security flaws, draw a diagram, generate practice — so the help you get is deliberate and consistent, not a lucky draw.</p>
+    </section>
+
+    <!-- How SYNAPSE uses MCP -->
+    <section>
+        <span class="section-eyebrow">The tools</span>
+        <h2>How SYNAPSE uses MCP</h2>
+        <p>SYNAPSE runs its own MCP server (the <strong>educational-tutor</strong> server) that publishes <strong>seven teaching tools</strong>. Each one is a distinct way of helping you understand and improve code:</p>
+        <div class="feature-grid">
+            <div class="feature-card"><div class="fc-icon">📖</div><h3>Explain Code</h3><p>Plain-language explanation of what a piece of code does and the concepts behind it.</p></div>
+            <div class="feature-card"><div class="fc-icon">🔒</div><h3>Security Check</h3><p>Reviews code for vulnerabilities, mapped to real CWE weaknesses and the OWASP Top 10.</p></div>
+            <div class="feature-card"><div class="fc-icon">📊</div><h3>Visual Guide</h3><p>Generates a diagram or visual walkthrough so you can <em>see</em> the structure, not just read it.</p></div>
+            <div class="feature-card"><div class="fc-icon">🔍</div><h3>Analyze Code</h3><p>A fuller structural and quality analysis of what you've written.</p></div>
+            <div class="feature-card"><div class="fc-icon">🔧</div><h3>Suggest Improvements</h3><p>Concrete refactoring and best-practice suggestions.</p></div>
+            <div class="feature-card"><div class="fc-icon">💪</div><h3>Practice Exercises</h3><p>Generates targeted exercises with scaffolded, staged hints.</p></div>
+            <div class="feature-card"><div class="fc-icon">⚡</div><h3>Run &amp; Test</h3><p>Executes and tests your code so you get real feedback, not guesses.</p></div>
+        </div>
+        <p style="margin-top:18px">Because these are explicit tools rather than vague prompts, the tutor's behaviour is predictable — which is exactly what helps when your attention is the scarce resource.</p>
+    </section>
+
+    <!-- Multi-LLM orchestration -->
+    <section>
+        <span class="section-eyebrow">Orchestration</span>
+        <h2>Multi-LLM orchestration — done deliberately</h2>
+        <p>Here's the part the name "synapse" points at: SYNAPSE doesn't rely on one model. It combines <strong>several leading AI models</strong>, each used for what it's genuinely best at, through a <strong>fixed, multi-step pipeline</strong>:</p>
+        <div class="feature-grid">
+            <div class="feature-card"><div class="fc-icon">🧠</div><h3>The tutor</h3><p>A primary tutoring model leads the teaching — Socratic guidance, step-by-step explanation, and the conversational back-and-forth.</p></div>
+            <div class="feature-card"><div class="fc-icon">🖼️</div><h3>Examples &amp; visuals</h3><p>A second model generates worked examples and powers the Visual Guide (image generation for diagrams).</p></div>
+            <div class="feature-card"><div class="fc-icon">🔗</div><h3>Analogies &amp; planning</h3><p>A third model contributes analogies and the structured planning step that shapes a response before it's written.</p></div>
+        </div>
+        <p style="margin-top:18px">Every tutoring answer is assembled from these defined steps, and each response records which models contributed. In the open exploration workspace you can also <strong>choose a model yourself</strong> and compare how each one explains the same thing. And if one provider is unavailable, a <strong>fallback</strong> keeps the tutor working.</p>
+        <div class="tech-note">
+            <strong>One honest clarification</strong>
+            This is a structured pipeline, not an "intelligent router" that decides on its own which model to use. The orchestration is designed and fixed — the reliability and the combined strengths come from that design, not from a model improvising its own dispatch.
+        </div>
+    </section>
+
+    <!-- Why it matters -->
+    <section>
+        <span class="section-eyebrow">For learners</span>
+        <h2>Why it matters for how you learn</h2>
+        <div class="feature-grid">
+            <div class="feature-card"><div class="fc-icon">🛡️</div><h3>No single point of failure</h3><p>Several models plus a fallback mean the tutor keeps helping even when one service is down.</p></div>
+            <div class="feature-card"><div class="fc-icon">🎯</div><h3>Each model does what it's best at</h3><p>Explanation, worked examples and visuals, planning — combined into one coherent answer.</p></div>
+            <div class="feature-card"><div class="fc-icon">🧩</div><h3>Predictable, tool-based help</h3><p>Explicit MCP tools make the experience consistent — and consistency is accessibility for a distractible brain.</p></div>
+            <div class="feature-card"><div class="fc-icon">🎛️</div><h3>You stay in control</h3><p>Manual model selection lets you explore and compare, instead of being locked into one voice.</p></div>
+        </div>
+    </section>
+
+    <!-- Open and reproducible -->
+    <section>
+        <span class="section-eyebrow">Open &amp; reproducible</span>
+        <h2>Open and reproducible</h2>
+        <div class="card">
+            <p>SYNAPSE was built as an Honours research project and is openly documented. The code is on <strong>GitHub</strong> under the MIT licence, and a citable software archive is preserved on <strong>Zenodo</strong> with a permanent DOI.</p>
+        </div>
+        <div class="connect-grid">
+            <a href="https://github.com/whitepanther69/synapse-course" target="_blank" rel="noopener" class="connect-card">
+                <span class="connect-icon">💻</span>
+                <div class="connect-text"><span class="connect-label">Source code</span><span class="connect-value">GitHub</span></div>
+            </a>
+            <a href="https://doi.org/10.5281/zenodo.20480483" target="_blank" rel="noopener" class="connect-card">
+                <span class="connect-icon">📦</span>
+                <div class="connect-text"><span class="connect-label">Software archive</span><span class="connect-value">Zenodo DOI</span></div>
+            </a>
+            <a href="/about" class="connect-card">
+                <span class="connect-icon">🦋</span>
+                <div class="connect-text"><span class="connect-label">Learn more</span><span class="connect-value">About SYNAPSE</span></div>
+            </a>
+            <a href="https://orcid.org/0009-0005-3669-8396" target="_blank" rel="noopener" class="connect-card">
+                <span class="connect-icon">🆔</span>
+                <div class="connect-text"><span class="connect-label">Creator</span><span class="connect-value">ORCID</span></div>
+            </a>
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    <p>Built and maintained by Giusy Ferrara.</p>
+    <p style="margin-top:8px"><a href="/">Back to home</a> · <a href="/about">About</a></p>
+</footer>
+
+</body>
+</html>
