@@ -22,6 +22,13 @@ def main():
     schema_path = Path(__file__).with_name("schema.sql")
     sql = schema_path.read_text(encoding="utf-8")
 
+    # Strip psql client meta-commands (lines beginning with a backslash, e.g. the
+    # \restrict / \unrestrict guards recent pg_dump versions emit). They are not SQL
+    # and psycopg2 sends the script straight to the server, which would reject them.
+    sql = "\n".join(
+        line for line in sql.splitlines() if not line.lstrip().startswith("\\")
+    )
+
     # Apply the full schema dump in one shot via a raw psycopg2 connection.
     # (SQLAlchemy's text() cannot run multi-statement scripts; psycopg2 sends the
     # whole dump to the server, which executes every statement.)

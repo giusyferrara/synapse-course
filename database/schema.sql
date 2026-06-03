@@ -2,8 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict 8AsgUXuvgS6pJAGyRVh6oqx2FDO3t07gkhFvvrTwuzBZaVEDGL7aTr2yzW0tE1g
-
 -- Dumped from database version 16.14 (Ubuntu 16.14-0ubuntu0.24.04.1)
 -- Dumped by pg_dump version 16.14 (Ubuntu 16.14-0ubuntu0.24.04.1)
 
@@ -1757,5 +1755,4 @@ ALTER TABLE ONLY public.user_progress
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 8AsgUXuvgS6pJAGyRVh6oqx2FDO3t07gkhFvvrTwuzBZaVEDGL7aTr2yzW0tE1g
 
