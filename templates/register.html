@@ -623,9 +623,11 @@ async function handleRegister(e) {
 
         if (data.success) {
             alertBox.className = 'alert success';
-            alertBox.textContent = '✅ Account created! Redirecting to your dashboard...';
+            alertBox.textContent = '✅ Account created! Taking you in...';
             localStorage.setItem('synapse_user', JSON.stringify(data.user));
-            setTimeout(() => window.location.href = '/dashboard', 1200);
+            // Smart redirect: phone → /m, desktop → /dashboard
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            setTimeout(() => window.location.href = isMobile ? '/m' : '/dashboard', 1200);
         } else {
             alertBox.className = 'alert error';
             alertBox.textContent = data.message || 'Registration failed. Please try again.';

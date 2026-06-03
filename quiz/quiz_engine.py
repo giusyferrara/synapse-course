@@ -268,6 +268,52 @@ def skill_accuracy(session, student_id):
     return _history(session, student_id)[1]
 
 
+GAIN_MIN_ATTEMPTS = 4  # need enough signal to split into a before/after window
+
+
+def learning_gain(session, student_id):
+    """Per-skill learning gain for one learner, computed from the attempt history
+    already collected in quiz_attempts (no new data).
+
+    For each skill with >= GAIN_MIN_ATTEMPTS attempts, split the attempts
+    chronologically in half: baseline = first half, current = second half.
+    Returns a list of {skill_tag, attempts, baseline, current, delta,
+    normalized_gain} (Hake's normalised gain), sorted by biggest delta first.
+    """
+    from database.models import QuizAttempt  # lazy
+    rows = (session.query(QuizAttempt)
+            .filter_by(student_id=student_id)
+            .order_by(QuizAttempt.created_at.asc())
+            .all())
+    by_skill = {}
+    for a in rows:
+        by_skill.setdefault(a.skill_tag, []).append(1 if a.is_correct else 0)
+
+    out = []
+    for skill, seq in by_skill.items():
+        n = len(seq)
+        if n < GAIN_MIN_ATTEMPTS:
+            continue
+        half = n // 2
+        early, recent = seq[:half], seq[half:]
+        baseline = sum(early) / len(early)
+        current = sum(recent) / len(recent)
+        if baseline >= 1.0:
+            gain = 1.0 if current >= 1.0 else 0.0
+        else:
+            gain = (current - baseline) / (1.0 - baseline)
+        out.append({
+            "skill_tag": skill,
+            "attempts": n,
+            "baseline": round(baseline, 2),
+            "current": round(current, 2),
+            "delta": round(current - baseline, 2),
+            "normalized_gain": round(max(-1.0, min(1.0, gain)), 2),
+        })
+    out.sort(key=lambda d: -d["delta"])
+    return out
+
+
 def allowed_difficulties(total_attempts, recent_acc):
     """Difficulty ramp gate. Beginner/intermediate always allowed; advanced
     unlocks only with enough signal AND strong recent accuracy."""

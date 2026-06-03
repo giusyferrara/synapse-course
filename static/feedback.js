@@ -41,8 +41,12 @@ document.addEventListener('DOMContentLoaded', function() {
             features.push(checkbox.value);
         });
         feedback.features = features;
-        
-        // Add metadata
+
+        // Research consent (optional)
+        const consentEl = document.getElementById('consent');
+        feedback.consent = consentEl ? consentEl.checked : false;
+
+        // Add metadata (server links to the logged-in user via the synapse_user cookie)
         feedback.timestamp = new Date().toISOString();
         feedback.student_id = 'feedback_user_' + Date.now();
         

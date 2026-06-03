@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SYNAPSE — Tutor</title>
+<meta name="theme-color" content="#667eea">
+<link rel="manifest" href="/static/m.webmanifest">
+<link rel="icon" href="/icons/butterfly_logo_bright.svg">
+<link rel="apple-touch-icon" href="/icons/butterfly_logo_bright.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --brand1:#667eea; --brand2:#764ba2;
+    --grad:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+    --bg:#f6f7fb; --card:#ffffff; --ink:#1e293b; --muted:#64748b; --line:#e9edf3;
+    --nav-h:64px; --input-h:60px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:var(--bg);color:var(--ink);display:flex;flex-direction:column;height:100dvh;}
+
+  .appbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;
+    padding:calc(14px + env(safe-area-inset-top)) 16px 12px;color:#fff;background:var(--grad);}
+  .appbar .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:18px;
+    background:rgba(255,255,255,.18);}
+  .appbar b{font-weight:700;font-size:16px;display:block;line-height:1.1}
+  .appbar span{font-size:12px;opacity:.9}
+
+  .log{flex:1 1 auto;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:12px;
+    padding-bottom:calc(var(--input-h) + var(--nav-h) + env(safe-area-inset-bottom) + 12px);}
+  .msg{padding:11px 14px;border-radius:14px;font-size:.95rem;line-height:1.5;max-width:88%;white-space:pre-wrap;word-break:break-word;}
+  .msg.user{align-self:flex-end;background:var(--grad);color:#fff;border-bottom-right-radius:5px;}
+  .msg.ai{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:5px;}
+  .msg.ai code{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f1f3f9;padding:1px 5px;border-radius:5px;font-size:.88em;}
+
+  .input-row{position:fixed;left:0;right:0;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));
+    height:var(--input-h);display:flex;gap:8px;align-items:center;padding:8px 12px;
+    background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);}
+  .input-row input{flex:1;min-width:0;font:inherit;font-size:.95rem;padding:11px 14px;
+    border:2px solid var(--line);border-radius:22px;}
+  .input-row input:focus{outline:none;border-color:var(--brand1);}
+  .input-row button{flex:0 0 auto;border:0;border-radius:22px;padding:11px 18px;font:inherit;font-weight:700;
+    color:#fff;background:var(--grad);cursor:pointer;}
+  .input-row button:disabled{opacity:.5;}
+
+  .nav{position:fixed;left:0;right:0;bottom:0;z-index:30;height:calc(var(--nav-h) + env(safe-area-inset-bottom));
+    display:flex;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+    border-top:1px solid var(--line);padding:8px 4px calc(8px + env(safe-area-inset-bottom));}
+  .nav a{flex:1;text-decoration:none;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:3px;color:var(--muted);font-weight:600;font-size:10.5px;}
+  .nav a .ni{font-size:20px;line-height:1;}
+  .nav a.on{color:var(--brand2);}
+</style>
+</head>
+<body>
+  <header class="appbar">
+    <div class="logo">🦋</div>
+    <div><b>Tutor</b><span>Ask me anything — code, security, concepts</span></div>
+  </header>
+
+  <main class="log" id="log"></main>
+
+  <div class="input-row">
+    <input id="msg" type="text" placeholder="Ask the tutor…" autocomplete="off" maxlength="800">
+    <button id="send" type="button">Send</button>
+  </div>
+
+  <nav class="nav" aria-label="Navigation">
+    <a href="/m"><span class="ni">🏠</span>Home</a>
+    <a href="/quiz"><span class="ni">🧠</span>Quiz</a>
+    <a href="/flashcards"><span class="ni">🃏</span>Cards</a>
+    <a href="/m/tutor" class="on" aria-current="page"><span class="ni">🦋</span>Tutor</a>
+    <a href="/dashboard"><span class="ni">👤</span>You</a>
+  </nav>
+
+<script>
+(function () {
+  var log = document.getElementById('log');
+  var input = document.getElementById('msg');
+  var send = document.getElementById('send');
+  var history = [];
+
+  function add(role, text) {
+    var d = document.createElement('div');
+    d.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
+    d.textContent = text;
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+    return d;
+  }
+
+  add('ai', "Hi! 🦋 I'm your tutor. Ask me anything about coding or security — SQL injection, XSS, a concept you're stuck on, or how something works. I'll keep it clear and friendly.");
+
+  function sendMsg() {
+    var text = (input.value || '').trim();
+    if (!text) return;
+    add('user', text);
+    history.push({ role: 'user', content: text });
+    input.value = ''; input.disabled = true; send.disabled = true;
+    var bubble = add('ai', '…');
+    fetch('/api/course/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history: history.slice(0, -1) })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var reply = (data && data.response) || "Sorry, I couldn't answer that — try again.";
+        bubble.textContent = reply;
+        history.push({ role: 'assistant', content: reply });
+        log.scrollTop = log.scrollHeight;
+      })
+      .catch(function () { bubble.textContent = 'Network error — please try again.'; })
+      .finally(function () { input.disabled = false; send.disabled = false; input.focus(); });
+  }
+
+  send.addEventListener('click', sendMsg);
+  input.addEventListener('keypress', function (e) { if (e.key === 'Enter') sendMsg(); });
+})();
+</script>
+</body></html>

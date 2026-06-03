@@ -3,187 +3,306 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Experience Feedback - Security Programming Tutor</title>
-    <link rel="stylesheet" href="/static/style.css?v=20260526_143659">
+    <title>Your experience — SYNAPSE</title>
+    <link rel="icon" href="/icons/butterfly_logo_bright.svg">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .feedback-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --purple: #667eea;
+            --purple-dark: #764ba2;
+            --green: #10b981;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --card-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        .rating-group {
-            display: flex;
-            gap: 10px;
-            margin: 10px 0;
-            justify-content: center;
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
-        .rating-btn {
-            padding: 10px 15px;
-            border: 2px solid #e2e8f0;
-            border-radius: 25px;
-            background: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 16px;
-            min-width: 60px;
-            text-align: center;
-        }
-        .rating-btn:hover {
-            border-color: #4facfe;
-            background: #f0f9ff;
-        }
-        .rating-btn.selected {
-            border-color: #4facfe;
-            background: #4facfe;
-            color: white;
-        }
-        .checkbox-group {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
-            margin: 10px 0;
-        }
-        .checkbox-item {
+
+        /* Top bar */
+        nav {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            padding: 0 20px;
+            height: 60px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; color: var(--text); text-decoration: none; }
+        .nav-brand img { width: 30px; height: 30px; }
+        .nav-back { font-size: 14px; color: var(--text-muted); text-decoration: none; }
+        .nav-back:hover { color: var(--purple); }
+
+        main { max-width: 620px; margin: 0 auto; padding: 28px 16px 60px; }
+
+        .intro { text-align: center; margin-bottom: 24px; }
+        .intro h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.4px; margin-bottom: 6px; }
+        .intro p { color: var(--text-muted); font-size: 15px; }
+
+        .card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 22px 18px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .form-group { margin-bottom: 26px; }
+        .form-group:last-of-type { margin-bottom: 18px; }
+        .form-group > label.q {
+            display: block;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        /* Rating buttons — always one row (5-point scale) */
+        .rating-group {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
             gap: 8px;
         }
-        .checkbox-item input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-        }
-        .submit-btn {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 8px;
+        .rating-btn {
+            min-height: 48px;
+            padding: 10px 6px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--white);
+            color: var(--text);
+            cursor: pointer;
+            font-family: inherit;
             font-size: 16px;
             font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.3s ease;
+            transition: all 0.18s ease;
         }
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+        .rating-btn:hover { border-color: var(--purple); background: #f5f7ff; }
+        .rating-btn.selected {
+            border-color: var(--purple);
+            background: var(--gradient);
+            color: var(--white);
+            box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+        }
+        .rating-btn.emoji { font-size: 22px; }
+        .scale-ends {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            padding: 0 2px;
+        }
+
+        select {
+            width: 100%;
+            padding: 13px 14px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 15px;
+            color: var(--text);
+            background: var(--white);
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+        }
+        select:focus, textarea:focus { outline: none; border-color: var(--purple); }
+
+        /* Feature chips */
+        .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip { position: relative; }
+        .chip input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .chip label {
+            display: inline-block;
+            padding: 9px 14px;
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            font-size: 14px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.18s ease;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .chip input:checked + label {
+            border-color: var(--purple);
+            background: #f5f7ff;
+            color: var(--purple-dark);
+            font-weight: 600;
+        }
+        .chip input:focus-visible + label { outline: 2px solid var(--purple); outline-offset: 2px; }
+
+        textarea {
+            width: 100%;
+            min-height: 88px;
+            padding: 13px 14px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 15px;
+            color: var(--text);
+            resize: vertical;
+        }
+
+        /* Consent */
+        .consent {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: #f5f7ff;
+            border: 1px solid #dfe4ff;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 20px;
+        }
+        .consent input { width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0; accent-color: var(--purple); }
+        .consent label { font-size: 13.5px; color: var(--text-muted); line-height: 1.45; }
+
+        .submit-btn {
+            width: 100%;
+            background: var(--gradient);
+            color: var(--white);
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(102,126,234,0.35); }
+
+        @media (min-width: 560px) {
+            .card { padding: 30px 28px; }
+            .intro h1 { font-size: 27px; }
         }
     </style>
-    <link rel="stylesheet" href="/static/butterfly_logo.css">
 </head>
 <body>
-    <div class="container feedback-container">
-        <h1>User Experience Feedback</h1>
-        <p class="subtitle">Help us improve the Security Programming Tutor</p>
-        
-        <form id="feedbackForm">
-            <div class="form-group">
-                <label>Overall Experience Rating:</label>
-                <div class="rating-group" data-field="overall">
-                    <button type="button" class="rating-btn" data-value="1">😞</button>
-                    <button type="button" class="rating-btn" data-value="2">😐</button>
-                    <button type="button" class="rating-btn" data-value="3">🙂</button>
-                    <button type="button" class="rating-btn" data-value="4">😊</button>
-                    <button type="button" class="rating-btn" data-value="5">🤩</button>
-                </div>
-            </div>
 
-            <div class="form-group">
-                <label>AI Teacher Helpfulness (1-5):</label>
-                <div class="rating-group" data-field="ai_helpfulness">
-                    <button type="button" class="rating-btn" data-value="1">1</button>
-                    <button type="button" class="rating-btn" data-value="2">2</button>
-                    <button type="button" class="rating-btn" data-value="3">3</button>
-                    <button type="button" class="rating-btn" data-value="4">4</button>
-                    <button type="button" class="rating-btn" data-value="5">5</button>
-                </div>
-            </div>
+<nav>
+    <a href="/" class="nav-brand">
+        <img src="/icons/butterfly_logo_bright.svg" alt="SYNAPSE">
+        <span>SYNAPSE</span>
+    </a>
+    <a href="/dashboard" class="nav-back">← Back</a>
+</nav>
 
-            <div class="form-group">
-                <label>Accessibility Features Quality:</label>
-                <div class="rating-group" data-field="accessibility">
-                    <button type="button" class="rating-btn" data-value="1">Poor</button>
-                    <button type="button" class="rating-btn" data-value="2">Fair</button>
-                    <button type="button" class="rating-btn" data-value="3">Good</button>
-                    <button type="button" class="rating-btn" data-value="4">Great</button>
-                    <button type="button" class="rating-btn" data-value="5">Excellent</button>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Your Learning Background:</label>
-                <select name="background" required title="Select your programming experience level">
-                    <option value="">Select your level</option>
-                    <option value="beginner">Complete beginner</option>
-                    <option value="some_experience">Some programming experience</option>
-                    <option value="intermediate">Intermediate programmer</option>
-                    <option value="advanced">Advanced programmer</option>
-                    <option value="professional">Professional developer</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Which features did you use? (Select all that apply)</label>
-                <div class="checkbox-group">
-                    <div class="checkbox-item">
-                        <input type="checkbox" name="features" value="analyze" id="feat1">
-                        <label for="feat1">Code Analysis</label>
-                    </div>
-                    <div class="checkbox-item">
-                        <input type="checkbox" name="features" value="explain" id="feat2">
-                        <label for="feat2">Code Explanation</label>
-                    </div>
-                    <div class="checkbox-item">
-                        <input type="checkbox" name="features" value="visual" id="feat3">
-                        <label for="feat3">Visual Guide</label>
-                    </div>
-                    <div class="checkbox-item">
-                        <input type="checkbox" name="features" value="security" id="feat4">
-                        <label for="feat4">Security Check</label>
-                    </div>
-                    <div class="checkbox-item">
-                        <input type="checkbox" name="features" value="tests" id="feat5">
-                        <label for="feat5">Test Generation</label>
-                    </div>
-                    <div class="checkbox-item">
-                        <input type="checkbox" name="features" value="accessibility" id="feat6">
-                        <label for="feat6">Accessibility Tools</label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>What did you find most helpful?</label>
-                <textarea name="most_helpful" placeholder="Describe what worked well for your learning..."></textarea>
-            </div>
-
-            <div class="form-group">
-                <label>What could be improved?</label>
-                <textarea name="improvements" placeholder="Suggest specific improvements or report issues..."></textarea>
-            </div>
-
-            <div class="form-group">
-                <label>Would you recommend this tool to other students?</label>
-                <div class="rating-group" data-field="recommend">
-                    <button type="button" class="rating-btn" data-value="1">Definitely Not</button>
-                    <button type="button" class="rating-btn" data-value="2">Probably Not</button>
-                    <button type="button" class="rating-btn" data-value="3">Maybe</button>
-                    <button type="button" class="rating-btn" data-value="4">Probably</button>
-                    <button type="button" class="rating-btn" data-value="5">Definitely</button>
-                </div>
-            </div>
-
-            <button type="submit" class="submit-btn">Submit Feedback</button>
-        </form>
-
-        <div class="back-link">
-            <a href="/" style="display: inline-flex; align-items: center;"><img src="/icons/butterfly_logo_bright.svg" alt="Home" style="width: 40px; height: 40px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.1) rotate(-8deg)'" onmouseout="this.style.transform='scale(1)'"></a>
-        </div>
+<main>
+    <div class="intro">
+        <h1>How was your experience? 🦋</h1>
+        <p>A minute of your time helps us make SYNAPSE clearer and kinder.</p>
     </div>
 
-    <script src="/static/feedback.js"></script>
+    <form id="feedbackForm" class="card">
+
+        <div class="form-group">
+            <label class="q">Overall experience</label>
+            <div class="rating-group" data-field="overall">
+                <button type="button" class="rating-btn emoji" data-value="1" aria-label="Very poor">😞</button>
+                <button type="button" class="rating-btn emoji" data-value="2" aria-label="Poor">😐</button>
+                <button type="button" class="rating-btn emoji" data-value="3" aria-label="Okay">🙂</button>
+                <button type="button" class="rating-btn emoji" data-value="4" aria-label="Good">😊</button>
+                <button type="button" class="rating-btn emoji" data-value="5" aria-label="Great">🤩</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="q">How helpful was the AI tutor?</label>
+            <div class="rating-group" data-field="ai_helpfulness">
+                <button type="button" class="rating-btn" data-value="1">1</button>
+                <button type="button" class="rating-btn" data-value="2">2</button>
+                <button type="button" class="rating-btn" data-value="3">3</button>
+                <button type="button" class="rating-btn" data-value="4">4</button>
+                <button type="button" class="rating-btn" data-value="5">5</button>
+            </div>
+            <div class="scale-ends"><span>Not helpful</span><span>Very helpful</span></div>
+        </div>
+
+        <div class="form-group">
+            <label class="q">Quality of the accessibility features</label>
+            <div class="rating-group" data-field="accessibility">
+                <button type="button" class="rating-btn" data-value="1">1</button>
+                <button type="button" class="rating-btn" data-value="2">2</button>
+                <button type="button" class="rating-btn" data-value="3">3</button>
+                <button type="button" class="rating-btn" data-value="4">4</button>
+                <button type="button" class="rating-btn" data-value="5">5</button>
+            </div>
+            <div class="scale-ends"><span>Poor</span><span>Excellent</span></div>
+        </div>
+
+        <div class="form-group">
+            <label class="q">Would you recommend SYNAPSE to others?</label>
+            <div class="rating-group" data-field="recommend">
+                <button type="button" class="rating-btn" data-value="1">1</button>
+                <button type="button" class="rating-btn" data-value="2">2</button>
+                <button type="button" class="rating-btn" data-value="3">3</button>
+                <button type="button" class="rating-btn" data-value="4">4</button>
+                <button type="button" class="rating-btn" data-value="5">5</button>
+            </div>
+            <div class="scale-ends"><span>Definitely not</span><span>Definitely</span></div>
+        </div>
+
+        <div class="form-group">
+            <label class="q" for="background">Your learning background</label>
+            <select name="background" id="background" required title="Select your programming experience level">
+                <option value="">Select your level…</option>
+                <option value="beginner">Complete beginner</option>
+                <option value="some_experience">Some programming experience</option>
+                <option value="intermediate">Intermediate programmer</option>
+                <option value="advanced">Advanced programmer</option>
+                <option value="professional">Professional developer</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="q">Which features did you use?</label>
+            <div class="chip-group">
+                <span class="chip"><input type="checkbox" name="features" value="analyze" id="feat1"><label for="feat1">Code Analysis</label></span>
+                <span class="chip"><input type="checkbox" name="features" value="explain" id="feat2"><label for="feat2">Code Explanation</label></span>
+                <span class="chip"><input type="checkbox" name="features" value="visual" id="feat3"><label for="feat3">Visual Guide</label></span>
+                <span class="chip"><input type="checkbox" name="features" value="security" id="feat4"><label for="feat4">Security Check</label></span>
+                <span class="chip"><input type="checkbox" name="features" value="tests" id="feat5"><label for="feat5">Test Generation</label></span>
+                <span class="chip"><input type="checkbox" name="features" value="accessibility" id="feat6"><label for="feat6">Accessibility Tools</label></span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="q" for="most_helpful">What worked well for you?</label>
+            <textarea name="most_helpful" id="most_helpful" placeholder="What helped your learning the most…"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="q" for="improvements">What could be improved?</label>
+            <textarea name="improvements" id="improvements" placeholder="Suggestions, or anything that got in your way…"></textarea>
+        </div>
+
+        <div class="consent">
+            <input type="checkbox" name="consent" id="consent">
+            <label for="consent">I agree that my anonymous responses may be used to improve and research SYNAPSE. (Optional — your feedback is welcome either way.)</label>
+        </div>
+
+        <button type="submit" class="submit-btn">Submit feedback</button>
+    </form>
+</main>
+
+<script src="/static/feedback.js?v=20260603"></script>
 </body>
 </html>

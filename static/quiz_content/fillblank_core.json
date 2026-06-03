@@ -1,0 +1,146 @@
+[
+  {
+    "id": "fill_cwe89_preparedstmt",
+    "format": "fill_blank",
+    "category": "remediate",
+    "skill_tag": "CWE-89",
+    "owasp": "A03",
+    "difficulty": "intermediate",
+    "prompt": "Drop in the call that safely binds the value so the query is injection-proof.",
+    "code_snippet": "PreparedStatement ps = conn.prepareStatement(\n    \"SELECT * FROM users WHERE name = ?\");\nps.▢(1, name);\nps.executeQuery();",
+    "options": [
+      { "id": "A", "text": "setString", "correct": true },
+      { "id": "B", "text": "addString" },
+      { "id": "C", "text": "executeString" },
+      { "id": "D", "text": "bindParam" }
+    ],
+    "explanation": "setString binds `name` as a bound parameter, so user input can never change the query's structure — the fix for SQL injection (CWE-89). The other method names don't exist on PreparedStatement.",
+    "source_reference": "CWE-89; OWASP A03:2021 (Injection)"
+  },
+  {
+    "id": "fill_cwe79_xss_htmlescape",
+    "format": "fill_blank",
+    "category": "remediate",
+    "skill_tag": "CWE-79",
+    "owasp": "A03",
+    "difficulty": "beginner",
+    "prompt": "Drop in the function that makes the username safe to place inside HTML.",
+    "code_snippet": "import html\nsafe = ▢(username)\nreturn f\"<p>Hello {safe}</p>\"",
+    "options": [
+      { "id": "A", "text": "str" },
+      { "id": "B", "text": "urllib.parse.quote" },
+      { "id": "C", "text": "html.escape", "correct": true },
+      { "id": "D", "text": "repr" }
+    ],
+    "explanation": "html.escape turns `< > &` into HTML entities, so injected markup is shown as text, not executed — the fix for reflected XSS (CWE-79). `quote` is for URLs; `str`/`repr` don't neutralise HTML.",
+    "source_reference": "CWE-79; OWASP A03:2021"
+  },
+  {
+    "id": "fill_cwe78_cmdi_arglist",
+    "format": "fill_blank",
+    "category": "remediate",
+    "skill_tag": "CWE-78",
+    "owasp": "A03",
+    "difficulty": "intermediate",
+    "prompt": "Drop in the argument so the hostname can't inject extra shell commands.",
+    "code_snippet": "import subprocess\nsubprocess.run(▢, shell=False)",
+    "options": [
+      { "id": "A", "text": "[\"ping\", \"-c\", \"1\", host]", "correct": true },
+      { "id": "B", "text": "\"ping -c 1 \" + host" },
+      { "id": "C", "text": "f\"ping {host}\"" },
+      { "id": "D", "text": "\"ping \" + host" }
+    ],
+    "explanation": "An argument list with shell=False means `host` is a single argument the shell never parses, so `; rm -rf /` can't run (CWE-78). Building a command string invites shell injection.",
+    "source_reference": "CWE-78; OWASP A03:2021"
+  },
+  {
+    "id": "fill_cwe22_pathtraversal_basename",
+    "format": "fill_blank",
+    "category": "remediate",
+    "skill_tag": "CWE-22",
+    "owasp": "A01",
+    "difficulty": "intermediate",
+    "prompt": "Drop in the expression so a user can't escape the uploads folder with `../`.",
+    "code_snippet": "import os\npath = os.path.join(UPLOADS, ▢)\nreturn open(path).read()",
+    "options": [
+      { "id": "A", "text": "filename" },
+      { "id": "B", "text": "os.path.basename(filename)", "correct": true },
+      { "id": "C", "text": "\"../\" + filename" },
+      { "id": "D", "text": "request.args[\"filename\"]" }
+    ],
+    "explanation": "os.path.basename strips any directory parts (including `../`), keeping the file inside UPLOADS — the fix for path traversal (CWE-22). The raw filename lets `../../etc/passwd` escape.",
+    "source_reference": "CWE-22; OWASP A01:2021"
+  },
+  {
+    "id": "fill_cwe916_password_bcrypt",
+    "format": "fill_blank",
+    "category": "remediate",
+    "skill_tag": "CWE-916",
+    "owasp": "A02",
+    "difficulty": "intermediate",
+    "prompt": "Drop in the secure way to hash a password for storage.",
+    "code_snippet": "hashed = ▢",
+    "options": [
+      { "id": "A", "text": "hashlib.md5(pw).hexdigest()" },
+      { "id": "B", "text": "hashlib.sha1(pw).hexdigest()" },
+      { "id": "C", "text": "base64.b64encode(pw)" },
+      { "id": "D", "text": "bcrypt.hashpw(pw, bcrypt.gensalt())", "correct": true }
+    ],
+    "explanation": "bcrypt is a slow, salted password hash built to resist brute force (CWE-916/327). MD5 and SHA-1 are fast and unsalted — wrong for passwords; Base64 is encoding, not hashing.",
+    "source_reference": "CWE-916; CWE-327"
+  },
+  {
+    "id": "fill_cwe798_hardcoded_env",
+    "format": "fill_blank",
+    "category": "remediate",
+    "skill_tag": "CWE-798",
+    "owasp": "A07",
+    "difficulty": "beginner",
+    "prompt": "Drop in the value so the API key isn't hardcoded in the source.",
+    "code_snippet": "import os\nAPI_KEY = ▢",
+    "options": [
+      { "id": "A", "text": "os.environ[\"API_KEY\"]", "correct": true },
+      { "id": "B", "text": "\"sk-live-9f8a7b6c5d\"" },
+      { "id": "C", "text": "\"password123\"" },
+      { "id": "D", "text": "\"AKIA1234567890HARD\"" }
+    ],
+    "explanation": "Reading the secret from an environment variable keeps it out of source control (CWE-798). Hardcoding a literal key or password exposes it to anyone who can see the code.",
+    "source_reference": "CWE-798"
+  },
+  {
+    "id": "fill_cwe502_deser_json",
+    "format": "fill_blank",
+    "category": "remediate",
+    "skill_tag": "CWE-502",
+    "owasp": "A08",
+    "difficulty": "intermediate",
+    "prompt": "Drop in the safe way to parse data coming from an untrusted client.",
+    "code_snippet": "data = ▢(request.body)",
+    "options": [
+      { "id": "A", "text": "pickle.loads" },
+      { "id": "B", "text": "json.loads", "correct": true },
+      { "id": "C", "text": "yaml.load" },
+      { "id": "D", "text": "eval" }
+    ],
+    "explanation": "json.loads only produces plain data structures — it can't execute code. pickle.loads, yaml.load and eval can all run attacker-controlled code on untrusted input (CWE-502).",
+    "source_reference": "CWE-502; OWASP A08:2021"
+  },
+  {
+    "id": "fill_cwe352_csrf_samesite",
+    "format": "fill_blank",
+    "category": "remediate",
+    "skill_tag": "CWE-352",
+    "owasp": "A01",
+    "difficulty": "intermediate",
+    "prompt": "Drop in the cookie attribute value that helps mitigate CSRF.",
+    "code_snippet": "app.config[\"SESSION_COOKIE_SAMESITE\"] = ▢\napp.config[\"SESSION_COOKIE_SECURE\"] = True",
+    "options": [
+      { "id": "A", "text": "\"Lax\"", "correct": true },
+      { "id": "B", "text": "\"None\"" },
+      { "id": "C", "text": "\"Disabled\"" },
+      { "id": "D", "text": "\"All\"" }
+    ],
+    "explanation": "SameSite=Lax stops the browser sending the session cookie on cross-site requests, blocking most CSRF (CWE-352). `None` allows cross-site sending; `Disabled`/`All` aren't valid values.",
+    "source_reference": "CWE-352; OWASP A01:2021"
+  }
+]

@@ -51,10 +51,17 @@ class Feedback(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     student_record_id = Column(Integer, ForeignKey("students.id"), nullable=True)
+    user_id = Column(Integer, nullable=True, index=True)  # auth users.id (cookie synapse_user) — joins to user_progress
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
     most_helpful = Column(Text, nullable=True)
     improvements = Column(Text, nullable=True)
     background = Column(String, nullable=True)
+    overall_rating = Column(Integer, nullable=True)
+    ai_helpfulness = Column(Integer, nullable=True)
+    accessibility_rating = Column(Integer, nullable=True)
+    recommend = Column(Integer, nullable=True)
+    features_used = Column(Text, nullable=True)  # JSON array of feature keys
+    consent = Column(Boolean, nullable=True)     # opt-in to use responses for research
 
 # Chat-related tables
 class ChatConversation(Base):

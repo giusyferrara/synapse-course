@@ -65,6 +65,7 @@ def _client_question(q):
         "difficulty": q["difficulty"],
         "prompt": q["prompt"],
         "code_snippet": q.get("code_snippet"),
+        "format": q.get("format"),  # e.g. "fill_blank" — client renders a different UI
         # options WITHOUT the 'correct' flag:
         "options": [{"id": o["id"], "text": o["text"]} for o in q["options"]],
     }
@@ -158,6 +159,7 @@ def setup_quiz_routes(app):
         sid = _require_student(request)
         data = await request.json()
         qid = data.get("question_id")
+        level = data.get("level", 1)
         question = request.app["quiz_bank"].get(qid)
         if question is None:
             return web.json_response({"error": "unknown question"}, status=400)
@@ -167,7 +169,34 @@ def setup_quiz_routes(app):
             return web.json_response({"error": f"AI unavailable: {e}"}, status=503)
         loop = asyncio.get_event_loop()
         try:
-            result = await loop.run_in_executor(None, svc.hint, sid, question)
+            result = await loop.run_in_executor(None, svc.hint, sid, question, level)
+        except RateLimitError as e:
+            return web.json_response({"error": str(e), "rate_limited": True}, status=429)
+        except Exception as e:
+            return web.json_response({"error": f"AI error: {e}"}, status=502)
+        return web.json_response(result)
+
+    async def quiz_chat(request):
+        sid = _require_student(request)
+        data = await request.json()
+        qid = data.get("question_id")
+        message = (data.get("message") or "").strip()[:500]
+        answered = bool(data.get("answered"))
+        history = data.get("history")
+        history = history[-6:] if isinstance(history, list) else []
+        question = request.app["quiz_bank"].get(qid)
+        if question is None:
+            return web.json_response({"error": "unknown question"}, status=400)
+        if not message:
+            return web.json_response({"error": "empty message"}, status=400)
+        try:
+            svc = _get_quiz_ai(request.app)
+        except Exception as e:
+            return web.json_response({"error": f"AI unavailable: {e}"}, status=503)
+        loop = asyncio.get_event_loop()
+        try:
+            result = await loop.run_in_executor(
+                None, svc.chat, sid, question, message, history, answered)
         except RateLimitError as e:
             return web.json_response({"error": str(e), "rate_limited": True}, status=429)
         except Exception as e:
@@ -180,6 +209,7 @@ def setup_quiz_routes(app):
         db = SessionLocal()
         try:
             seen, skill_acc, recent_acc, total = quiz_engine._history(db, sid)
+            gains = quiz_engine.learning_gain(db, sid)
         finally:
             db.close()
         bank_skills = {s: len(qs) for s, qs in bank.by_skill().items()}
@@ -198,12 +228,42 @@ def setup_quiz_routes(app):
             "questions_seen": len(seen),
             "allowed_difficulties": sorted(quiz_engine.allowed_difficulties(total, recent_acc)),
             "skills": skills,
+            "gains": gains,  # per-skill baseline -> current learning gain
         })
+
+    async def quiz_gain_summary(request):
+        """Aggregate learning gain across all learners (research). Admin-gated."""
+        if request.query.get("admin", "") != os.getenv("ADMIN_KEY", ""):
+            raise web.HTTPUnauthorized(text='{"error":"admin only"}',
+                                       content_type="application/json")
+        db = SessionLocal()
+        try:
+            from database.models import QuizAttempt
+            students = [r[0] for r in db.query(QuizAttempt.student_id).distinct().all()]
+            agg = {}
+            for s in students:
+                for g in quiz_engine.learning_gain(db, s):
+                    a = agg.setdefault(g["skill_tag"], {"learners": 0, "gain_sum": 0.0, "delta_sum": 0.0})
+                    a["learners"] += 1
+                    a["gain_sum"] += g["normalized_gain"]
+                    a["delta_sum"] += g["delta"]
+        finally:
+            db.close()
+        skills = [{
+            "skill_tag": k,
+            "learners": v["learners"],
+            "avg_normalized_gain": round(v["gain_sum"] / v["learners"], 2),
+            "avg_delta": round(v["delta_sum"] / v["learners"], 2),
+        } for k, v in agg.items()]
+        skills.sort(key=lambda d: -d["avg_delta"])
+        return web.json_response({"total_learners": len(students), "skills": skills})
 
     app.router.add_get("/quiz", serve_quiz_page)
     app.router.add_get("/api/quiz/next", quiz_next)
     app.router.add_post("/api/quiz/answer", quiz_answer)
     app.router.add_post("/api/quiz/explain", quiz_explain)
     app.router.add_post("/api/quiz/hint", quiz_hint)
+    app.router.add_post("/api/quiz/chat", quiz_chat)
     app.router.add_get("/api/quiz/progress", quiz_progress)
+    app.router.add_get("/api/quiz/gain_summary", quiz_gain_summary)
     return app

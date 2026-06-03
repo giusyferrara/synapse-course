@@ -476,7 +476,13 @@ async function handleLogin(e) {
             alertBox.className = 'alert success';
             alertBox.textContent = '✅ Login successful! Redirecting...';
             localStorage.setItem('synapse_user', JSON.stringify(data.user));
-            setTimeout(() => window.location.href = '/dashboard', 1000);
+            // Smart redirect: honour a safe ?next=, else phone → /m, desktop → /dashboard
+            const params = new URLSearchParams(window.location.search);
+            let next = params.get('next');
+            if (!(next && next.charAt(0) === '/' && next.charAt(1) !== '/')) next = null;
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            const dest = next || (isMobile ? '/m' : '/dashboard');
+            setTimeout(() => window.location.href = dest, 1000);
         } else {
             alertBox.className = 'alert error';
             alertBox.textContent = data.message || 'Invalid email or password.';

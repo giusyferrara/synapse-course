@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Synapse · Adaptive Security Quiz</title>
   <link rel="stylesheet" href="/static/synapse_a11y.css?v=19">
-  <link rel="stylesheet" href="/static/synapse_a11y_toolbar.css?v=5">
+  <link rel="stylesheet" href="/static/synapse_a11y_toolbar.css?v=7">
   <style>
     :root{
       --bg:#f6f7fb; --card:#ffffff; --ink:#1f2430; --ink-soft:#5b6472;
@@ -32,6 +32,28 @@
     .chip{font-size:.78rem;font-weight:600;padding:3px 10px;border-radius:99px;
       background:var(--accent-soft);color:var(--accent);}
     .chip.diff{background:#eee9f6;color:#6b4ea0;}
+    /* per-category accent — visual variety so consecutive questions never look identical */
+    .card.cat-detect{--cat:#e11d48;} .card.cat-understand{--cat:#d97706;}
+    .card.cat-remediate{--cat:#16a34a;} .card.cat-tooling{--cat:#2563eb;}
+    .card.cat-severity{--cat:#7c3aed;}
+    .card.cat-detect,.card.cat-understand,.card.cat-remediate,
+    .card.cat-tooling,.card.cat-severity{border-top:4px solid var(--cat);}
+    .chip.cat-chip{background:var(--cat,var(--accent));color:#fff;}
+    /* fill-the-blank (tap-to-place token into the gap) */
+    .fb-slot{display:inline-block;min-width:5em;text-align:center;padding:0 8px;border-radius:6px;
+      background:var(--accent-soft);border:1.5px dashed var(--accent);color:var(--accent);font-weight:700;}
+    .fb-slot.filled{border-style:solid;}
+    .fb-slot.slot-ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok);border-style:solid;}
+    .fb-slot.slot-no{background:var(--warn-soft);border-color:var(--warn);color:var(--warn);border-style:solid;}
+    .options.tokens{flex-direction:row;flex-wrap:wrap;gap:10px;}
+    .token{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-weight:700;font-size:.92rem;
+      background:#fff;border:2px solid var(--line);border-radius:10px;padding:10px 14px;cursor:pointer;
+      color:var(--ink);transition:border-color .15s,background .15s;min-height:44px;}
+    .token:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft);}
+    .token.chosen{border-color:var(--accent);background:var(--accent-soft);}
+    .token.correct{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);}
+    .token.incorrect{border-color:var(--warn);background:var(--warn-soft);color:var(--warn);}
+    .token:disabled{cursor:default;}
     .prompt{font-size:1.15rem;font-weight:600;margin:6px 0 14px;}
     pre.code{background:#0f1729;color:#e6edf7;border-radius:10px;padding:14px 16px;
       font-size:.86rem;line-height:1.55;
@@ -65,6 +87,14 @@
       border:1px solid #e0d9f3;}
     .ai-box .lbl{font-weight:700;color:#6b4ea0;font-size:.82rem;margin-bottom:4px;
       display:flex;align-items:center;gap:6px;}
+    .chat-log{display:flex;flex-direction:column;gap:8px;margin:8px 0;max-height:260px;overflow-y:auto;}
+    .chat-msg{padding:8px 12px;border-radius:12px;font-size:.95rem;max-width:90%;white-space:pre-wrap;}
+    .chat-msg.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px;}
+    .chat-msg.ai{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px;}
+    .chat-input-row{display:flex;gap:8px;margin-top:8px;}
+    .chat-input-row input{flex:1;font:inherit;font-size:.95rem;padding:10px 12px;
+      border:2px solid var(--line);border-radius:10px;min-width:0;}
+    .chat-input-row input:focus{outline:none;border-color:var(--accent);}
     .muted{color:var(--ink-soft);}
     .center{text-align:center;}
     .summary .big{font-size:2.4rem;font-weight:700;color:var(--accent);}
@@ -75,6 +105,7 @@
     .prog-bar{flex:1;height:9px;border-radius:99px;background:var(--line);overflow:hidden;}
     .prog-bar > i{display:block;height:100%;background:var(--ok);border-radius:99px;}
     .prog-pct{flex:0 0 3em;text-align:right;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+    .gain-badge{flex:0 0 auto;font-weight:700;font-size:.85rem;font-variant-numeric:tabular-nums;}
     .hidden{display:none!important;}
     @media (prefers-reduced-motion: reduce){*{transition:none!important;}}
   </style>
@@ -123,14 +154,26 @@
           <div class="lbl">✨ AI explanation</div>
           <div id="explainText"></div>
         </div>
+
+        <div class="actions" id="chatActions">
+          <button class="btn ghost" id="askBtn" type="button">🦋 Ask tutor</button>
+        </div>
+        <div class="ai-box hidden" id="chatBox" aria-live="polite">
+          <div class="lbl">🦋 Tutor — sees this question</div>
+          <div id="chatLog" class="chat-log"></div>
+          <div class="chat-input-row">
+            <input id="chatInput" type="text" placeholder="Ask about this question…" maxlength="500" autocomplete="off">
+            <button class="btn" id="chatSend" type="button">Send</button>
+          </div>
+        </div>
       </div>
     </div>
 
     <div id="summary" class="card center summary hidden"></div>
   </div>
 
-  <script src="/static/quiz.js?v=1"></script>
-  <script src="/static/synapse_a11y_toolbar.js?v=5"></script>
+  <script src="/static/quiz.js?v=5"></script>
+  <script src="/static/synapse_a11y_toolbar.js?v=6"></script>
   <script src="/static/synapse_a11y.js?v=12"></script>
 </body>
 </html>

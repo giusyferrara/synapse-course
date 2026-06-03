@@ -100,6 +100,15 @@
     var nodes = Array.prototype.slice.call(holder.childNodes);
     nodes.forEach(function (n) { document.body.appendChild(n); });
     document.body.classList.add("synapse-has-toolbar");
+    // Reserve EXACTLY the toolbar's real height so it never covers page content,
+    // on any screen size or however many rows it wraps to.
+    var navEl = document.getElementById("synapseA11yNav");
+    function reserveToolbarSpace() {
+      if (navEl) document.body.style.paddingTop = navEl.offsetHeight + "px";
+    }
+    reserveToolbarSpace();
+    setTimeout(reserveToolbarSpace, 300); // after the logo image / fonts settle
+    window.addEventListener("resize", reserveToolbarSpace);
     restore();
   }
 

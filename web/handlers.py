@@ -13,6 +13,10 @@ def setup_routes(app):
     app.router.add_get("/", handle_mcp_inspector)
     app.router.add_get("/feedback", handle_feedback_form)
     app.router.add_get("/tools", handle_advanced_tools)  # NEW: Advanced tools page
+    app.router.add_get("/m", handle_mobile_home)          # Mobile PWA home (slice 1)
+    app.router.add_get("/m/", handle_mobile_home)
+    app.router.add_get("/m/tutor", handle_mobile_tutor)   # Mobile Socratic tutor chat
+    app.router.add_get("/m/sw.js", handle_mobile_sw)      # Service worker (scope /m/)
     app.router.add_get("/health", handle_health)
 
     app.router.add_post("/submit_feedback", handle_submit_feedback)
@@ -62,6 +66,38 @@ async def handle_advanced_tools(request):
     except FileNotFoundError:
         return web.Response(text="<h1>Error: advanced_tools.html not found.</h1>", status=500, content_type="text/html")
 
+async def handle_mobile_home(request):
+    """Mobile PWA home hub (/m) — login-gated, reuses the same account."""
+    if not request.cookies.get('synapse_user'):
+        raise web.HTTPFound('/login?next=/m')
+    try:
+        with open("templates/mobile/home.html", "r", encoding="utf-8") as f:
+            return web.Response(text=f.read(), content_type="text/html")
+    except FileNotFoundError:
+        return web.Response(text="<h1>Error: mobile home not found.</h1>", status=500, content_type="text/html")
+
+async def handle_mobile_tutor(request):
+    """Mobile Socratic tutor chat (/m/tutor) — login-gated; reuses /api/course/chat."""
+    if not request.cookies.get('synapse_user'):
+        raise web.HTTPFound('/login?next=/m/tutor')
+    try:
+        with open("templates/mobile/tutor.html", "r", encoding="utf-8") as f:
+            return web.Response(text=f.read(), content_type="text/html")
+    except FileNotFoundError:
+        return web.Response(text="<h1>Error: mobile tutor not found.</h1>", status=500, content_type="text/html")
+
+async def handle_mobile_sw(request):
+    """Serve the mobile service worker at /m/sw.js so its scope is /m/."""
+    try:
+        with open("static/m-sw.js", "r", encoding="utf-8") as f:
+            return web.Response(
+                text=f.read(),
+                content_type="application/javascript",
+                headers={"Service-Worker-Allowed": "/m/", "Cache-Control": "no-cache"},
+            )
+    except FileNotFoundError:
+        return web.Response(text="// service worker not found", status=404, content_type="application/javascript")
+
 # --- Handler per le API (Azioni dei Pulsanti) ---
 
 async def handle_health(request):
@@ -71,14 +107,45 @@ async def handle_submit_feedback(request):
     db = SessionLocal()
     try:
         data = await request.json()
+
+        # Link to the logged-in auth user (cookie synapse_user = users.id), if present
+        user_id = None
+        cookie_uid = request.cookies.get('synapse_user')
+        if cookie_uid and cookie_uid.isdigit():
+            user_id = int(cookie_uid)
+
+        # Legacy: resolve a Student record if a real student_id was sent
         student_id_str = data.get("student_id", "anonymous_feedback_user")
         student = db.query(Student).filter(Student.student_id == student_id_str).first()
 
+        def _as_int(v):
+            try:
+                return int(v)
+            except (TypeError, ValueError):
+                return None
+
+        features = data.get("features")
+        if isinstance(features, (list, dict)):
+            features_used = json.dumps(features)
+        elif features:
+            features_used = json.dumps([features])
+        else:
+            features_used = None
+
+        consent = bool(data.get("consent"))
+
         new_feedback = Feedback(
             student_record_id=student.id if student else None,
+            user_id=user_id,
             most_helpful=data.get("most_helpful"),
             improvements=data.get("improvements"),
-            background=data.get("background")
+            background=data.get("background"),
+            overall_rating=_as_int(data.get("overall")),
+            ai_helpfulness=_as_int(data.get("ai_helpfulness")),
+            accessibility_rating=_as_int(data.get("accessibility")),
+            recommend=_as_int(data.get("recommend")),
+            features_used=features_used,
+            consent=consent,
         )
         db.add(new_feedback)
         db.commit()
@@ -86,16 +153,25 @@ async def handle_submit_feedback(request):
         try:
             to_email = os.environ.get("FEEDBACK_TO_EMAIL", "synapse_4AI@outlook.com")
             html_body = f"""<h2>New SYNAPSE Feedback</h2>
-<p><strong>Student ID:</strong> {student_id_str}</p>
+<p><strong>User ID:</strong> {user_id if user_id is not None else "anonymous"}</p>
+<p><strong>Overall:</strong> {data.get("overall") or "—"}/5 &nbsp;|&nbsp;
+<strong>AI tutor:</strong> {data.get("ai_helpfulness") or "—"}/5 &nbsp;|&nbsp;
+<strong>Accessibility:</strong> {data.get("accessibility") or "—"}/5 &nbsp;|&nbsp;
+<strong>Recommend:</strong> {data.get("recommend") or "—"}/5</p>
+<p><strong>Background:</strong> {data.get("background") or "—"}</p>
+<p><strong>Features used:</strong> {features_used or "—"}</p>
+<p><strong>Consent (research):</strong> {"yes" if consent else "no"}</p>
 <p><strong>Most helpful:</strong><br>{data.get("most_helpful") or "—"}</p>
-<p><strong>Improvements:</strong><br>{data.get("improvements") or "—"}</p>
-<p><strong>Background:</strong><br>{data.get("background") or "—"}</p>"""
+<p><strong>Improvements:</strong><br>{data.get("improvements") or "—"}</p>"""
             text_body = f"""New SYNAPSE Feedback
 
-Student ID: {student_id_str}
+User ID: {user_id if user_id is not None else "anonymous"}
+Overall: {data.get("overall") or "—"}/5 | AI tutor: {data.get("ai_helpfulness") or "—"}/5 | Accessibility: {data.get("accessibility") or "—"}/5 | Recommend: {data.get("recommend") or "—"}/5
+Background: {data.get("background") or "—"}
+Features used: {features_used or "—"}
+Consent (research): {"yes" if consent else "no"}
 Most helpful: {data.get("most_helpful") or "—"}
-Improvements: {data.get("improvements") or "—"}
-Background: {data.get("background") or "—"}"""
+Improvements: {data.get("improvements") or "—"}"""
             send_email(to_email, "New SYNAPSE feedback received", html_body, text_body)
         except Exception as e:
             print(f"[!] Feedback email notification failed: {e}")
