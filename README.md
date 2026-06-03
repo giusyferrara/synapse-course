@@ -26,12 +26,6 @@
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
-**An accessibility-first, multi-LLM AI tutor for secure software development education.**
-
-*Learning designed for focused, creative minds.*
-
-🔗 **Live platform:** https://synapse-course.com
-
 ---
 
 ## Evaluating SYNAPSE (for reviewers)
