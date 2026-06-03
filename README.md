@@ -78,10 +78,12 @@ Persistent storage uses PostgreSQL.
 > Requires Python 3.12, PostgreSQL, OpenJDK 21, and Docker (for ShopSecure / labs). You will need your own API keys for Anthropic, OpenAI, and Google.
 
 1. Clone the repository.
-2. Install dependencies: `pip install -r requirements.txt`
-3. Copy `.env.example` to `.env` and `claude_desktop_config.example.json` to `claude_desktop_config.json`, then fill in your own API keys and database credentials.
+2. (Recommended) Create and activate a virtual environment: `python -m venv .venv && source .venv/bin/activate` — then install dependencies: `pip install -r requirements.txt`
+3. Copy `.env.example` to `.env` and fill in your own API keys (Anthropic, OpenAI, Google) and your `DATABASE_URL`.
 4. Create an empty PostgreSQL database (e.g. `createdb security_tutor`), set `DATABASE_URL` in `.env`, then load the schema: `python -m database.init_db` (applies `database/schema.sql`, the full table schema)
-5. Start the app: `python app.py`
+5. Start the app: `python app.py`, then open http://localhost:6281 in your browser and register an account.
+
+*Optional — only to use the MCP server with Claude Desktop:* also copy `claude_desktop_config.example.json` to `claude_desktop_config.json` and fill it in. This is not needed to run the web platform.
 
 (OpenJDK 21 and Docker are only needed for the code-execution sandbox and ShopSecure/labs — not to run and explore the tutor.)
 
