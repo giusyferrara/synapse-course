@@ -11,7 +11,7 @@
 <p align="center">🔗 <a href="https://synapse-course.com">synapse-course.com</a></p>
 
 <p align="center">
-  <a href="https://doi.org/10.5281/zenodo.20480483"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.20480483.svg" alt="DOI"></a>
+  <a href="https://doi.org/10.5281/zenodo.20480483"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20480483-blue.svg" alt="DOI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
   <a href="https://synapse-course.com"><img src="https://img.shields.io/badge/demo-live-brightgreen.svg" alt="Live demo"></a>
   <a href="https://youtu.be/9R17KC47qQI"><img src="https://img.shields.io/badge/screencast-YouTube-red.svg" alt="Screencast"></a>
