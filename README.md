@@ -86,7 +86,7 @@ Persistent storage uses PostgreSQL.
 1. Clone the repository.
 2. Install dependencies: `pip install -r requirements.txt`
 3. Copy `.env.example` to `.env` and `claude_desktop_config.example.json` to `claude_desktop_config.json`, then fill in your own API keys and database credentials.
-4. Create an empty PostgreSQL database (e.g. `createdb security_tutor`), set `DATABASE_URL` in `.env`, then create the tables: `python -m database.init_db`
+4. Create an empty PostgreSQL database (e.g. `createdb security_tutor`), set `DATABASE_URL` in `.env`, then load the schema: `python -m database.init_db` (applies `database/schema.sql`, the full table schema)
 5. Start the app: `python app.py`
 
 (OpenJDK 21 and Docker are only needed for the code-execution sandbox and ShopSecure/labs — not to run and explore the tutor.)
