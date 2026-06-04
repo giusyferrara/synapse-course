@@ -271,14 +271,53 @@ GEN_PROMPT = (
     "Generate an exercise DIFFERENT from the seed (other tool/flag/scenario), not a mere rewrite."
 )
 
-# Per-deck allowlist of tools the generator may use. Keeps the model on tools it actually
-# knows (stable CLIs), which is where flag-hallucination stops. No GUI tools, no obscure ones.
-# Add a deck here before its --ai run; decks without an entry fall back to unconstrained.
+# Per-deck constraints that keep the model on ground it actually knows — that is where
+# hallucination (invented tools/flags/APIs) stops. Each value is a dict; supported keys:
+#   "tools"      -> CLI decks: the ONLY commands allowed (use real flags, never invent).
+#   "frameworks" -> code decks: the ONLY frameworks allowed (real mainstream APIs only).
+#   "bugs"       -> the vulnerability classes the bug must belong to.
+#   "note"       -> extra free-form guidance appended verbatim.
+# A deck with no entry falls back to unconstrained generation.
 DECK_ALLOWLIST = {
-    "netmon": ["tcpdump", "tshark", "nmap", "ss", "netstat", "ngrep", "tcpflow", "dig"],
+    "netmon": {
+        "tools": ["tcpdump", "tshark", "nmap", "ss", "netstat", "ngrep", "tcpflow", "dig"],
+    },
+    "api": {
+        "frameworks": ["Python Flask", "Python FastAPI", "Node.js Express"],
+        "bugs": [
+            "BOLA / IDOR (missing object-level ownership check)",
+            "BFLA (missing role / function-level authorization)",
+            "mass assignment (binding untrusted fields to a model)",
+            "broken authentication (JWT alg/none, weak session handling)",
+            "SSRF (server fetches a user-supplied URL)",
+            "missing rate limiting / brute-force protection on auth",
+            "excessive data exposure / verbose errors leaking internals",
+        ],
+        "note": ("Bugs MUST be CONCEPTUAL — a real line of code where a security check is missing or wrong "
+                 "(the vuln line is that code line; the fix adds/repairs the check). Do NOT make CLI-flag trivia. "
+                 "Use only real, mainstream APIs of the allowed frameworks; never invent decorators, methods, or libraries."),
+    },
     # dfir (later): PIN Volatility 3 syntax (windows.pslist, no --profile) or avoid flag puzzles on it —
     #   vol2/vol3 differ and the malware-pilot volatility item was conceptually right but structurally broken.
 }
+
+def _allow_instruction(deck):
+    """Build the per-deck constraint text appended to the generation request."""
+    spec = DECK_ALLOWLIST.get(deck)
+    if not spec:
+        return ""
+    parts = []
+    if spec.get("tools"):
+        parts.append("Use ONLY one of these tools, nothing else: " + ", ".join(spec["tools"]) +
+                     ". Use only real, standard flags; never invent a tool or flag.")
+    if spec.get("frameworks"):
+        parts.append("Use ONLY these frameworks: " + ", ".join(spec["frameworks"]) +
+                     ". Use only their real, mainstream APIs; never invent decorators, methods, or libraries.")
+    if spec.get("bugs"):
+        parts.append("The bug MUST be one of these vulnerability classes: " + "; ".join(spec["bugs"]) + ".")
+    if spec.get("note"):
+        parts.append(spec["note"])
+    return " " + " ".join(parts)
 VERIFY_PROMPT = (
     "You are a senior security engineer reviewing one Spot the Bug exercise for TECHNICAL CORRECTNESS. "
     "Check: is the flagged line (index 'vuln') really the wrong/dangerous one? Is 'category' accurate? "
@@ -302,11 +341,7 @@ async def gen_ai(deck, n, verify):
         nonce = random.randint(1000, 9999)
         used_tools = sorted({e.get("lang", "") for e in out})
         avoid = (" Avoid reusing these tools already used in this batch: " + ", ".join(used_tools) + ".") if used_tools else ""
-        allow_tools = DECK_ALLOWLIST.get(deck)
-        allow = ""
-        if allow_tools:
-            allow = (" ALLOWED TOOLS — use ONLY one of these, nothing else: " + ", ".join(allow_tools) +
-                     ". Use only real, standard flags for that tool; do NOT invent tools or flags.")
+        allow = _allow_instruction(deck)
         ask = (f"Deck: {deck}. Style example (do NOT copy it): {seed_json}. "
                f"Make it clearly different (variation #{nonce}).{allow}{avoid}")
         try:
