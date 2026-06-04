@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spot the Bug · AI — prototype</title>
+<style>
+  :root{ --bg:#0b1020; --card:#121a2e; --line:#1f2a44; --ink:#e8eefc; --mut:#94a3c4;
+         --acc:#39d98a; --accd:#1f7a52; --bad:#ff5c7a; --warn:#ffd166; --cy:#5cc8ff; }
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.5 -apple-system,Segoe UI,Roboto,system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+  .wrap{max-width:680px;margin:0 auto;padding:16px 14px 60px}
+  h1{font-size:20px;margin:.2em 0}
+  .sub{color:var(--mut);font-size:13px;margin:0 0 14px}
+  .badge{display:inline-block;font-size:11px;background:#0e2a1e;color:var(--acc);border:1px solid var(--accd);
+         border-radius:999px;padding:2px 9px;margin-left:6px;vertical-align:middle}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+  .meta{color:var(--cy);font-size:12px;letter-spacing:.02em;margin-bottom:8px}
+  .code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;
+        background:#0a0f1f;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .code.tappable .line{cursor:pointer}
+  .line{display:block;padding:9px 12px;border-bottom:1px solid #131c33;white-space:pre-wrap;word-break:break-word}
+  .line:last-child{border-bottom:0}
+  .line.correct{background:#0e2a1e;box-shadow:inset 3px 0 0 var(--acc)}
+  .line.wrong{background:#2a0e16;box-shadow:inset 3px 0 0 var(--bad)}
+  .code.locked .line{cursor:default;opacity:.85}
+  .step{font-size:13px;color:var(--mut);margin:10px 0 6px;min-height:18px}
+  .chips,.tokens{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+  .chip,.token,button.btn{font:inherit;font-size:14px;border-radius:10px;border:1px solid var(--line);
+        background:#0e1426;color:var(--ink);padding:8px 12px;cursor:pointer}
+  .chip.correct{background:#0e2a1e;border-color:var(--accd);color:var(--acc)}
+  .chip.wrong{background:#2a0e16;border-color:var(--bad)}
+  .chip:disabled{opacity:.55}
+  .token.used{opacity:.35;text-decoration:line-through}
+  .slot{display:inline-block;min-width:64px;text-align:center;border-bottom:2px dashed var(--mut);
+        margin:0 3px;cursor:pointer;color:var(--cy)}
+  .slot.filled{border-bottom-style:solid}
+  .slot.selected{background:#13243f}
+  .slot.ok{color:var(--acc);border-color:var(--acc)} .slot.bad{color:var(--bad);border-color:var(--bad)}
+  .why,.fixmsg{font-size:13px;border-radius:10px;padding:9px 11px;margin-top:8px}
+  .why{background:#10182c;border:1px solid var(--line);color:var(--mut)}
+  .fixmsg.good{background:#0e2a1e;border:1px solid var(--accd);color:var(--acc)}
+  .fixmsg.bad{background:#2a0e16;border:1px solid var(--bad)}
+  .ai{background:#0d1730;border:1px solid #24407a;border-radius:10px;padding:10px 11px;margin-top:8px;font-size:13.5px}
+  .ai b{color:var(--cy)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .btn{transition:transform .05s}
+  .btn:active{transform:scale(.97)}
+  .btn.acc{background:#0e2a1e;border-color:var(--accd);color:var(--acc)}
+  .btn.cy{background:#0d1730;border-color:#24407a;color:var(--cy)}
+  .ghost{background:transparent;border:1px dashed var(--line);color:var(--mut)}
+  .hidden{display:none!important}
+  .targetbanner{background:#2a230b;border:1px solid #5b4a16;color:var(--warn);border-radius:10px;
+        padding:8px 11px;font-size:13px;margin:10px 0}
+  .stats{font-size:12px;color:var(--mut);margin-top:10px;display:flex;gap:14px;flex-wrap:wrap}
+  .stats b{color:var(--ink)}
+  .toggle{font-size:12px;color:var(--mut);display:flex;gap:8px;align-items:center}
+  .note{font-size:12px;color:var(--mut);border-top:1px solid var(--line);margin-top:18px;padding-top:12px}
+  code{background:#0a0f1f;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Spot the Bug <span style="color:var(--cy)">· ✨ AI</span> <span class="badge">PROTOTYPE</span></h1>
+  <p class="sub">Demonstrates the three things no static competitor can copy: <b>infinite variants</b> of the same bug, an explanation of <b>your specific mistake</b>, and <b>targeted re-practice</b> on your weak spots. Runs now on a local mock; the real AI backend is already wired (see note at the bottom). Works on desktop and mobile.</p>
+
+  <div class="row" style="justify-content:space-between">
+    <label class="toggle"><input type="checkbox" id="aiToggle"> Use AI backend (<code>/api/spotbug/variant</code>) instead of the mock</label>
+  </div>
+
+  <div id="targetBanner" class="targetbanner hidden"></div>
+
+  <div class="card">
+    <div class="meta" id="snippetMeta"></div>
+    <div class="code tappable" id="codeBlock"></div>
+    <div class="step" id="stepHint">1️⃣ Tap the wrong or dangerous line.</div>
+    <button class="btn cy hidden" id="explainBtn">💡 Why was I wrong?</button>
+    <div class="ai hidden" id="aiMiss"></div>
+    <button class="btn acc hidden" id="detectNext">Next →</button>
+
+    <div id="understandWrap" class="hidden">
+      <div class="step">2️⃣ What kind of mistake is it?</div>
+      <div class="chips" id="catChips"></div>
+      <div class="why hidden" id="whyBox"></div>
+      <button class="btn acc hidden" id="understandNext">Next →</button>
+    </div>
+
+    <div id="fixWrap" class="hidden">
+      <div class="step">3️⃣ Fix it: tap a blank, then the right token.</div>
+      <div class="code" id="fixBlock" style="padding:6px 4px"></div>
+      <div class="tokens" id="tokenBank"></div>
+      <button class="btn" id="checkFix">Check</button>
+      <div class="fixmsg hidden" id="fixMsg"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <button class="btn cy" id="variantBtn">🎲 New variant (same bug, different form)</button>
+    <button class="btn ghost" id="newBtn">Next exercise →</button>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="note" id="srcNote"></div>
+</div>
+
+<script>
+/* ============================================================
+   BASE TEMPLATES — each template is "one bug" with {{...}} holes.
+   Filling the holes from `pools` yields infinite equivalent
+   surface forms: memorising the text no longer helps.
+   In production the AI generates (and expands) this same object.
+   ============================================================ */
+const TEMPLATES = [
+  { id:'tcpdump_w', deck:'netmon', lang:'tcpdump',
+    ctxForms:['capture traffic on {{IF}} to a file','save packets from {{IF}} to analyse later'],
+    code:['sudo tcpdump -i {{IF}} -o {{FILE}}'], vuln:0, category:'Wrong flag',
+    options:['Wrong flag','Wrong tool','Wrong value','Wrong syntax'],
+    why:'-o is not how tcpdump writes to a file.',
+    fixLines:['sudo tcpdump -i {{IF}} ___ {{FILE}}'], slots:['-w'], tokens:['-w','-o','-f','-r'],
+    fixWhy:'-w writes the raw packets; you read them back with -r.',
+    pools:{ IF:['eth0','wlan0','ens33','enp0s3'], FILE:['capture.pcap','traffic.pcap','dump.pcap','wire.pcap'] } },
+
+  { id:'bola', deck:'api', lang:'Python',
+    ctxForms:['an endpoint returns a {{RES}} by id','the API reads a {{RES}} given its id'],
+    code:['@app.get("/api/{{RES}}/<id>")','def get(id):','    return db.{{RES}}(id)'], vuln:2, category:'BOLA (IDOR)',
+    options:['BOLA (IDOR)','BFLA','Mass assignment','SSRF'],
+    why:'Any authenticated user can read someone else\'s {{RES}} by changing the id — the ownership check is missing.',
+    fixLines:['row = db.{{RES}}(id)','if row.owner != ___.id: abort(403)','return row'], slots:['current_user'],
+    tokens:['current_user','id','db','request'],
+    fixWhy:'Verify the resource belongs to the caller (BOLA = #1 API risk).',
+    pools:{ RES:['invoices','orders','tickets','documents'] } },
+
+  { id:'store', deck:'mobile', lang:'Java',
+    ctxForms:['the app stores the {{SECRET}}','where the app keeps the {{SECRET}}'],
+    code:['prefs.edit().putString("{{SECRET}}", value).apply()   // SharedPreferences, plaintext'], vuln:0,
+    category:'Insecure storage',
+    options:['Insecure storage','Weak crypto','Exported component','Hardcoded secret'],
+    why:'Plaintext SharedPreferences are readable on rooted devices or in backups.',
+    fixLines:['store the {{SECRET}} via ___ / EncryptedSharedPreferences'], slots:['Keystore'],
+    tokens:['Keystore','SD card','logcat','clipboard'],
+    fixWhy:'Use the Android Keystore (EncryptedSharedPreferences); never store secrets in plaintext.',
+    pools:{ SECRET:['token','refresh_token','PIN','api_key'] } },
+
+  { id:'volatility', deck:'dfir', lang:'acquisition',
+    ctxForms:['order of collection during live acquisition of {{HOST}}','on compromised {{HOST}}: what do you collect first'],
+    code:['image the {{HOST}} disk first, then capture RAM','(RAM is far more volatile than disk)'],
+    vuln:0, category:'Wrong approach',
+    options:['Wrong approach','Wrong tool','Wrong value','Wrong field'],
+    why:'The order of volatility says collect what disappears first.',
+    fixLines:['capture ___ first (order of volatility)'], slots:['memory'],
+    tokens:['memory','the disk','the logs','the backups'],
+    fixWhy:'Order of volatility: CPU/cache → RAM → network state → disk → archives. RAM dies on power-off.',
+    pools:{ HOST:['WS-014','SRV-DC1','LAPTOP-07','HOST-22'] } }
+];
+
+/* ---------- state + utils ---------- */
+const el = id => document.getElementById(id);
+const rnd = a => a[Math.floor(Math.random()*a.length)];
+const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+let cur=null, selectedSlot=null;
+const stat = { played:0, firstTry:0, variants:0, aiCalls:0, miss:{} };  // miss[category]=count
+
+/* substitute the {{HOLES}} across every string of an exercise */
+function materialise(t){
+  const pick={}; Object.keys(t.pools||{}).forEach(k=>pick[k]=rnd(t.pools[k]));
+  const sub = s => s.replace(/\{\{(\w+)\}\}/g, (_,k)=> pick[k]!==undefined?pick[k]:('{{'+k+'}}'));
+  return {
+    id:t.id, deck:t.deck, lang:t.lang, vuln:t.vuln, category:sub(t.category),
+    ctx: sub(rnd(t.ctxForms)),
+    code: t.code.map(sub),
+    options: t.options.map(sub),
+    why: sub(t.why),
+    fixLines: t.fixLines.map(sub),
+    slots: t.slots.map(sub),
+    tokens: t.tokens.map(sub),
+    fixWhy: sub(t.fixWhy),
+    _source:'mock'
+  };
+}
+
+/* pick the next template, weighting weak spots (targeted re-practice) */
+function pickTemplate(){
+  const weak = Object.entries(stat.miss).sort((a,b)=>b[1]-a[1])[0];
+  if(weak && weak[1]>0 && Math.random()<0.6){
+    const cand = TEMPLATES.filter(t=>t.category===weak[0]);
+    if(cand.length){ showTarget(weak[0]); return rnd(cand); }
+  }
+  hideTarget();
+  return rnd(TEMPLATES);
+}
+function showTarget(c){ el('targetBanner').textContent='🎯 Targeted re-practice: you keep missing the « '+c+' » category — here is another form of it.'; el('targetBanner').classList.remove('hidden'); }
+function hideTarget(){ el('targetBanner').classList.add('hidden'); }
+
+/* ---------- real backend (already wired) ---------- */
+async function fetchVariantFromBackend(deck, weakCategory){
+  // Production: POST /api/spotbug/variant → the AI generates a fresh exercise
+  // in the same schema, validated server-side. See the handover .md.
+  const r = await fetch('/api/spotbug/variant', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ deck, weak_category:weakCategory, model:'claude' })
+  });
+  if(!r.ok) throw new Error('backend '+r.status);
+  const ex = await r.json();
+  ex._source='AI'; return ex;
+}
+
+/* ---------- game engine (slim) ---------- */
+function load(ex){
+  cur=ex; selectedSlot=null;
+  el('snippetMeta').textContent = ex.lang+' · '+ex.ctx + (ex._source==='AI'?'   ✨ generated by AI':'   🎲 mock variant');
+  const code=el('codeBlock'); code.className='code tappable'; code.innerHTML='';
+  ex.code.forEach((ln,i)=>{ const r=document.createElement('span'); r.className='line'; r.textContent=ln;
+    r.onclick=()=>onDetect(i,r); code.appendChild(r); });
+  el('stepHint').textContent='1️⃣ Tap the wrong or dangerous line.';
+  el('explainBtn').classList.add('hidden'); el('aiMiss').classList.add('hidden');
+  el('detectNext').classList.add('hidden');
+  el('understandWrap').classList.add('hidden'); el('fixWrap').classList.add('hidden');
+  el('whyBox').classList.add('hidden'); el('understandNext').classList.add('hidden');
+  el('fixMsg').classList.add('hidden');
+  cur._firstTry=true; cur._lastWrongLine=null; cur._lastWrongCat=null;
+  renderStats();
+}
+
+function onDetect(i,row){
+  if(el('codeBlock').classList.contains('locked')) return;
+  if(i===cur.vuln){
+    row.classList.add('correct'); el('codeBlock').className='code locked';
+    el('stepHint').textContent='✅ Found it! Now understand and fix it.';
+    el('detectNext').classList.remove('hidden');
+  } else {
+    row.classList.add('wrong'); cur._firstTry=false; cur._lastWrongLine=cur.code[i];
+    el('stepHint').textContent='❌ No — that line is correct. Look again.';
+    el('explainBtn').classList.remove('hidden');
+    setTimeout(()=>row.classList.remove('wrong'),500);
+  }
+}
+el('detectNext').onclick=()=>{ el('understandWrap').classList.remove('hidden'); buildChips(); el('detectNext').classList.add('hidden'); };
+
+function buildChips(){
+  const chips=el('catChips'); chips.innerHTML='';
+  shuffle(cur.options.slice()).forEach(opt=>{ const b=document.createElement('button'); b.className='chip'; b.textContent=opt;
+    b.onclick=()=>onUnderstand(opt,b); chips.appendChild(b); });
+}
+function onUnderstand(opt,b){
+  if(opt===cur.category){
+    b.classList.add('correct'); [...el('catChips').children].forEach(x=>x.disabled=true);
+    el('whyBox').textContent=cur.why; el('whyBox').classList.remove('hidden');
+    el('understandNext').classList.remove('hidden');
+  } else {
+    b.classList.add('wrong'); cur._firstTry=false; cur._lastWrongCat=opt;
+    bumpMiss(cur.category);
+    el('explainBtn').classList.remove('hidden');
+    setTimeout(()=>b.classList.remove('wrong'),500);
+  }
+}
+el('understandNext').onclick=()=>{ el('fixWrap').classList.remove('hidden'); buildFix(); el('understandNext').classList.add('hidden'); };
+
+function buildFix(){
+  const block=el('fixBlock'); block.innerHTML=''; let idx=0;
+  cur.fixLines.forEach(line=>{ const div=document.createElement('div'); div.className='line';
+    line.split('___').forEach((part,k,arr)=>{ div.appendChild(document.createTextNode(part));
+      if(k<arr.length-1){ const s=document.createElement('span'); s.className='slot'; s.dataset.idx=idx++; s.textContent='____';
+        s.onclick=()=>selectSlot(s); div.appendChild(s); } });
+    block.appendChild(div); });
+  const bank=el('tokenBank'); bank.innerHTML='';
+  shuffle(cur.tokens.slice()).forEach(tk=>{ const t=document.createElement('button'); t.className='token'; t.textContent=tk;
+    t.onclick=()=>fillToken(t,tk); bank.appendChild(t); });
+  selectedSlot=null;
+}
+function selectSlot(s){ document.querySelectorAll('.slot').forEach(x=>x.classList.remove('selected'));
+  if(s.dataset.filled){ const tk=s.dataset.filled; delete s.dataset.filled; s.textContent='____'; s.classList.remove('filled','ok','bad');
+    const t=[...el('tokenBank').children].find(b=>b.textContent===tk&&b.disabled); if(t){t.disabled=false;t.classList.remove('used');} }
+  s.classList.add('selected'); selectedSlot=s; }
+function fillToken(t,tk){ if(t.disabled)return; let s=selectedSlot||document.querySelector('.slot:not(.filled)'); if(!s)return;
+  s.textContent=tk; s.dataset.filled=tk; s.classList.add('filled'); s.classList.remove('selected','ok','bad');
+  t.disabled=true; t.classList.add('used'); selectedSlot=document.querySelector('.slot:not(.filled)'); if(selectedSlot)selectedSlot.classList.add('selected'); }
+
+el('checkFix').onclick=()=>{
+  const slots=[...el('fixBlock').querySelectorAll('.slot')]; const msg=el('fixMsg');
+  if(slots.some(s=>!s.dataset.filled)){ msg.className='fixmsg bad'; msg.textContent='Fill every blank first.'; msg.classList.remove('hidden'); return; }
+  let ok=true; slots.forEach((s,i)=>{ const good=s.dataset.filled===cur.slots[i]; s.classList.toggle('ok',good); s.classList.toggle('bad',!good); if(!good)ok=false; });
+  msg.classList.remove('hidden');
+  if(ok){ msg.className='fixmsg good'; msg.textContent='✅ '+cur.fixWhy; el('checkFix').classList.add('hidden');
+    stat.played++; if(cur._firstTry)stat.firstTry++; renderStats(); }
+  else { msg.className='fixmsg bad'; msg.textContent='Almost — tap a red blank to swap its token.'; cur._firstTry=false; bumpMiss(cur.category); }
+};
+
+function bumpMiss(cat){ stat.miss[cat]=(stat.miss[cat]||0)+1; renderStats(); }
+
+/* ---------- "why was I wrong?" (the key AI hook) ---------- */
+el('explainBtn').onclick=async ()=>{
+  el('explainBtn').disabled=true;
+  let text;
+  if(el('aiToggle').checked){
+    text='✨ (in production this calls /api/chat with the exercise context and your wrong tap; disabled here to avoid AI cost).';
+    try{ stat.aiCalls++; renderStats(); }catch(e){}
+  } else {
+    text = mockExplain();
+  }
+  const box=el('aiMiss'); box.innerHTML=text; box.classList.remove('hidden'); el('explainBtn').disabled=false;
+};
+function mockExplain(){
+  if(cur._lastWrongCat){
+    return '<b>Tutor:</b> you picked « '+cur._lastWrongCat+' », but the issue here is « '+cur.category+' ». '
+      + cur.why + ' In short, « '+cur._lastWrongCat+' » describes a different flaw — ask yourself what makes <i>this</i> line dangerous.';
+  }
+  if(cur._lastWrongLine){
+    return '<b>Tutor:</b> the line you tapped (<code>'+escapeHtml(cur._lastWrongLine.slice(0,48))+'…</code>) does the right thing. '
+      + 'The bug is elsewhere: look for the line where ' + lower(cur.why);
+  }
+  return '<b>Tutor:</b> re-read the stated goal and ask which line betrays it.';
+}
+const lower = s => s.charAt(0).toLowerCase()+s.slice(1);
+const escapeHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ---------- variant / new buttons ---------- */
+el('variantBtn').onclick=async ()=>{
+  stat.variants++;
+  if(el('aiToggle').checked){
+    try{ const ex=await fetchVariantFromBackend(cur.deck, topWeak()); load(ex); return; }
+    catch(e){ /* backend not reachable locally → fall back to mock */ }
+  }
+  const t=TEMPLATES.find(x=>x.id===cur.id); load(materialise(t));
+};
+el('newBtn').onclick=()=> load(materialise(pickTemplate()));
+function topWeak(){ const w=Object.entries(stat.miss).sort((a,b)=>b[1]-a[1])[0]; return w?w[0]:null; }
+
+function renderStats(){
+  const acc = stat.played? Math.round(100*stat.firstTry/stat.played):0;
+  el('stats').innerHTML =
+    'Solved: <b>'+stat.played+'</b>' +
+    ' · First try: <b>'+acc+'%</b>' +
+    ' · Variants seen: <b>'+stat.variants+'</b>' +
+    ' · AI calls: <b>'+stat.aiCalls+'</b>' +
+    (topWeak()? ' · Weak spot: <b>'+topWeak()+'</b>':'');
+}
+
+el('srcNote').innerHTML =
+  '<b>How it becomes real.</b> The mock here fills the <code>{{…}}</code> holes from fixed pools. ' +
+  'In production the endpoint <code>POST /api/spotbug/variant</code> calls <code>tutor.ai_router.get_chat_response()</code> ' +
+  '(the same router as <code>/api/chat</code>) with a prompt that returns a fresh exercise in the <i>same schema</i>, ' +
+  'validated server-side and cached. That makes variants <b>infinite and genuinely different</b> (not just swapped names), ' +
+  'and "Why was I wrong?" becomes an explanation adapted to your level. Ready-to-paste code is in the handover file.';
+
+load(materialise(rnd(TEMPLATES)));
+</script>
+</body>
+</html>
