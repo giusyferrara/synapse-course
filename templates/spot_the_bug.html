@@ -69,6 +69,11 @@
       transition: width 0.45s ease; }
     .sb-count { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
       color: var(--ink-soft); margin-top: 8px; }
+    .sb-deck { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--ink-soft); }
+    .sb-deck select { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+      padding: 7px 10px; border-radius: 9px; border: 1px solid var(--border-soft);
+      background: var(--paper); color: var(--ink); cursor: pointer; }
 
     /* stage card */
     .stage { background: var(--paper); border: 1px solid var(--border-soft);
@@ -171,7 +176,11 @@
     <header class="sb-head">
       <a class="sb-back" href="/m" id="backLink">‹ Back</a>
       <div class="sb-title">🐞 Spot the Bug</div>
-      <div class="sb-sub">Find it · understand it · fix it</div>
+      <div class="sb-sub" id="sbSub">Find it · understand it · fix it</div>
+      <div class="sb-deck">
+        <label for="deckSelect">Deck:</label>
+        <select id="deckSelect" aria-label="Choose a deck"></select>
+      </div>
       <div class="sb-bar"><i id="bar"></i></div>
       <div class="sb-count" id="count">1 / 6</div>
     </header>
@@ -180,7 +189,7 @@
       <!-- STAGE 1: DETECT -->
       <section class="stage" id="stageDetect">
         <span class="stage-tag">🔍 Detect</span>
-        <p class="stage-q">Tap the vulnerable line</p>
+        <p class="stage-q" id="detectQ">Tap the vulnerable line</p>
         <p class="stage-hint" id="detectHint">Look for untrusted input used unsafely.</p>
         <div class="meta" id="snippetMeta"></div>
         <div class="code tappable" id="codeBlock"></div>
@@ -226,7 +235,7 @@
 
   <script>
     /* ---------------- challenges ---------------- */
-    const CHALLENGES = [
+    const SECURE_CODING = [
       {
         lang: 'Python', ctx: 'login',
         code: [
@@ -342,9 +351,284 @@
       }
     ];
 
+    /* ---------------- Linux Essentials · Part 1 (one per command, paired with the flashcard deck) ---------------- */
+    const LINUX_ESSENTIALS_1 = [
+      { lang: 'Bash', ctx: 'cd · go up one directory',
+        code: ['user@host:/var/log/nginx$ cd /', 'user@host:/$'],
+        vuln: 0, category: 'Wrong target',
+        options: ['Wrong target', 'Missing flag', 'Dangerous deletion', 'Unquoted wildcard'],
+        why: 'cd / jumps to the filesystem ROOT, not one level up. The prompt confirms it landed in /.',
+        fixLines: ['cd ___'], slots: ['..'], tokens: ['..', '/', '.', '~'],
+        fixWhy: '.. is the parent directory; a single . is the current one, / is the root.' },
+
+      { lang: 'Bash', ctx: 'ls · show hidden files and permissions',
+        code: ['user@host:~$ ls', 'Documents  Downloads  notes.txt'],
+        vuln: 0, category: 'Missing flag',
+        options: ['Missing flag', 'Wrong target', 'Over-permissive', 'Wrong tool'],
+        why: 'Plain ls hides dotfiles (.bashrc, .ssh) and shows no permissions/owner/size.',
+        fixLines: ['ls ___'], slots: ['-la'], tokens: ['-la', '-l', '-a', '-h'],
+        fixWhy: '-l = long (perms/owner/size), -a = all incl. hidden. Combined: ls -la.' },
+
+      { lang: 'Bash', ctx: 'mkdir · create a nested path in one go',
+        code: ['user@host:~$ mkdir projects/api/src', 'mkdir: cannot create ... No such file or directory'],
+        vuln: 0, category: 'Missing flag',
+        options: ['Missing flag', 'Wrong target', 'Wrong argument order', 'Dangerous deletion'],
+        why: 'Without -p, mkdir fails when a parent (projects, api) does not already exist.',
+        fixLines: ['mkdir ___ projects/api/src'], slots: ['-p'], tokens: ['-p', '-r', '-m', '-a'],
+        fixWhy: '-p (parents) creates every missing directory along the path.' },
+
+      { lang: 'Bash', ctx: 'create an empty file without risking existing content',
+        code: ['user@host:~$ echo "" > notes.txt'],
+        vuln: 0, category: 'Overwrites data',
+        options: ['Overwrites data', 'Missing flag', 'Wrong tool', 'Over-permissive'],
+        why: '> truncates notes.txt if it already exists, and echo "" leaves a stray newline — not truly empty.',
+        fixLines: ['___ notes.txt'], slots: ['touch'], tokens: ['touch', 'echo >', 'cat', 'rm'],
+        fixWhy: 'touch creates the file if absent and only refreshes the timestamp if it exists — never erases.' },
+
+      { lang: 'Bash', ctx: 'cp · copy a whole folder',
+        code: ['user@host:~$ cp projects/ backup/', "cp: -r not specified; omitting directory 'projects/'"],
+        vuln: 0, category: 'Missing flag',
+        options: ['Missing flag', 'Wrong target', 'Dangerous deletion', 'Wrong argument order'],
+        why: 'cp skips directories unless you pass -r (recursive).',
+        fixLines: ['cp ___ projects/ backup/'], slots: ['-r'], tokens: ['-r', '-i', '-v', '-f'],
+        fixWhy: '-r copies the folder and everything inside it. Source first, destination last.' },
+
+      { lang: 'Bash', ctx: 'mv · move two files into a folder',
+        code: ['user@host:~$ mv a.txt b.txt report.txt', "mv: target 'report.txt' is not a directory"],
+        vuln: 0, category: 'Wrong target',
+        options: ['Wrong target', 'Missing flag', 'Overwrites data', 'Unquoted wildcard'],
+        why: 'With 3+ arguments the last must be a directory. report.txt is a file, so two files collide into one.',
+        fixLines: ['mv a.txt b.txt ___'], slots: ['archive/'], tokens: ['archive/', 'report.txt', '-r', '*'],
+        fixWhy: 'When moving multiple items the final argument has to be a destination folder.' },
+
+      { lang: 'Bash', ctx: 'rm · delete a temp folder',
+        code: ['user@host:~$ rm -rf / tmp/cache'],
+        vuln: 0, category: 'Dangerous deletion',
+        options: ['Dangerous deletion', 'Missing flag', 'Wrong target', 'Over-permissive'],
+        why: 'The space after / makes / its own argument — rm -rf / wipes the whole filesystem before reaching tmp/cache.',
+        fixLines: ['rm -rf ___'], slots: ['/tmp/cache'], tokens: ['/tmp/cache', '/ tmp/cache', '-rf /', '~/*'],
+        fixWhy: 'No space: /tmp/cache is one path. Always re-read an rm -rf path before Enter — there is no trash bin.' },
+
+      { lang: 'Bash', ctx: 'ln -s · make a shortcut "mylog" to the syslog file',
+        code: ['user@host:~$ ln -s mylog /var/log/syslog'],
+        vuln: 0, category: 'Wrong argument order',
+        options: ['Wrong argument order', 'Missing flag', 'Wrong target', 'Over-permissive'],
+        why: 'Order is target first, link-name second. This makes a link AT /var/log/syslog pointing to a missing mylog.',
+        fixLines: ['ln -s ___ ___'], slots: ['/var/log/syslog', 'mylog'], tokens: ['/var/log/syslog', 'mylog', '-r', 'syslog'],
+        fixWhy: 'ln -s <target> <link_name>: the real file first, the shortcut name last.' },
+
+      { lang: 'Bash', ctx: 'view a 2 GB log file',
+        code: ['admin@server:~$ cat /var/log/huge.log'],
+        vuln: 0, category: 'Wrong tool',
+        options: ['Wrong tool', 'Missing flag', 'Dangerous deletion', 'Wrong target'],
+        why: 'cat dumps the entire file to the terminal — a 2 GB log floods your screen and scrollback.',
+        fixLines: ['admin@server:~$ ___ /var/log/huge.log'], slots: ['less'], tokens: ['less', 'cat', 'head', 'echo'],
+        fixWhy: 'less pages through the file without loading it all — built for huge logs.' },
+
+      { lang: 'Bash', ctx: 'page through a log AND scroll back up',
+        code: ['user@host:~$ more /var/log/syslog'],
+        vuln: 0, category: 'Wrong tool',
+        options: ['Wrong tool', 'Missing flag', 'Wrong target', 'Overwrites data'],
+        why: 'more only scrolls forward — you cannot go back up. ',
+        fixLines: ['user@host:~$ ___ /var/log/syslog'], slots: ['less'], tokens: ['less', 'more', 'cat', 'tail'],
+        fixWhy: 'less scrolls both ways and searches with /word — "less is more".' },
+
+      { lang: 'Bash', ctx: 'head · show the first 5 lines',
+        code: ['user@host:~$ head 5 /etc/passwd', "head: cannot open '5' for reading"],
+        vuln: 0, category: 'Missing flag',
+        options: ['Missing flag', 'Wrong tool', 'Wrong target', 'Unquoted wildcard'],
+        why: 'Without -n, head treats 5 as a filename. The line count needs the -n flag.',
+        fixLines: ['head ___ 5 /etc/passwd'], slots: ['-n'], tokens: ['-n', '-c', '-l', '-5'],
+        fixWhy: 'head -n 5 file → the first 5 lines (head -5 also works as shorthand).' },
+
+      { lang: 'Bash', ctx: 'see the most recent entries in a growing log',
+        code: ['admin@server:~$ head /var/log/auth.log'],
+        vuln: 0, category: 'Wrong tool',
+        options: ['Wrong tool', 'Missing flag', 'Wrong target', 'Dangerous deletion'],
+        why: 'Logs append at the bottom, so the newest events are at the end — head shows the OLDEST.',
+        fixLines: ['admin@server:~$ ___ /var/log/auth.log'], slots: ['tail'], tokens: ['tail', 'head', 'cat', 'less'],
+        fixWhy: 'tail shows the end of the file; add -f to follow new lines live.' },
+
+      { lang: 'Bash', ctx: 'follow a log live, surviving log rotation',
+        code: ['admin@server:~$ tail -f /var/log/syslog'],
+        vuln: 0, category: 'Wrong flag',
+        options: ['Wrong flag', 'Wrong tool', 'Missing flag', 'Wrong target'],
+        why: 'Lowercase -f stops following once logrotate replaces the file with a fresh one.',
+        fixLines: ['admin@server:~$ tail ___ /var/log/syslog'], slots: ['-F'], tokens: ['-F', '-f', '-n', '-r'],
+        fixWhy: '-F keeps following across rotation (it reopens the new file).' },
+
+      { lang: 'Bash', ctx: 'chmod · lock down a private SSH key',
+        code: ['user@host:~$ chmod 777 ~/.ssh/id_rsa'],
+        vuln: 0, category: 'Over-permissive',
+        options: ['Over-permissive', 'Missing flag', 'Wrong ownership', 'Dangerous deletion'],
+        why: '777 lets every user read and modify your private key — and SSH will refuse to use a world-readable key.',
+        fixLines: ['chmod ___ ~/.ssh/id_rsa'], slots: ['600'], tokens: ['600', '777', '644', '755'],
+        fixWhy: '600 = owner read/write only — the correct mode for keys and secrets.' },
+
+      { lang: 'Bash', ctx: 'run a script you just wrote',
+        code: ['user@host:~$ chmod 644 deploy.sh', 'user@host:~$ ./deploy.sh', 'bash: ./deploy.sh: Permission denied'],
+        vuln: 0, category: 'Missing permission',
+        options: ['Missing permission', 'Over-permissive', 'Wrong target', 'Missing flag'],
+        why: '644 has no execute bit, so the script cannot run.',
+        fixLines: ['chmod ___ deploy.sh'], slots: ['+x'], tokens: ['+x', '-x', '777', '+w'],
+        fixWhy: 'chmod +x adds the execute bit — preferred over 777, which over-shares.' },
+
+      { lang: 'Bash', ctx: 'chown · give your home back to yourself',
+        code: ['admin@server:~$ sudo chown -R root:root ~'],
+        vuln: 0, category: 'Wrong ownership',
+        options: ['Wrong ownership', 'Over-permissive', 'Dangerous deletion', 'Wrong target'],
+        why: 'This hands your entire home directory to root — you lose access to your own files.',
+        fixLines: ['sudo chown -R ___ ~'], slots: ['$USER:$USER'], tokens: ['$USER:$USER', 'root:root', '777', 'alice'],
+        fixWhy: 'Own your home with your own user:group. Recursive root ownership is a classic lockout.' },
+
+      { lang: 'Bash', ctx: 'install a package',
+        code: ['user@host:~$ apt install htop', 'E: Could not open lock file ... Permission denied'],
+        vuln: 0, category: 'Missing privilege',
+        options: ['Missing privilege', 'Missing flag', 'Wrong tool', 'Wrong target'],
+        why: 'Package management writes to system directories, which requires root.',
+        fixLines: ['___ apt install htop'], slots: ['sudo'], tokens: ['sudo', 'su', 'run', 'admin'],
+        fixWhy: 'sudo runs that single command as root; your prompt stays a normal $.' },
+
+      { lang: 'Bash', ctx: 'list which commands you may run with sudo',
+        code: ['user@host:~$ sudo -v'],
+        vuln: 0, category: 'Wrong flag',
+        options: ['Wrong flag', 'Missing flag', 'Wrong tool', 'Missing privilege'],
+        why: '-v only refreshes the sudo timestamp; it prints nothing about your rights.',
+        fixLines: ['user@host:~$ sudo ___'], slots: ['-l'], tokens: ['-l', '-v', '-i', '-k'],
+        fixWhy: 'sudo -l lists your allowed commands — key for spotting privilege-escalation paths.' },
+
+      { lang: 'Bash', ctx: 'list every process on the system',
+        code: ['user@host:~$ ps', '  PID TTY          TIME CMD', ' 2841 pts/0    00:00:00 bash'],
+        vuln: 0, category: 'Missing flag',
+        options: ['Missing flag', 'Wrong tool', 'Wrong target', 'Wrong flag'],
+        why: 'Plain ps shows only processes in your current terminal — not the whole system.',
+        fixLines: ['user@host:~$ ps ___'], slots: ['aux'], tokens: ['aux', '-l', '-f', 'all'],
+        fixWhy: 'ps aux = all users (a), user-friendly (u), include background (x).' },
+
+      { lang: 'Bash', ctx: 'capture a one-shot process snapshot inside a script',
+        code: ['#!/bin/bash', 'top >> usage.log'],
+        vuln: 1, category: 'Wrong tool',
+        options: ['Wrong tool', 'Missing flag', 'Overwrites data', 'Wrong target'],
+        why: 'top is interactive and never exits on its own — in a script it hangs forever.',
+        fixLines: ['top ___ >> usage.log'], slots: ['-b -n1'], tokens: ['-b -n1', '-c', '-d 1', '-u'],
+        fixWhy: '-b (batch) -n1 (one iteration) makes top print once and exit — script-safe.' },
+
+      { lang: 'Bash', ctx: 'force-stop a frozen app (its PID is 4521)',
+        code: ['user@host:~$ kill -9 1'],
+        vuln: 0, category: 'Kills critical process',
+        options: ['Kills critical process', 'Missing flag', 'Wrong target', 'Over-permissive'],
+        why: 'PID 1 is init/systemd — killing it takes the whole system down. 4521 is the app you meant.',
+        fixLines: ['kill -9 ___'], slots: ['4521'], tokens: ['4521', '1', '0', '-9'],
+        fixWhy: 'Target the app PID (from ps aux | grep). And try plain kill before the -9 nuclear option.' },
+
+      { lang: 'Bash', ctx: 'start a long script and keep using the shell',
+        code: ['user@host:~$ ./backup.sh', '(the terminal is stuck until it finishes)'],
+        vuln: 0, category: 'Missing flag',
+        options: ['Missing flag', 'Wrong tool', 'Wrong target', 'Dangerous deletion'],
+        why: 'Without & the script runs in the foreground and blocks your terminal.',
+        fixLines: ['user@host:~$ ./backup.sh ___'], slots: ['&'], tokens: ['&', '&&', '-b', 'bg'],
+        fixWhy: 'A trailing & runs it in the background; manage it with jobs, fg %1, bg %1.' },
+
+      { lang: 'Bash', ctx: 'get full kernel + architecture info on an unknown box',
+        code: ['user@host:~$ uname', 'Linux'],
+        vuln: 0, category: 'Missing flag',
+        options: ['Missing flag', 'Wrong tool', 'Wrong target', 'Wrong flag'],
+        why: 'Plain uname prints only "Linux". You need -a for kernel version, architecture and hostname.',
+        fixLines: ['user@host:~$ uname ___'], slots: ['-a'], tokens: ['-a', '-s', '-m', '-v'],
+        fixWhy: 'uname -a = all: kernel name, release, machine, hostname.' },
+
+      { lang: 'Bash', ctx: "find this machine's IP addresses",
+        code: ['user@host:~$ hostname', 'host'],
+        vuln: 0, category: 'Missing flag',
+        options: ['Missing flag', 'Wrong tool', 'Wrong target', 'Wrong flag'],
+        why: 'hostname alone prints only the machine name — not its IPs.',
+        fixLines: ['user@host:~$ hostname ___'], slots: ['-I'], tokens: ['-I', '-i', '-f', '-s'],
+        fixWhy: 'hostname -I lists the IP addresses assigned to the host.' },
+
+      { lang: 'Bash', ctx: 'check whether you belong to the sudo group',
+        code: ['user@host:~$ whoami', 'user'],
+        vuln: 0, category: 'Wrong tool',
+        options: ['Wrong tool', 'Missing flag', 'Missing privilege', 'Wrong target'],
+        why: 'whoami prints only your username — it cannot show group membership.',
+        fixLines: ['user@host:~$ ___'], slots: ['id'], tokens: ['id', 'whoami', 'sudo', 'name'],
+        fixWhy: 'id lists your UID, GID and every group — look for 27(sudo).' },
+
+      { lang: 'Bash', ctx: 'check free disk space in readable units',
+        code: ['admin@server:~$ df', 'Filesystem     1K-blocks      Used Available Use% Mounted on', '/dev/sda1       51474912  44032100   5219884  90% /'],
+        vuln: 0, category: 'Missing flag',
+        options: ['Missing flag', 'Wrong tool', 'Wrong target', 'Wrong flag'],
+        why: 'Without -h, df reports raw 1K blocks — hard to read at a glance.',
+        fixLines: ['admin@server:~$ df ___'], slots: ['-h'], tokens: ['-h', '-a', '-i', '-T'],
+        fixWhy: 'df -h = human-readable sizes (G/M/K).' },
+
+      { lang: 'Bash', ctx: 'get the TOTAL size of the Downloads folder',
+        code: ['user@host:~$ du Downloads', '12   Downloads/a', '40   Downloads/b', '...hundreds of lines...'],
+        vuln: 0, category: 'Missing flag',
+        options: ['Missing flag', 'Wrong tool', 'Wrong target', 'Wrong flag'],
+        why: 'Plain du prints the size of every sub-folder recursively — a wall of numbers, not one total.',
+        fixLines: ['user@host:~$ du ___ Downloads'], slots: ['-sh'], tokens: ['-sh', '-h', '-a', '-r'],
+        fixWhy: '-s = summary (one total), -h = human-readable. du -sh = just the folder total.' },
+
+      { lang: 'Bash', ctx: 'check RAM usage in MB/GB',
+        code: ['user@host:~$ free', '              total        used        free', 'Mem:        8039084     3221004     1567220'],
+        vuln: 0, category: 'Missing flag',
+        options: ['Missing flag', 'Wrong tool', 'Wrong target', 'Wrong flag'],
+        why: 'Without -h, free reports kibibytes — add -h for MB/GB.',
+        fixLines: ['user@host:~$ free ___'], slots: ['-h'], tokens: ['-h', '-m', '-b', '-t'],
+        fixWhy: 'free -h is readable — and read the "available" column, not "free".' },
+
+      { lang: 'Bash', ctx: 'check how long the box has been up (reboot check)',
+        code: ['user@host:~$ time', 'real    0m0.000s'],
+        vuln: 0, category: 'Wrong tool',
+        options: ['Wrong tool', 'Missing flag', 'Wrong target', 'Wrong flag'],
+        why: 'time measures how long a command takes — not system uptime.',
+        fixLines: ['user@host:~$ ___'], slots: ['uptime'], tokens: ['uptime', 'time', 'top', 'date'],
+        fixWhy: 'uptime shows time since last boot plus 1/5/15-minute load averages.' },
+
+      { lang: 'Bash', ctx: 'find every .log file under the current folder',
+        code: ['user@host:~$ find . -name *.log', 'find: paths must precede expression: error.log'],
+        vuln: 0, category: 'Unquoted wildcard',
+        options: ['Unquoted wildcard', 'Missing flag', 'Wrong target', 'Too-broad scope'],
+        why: 'The shell expands *.log before find runs, so find receives the wrong arguments and errors.',
+        fixLines: ['find . -name ___'], slots: ['"*.log"'], tokens: ['"*.log"', '*.log', '.log', '-log'],
+        fixWhy: 'Quote the pattern so find (not the shell) handles the wildcard.' },
+
+      { lang: 'Bash', ctx: 'delete old .bak files in THIS project',
+        code: ['user@host:~/project$ find / -name "*.bak" -delete'],
+        vuln: 0, category: 'Too-broad scope',
+        options: ['Too-broad scope', 'Unquoted wildcard', 'Missing flag', 'Wrong argument order'],
+        why: 'Starting at / makes find walk the ENTIRE system and delete every .bak it can reach — including system files.',
+        fixLines: ['find ___ -name "*.bak" -delete'], slots: ['.'], tokens: ['.', '/', '~', '*'],
+        fixWhy: 'Scope find to the folder you mean (. = here). Test with -print before -delete.' },
+
+      { lang: 'Bash', ctx: 'find out whether "ls" is an alias',
+        code: ['user@host:~$ which ls', '/usr/bin/ls'],
+        vuln: 0, category: 'Wrong tool',
+        options: ['Wrong tool', 'Missing flag', 'Wrong target', 'Wrong flag'],
+        why: 'which only finds the executable on PATH — it cannot reveal aliases or shell builtins.',
+        fixLines: ['user@host:~$ ___ ls'], slots: ['type'], tokens: ['type', 'which', 'whereis', 'find'],
+        fixWhy: 'type tells you if a name is a builtin, an alias or an external command.' },
+
+      { lang: 'Bash', ctx: 'print which directory you are currently in',
+        code: ['user@host:~/api$ cwd', 'bash: cwd: command not found'],
+        vuln: 0, category: 'Wrong command',
+        options: ['Wrong command', 'Missing flag', 'Wrong target', 'Wrong tool'],
+        why: 'There is no cwd command — the one that prints your location is pwd.',
+        fixLines: ['user@host:~/api$ ___'], slots: ['pwd'], tokens: ['pwd', 'cwd', 'dir', 'path'],
+        fixWhy: 'pwd = print working directory. Run it any time you feel lost after many cd jumps.' }
+    ];
+
+    const DECKS = [
+      { id: 'linux_essentials_1', title: 'Linux Essentials · Part 1', sub: 'Spot the dangerous / wrong command — then fix it', challenges: LINUX_ESSENTIALS_1,
+        strings: { q: 'Tap the wrong or dangerous command', hint: "Which line is risky — or simply won't do what's intended?", miss: 'Not that one — look again for the dangerous or incorrect command.' } },
+      { id: 'secure_coding', title: 'Secure Coding', sub: 'Find the vulnerable line · understand it · patch it', challenges: SECURE_CODING,
+        strings: { q: 'Tap the vulnerable line', hint: 'Look for untrusted input used unsafely.', miss: 'Not that line — where does user input flow into something dangerous?' } }
+    ];
+
     /* ---------------- state ---------------- */
     const el = id => document.getElementById(id);
     let ci = 0, selectedSlot = null, solved = 0;
+    let challenges = [], deckId = '', deckStrings = {};
     const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
     const shakeEl = e => { e.classList.remove('shake'); void e.offsetWidth; e.classList.add('shake'); };
 
@@ -353,16 +637,17 @@
         el('stage' + s).classList.toggle('hidden', s.toLowerCase() !== name));
     }
     function setProgress() {
-      el('count').textContent = (ci + 1) + ' / ' + CHALLENGES.length;
-      el('bar').style.width = (ci / CHALLENGES.length * 100) + '%';
+      el('count').textContent = (ci + 1) + ' / ' + challenges.length;
+      el('bar').style.width = (ci / challenges.length * 100) + '%';
     }
 
     function render() {
-      const c = CHALLENGES[ci];
+      const c = challenges[ci];
       setProgress();
       // detect
       el('snippetMeta').textContent = c.lang + ' · ' + c.ctx;
-      el('detectHint').textContent = 'Look for untrusted input used unsafely.';
+      el('detectQ').textContent = deckStrings.q;
+      el('detectHint').textContent = deckStrings.hint;
       const code = el('codeBlock');
       code.className = 'code tappable';
       code.innerHTML = '';
@@ -394,7 +679,7 @@
     }
 
     function onDetect(i, row) {
-      const c = CHALLENGES[ci];
+      const c = challenges[ci];
       if (i === c.vuln) {
         row.classList.add('correct');
         el('codeBlock').className = 'code locked';
@@ -404,12 +689,12 @@
       } else {
         row.classList.add('wrong'); shakeEl(row);
         setTimeout(() => row.classList.remove('wrong'), 450);
-        el('detectHint').textContent = 'Not that line — where does user input flow into something dangerous?';
+        el('detectHint').textContent = deckStrings.miss;
       }
     }
 
     function onUnderstand(opt, b) {
-      const c = CHALLENGES[ci];
+      const c = challenges[ci];
       if (opt === c.category) {
         b.classList.add('correct');
         [...el('catChips').children].forEach(x => x.disabled = true);
@@ -475,7 +760,7 @@
     }
 
     el('checkFix').onclick = () => {
-      const c = CHALLENGES[ci];
+      const c = challenges[ci];
       const slots = [...el('fixBlock').querySelectorAll('.slot')];
       const msg = el('fixMsg');
       if (slots.some(s => !s.dataset.filled)) {
@@ -493,7 +778,7 @@
         msg.className = 'fixmsg good'; msg.textContent = '✅ ' + c.fixWhy;
         el('checkFix').classList.add('hidden');
         el('fixNext').classList.remove('hidden');
-        el('fixNext').textContent = ci < CHALLENGES.length - 1 ? 'Next bug →' : 'See results →';
+        el('fixNext').textContent = ci < challenges.length - 1 ? 'Next bug →' : 'See results →';
         solved++;
       } else {
         msg.className = 'fixmsg bad'; msg.textContent = 'Close — tap a red blank to swap its token.';
@@ -502,15 +787,38 @@
 
     el('fixNext').onclick = () => {
       ci++;
-      if (ci < CHALLENGES.length) render();
+      if (ci < challenges.length) render();
       else {
         setProgress(); el('bar').style.width = '100%';
-        el('scoreLine').textContent = solved + ' / ' + CHALLENGES.length + ' bugs fixed first time. Come back tomorrow for more.';
+        el('scoreLine').textContent = solved + ' / ' + challenges.length + ' bugs fixed first time. Come back tomorrow for more.';
         showStage('result');
       }
     };
 
-    el('playAgain').onclick = () => { ci = 0; solved = 0; render(); };
+    el('playAgain').onclick = () => { loadDeck(deckId); render(); };
+
+    function loadDeck(id) {
+      const d = DECKS.find(x => x.id === id) || DECKS[0];
+      deckId = d.id;
+      challenges = shuffle(d.challenges.slice());
+      ci = 0; solved = 0;
+      deckStrings = d.strings;
+      el('sbSub').textContent = d.sub;
+    }
+    function initDecks() {
+      const sel = el('deckSelect');
+      DECKS.forEach(d => {
+        const o = document.createElement('option');
+        o.value = d.id; o.textContent = d.title + ' (' + d.challenges.length + ')';
+        sel.appendChild(o);
+      });
+      const want = new URLSearchParams(location.search).get('deck');
+      const start = DECKS.find(d => d.id === want) ? want : DECKS[0].id;
+      sel.value = start;
+      sel.onchange = () => { loadDeck(sel.value); render(); };
+      loadDeck(start);
+      render();
+    }
 
     /* theme toggle (same behaviour as flashcards) */
     (function () {
@@ -523,7 +831,7 @@
       };
     })();
 
-    render();
+    initDecks();
   </script>
 
   <script src="/static/synapse_a11y_toolbar.js?v=7"></script>
