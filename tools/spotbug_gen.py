@@ -60,6 +60,16 @@ TEMPLATES = [
      "fixWhy": "Use the Android Keystore (EncryptedSharedPreferences); never store secrets in plaintext.",
      "pools": {"SECRET": ["token", "refresh_token", "PIN", "api_key"]}},
 
+    {"id": "mw_strings", "deck": "malware", "lang": "strings",
+     "ctxForms": ["extract readable strings (including Windows wide/UTF-16) from {{FILE}}",
+                  "pull strings from {{FILE}}, including the wide ones"],
+     "code": ["strings {{FILE}}"], "vuln": 0, "category": "Missing flag",
+     "options": ["Missing flag", "Wrong flag", "Wrong tool", "Wrong value"],
+     "why": "By default strings finds 7-bit ASCII only; it misses UTF-16 (wide) strings common in Windows malware.",
+     "fixLines": ["strings -e ___ {{FILE}}"], "slots": ["l"], "tokens": ["l", "s", "b", "a"],
+     "fixWhy": "strings -e l extracts UTF-16LE (wide) strings; -e b for big-endian.",
+     "pools": {"FILE": ["sample.exe", "payload.bin", "dropper.exe", "loader.dll"]}},
+
     {"id": "volatility", "deck": "dfir", "lang": "acquisition",
      "ctxForms": ["order of collection during live acquisition of {{HOST}}", "on compromised {{HOST}}: what do you collect first"],
      "code": ["image the {{HOST}} disk first, then capture RAM", "(RAM is far more volatile than disk)"],
