@@ -119,6 +119,9 @@
     .fixmsg.good { background: var(--green-soft); border: 1px solid var(--green); color: var(--green); }
     .fixmsg.bad { background: var(--red-soft); border: 1px solid var(--red); color: var(--red); }
     .why.hidden, .fixmsg.hidden { display: none; }
+    .step-box { margin-top: 18px; border-top: 1px solid var(--border-soft); padding-top: 16px; }
+    .step-box.hidden { display: none; }
+    .fix-label { font-size: 0.9rem; color: var(--ink-soft); margin-bottom: 8px; }
 
     /* fix stage: code with blanks + token bank */
     .fix-code { font-family: 'JetBrains Mono', monospace; font-size: 0.84rem; line-height: 2.1;
@@ -186,36 +189,31 @@
     </header>
 
     <main>
-      <!-- STAGE 1: DETECT -->
-      <section class="stage" id="stageDetect">
-        <span class="stage-tag">🔍 Detect</span>
-        <p class="stage-q" id="detectQ">Tap the vulnerable line</p>
-        <p class="stage-hint" id="detectHint">Look for untrusted input used unsafely.</p>
+      <!-- Single card: the buggy snippet stays visible across Detect / Understand / Fix
+           so the question is always re-readable; only the controls below it change. -->
+      <section class="stage" id="stageMain">
+        <span class="stage-tag" id="stepTag">🔍 Detect</span>
+        <p class="stage-q" id="stepQ">Tap the vulnerable line</p>
+        <p class="stage-hint" id="stepHint">Look for untrusted input used unsafely.</p>
         <div class="meta" id="snippetMeta"></div>
         <div class="code tappable" id="codeBlock"></div>
-        <button class="btn hidden" id="detectNext" type="button">Continue →</button>
-      </section>
 
-      <!-- STAGE 2: UNDERSTAND -->
-      <section class="stage hidden" id="stageUnderstand">
-        <span class="stage-tag">🧠 Understand</span>
-        <p class="stage-q">What kind of bug is this?</p>
-        <p class="stage-hint">Tap the vulnerability category.</p>
-        <div class="chips" id="catChips"></div>
-        <div class="why hidden" id="whyBox"></div>
-        <button class="btn hidden" id="understandNext" type="button">Continue →</button>
-      </section>
+        <div class="step-box hidden" id="understandBox">
+          <div class="chips" id="catChips"></div>
+          <div class="why hidden" id="whyBox"></div>
+        </div>
 
-      <!-- STAGE 3: FIX -->
-      <section class="stage hidden" id="stageFix">
-        <span class="stage-tag">🛠 Fix</span>
-        <p class="stage-q">Patch it</p>
-        <p class="stage-hint">Tap a blank, then tap the token that belongs there.</p>
-        <div class="fix-code" id="fixBlock"></div>
-        <div class="tokens" id="tokenBank"></div>
-        <div class="fixmsg hidden" id="fixMsg"></div>
+        <div class="step-box hidden" id="fixBox">
+          <p class="fix-label">Build the patched version:</p>
+          <div class="fix-code" id="fixBlock"></div>
+          <div class="tokens" id="tokenBank"></div>
+          <div class="fixmsg hidden" id="fixMsg"></div>
+        </div>
+
         <div class="btn-row">
-          <button class="btn" id="checkFix" type="button">Check fix</button>
+          <button class="btn hidden" id="detectNext" type="button">Continue →</button>
+          <button class="btn hidden" id="understandNext" type="button">Continue →</button>
+          <button class="btn hidden" id="checkFix" type="button">Check fix</button>
           <button class="btn hidden" id="fixNext" type="button">Next →</button>
         </div>
       </section>
@@ -633,8 +631,26 @@
     const shakeEl = e => { e.classList.remove('shake'); void e.offsetWidth; e.classList.add('shake'); };
 
     function showStage(name) {
-      ['Detect', 'Understand', 'Fix', 'Result'].forEach(s =>
-        el('stage' + s).classList.toggle('hidden', s.toLowerCase() !== name));
+      el('stageMain').classList.toggle('hidden', name === 'result');
+      el('stageResult').classList.toggle('hidden', name !== 'result');
+      if (name === 'result') return;
+      ['detectNext', 'understandNext', 'checkFix', 'fixNext'].forEach(b => el(b).classList.add('hidden'));
+      el('understandBox').classList.toggle('hidden', name !== 'understand');
+      el('fixBox').classList.toggle('hidden', name !== 'fix');
+      if (name === 'detect') {
+        el('stepTag').textContent = '🔍 Detect';
+        el('stepQ').textContent = deckStrings.q;
+        el('stepHint').textContent = deckStrings.hint;
+      } else if (name === 'understand') {
+        el('stepTag').textContent = '🧠 Understand';
+        el('stepQ').textContent = 'What kind of bug is this?';
+        el('stepHint').textContent = 'Tap the vulnerability category — the snippet stays above.';
+      } else if (name === 'fix') {
+        el('stepTag').textContent = '🛠 Fix';
+        el('stepQ').textContent = 'Patch it';
+        el('stepHint').textContent = 'Tap a blank, then the right token. The original is still above.';
+        el('checkFix').classList.remove('hidden');
+      }
     }
     function setProgress() {
       el('count').textContent = (ci + 1) + ' / ' + challenges.length;
@@ -646,8 +662,6 @@
       setProgress();
       // detect
       el('snippetMeta').textContent = c.lang + ' · ' + c.ctx;
-      el('detectQ').textContent = deckStrings.q;
-      el('detectHint').textContent = deckStrings.hint;
       const code = el('codeBlock');
       code.className = 'code tappable';
       code.innerHTML = '';
@@ -673,7 +687,6 @@
       // fix
       renderFix(c);
       el('fixMsg').classList.add('hidden');
-      el('checkFix').classList.remove('hidden');
       el('fixNext').classList.add('hidden');
       showStage('detect');
     }
@@ -683,13 +696,13 @@
       if (i === c.vuln) {
         row.classList.add('correct');
         el('codeBlock').className = 'code locked';
-        el('detectHint').textContent = '✅ Found it.';
+        el('stepHint').textContent = '✅ Found it — now understand and fix it.';
         el('detectNext').classList.remove('hidden');
         el('detectNext').onclick = () => showStage('understand');
       } else {
         row.classList.add('wrong'); shakeEl(row);
         setTimeout(() => row.classList.remove('wrong'), 450);
-        el('detectHint').textContent = deckStrings.miss;
+        el('stepHint').textContent = deckStrings.miss;
       }
     }
 
