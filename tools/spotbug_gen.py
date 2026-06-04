@@ -202,9 +202,19 @@ GEN_PROMPT = (
     "tokens has 3-4 distinct entries (the right one + plausible distractors); "
     "0 <= vuln < len(code); no backticks, no markdown, no '</script>'. "
     "SELF-CONSISTENCY (critical): the line at index vuln MUST literally contain the described mistake; never say a flag is missing if it already appears in that line, and never flag a line that is actually correct; the fix MUST genuinely correct that exact line. "
-    "VARIETY: vary the tool and technique widely (for malware: PE and header parsing, packer and entropy detection, imports and sections, string extraction, hashing and IOCs, disassembly, sandboxing, YARA) and vary the bug category; do NOT default to missing or wrong-flag puzzles. "
+    "VARIETY: vary the tool, technique and bug category widely across the deck's scope; do NOT default to missing- or wrong-flag puzzles. "
+    "TOOLS (critical): if the request gives an allowed-tools list, use ONLY those tools and ONLY real, standard flags/options you are certain exist; NEVER invent a tool, flag, or subcommand. If you are unsure whether a flag or tool exists, choose a different idea rather than guess. "
     "Generate an exercise DIFFERENT from the seed (other tool/flag/scenario), not a mere rewrite."
 )
+
+# Per-deck allowlist of tools the generator may use. Keeps the model on tools it actually
+# knows (stable CLIs), which is where flag-hallucination stops. No GUI tools, no obscure ones.
+# Add a deck here before its --ai run; decks without an entry fall back to unconstrained.
+DECK_ALLOWLIST = {
+    "netmon": ["tcpdump", "tshark", "nmap", "ss", "netstat", "ngrep", "tcpflow", "dig"],
+    # dfir (later): PIN Volatility 3 syntax (windows.pslist, no --profile) or avoid flag puzzles on it —
+    #   vol2/vol3 differ and the malware-pilot volatility item was conceptually right but structurally broken.
+}
 VERIFY_PROMPT = (
     "You are a senior security engineer reviewing one Spot the Bug exercise for TECHNICAL CORRECTNESS. "
     "Check: is the flagged line (index 'vuln') really the wrong/dangerous one? Is 'category' accurate? "
@@ -228,8 +238,13 @@ async def gen_ai(deck, n, verify):
         nonce = random.randint(1000, 9999)
         used_tools = sorted({e.get("lang", "") for e in out})
         avoid = (" Avoid reusing these tools already used in this batch: " + ", ".join(used_tools) + ".") if used_tools else ""
+        allow_tools = DECK_ALLOWLIST.get(deck)
+        allow = ""
+        if allow_tools:
+            allow = (" ALLOWED TOOLS — use ONLY one of these, nothing else: " + ", ".join(allow_tools) +
+                     ". Use only real, standard flags for that tool; do NOT invent tools or flags.")
         ask = (f"Deck: {deck}. Style example (do NOT copy it): {seed_json}. "
-               f"Make it clearly different (variation #{nonce}).{avoid}")
+               f"Make it clearly different (variation #{nonce}).{allow}{avoid}")
         try:
             raw = await router.get_chat_response(GEN_PROMPT, [{"role": "user", "content": ask}])
             ex = _extract_json(raw)
