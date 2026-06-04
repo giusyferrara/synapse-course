@@ -339,11 +339,24 @@ async def gen_ai(deck, n, verify):
     while len(out) < n and tries < n * 4:
         tries += 1
         nonce = random.randint(1000, 9999)
-        used_tools = sorted({e.get("lang", "") for e in out})
-        avoid = (" Avoid reusing these tools already used in this batch: " + ", ".join(used_tools) + ".") if used_tools else ""
+        used_tools = sorted(t for t in {e.get("lang", "") for e in out} if t)
+        used_cats = sorted(c for c in {e.get("category", "") for e in out} if c)
+        avoid_t = (" Avoid reusing these tools/frameworks already used in this batch: " + ", ".join(used_tools) + ".") if used_tools else ""
+        # Variety: for decks with a bug-class list, ROTATE the target class so coverage spreads
+        # evenly (this is what api needed — rotating the framework left the bug class stuck on BOLA).
+        bug_classes = (DECK_ALLOWLIST.get(deck) or {}).get("bugs")
+        if bug_classes:
+            target_bug = bug_classes[len(out) % len(bug_classes)]
+            variety = (f" This exercise MUST cover this vulnerability class, not another: {target_bug}. "
+                       "Pick a fresh endpoint/scenario each time (orders, payments, file upload, login, search, admin, webhook, etc.); "
+                       "do NOT keep using a 'user profile update' scene.")
+        elif used_cats:
+            variety = " Cover a DIFFERENT bug category than these already produced: " + ", ".join(used_cats) + "."
+        else:
+            variety = ""
         allow = _allow_instruction(deck)
         ask = (f"Deck: {deck}. Style example (do NOT copy it): {seed_json}. "
-               f"Make it clearly different (variation #{nonce}).{allow}{avoid}")
+               f"Make it clearly different (variation #{nonce}).{allow}{variety}{avoid_t}")
         try:
             raw = await router.get_chat_response(GEN_PROMPT, [{"role": "user", "content": ask}])
             ex = _extract_json(raw)
