@@ -70,6 +70,60 @@ TEMPLATES = [
      "fixWhy": "strings -e l extracts UTF-16LE (wide) strings; -e b for big-endian.",
      "pools": {"FILE": ["sample.exe", "payload.bin", "dropper.exe", "loader.dll"]}},
 
+    {"id": "objdump_section", "deck": "malware", "lang": "objdump",
+     "ctxForms": ["disassemble the executable code of {{FILE}}", "look at the runnable instructions inside {{FILE}}"],
+     "code": ["objdump -d -j .data {{FILE}}"], "vuln": 0, "category": "Wrong value",
+     "options": ["Wrong value", "Wrong flag", "Wrong tool", "Wrong syntax"],
+     "why": "The .data section holds static data, not code; the runnable instructions live in .text, so this disassembles the wrong section.",
+     "fixLines": ["objdump -d -j ___ {{FILE}}"], "slots": [".text"], "tokens": [".text", ".data", ".bss", ".rodata"],
+     "fixWhy": "Disassemble .text, where the runnable code lives; .data is only static values.",
+     "pools": {"FILE": ["sample.exe", "payload.bin", "dropper.exe", "loader.dll"]}},
+
+    {"id": "entropy_tool", "deck": "malware", "lang": "binwalk",
+     "ctxForms": ["check whether {{FILE}} is packed by measuring its entropy", "decide if {{FILE}} is packed or encrypted"],
+     "code": ["hexdump -C {{FILE}}"], "vuln": 0, "category": "Wrong tool",
+     "options": ["Wrong tool", "Wrong flag", "Wrong value", "Wrong approach"],
+     "why": "A raw hex dump tells you nothing about packing; you need an entropy view to spot compressed or encrypted regions.",
+     "fixLines": ["___ -E {{FILE}}"], "slots": ["binwalk"], "tokens": ["binwalk", "hexdump", "xxd", "cat"],
+     "fixWhy": "binwalk -E plots entropy; a high, flat curve signals packing or encryption.",
+     "pools": {"FILE": ["sample.exe", "packed.bin", "dropper.exe", "suspicious.exe"]}},
+
+    {"id": "r2_analysis", "deck": "malware", "lang": "radare2",
+     "ctxForms": ["open {{FILE}} in radare2 and run full auto-analysis", "analyse all functions and references in {{FILE}} with r2"],
+     "code": ["r2 -qc aa {{FILE}}"], "vuln": 0, "category": "Wrong value",
+     "options": ["Wrong value", "Wrong flag", "Wrong tool", "Wrong syntax"],
+     "why": "aa runs only the basic analysis pass; it misses functions, strings and cross-references needed for malware triage.",
+     "fixLines": ["r2 -qc ___ {{FILE}}"], "slots": ["aaa"], "tokens": ["aaa", "aa", "af", "pdf"],
+     "fixWhy": "aaa runs the deeper auto-analysis (functions, refs, strings); aa is only the minimal pass.",
+     "pools": {"FILE": ["sample.exe", "payload.bin", "trojan.exe", "loader.dll"]}},
+
+    {"id": "upx_unpack", "deck": "malware", "lang": "upx",
+     "ctxForms": ["unpack the UPX-packed sample {{FILE}} without destroying the original", "decompress {{FILE}} but keep the packed sample as evidence"],
+     "code": ["upx -d {{FILE}}"], "vuln": 0, "category": "Missing flag",
+     "options": ["Missing flag", "Wrong flag", "Wrong tool", "Wrong value"],
+     "why": "upx -d unpacks in place and overwrites the original file, so the packed evidence sample is lost.",
+     "fixLines": ["upx -d ___ unpacked.exe {{FILE}}"], "slots": ["-o"], "tokens": ["-o", "-k", "-q", "-f"],
+     "fixWhy": "-o writes the unpacked copy to a new file, leaving the original packed sample intact.",
+     "pools": {"FILE": ["trojan.exe", "packed.exe", "sample.exe", "dropper.exe"]}},
+
+    {"id": "binwalk_entropy", "deck": "malware", "lang": "binwalk",
+     "ctxForms": ["measure the entropy of {{FILE}} to judge if it is packed", "scan {{FILE}} for high-entropy packed regions"],
+     "code": ["binwalk -e {{FILE}}"], "vuln": 0, "category": "Wrong flag",
+     "options": ["Wrong flag", "Wrong value", "Wrong tool", "Wrong syntax"],
+     "why": "-e extracts embedded files; it does not show entropy, so it will not tell you whether the sample is packed.",
+     "fixLines": ["binwalk ___ {{FILE}}"], "slots": ["-E"], "tokens": ["-E", "-e", "-A", "-B"],
+     "fixWhy": "-E (capital) plots an entropy curve; high and flat means packed or encrypted.",
+     "pools": {"FILE": ["sample.exe", "payload.bin", "dropper.exe", "suspicious.bin"]}},
+
+    {"id": "hash_ioc", "deck": "malware", "lang": "bash",
+     "ctxForms": ["compute a reliable hash of {{FILE}} to share as an IOC", "fingerprint {{FILE}} for an indicator of compromise"],
+     "code": ["md5sum {{FILE}}"], "vuln": 0, "category": "Wrong tool",
+     "options": ["Wrong tool", "Wrong flag", "Wrong value", "Wrong approach"],
+     "why": "MD5 is collision-prone: two different files can produce the same MD5, so it is unsafe as a unique malware identifier.",
+     "fixLines": ["___ {{FILE}}"], "slots": ["sha256sum"], "tokens": ["sha256sum", "md5sum", "crc32", "base64"],
+     "fixWhy": "Use sha256sum, which is collision-resistant and the standard for malware IOCs.",
+     "pools": {"FILE": ["sample.exe", "payload.bin", "trojan.exe", "ransomware.exe"]}},
+
     {"id": "volatility", "deck": "dfir", "lang": "acquisition",
      "ctxForms": ["order of collection during live acquisition of {{HOST}}", "on compromised {{HOST}}: what do you collect first"],
      "code": ["image the {{HOST}} disk first, then capture RAM", "(RAM is far more volatile than disk)"],
@@ -147,6 +201,8 @@ GEN_PROMPT = (
     "the number of '___' in fixLines MUST equal len(slots); every slot MUST be in tokens; "
     "tokens has 3-4 distinct entries (the right one + plausible distractors); "
     "0 <= vuln < len(code); no backticks, no markdown, no '</script>'. "
+    "SELF-CONSISTENCY (critical): the line at index vuln MUST literally contain the described mistake; never say a flag is missing if it already appears in that line, and never flag a line that is actually correct; the fix MUST genuinely correct that exact line. "
+    "VARIETY: vary the tool and technique widely (for malware: PE and header parsing, packer and entropy detection, imports and sections, string extraction, hashing and IOCs, disassembly, sandboxing, YARA) and vary the bug category; do NOT default to missing or wrong-flag puzzles. "
     "Generate an exercise DIFFERENT from the seed (other tool/flag/scenario), not a mere rewrite."
 )
 VERIFY_PROMPT = (
@@ -163,15 +219,17 @@ def _extract_json(raw):
 async def gen_ai(deck, n, verify):
     from ai.router import AIRouter
     router = AIRouter()
-    seed = next((t for t in TEMPLATES if t["deck"] == deck), TEMPLATES[0])
-    seed_json = json.dumps({k: seed[k] for k in ("lang", "ctx", "code", "vuln", "category",
-                            "options", "why", "fixLines", "slots", "tokens", "fixWhy")})
+    seed_ex = gen_mock(deck, 1) or gen_mock(DECKS[0], 1)
+    seed = seed_ex[0] if seed_ex else {}
+    seed_json = json.dumps({k: seed[k] for k in ("lang", "ctx", "code", "vuln", "category", "options", "why", "fixLines", "slots", "tokens", "fixWhy") if k in seed})
     out, seen, tries = [], set(), 0
     while len(out) < n and tries < n * 4:
         tries += 1
         nonce = random.randint(1000, 9999)
+        used_tools = sorted({e.get("lang", "") for e in out})
+        avoid = (" Avoid reusing these tools already used in this batch: " + ", ".join(used_tools) + ".") if used_tools else ""
         ask = (f"Deck: {deck}. Style example (do NOT copy it): {seed_json}. "
-               f"Make it clearly different (variation #{nonce}).")
+               f"Make it clearly different (variation #{nonce}).{avoid}")
         try:
             raw = await router.get_chat_response(GEN_PROMPT, [{"role": "user", "content": ask}])
             ex = _extract_json(raw)
