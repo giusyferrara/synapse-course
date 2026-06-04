@@ -417,6 +417,21 @@ DECK_ALLOWLIST = {
                  "(the vuln line is that code line; the fix adds/repairs the check). Do NOT make CLI-flag trivia. "
                  "Use only real, mainstream APIs of the allowed frameworks; never invent decorators, methods, or libraries."),
     },
+    "mobile": {
+        "tools": ["adb", "apktool", "jadx", "keytool", "frida", "objection"],
+        "bugs": [
+            "insecure data storage (secrets in plaintext SharedPreferences / NSUserDefaults / files)",
+            "exported component (activity/service/receiver exported with no permission)",
+            "insecure WebView (JS bridge to untrusted content, file/URL access)",
+            "weak crypto or hardcoded key (AES/ECB, a static key shipped in the app)",
+            "sensitive data in logs (Log.d / println leaking tokens or PII)",
+            "missing certificate pinning / trusting user-added CAs",
+        ],
+        "note": ("Bugs are mostly CODE/CONFIG in Java/Kotlin or AndroidManifest.xml — a real line where a control is "
+                 "missing or wrong, and the fix repairs that exact line. frida and objection are the riskiest tools: "
+                 "use ONLY real commands and hooks on real Android/Java classes & methods (e.g. Java.use(...), "
+                 "javax.net.ssl, objection 'android sslpinning disable'); never invent a Frida/objection API."),
+    },
     # dfir (later): PIN Volatility 3 syntax (windows.pslist, no --profile) or avoid flag puzzles on it —
     #   vol2/vol3 differ and the malware-pilot volatility item was conceptually right but structurally broken.
 }
@@ -428,8 +443,12 @@ def _allow_instruction(deck):
         return ""
     parts = []
     if spec.get("tools"):
-        parts.append("Use ONLY one of these tools, nothing else: " + ", ".join(spec["tools"]) +
-                     ". Use only real, standard flags; never invent a tool or flag.")
+        if spec.get("bugs"):  # mixed deck (CLI + code/config): tools constrain ONLY the CLI exercises
+            parts.append("When an exercise uses a CLI tool, use ONLY one of these: " + ", ".join(spec["tools"]) +
+                         ", with real commands/flags/APIs only; never invent a tool, flag, command, or API.")
+        else:               # pure CLI deck: every exercise must be one of these tools
+            parts.append("Use ONLY one of these tools, nothing else: " + ", ".join(spec["tools"]) +
+                         ". Use only real, standard flags; never invent a tool or flag.")
     if spec.get("frameworks"):
         parts.append("Use ONLY these frameworks: " + ", ".join(spec["frameworks"]) +
                      ". Use only their real, mainstream APIs; never invent decorators, methods, or libraries.")
