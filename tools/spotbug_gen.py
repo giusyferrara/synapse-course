@@ -539,8 +539,23 @@ DECK_ALLOWLIST = {
                  "use ONLY real commands and hooks on real Android/Java classes & methods (e.g. Java.use(...), "
                  "javax.net.ssl, objection 'android sslpinning disable'); never invent a Frida/objection API."),
     },
-    # dfir (later): PIN Volatility 3 syntax (windows.pslist, no --profile) or avoid flag puzzles on it —
-    #   vol2/vol3 differ and the malware-pilot volatility item was conceptually right but structurally broken.
+    "dfir": {
+        "tools": ["vol.py", "dd", "dc3dd", "ewfacquire", "sha256sum", "MFTECmd", "EvtxECmd",
+                  "wevtutil", "log2timeline.py", "psort.py", "RegRipper", "PECmd"],
+        "bugs": [
+            "memory forensics: the wrong Volatility 3 plugin (windows.pslist misses hidden/unlinked processes -> windows.psscan)",
+            "imaging integrity: imaging without hashing/verification (no SHA-256), or using a non-forensic copy",
+            "timeline: wrong order or wrong tool for a super-timeline (log2timeline.py extracts events -> psort.py processes them)",
+            "Windows event logs: the wrong tool (grep on a binary .evtx) or the wrong Event ID for the artifact",
+            "artifact analysis: wrong artifact/tool for the question (MFT via MFTECmd, registry via RegRipper, execution evidence via PECmd/Prefetch)",
+        ],
+        "note": ("Volatility 3 ONLY: vol.py with plugin namespaces (windows.pslist, windows.psscan, windows.netscan) — "
+                 "NEVER use --profile (that is Volatility 2). For EVERY tool here the bug must be CONCEPTUAL / a usage "
+                 "mistake — the wrong artifact, the wrong tool for the question, a missing integrity step, or the wrong "
+                 "plugin/Event-ID — NOT obscure flag trivia. Use ONLY flags/options that certainly exist; if unsure a flag "
+                 "exists, make the bug a tool/artifact/step choice instead. Do NOT produce chain-of-custody or pure-process "
+                 "exercises — there is no single command line to get wrong in those."),
+    },
 }
 
 def _allow_instruction(deck):
