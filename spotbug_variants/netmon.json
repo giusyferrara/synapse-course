@@ -1,9 +1,9 @@
 [
  {
-  "lang": "tcpdump",
-  "ctx": "save packets from wlan0 to analyse later",
+  "lang": "nmap",
+  "ctx": "scan for open TCP ports on 10.0.0.5",
   "code": [
-   "sudo tcpdump -i wlan0 -o traffic.pcap"
+   "nmap -sU -p 1-65535 10.0.0.5"
   ],
   "vuln": 0,
   "category": "Wrong flag",
@@ -13,26 +13,26 @@
    "Wrong value",
    "Wrong syntax"
   ],
-  "why": "-o is not how tcpdump writes to a file.",
+  "why": "-sU runs a UDP scan, not a TCP scan, so it will not find open TCP ports.",
   "fixLines": [
-   "sudo tcpdump -i wlan0 ___ traffic.pcap"
+   "nmap ___ -p 1-65535 10.0.0.5"
   ],
   "slots": [
-   "-w"
+   "-sT"
   ],
   "tokens": [
-   "-w",
-   "-o",
-   "-f",
-   "-r"
+   "-sT",
+   "-sU",
+   "-sn",
+   "-sA"
   ],
-  "fixWhy": "-w writes the raw packets; you read them back with -r."
+  "fixWhy": "-sT does a TCP connect scan to find open TCP ports (-sS SYN scan also works but needs root)."
  },
  {
   "lang": "tcpdump",
-  "ctx": "save packets from wlan0 to analyse later",
+  "ctx": "capture packets on ens33 with timestamps",
   "code": [
-   "sudo tcpdump -i wlan0 -o capture.pcap"
+   "sudo tcpdump -i ens33 -v -t host 10.0.0.5"
   ],
   "vuln": 0,
   "category": "Wrong flag",
@@ -42,26 +42,84 @@
    "Wrong value",
    "Wrong syntax"
   ],
-  "why": "-o is not how tcpdump writes to a file.",
+  "why": "-t SUPPRESSES the timestamp on every line, which defeats the goal of capturing with timestamps.",
   "fixLines": [
-   "sudo tcpdump -i wlan0 ___ capture.pcap"
+   "sudo tcpdump -i ens33 -v ___ host 10.0.0.5"
   ],
   "slots": [
-   "-w"
+   "-tt"
   ],
   "tokens": [
-   "-w",
-   "-o",
-   "-f",
-   "-r"
+   "-tt",
+   "-t",
+   "-T",
+   "-A"
   ],
-  "fixWhy": "-w writes the raw packets; you read them back with -r."
+  "fixWhy": "-tt prints an unformatted (epoch) timestamp per packet; -t removes timestamps entirely."
+ },
+ {
+  "lang": "nmap",
+  "ctx": "list the open TCP ports on target.local",
+  "code": [
+   "nmap -sU -p 1-65535 target.local"
+  ],
+  "vuln": 0,
+  "category": "Wrong flag",
+  "options": [
+   "Wrong flag",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong syntax"
+  ],
+  "why": "-sU runs a UDP scan, not a TCP scan, so it will not find open TCP ports.",
+  "fixLines": [
+   "nmap ___ -p 1-65535 target.local"
+  ],
+  "slots": [
+   "-sT"
+  ],
+  "tokens": [
+   "-sT",
+   "-sU",
+   "-sn",
+   "-sA"
+  ],
+  "fixWhy": "-sT does a TCP connect scan to find open TCP ports (-sS SYN scan also works but needs root)."
+ },
+ {
+  "lang": "nmap",
+  "ctx": "scan for open TCP ports on target.local",
+  "code": [
+   "nmap -sU -p 1-1024 target.local"
+  ],
+  "vuln": 0,
+  "category": "Wrong flag",
+  "options": [
+   "Wrong flag",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong syntax"
+  ],
+  "why": "-sU runs a UDP scan, not a TCP scan, so it will not find open TCP ports.",
+  "fixLines": [
+   "nmap ___ -p 1-1024 target.local"
+  ],
+  "slots": [
+   "-sT"
+  ],
+  "tokens": [
+   "-sT",
+   "-sU",
+   "-sn",
+   "-sA"
+  ],
+  "fixWhy": "-sT does a TCP connect scan to find open TCP ports (-sS SYN scan also works but needs root)."
  },
  {
   "lang": "tcpdump",
-  "ctx": "capture traffic on enp0s3 to a file",
+  "ctx": "capture packets on eth0 with timestamps",
   "code": [
-   "sudo tcpdump -i enp0s3 -o traffic.pcap"
+   "sudo tcpdump -i eth0 -v -t host 172.16.0.9"
   ],
   "vuln": 0,
   "category": "Wrong flag",
@@ -71,26 +129,55 @@
    "Wrong value",
    "Wrong syntax"
   ],
-  "why": "-o is not how tcpdump writes to a file.",
+  "why": "-t SUPPRESSES the timestamp on every line, which defeats the goal of capturing with timestamps.",
   "fixLines": [
-   "sudo tcpdump -i enp0s3 ___ traffic.pcap"
+   "sudo tcpdump -i eth0 -v ___ host 172.16.0.9"
   ],
   "slots": [
-   "-w"
+   "-tt"
   ],
   "tokens": [
-   "-w",
-   "-o",
-   "-f",
-   "-r"
+   "-tt",
+   "-t",
+   "-T",
+   "-A"
   ],
-  "fixWhy": "-w writes the raw packets; you read them back with -r."
+  "fixWhy": "-tt prints an unformatted (epoch) timestamp per packet; -t removes timestamps entirely."
+ },
+ {
+  "lang": "nmap",
+  "ctx": "scan for open TCP ports on 127.0.0.1",
+  "code": [
+   "nmap -sU -p 22,80,443 127.0.0.1"
+  ],
+  "vuln": 0,
+  "category": "Wrong flag",
+  "options": [
+   "Wrong flag",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong syntax"
+  ],
+  "why": "-sU runs a UDP scan, not a TCP scan, so it will not find open TCP ports.",
+  "fixLines": [
+   "nmap ___ -p 22,80,443 127.0.0.1"
+  ],
+  "slots": [
+   "-sT"
+  ],
+  "tokens": [
+   "-sT",
+   "-sU",
+   "-sn",
+   "-sA"
+  ],
+  "fixWhy": "-sT does a TCP connect scan to find open TCP ports (-sS SYN scan also works but needs root)."
  },
  {
   "lang": "tcpdump",
-  "ctx": "save packets from ens33 to analyse later",
+  "ctx": "capture packets on wlan0 with timestamps",
   "code": [
-   "sudo tcpdump -i ens33 -o wire.pcap"
+   "sudo tcpdump -i wlan0 -v -t host 192.168.1.100"
   ],
   "vuln": 0,
   "category": "Wrong flag",
@@ -100,26 +187,229 @@
    "Wrong value",
    "Wrong syntax"
   ],
-  "why": "-o is not how tcpdump writes to a file.",
+  "why": "-t SUPPRESSES the timestamp on every line, which defeats the goal of capturing with timestamps.",
   "fixLines": [
-   "sudo tcpdump -i ens33 ___ wire.pcap"
+   "sudo tcpdump -i wlan0 -v ___ host 192.168.1.100"
   ],
   "slots": [
-   "-w"
+   "-tt"
   ],
   "tokens": [
-   "-w",
-   "-o",
-   "-f",
-   "-r"
+   "-tt",
+   "-t",
+   "-T",
+   "-A"
   ],
-  "fixWhy": "-w writes the raw packets; you read them back with -r."
+  "fixWhy": "-tt prints an unformatted (epoch) timestamp per packet; -t removes timestamps entirely."
+ },
+ {
+  "lang": "tshark",
+  "ctx": "read traffic.pcap and keep only tcp packets",
+  "code": [
+   "tshark -r traffic.pcap -f tcp"
+  ],
+  "vuln": 0,
+  "category": "Wrong flag",
+  "options": [
+   "Wrong flag",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong syntax"
+  ],
+  "why": "-f is a capture (BPF) filter that only applies to a live capture; reading a file needs a display filter.",
+  "fixLines": [
+   "tshark -r traffic.pcap ___ tcp"
+  ],
+  "slots": [
+   "-Y"
+  ],
+  "tokens": [
+   "-Y",
+   "-f",
+   "-R",
+   "-d"
+  ],
+  "fixWhy": "-Y applies a Wireshark display filter when reading a pcap; -f only works during live capture."
+ },
+ {
+  "lang": "tshark",
+  "ctx": "extract HTTP request host+URI from traffic.pcap without name resolution",
+  "code": [
+   "tshark -r traffic.pcap -Y http.request -T fields -e http.host -e http.request.uri"
+  ],
+  "vuln": 0,
+  "category": "Missing flag",
+  "options": [
+   "Missing flag",
+   "Wrong flag",
+   "Wrong value",
+   "Wrong syntax"
+  ],
+  "why": "Without -n, tshark resolves addresses via DNS — slow, and it leaks lookups for the very hosts you are analysing.",
+  "fixLines": [
+   "tshark ___ -r traffic.pcap -Y http.request -T fields -e http.host -e http.request.uri"
+  ],
+  "slots": [
+   "-n"
+  ],
+  "tokens": [
+   "-n",
+   "-N",
+   "-d",
+   "-q"
+  ],
+  "fixWhy": "-n disables name resolution: faster analysis and no DNS leakage."
+ },
+ {
+  "lang": "tcpflow",
+  "ctx": "reconstruct TCP flows on port 443 into /var/tmp/cap/",
+  "code": [
+   "sudo tcpflow -i ens33 -p 443 -o /var/tmp/cap/"
+  ],
+  "vuln": 0,
+  "category": "Wrong syntax",
+  "options": [
+   "Wrong syntax",
+   "Wrong flag",
+   "Wrong tool",
+   "Wrong value"
+  ],
+  "why": "tcpflow takes its filter as a bare BPF expression (port 443); -p is the no-promiscuous flag, so '-p 443' is not a port filter.",
+  "fixLines": [
+   "sudo tcpflow -i ens33 ___ 443 -o /var/tmp/cap/"
+  ],
+  "slots": [
+   "port"
+  ],
+  "tokens": [
+   "port",
+   "-p",
+   "-P",
+   "dst"
+  ],
+  "fixWhy": "Filters are bare BPF: 'port 443'. (-o correctly sets the output directory.)"
+ },
+ {
+  "lang": "tcpflow",
+  "ctx": "reassemble streams on port 80 with tcpflow",
+  "code": [
+   "sudo tcpflow -i wlan0 -p 80 -o /tmp/flows/"
+  ],
+  "vuln": 0,
+  "category": "Wrong syntax",
+  "options": [
+   "Wrong syntax",
+   "Wrong flag",
+   "Wrong tool",
+   "Wrong value"
+  ],
+  "why": "tcpflow takes its filter as a bare BPF expression (port 80); -p is the no-promiscuous flag, so '-p 80' is not a port filter.",
+  "fixLines": [
+   "sudo tcpflow -i wlan0 ___ 80 -o /tmp/flows/"
+  ],
+  "slots": [
+   "port"
+  ],
+  "tokens": [
+   "port",
+   "-p",
+   "-P",
+   "dst"
+  ],
+  "fixWhy": "Filters are bare BPF: 'port 80'. (-o correctly sets the output directory.)"
+ },
+ {
+  "lang": "netstat",
+  "ctx": "list listening TCP ports with their process, without slow reverse-DNS",
+  "code": [
+   "netstat -tlp"
+  ],
+  "vuln": 0,
+  "category": "Missing flag",
+  "options": [
+   "Missing flag",
+   "Wrong flag",
+   "Wrong value",
+   "Wrong syntax"
+  ],
+  "why": "Without -n, netstat resolves addresses and ports via reverse DNS, which is slow and noisy.",
+  "fixLines": [
+   "netstat -___lp"
+  ],
+  "slots": [
+   "tn"
+  ],
+  "tokens": [
+   "tn",
+   "tl",
+   "tu",
+   "ta"
+  ],
+  "fixWhy": "-n shows numeric addresses/ports, avoiding slow reverse-DNS lookups."
+ },
+ {
+  "lang": "nmap",
+  "ctx": "list the open TCP ports on target.local",
+  "code": [
+   "nmap -sU -p 22,80,443 target.local"
+  ],
+  "vuln": 0,
+  "category": "Wrong flag",
+  "options": [
+   "Wrong flag",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong syntax"
+  ],
+  "why": "-sU runs a UDP scan, not a TCP scan, so it will not find open TCP ports.",
+  "fixLines": [
+   "nmap ___ -p 22,80,443 target.local"
+  ],
+  "slots": [
+   "-sT"
+  ],
+  "tokens": [
+   "-sT",
+   "-sU",
+   "-sn",
+   "-sA"
+  ],
+  "fixWhy": "-sT does a TCP connect scan to find open TCP ports (-sS SYN scan also works but needs root)."
+ },
+ {
+  "lang": "tcpflow",
+  "ctx": "reassemble streams on port 8080 with tcpflow",
+  "code": [
+   "sudo tcpflow -i ens33 -p 8080 -o flows/"
+  ],
+  "vuln": 0,
+  "category": "Wrong syntax",
+  "options": [
+   "Wrong syntax",
+   "Wrong flag",
+   "Wrong tool",
+   "Wrong value"
+  ],
+  "why": "tcpflow takes its filter as a bare BPF expression (port 8080); -p is the no-promiscuous flag, so '-p 8080' is not a port filter.",
+  "fixLines": [
+   "sudo tcpflow -i ens33 ___ 8080 -o flows/"
+  ],
+  "slots": [
+   "port"
+  ],
+  "tokens": [
+   "port",
+   "-p",
+   "-P",
+   "dst"
+  ],
+  "fixWhy": "Filters are bare BPF: 'port 8080'. (-o correctly sets the output directory.)"
  },
  {
   "lang": "tcpdump",
-  "ctx": "save packets from eth0 to analyse later",
+  "ctx": "capture packets on eth0 with timestamps",
   "code": [
-   "sudo tcpdump -i eth0 -o capture.pcap"
+   "sudo tcpdump -i eth0 -v -t host 10.0.0.5"
   ],
   "vuln": 0,
   "category": "Wrong flag",
@@ -129,26 +419,26 @@
    "Wrong value",
    "Wrong syntax"
   ],
-  "why": "-o is not how tcpdump writes to a file.",
+  "why": "-t SUPPRESSES the timestamp on every line, which defeats the goal of capturing with timestamps.",
   "fixLines": [
-   "sudo tcpdump -i eth0 ___ capture.pcap"
+   "sudo tcpdump -i eth0 -v ___ host 10.0.0.5"
   ],
   "slots": [
-   "-w"
+   "-tt"
   ],
   "tokens": [
-   "-w",
-   "-o",
-   "-f",
-   "-r"
+   "-tt",
+   "-t",
+   "-T",
+   "-A"
   ],
-  "fixWhy": "-w writes the raw packets; you read them back with -r."
+  "fixWhy": "-tt prints an unformatted (epoch) timestamp per packet; -t removes timestamps entirely."
  },
  {
   "lang": "tcpdump",
-  "ctx": "capture traffic on enp0s3 to a file",
+  "ctx": "capture packets on wlan0 with timestamps",
   "code": [
-   "sudo tcpdump -i enp0s3 -o capture.pcap"
+   "sudo tcpdump -i wlan0 -v -t host 10.0.0.5"
   ],
   "vuln": 0,
   "category": "Wrong flag",
@@ -158,26 +448,55 @@
    "Wrong value",
    "Wrong syntax"
   ],
-  "why": "-o is not how tcpdump writes to a file.",
+  "why": "-t SUPPRESSES the timestamp on every line, which defeats the goal of capturing with timestamps.",
   "fixLines": [
-   "sudo tcpdump -i enp0s3 ___ capture.pcap"
+   "sudo tcpdump -i wlan0 -v ___ host 10.0.0.5"
   ],
   "slots": [
-   "-w"
+   "-tt"
   ],
   "tokens": [
-   "-w",
-   "-o",
-   "-f",
-   "-r"
+   "-tt",
+   "-t",
+   "-T",
+   "-A"
   ],
-  "fixWhy": "-w writes the raw packets; you read them back with -r."
+  "fixWhy": "-tt prints an unformatted (epoch) timestamp per packet; -t removes timestamps entirely."
+ },
+ {
+  "lang": "tcpflow",
+  "ctx": "reconstruct TCP flows on port 53 into /tmp/flows/",
+  "code": [
+   "sudo tcpflow -i wlan0 -p 53 -o /tmp/flows/"
+  ],
+  "vuln": 0,
+  "category": "Wrong syntax",
+  "options": [
+   "Wrong syntax",
+   "Wrong flag",
+   "Wrong tool",
+   "Wrong value"
+  ],
+  "why": "tcpflow takes its filter as a bare BPF expression (port 53); -p is the no-promiscuous flag, so '-p 53' is not a port filter.",
+  "fixLines": [
+   "sudo tcpflow -i wlan0 ___ 53 -o /tmp/flows/"
+  ],
+  "slots": [
+   "port"
+  ],
+  "tokens": [
+   "port",
+   "-p",
+   "-P",
+   "dst"
+  ],
+  "fixWhy": "Filters are bare BPF: 'port 53'. (-o correctly sets the output directory.)"
  },
  {
   "lang": "tcpdump",
-  "ctx": "save packets from enp0s3 to analyse later",
+  "ctx": "capture packets on ens33 with timestamps",
   "code": [
-   "sudo tcpdump -i enp0s3 -o dump.pcap"
+   "sudo tcpdump -i ens33 -v -t host 8.8.8.8"
   ],
   "vuln": 0,
   "category": "Wrong flag",
@@ -187,84 +506,84 @@
    "Wrong value",
    "Wrong syntax"
   ],
-  "why": "-o is not how tcpdump writes to a file.",
+  "why": "-t SUPPRESSES the timestamp on every line, which defeats the goal of capturing with timestamps.",
   "fixLines": [
-   "sudo tcpdump -i enp0s3 ___ dump.pcap"
+   "sudo tcpdump -i ens33 -v ___ host 8.8.8.8"
   ],
   "slots": [
-   "-w"
+   "-tt"
   ],
   "tokens": [
-   "-w",
-   "-o",
-   "-f",
-   "-r"
+   "-tt",
+   "-t",
+   "-T",
+   "-A"
   ],
-  "fixWhy": "-w writes the raw packets; you read them back with -r."
+  "fixWhy": "-tt prints an unformatted (epoch) timestamp per packet; -t removes timestamps entirely."
  },
  {
-  "lang": "tcpdump",
-  "ctx": "capture traffic on wlan0 to a file",
+  "lang": "tcpflow",
+  "ctx": "reassemble streams on port 80 with tcpflow",
   "code": [
-   "sudo tcpdump -i wlan0 -o wire.pcap"
+   "sudo tcpflow -i ens33 -p 80 -o flows/"
   ],
   "vuln": 0,
-  "category": "Wrong flag",
+  "category": "Wrong syntax",
   "options": [
+   "Wrong syntax",
    "Wrong flag",
    "Wrong tool",
-   "Wrong value",
-   "Wrong syntax"
+   "Wrong value"
   ],
-  "why": "-o is not how tcpdump writes to a file.",
+  "why": "tcpflow takes its filter as a bare BPF expression (port 80); -p is the no-promiscuous flag, so '-p 80' is not a port filter.",
   "fixLines": [
-   "sudo tcpdump -i wlan0 ___ wire.pcap"
+   "sudo tcpflow -i ens33 ___ 80 -o flows/"
   ],
   "slots": [
-   "-w"
+   "port"
   ],
   "tokens": [
-   "-w",
-   "-o",
-   "-f",
-   "-r"
+   "port",
+   "-p",
+   "-P",
+   "dst"
   ],
-  "fixWhy": "-w writes the raw packets; you read them back with -r."
+  "fixWhy": "Filters are bare BPF: 'port 80'. (-o correctly sets the output directory.)"
  },
  {
-  "lang": "tcpdump",
-  "ctx": "save packets from ens33 to analyse later",
+  "lang": "tshark",
+  "ctx": "read capture.pcap and show HTTP requests without slow DNS lookups",
   "code": [
-   "sudo tcpdump -i ens33 -o dump.pcap"
+   "tshark -r capture.pcap -Y http.request -T fields -e http.host -e http.request.uri"
   ],
   "vuln": 0,
-  "category": "Wrong flag",
+  "category": "Missing flag",
   "options": [
+   "Missing flag",
    "Wrong flag",
-   "Wrong tool",
    "Wrong value",
    "Wrong syntax"
   ],
-  "why": "-o is not how tcpdump writes to a file.",
+  "why": "Without -n, tshark resolves addresses via DNS — slow, and it leaks lookups for the very hosts you are analysing.",
   "fixLines": [
-   "sudo tcpdump -i ens33 ___ dump.pcap"
+   "tshark ___ -r capture.pcap -Y http.request -T fields -e http.host -e http.request.uri"
   ],
   "slots": [
-   "-w"
+   "-n"
   ],
   "tokens": [
-   "-w",
-   "-o",
-   "-f",
-   "-r"
+   "-n",
+   "-N",
+   "-d",
+   "-q"
   ],
-  "fixWhy": "-w writes the raw packets; you read them back with -r."
+  "fixWhy": "-n disables name resolution: faster analysis and no DNS leakage."
  },
  {
-  "lang": "tcpdump",
-  "ctx": "save packets from eth0 to analyse later",
+  "lang": "dig",
+  "ctx": "find the hostname behind 192.168.1.1",
   "code": [
-   "sudo tcpdump -i eth0 -o wire.pcap"
+   "dig -r 192.168.1.1"
   ],
   "vuln": 0,
   "category": "Wrong flag",
@@ -274,26 +593,26 @@
    "Wrong value",
    "Wrong syntax"
   ],
-  "why": "-o is not how tcpdump writes to a file.",
+  "why": "-r only tells dig to skip ~/.digrc; it does NOT perform a reverse lookup.",
   "fixLines": [
-   "sudo tcpdump -i eth0 ___ wire.pcap"
+   "dig ___ 192.168.1.1"
   ],
   "slots": [
-   "-w"
+   "-x"
   ],
   "tokens": [
-   "-w",
-   "-o",
-   "-f",
-   "-r"
+   "-x",
+   "-r",
+   "-p",
+   "-t"
   ],
-  "fixWhy": "-w writes the raw packets; you read them back with -r."
+  "fixWhy": "-x builds the in-addr.arpa PTR query automatically for a reverse lookup."
  },
  {
-  "lang": "tcpdump",
-  "ctx": "save packets from eth0 to analyse later",
+  "lang": "tshark",
+  "ctx": "filter a saved capture capture.pcap down to tls",
   "code": [
-   "sudo tcpdump -i eth0 -o dump.pcap"
+   "tshark -r capture.pcap -f tls"
   ],
   "vuln": 0,
   "category": "Wrong flag",
@@ -303,26 +622,55 @@
    "Wrong value",
    "Wrong syntax"
   ],
-  "why": "-o is not how tcpdump writes to a file.",
+  "why": "-f is a capture (BPF) filter that only applies to a live capture; reading a file needs a display filter.",
   "fixLines": [
-   "sudo tcpdump -i eth0 ___ dump.pcap"
+   "tshark -r capture.pcap ___ tls"
   ],
   "slots": [
-   "-w"
+   "-Y"
   ],
   "tokens": [
-   "-w",
-   "-o",
+   "-Y",
    "-f",
-   "-r"
+   "-R",
+   "-d"
   ],
-  "fixWhy": "-w writes the raw packets; you read them back with -r."
+  "fixWhy": "-Y applies a Wireshark display filter when reading a pcap; -f only works during live capture."
  },
  {
-  "lang": "tcpdump",
-  "ctx": "capture traffic on wlan0 to a file",
+  "lang": "tcpflow",
+  "ctx": "reassemble streams on port 8080 with tcpflow",
   "code": [
-   "sudo tcpdump -i wlan0 -o dump.pcap"
+   "sudo tcpflow -i eth0 -p 8080 -o flows/"
+  ],
+  "vuln": 0,
+  "category": "Wrong syntax",
+  "options": [
+   "Wrong syntax",
+   "Wrong flag",
+   "Wrong tool",
+   "Wrong value"
+  ],
+  "why": "tcpflow takes its filter as a bare BPF expression (port 8080); -p is the no-promiscuous flag, so '-p 8080' is not a port filter.",
+  "fixLines": [
+   "sudo tcpflow -i eth0 ___ 8080 -o flows/"
+  ],
+  "slots": [
+   "port"
+  ],
+  "tokens": [
+   "port",
+   "-p",
+   "-P",
+   "dst"
+  ],
+  "fixWhy": "Filters are bare BPF: 'port 8080'. (-o correctly sets the output directory.)"
+ },
+ {
+  "lang": "tshark",
+  "ctx": "filter a saved capture traffic.pcap down to dns",
+  "code": [
+   "tshark -r traffic.pcap -f dns"
   ],
   "vuln": 0,
   "category": "Wrong flag",
@@ -332,19 +680,19 @@
    "Wrong value",
    "Wrong syntax"
   ],
-  "why": "-o is not how tcpdump writes to a file.",
+  "why": "-f is a capture (BPF) filter that only applies to a live capture; reading a file needs a display filter.",
   "fixLines": [
-   "sudo tcpdump -i wlan0 ___ dump.pcap"
+   "tshark -r traffic.pcap ___ dns"
   ],
   "slots": [
-   "-w"
+   "-Y"
   ],
   "tokens": [
-   "-w",
-   "-o",
+   "-Y",
    "-f",
-   "-r"
+   "-R",
+   "-d"
   ],
-  "fixWhy": "-w writes the raw packets; you read them back with -r."
+  "fixWhy": "-Y applies a Wireshark display filter when reading a pcap; -f only works during live capture."
  }
 ]

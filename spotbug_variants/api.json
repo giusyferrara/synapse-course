@@ -1,7 +1,107 @@
 [
  {
   "lang": "Python",
-  "ctx": "the API reads a tickets given its id",
+  "ctx": "a PUT endpoint updates a subscription",
+  "code": [
+   "@app.route('/api/subscription/<int:item_id>', methods=['PUT'])",
+   "def update_subscription(item_id):",
+   "    record = load_subscription(item_id)",
+   "    record.update(**request.json)",
+   "    db.session.commit()",
+   "    return jsonify(record.to_dict())"
+  ],
+  "vuln": 3,
+  "category": "Mass assignment",
+  "options": [
+   "Mass assignment",
+   "BOLA (IDOR)",
+   "BFLA",
+   "Broken authentication"
+  ],
+  "why": "Binding the whole JSON body lets an attacker set protected fields (is_admin, price, balance) that should not be user-controllable.",
+  "fixLines": [
+   "    allowed = ['name', 'description']",
+   "    data = {k: v for k, v in request.json.items() if k in ___}",
+   "    record.update(**data)"
+  ],
+  "slots": [
+   "allowed"
+  ],
+  "tokens": [
+   "allowed",
+   "request.json",
+   "record",
+   "data"
+  ],
+  "fixWhy": "Bind only an explicit allowlist of fields; never map the raw request body onto the model."
+ },
+ {
+  "lang": "Python",
+  "ctx": "what the API leaks on a failed auth attempt",
+  "code": [
+   "user = User.authenticate(request.json['username'], request.json['password'])",
+   "if not user:",
+   "    return jsonify({'error': 'no user in table users_prod'}), 401",
+   "return jsonify({'token': make_token(user)})"
+  ],
+  "vuln": 2,
+  "category": "Information disclosure",
+  "options": [
+   "Information disclosure",
+   "BOLA (IDOR)",
+   "Mass assignment",
+   "SSRF"
+  ],
+  "why": "The error leaks internal details (the DB table name, whether the account exists), helping user enumeration and recon.",
+  "fixLines": [
+   "    return jsonify({'error': '___'}), 401"
+  ],
+  "slots": [
+   "Invalid credentials"
+  ],
+  "tokens": [
+   "Invalid credentials",
+   "no user in table users_prod",
+   "DB error",
+   "User not found"
+  ],
+  "fixWhy": "Return one generic message; never reveal whether the user exists or internal schema details."
+ },
+ {
+  "lang": "Python",
+  "ctx": "the API returns a account object",
+  "code": [
+   "@app.route('/api/account/<int:item_id>')",
+   "def get_account(item_id):",
+   "    record = load_account(item_id)",
+   "    return jsonify(record.__dict__)"
+  ],
+  "vuln": 3,
+  "category": "Excessive data exposure",
+  "options": [
+   "Excessive data exposure",
+   "BOLA (IDOR)",
+   "Mass assignment",
+   "BFLA"
+  ],
+  "why": "Serializing the whole object ships internal/sensitive fields (cost, password_hash, internal_notes) to the client.",
+  "fixLines": [
+   "    return jsonify(___(record))   # explicit response schema"
+  ],
+  "slots": [
+   "public_schema"
+  ],
+  "tokens": [
+   "public_schema",
+   "record.__dict__",
+   "vars",
+   "dict"
+  ],
+  "fixWhy": "Serialize through an explicit response schema exposing only safe fields; never dump __dict__."
+ },
+ {
+  "lang": "Python",
+  "ctx": "an endpoint returns a tickets by id",
   "code": [
    "@app.get(\"/api/tickets/<id>\")",
    "def get(id):",
@@ -34,11 +134,314 @@
  },
  {
   "lang": "Python",
-  "ctx": "an endpoint returns a invoices by id",
+  "ctx": "a FastAPI endpoint validates a JWT",
   "code": [
-   "@app.get(\"/api/invoices/<id>\")",
+   "token = request.headers.get('Authorization', '').replace('Bearer ', '')",
+   "payload = jwt.decode(token, SECRET, algorithms=['HS256', 'none'])",
+   "return jsonify({'user_id': payload['user_id']})"
+  ],
+  "vuln": 1,
+  "category": "Broken authentication",
+  "options": [
+   "Broken authentication",
+   "BOLA (IDOR)",
+   "SSRF",
+   "Mass assignment"
+  ],
+  "why": "Allowing the 'none' algorithm accepts UNSIGNED tokens, so an attacker can forge any payload.",
+  "fixLines": [
+   "payload = jwt.decode(token, SECRET, algorithms=['___'])"
+  ],
+  "slots": [
+   "HS256"
+  ],
+  "tokens": [
+   "HS256",
+   "none",
+   "RS256",
+   "ES256"
+  ],
+  "fixWhy": "Pin the exact expected algorithm; never accept 'none' (it skips signature verification)."
+ },
+ {
+  "lang": "Python",
+  "ctx": "an endpoint serializes a product",
+  "code": [
+   "@app.route('/api/product/<int:item_id>')",
+   "def get_product(item_id):",
+   "    record = load_product(item_id)",
+   "    return jsonify(record.__dict__)"
+  ],
+  "vuln": 3,
+  "category": "Excessive data exposure",
+  "options": [
+   "Excessive data exposure",
+   "BOLA (IDOR)",
+   "Mass assignment",
+   "BFLA"
+  ],
+  "why": "Serializing the whole object ships internal/sensitive fields (cost, password_hash, internal_notes) to the client.",
+  "fixLines": [
+   "    return jsonify(___(record))   # explicit response schema"
+  ],
+  "slots": [
+   "public_schema"
+  ],
+  "tokens": [
+   "public_schema",
+   "record.__dict__",
+   "vars",
+   "dict"
+  ],
+  "fixWhy": "Serialize through an explicit response schema exposing only safe fields; never dump __dict__."
+ },
+ {
+  "lang": "Python",
+  "ctx": "the server fetches a user-supplied URL",
+  "code": [
+   "@app.post('/api/import_profile')",
+   "def import_profile():",
+   "    url = request.json['url']",
+   "    resp = requests.get(url)",
+   "    return {'content': resp.text}"
+  ],
+  "vuln": 3,
+  "category": "SSRF",
+  "options": [
+   "SSRF",
+   "BOLA (IDOR)",
+   "Mass assignment",
+   "Broken authentication"
+  ],
+  "why": "The server fetches any URL the user supplies, so an attacker can reach internal services or the cloud metadata endpoint (169.254.169.254).",
+  "fixLines": [
+   "    host = urlparse(url).hostname",
+   "    if host not in ___:",
+   "        abort(400)",
+   "    resp = requests.get(url)"
+  ],
+  "slots": [
+   "ALLOWED_HOSTS"
+  ],
+  "tokens": [
+   "ALLOWED_HOSTS",
+   "url",
+   "request",
+   "resp"
+  ],
+  "fixWhy": "Allowlist permitted hosts (and block private/link-local ranges); a scheme check alone does NOT stop SSRF."
+ },
+ {
+  "lang": "Python",
+  "ctx": "a FastAPI route decodes a JWT",
+  "code": [
+   "token = request.headers.get('Authorization', '').replace('Bearer ', '')",
+   "payload = jwt.decode(token, options={'verify_signature': False})",
+   "return jsonify({'user_id': payload['user_id']})"
+  ],
+  "vuln": 1,
+  "category": "Broken authentication",
+  "options": [
+   "Broken authentication",
+   "BOLA (IDOR)",
+   "Mass assignment",
+   "SSRF"
+  ],
+  "why": "Disabling signature verification lets an attacker forge a token with any payload.",
+  "fixLines": [
+   "payload = jwt.decode(token, SECRET, algorithms=['HS256'], options={'verify_signature': ___})"
+  ],
+  "slots": [
+   "True"
+  ],
+  "tokens": [
+   "True",
+   "False",
+   "None",
+   "0"
+  ],
+  "fixWhy": "Verify the signature with the key and a pinned algorithm; never disable verification."
+ },
+ {
+  "lang": "Python",
+  "ctx": "the API updates a product from the request body",
+  "code": [
+   "@app.route('/api/product/<int:item_id>', methods=['PUT'])",
+   "def update_product(item_id):",
+   "    record = load_product(item_id)",
+   "    record.update(**request.json)",
+   "    db.session.commit()",
+   "    return jsonify(record.to_dict())"
+  ],
+  "vuln": 3,
+  "category": "Mass assignment",
+  "options": [
+   "Mass assignment",
+   "BOLA (IDOR)",
+   "BFLA",
+   "Broken authentication"
+  ],
+  "why": "Binding the whole JSON body lets an attacker set protected fields (is_admin, price, balance) that should not be user-controllable.",
+  "fixLines": [
+   "    allowed = ['name', 'description']",
+   "    data = {k: v for k, v in request.json.items() if k in ___}",
+   "    record.update(**data)"
+  ],
+  "slots": [
+   "allowed"
+  ],
+  "tokens": [
+   "allowed",
+   "request.json",
+   "record",
+   "data"
+  ],
+  "fixWhy": "Bind only an explicit allowlist of fields; never map the raw request body onto the model."
+ },
+ {
+  "lang": "Python",
+  "ctx": "the server fetches a user-supplied URL",
+  "code": [
+   "@app.post('/api/fetch_webhook')",
+   "def fetch_webhook():",
+   "    url = request.json['url']",
+   "    resp = requests.get(url)",
+   "    return {'content': resp.text}"
+  ],
+  "vuln": 3,
+  "category": "SSRF",
+  "options": [
+   "SSRF",
+   "BOLA (IDOR)",
+   "Mass assignment",
+   "Broken authentication"
+  ],
+  "why": "The server fetches any URL the user supplies, so an attacker can reach internal services or the cloud metadata endpoint (169.254.169.254).",
+  "fixLines": [
+   "    host = urlparse(url).hostname",
+   "    if host not in ___:",
+   "        abort(400)",
+   "    resp = requests.get(url)"
+  ],
+  "slots": [
+   "ALLOWED_HOSTS"
+  ],
+  "tokens": [
+   "ALLOWED_HOSTS",
+   "url",
+   "request",
+   "resp"
+  ],
+  "fixWhy": "Allowlist permitted hosts (and block private/link-local ranges); a scheme check alone does NOT stop SSRF."
+ },
+ {
+  "lang": "Python",
+  "ctx": "an admin endpoint deletes a account by id",
+  "code": [
+   "@app.delete(\"/api/admin/accounts/{item_id}\")",
+   "async def admin_delete(item_id: int, current_user=Depends(get_current_user)):",
+   "    await db.delete_account(item_id)",
+   "    return {\"message\": \"deleted\"}"
+  ],
+  "vuln": 2,
+  "category": "BFLA",
+  "options": [
+   "BFLA",
+   "BOLA (IDOR)",
+   "Mass assignment",
+   "Broken authentication"
+  ],
+  "why": "Any authenticated user can call this admin endpoint — there is no role check, so authentication is mistaken for authorization.",
+  "fixLines": [
+   "    if ___.role != \"admin\":",
+   "        raise HTTPException(403)",
+   "    await db.delete_account(item_id)"
+  ],
+  "slots": [
+   "current_user"
+  ],
+  "tokens": [
+   "current_user",
+   "item_id",
+   "db",
+   "request"
+  ],
+  "fixWhy": "Enforce the required role on every privileged function (function-level authorization)."
+ },
+ {
+  "lang": "Python",
+  "ctx": "an admin endpoint deletes a product by id",
+  "code": [
+   "@app.delete(\"/api/admin/products/{item_id}\")",
+   "async def admin_delete(item_id: int, current_user=Depends(get_current_user)):",
+   "    await db.delete_product(item_id)",
+   "    return {\"message\": \"deleted\"}"
+  ],
+  "vuln": 2,
+  "category": "BFLA",
+  "options": [
+   "BFLA",
+   "BOLA (IDOR)",
+   "Mass assignment",
+   "Broken authentication"
+  ],
+  "why": "Any authenticated user can call this admin endpoint — there is no role check, so authentication is mistaken for authorization.",
+  "fixLines": [
+   "    if ___.role != \"admin\":",
+   "        raise HTTPException(403)",
+   "    await db.delete_product(item_id)"
+  ],
+  "slots": [
+   "current_user"
+  ],
+  "tokens": [
+   "current_user",
+   "item_id",
+   "db",
+   "request"
+  ],
+  "fixWhy": "Enforce the required role on every privileged function (function-level authorization)."
+ },
+ {
+  "lang": "Python",
+  "ctx": "the auth endpoint accepts unlimited attempts",
+  "code": [
+   "@app.route('/api/login', methods=['POST'])",
+   "def login():",
+   "    user = User.authenticate(request.json['email'], request.json['password'])",
+   "    return {'token': make_token(user)} if user else ({'error': 'bad creds'}, 401)"
+  ],
+  "vuln": 0,
+  "category": "Missing rate limiting",
+  "options": [
+   "Missing rate limiting",
+   "BOLA (IDOR)",
+   "SSRF",
+   "Mass assignment"
+  ],
+  "why": "With no throttle, an attacker can brute-force or credential-stuff the login endpoint without limit.",
+  "fixLines": [
+   "@___.limit('5 per minute')",
+   "@app.route('/api/login', methods=['POST'])"
+  ],
+  "slots": [
+   "limiter"
+  ],
+  "tokens": [
+   "limiter",
+   "app",
+   "request",
+   "flask"
+  ],
+  "fixWhy": "Rate-limit auth endpoints (e.g. flask-limiter @limiter.limit) and lock out repeated failures."
+ },
+ {
+  "lang": "Python",
+  "ctx": "the API reads a documents given its id",
+  "code": [
+   "@app.get(\"/api/documents/<id>\")",
    "def get(id):",
-   "    return db.invoices(id)"
+   "    return db.documents(id)"
   ],
   "vuln": 2,
   "category": "BOLA (IDOR)",
@@ -48,9 +451,9 @@
    "Mass assignment",
    "SSRF"
   ],
-  "why": "Any authenticated user can read someone else's invoices by changing the id — the ownership check is missing.",
+  "why": "Any authenticated user can read someone else's documents by changing the id — the ownership check is missing.",
   "fixLines": [
-   "row = db.invoices(id)",
+   "row = db.documents(id)",
    "if row.owner != ___.id: abort(403)",
    "return row"
   ],
@@ -67,7 +470,111 @@
  },
  {
   "lang": "Python",
-  "ctx": "an endpoint returns a orders by id",
+  "ctx": "a privileged action on a invoice",
+  "code": [
+   "@app.delete(\"/api/admin/invoices/{item_id}\")",
+   "async def admin_delete(item_id: int, current_user=Depends(get_current_user)):",
+   "    await db.delete_invoice(item_id)",
+   "    return {\"message\": \"deleted\"}"
+  ],
+  "vuln": 2,
+  "category": "BFLA",
+  "options": [
+   "BFLA",
+   "BOLA (IDOR)",
+   "Mass assignment",
+   "Broken authentication"
+  ],
+  "why": "Any authenticated user can call this admin endpoint — there is no role check, so authentication is mistaken for authorization.",
+  "fixLines": [
+   "    if ___.role != \"admin\":",
+   "        raise HTTPException(403)",
+   "    await db.delete_invoice(item_id)"
+  ],
+  "slots": [
+   "current_user"
+  ],
+  "tokens": [
+   "current_user",
+   "item_id",
+   "db",
+   "request"
+  ],
+  "fixWhy": "Enforce the required role on every privileged function (function-level authorization)."
+ },
+ {
+  "lang": "Python",
+  "ctx": "the server fetches a user-supplied URL",
+  "code": [
+   "@app.post('/api/load_preview')",
+   "def load_preview():",
+   "    url = request.json['url']",
+   "    resp = requests.get(url)",
+   "    return {'content': resp.text}"
+  ],
+  "vuln": 3,
+  "category": "SSRF",
+  "options": [
+   "SSRF",
+   "BOLA (IDOR)",
+   "Mass assignment",
+   "Broken authentication"
+  ],
+  "why": "The server fetches any URL the user supplies, so an attacker can reach internal services or the cloud metadata endpoint (169.254.169.254).",
+  "fixLines": [
+   "    host = urlparse(url).hostname",
+   "    if host not in ___:",
+   "        abort(400)",
+   "    resp = requests.get(url)"
+  ],
+  "slots": [
+   "ALLOWED_HOSTS"
+  ],
+  "tokens": [
+   "ALLOWED_HOSTS",
+   "url",
+   "request",
+   "resp"
+  ],
+  "fixWhy": "Allowlist permitted hosts (and block private/link-local ranges); a scheme check alone does NOT stop SSRF."
+ },
+ {
+  "lang": "Python",
+  "ctx": "a privileged action on a user",
+  "code": [
+   "@app.delete(\"/api/admin/users/{item_id}\")",
+   "async def admin_delete(item_id: int, current_user=Depends(get_current_user)):",
+   "    await db.delete_user(item_id)",
+   "    return {\"message\": \"deleted\"}"
+  ],
+  "vuln": 2,
+  "category": "BFLA",
+  "options": [
+   "BFLA",
+   "BOLA (IDOR)",
+   "Mass assignment",
+   "Broken authentication"
+  ],
+  "why": "Any authenticated user can call this admin endpoint — there is no role check, so authentication is mistaken for authorization.",
+  "fixLines": [
+   "    if ___.role != \"admin\":",
+   "        raise HTTPException(403)",
+   "    await db.delete_user(item_id)"
+  ],
+  "slots": [
+   "current_user"
+  ],
+  "tokens": [
+   "current_user",
+   "item_id",
+   "db",
+   "request"
+  ],
+  "fixWhy": "Enforce the required role on every privileged function (function-level authorization)."
+ },
+ {
+  "lang": "Python",
+  "ctx": "the API reads a orders given its id",
   "code": [
    "@app.get(\"/api/orders/<id>\")",
    "def get(id):",
@@ -100,11 +607,111 @@
  },
  {
   "lang": "Python",
-  "ctx": "an endpoint returns a documents by id",
+  "ctx": "an endpoint serializes a order",
   "code": [
-   "@app.get(\"/api/documents/<id>\")",
+   "@app.route('/api/order/<int:item_id>')",
+   "def get_order(item_id):",
+   "    record = load_order(item_id)",
+   "    return jsonify(record.__dict__)"
+  ],
+  "vuln": 3,
+  "category": "Excessive data exposure",
+  "options": [
+   "Excessive data exposure",
+   "BOLA (IDOR)",
+   "Mass assignment",
+   "BFLA"
+  ],
+  "why": "Serializing the whole object ships internal/sensitive fields (cost, password_hash, internal_notes) to the client.",
+  "fixLines": [
+   "    return jsonify(___(record))   # explicit response schema"
+  ],
+  "slots": [
+   "public_schema"
+  ],
+  "tokens": [
+   "public_schema",
+   "record.__dict__",
+   "vars",
+   "dict"
+  ],
+  "fixWhy": "Serialize through an explicit response schema exposing only safe fields; never dump __dict__."
+ },
+ {
+  "lang": "Python",
+  "ctx": "the server fetches a user-supplied URL",
+  "code": [
+   "@app.post('/api/fetch_avatar')",
+   "def fetch_avatar():",
+   "    url = request.json['url']",
+   "    resp = requests.get(url)",
+   "    return {'content': resp.text}"
+  ],
+  "vuln": 3,
+  "category": "SSRF",
+  "options": [
+   "SSRF",
+   "BOLA (IDOR)",
+   "Mass assignment",
+   "Broken authentication"
+  ],
+  "why": "The server fetches any URL the user supplies, so an attacker can reach internal services or the cloud metadata endpoint (169.254.169.254).",
+  "fixLines": [
+   "    host = urlparse(url).hostname",
+   "    if host not in ___:",
+   "        abort(400)",
+   "    resp = requests.get(url)"
+  ],
+  "slots": [
+   "ALLOWED_HOSTS"
+  ],
+  "tokens": [
+   "ALLOWED_HOSTS",
+   "url",
+   "request",
+   "resp"
+  ],
+  "fixWhy": "Allowlist permitted hosts (and block private/link-local ranges); a scheme check alone does NOT stop SSRF."
+ },
+ {
+  "lang": "Python",
+  "ctx": "an endpoint serializes a user",
+  "code": [
+   "@app.route('/api/user/<int:item_id>')",
+   "def get_user(item_id):",
+   "    record = load_user(item_id)",
+   "    return jsonify(record.__dict__)"
+  ],
+  "vuln": 3,
+  "category": "Excessive data exposure",
+  "options": [
+   "Excessive data exposure",
+   "BOLA (IDOR)",
+   "Mass assignment",
+   "BFLA"
+  ],
+  "why": "Serializing the whole object ships internal/sensitive fields (cost, password_hash, internal_notes) to the client.",
+  "fixLines": [
+   "    return jsonify(___(record))   # explicit response schema"
+  ],
+  "slots": [
+   "public_schema"
+  ],
+  "tokens": [
+   "public_schema",
+   "record.__dict__",
+   "vars",
+   "dict"
+  ],
+  "fixWhy": "Serialize through an explicit response schema exposing only safe fields; never dump __dict__."
+ },
+ {
+  "lang": "Python",
+  "ctx": "the API reads a invoices given its id",
+  "code": [
+   "@app.get(\"/api/invoices/<id>\")",
    "def get(id):",
-   "    return db.documents(id)"
+   "    return db.invoices(id)"
   ],
   "vuln": 2,
   "category": "BOLA (IDOR)",
@@ -114,9 +721,9 @@
    "Mass assignment",
    "SSRF"
   ],
-  "why": "Any authenticated user can read someone else's documents by changing the id — the ownership check is missing.",
+  "why": "Any authenticated user can read someone else's invoices by changing the id — the ownership check is missing.",
   "fixLines": [
-   "row = db.documents(id)",
+   "row = db.invoices(id)",
    "if row.owner != ___.id: abort(403)",
    "return row"
   ],
@@ -130,5 +737,77 @@
    "request"
   ],
   "fixWhy": "Verify the resource belongs to the caller (BOLA = #1 API risk)."
+ },
+ {
+  "lang": "Python",
+  "ctx": "a PUT endpoint updates a article",
+  "code": [
+   "@app.route('/api/article/<int:item_id>', methods=['PUT'])",
+   "def update_article(item_id):",
+   "    record = load_article(item_id)",
+   "    record.update(**request.json)",
+   "    db.session.commit()",
+   "    return jsonify(record.to_dict())"
+  ],
+  "vuln": 3,
+  "category": "Mass assignment",
+  "options": [
+   "Mass assignment",
+   "BOLA (IDOR)",
+   "BFLA",
+   "Broken authentication"
+  ],
+  "why": "Binding the whole JSON body lets an attacker set protected fields (is_admin, price, balance) that should not be user-controllable.",
+  "fixLines": [
+   "    allowed = ['name', 'description']",
+   "    data = {k: v for k, v in request.json.items() if k in ___}",
+   "    record.update(**data)"
+  ],
+  "slots": [
+   "allowed"
+  ],
+  "tokens": [
+   "allowed",
+   "request.json",
+   "record",
+   "data"
+  ],
+  "fixWhy": "Bind only an explicit allowlist of fields; never map the raw request body onto the model."
+ },
+ {
+  "lang": "Python",
+  "ctx": "the API updates a profile from the request body",
+  "code": [
+   "@app.route('/api/profile/<int:item_id>', methods=['PUT'])",
+   "def update_profile(item_id):",
+   "    record = load_profile(item_id)",
+   "    record.update(**request.json)",
+   "    db.session.commit()",
+   "    return jsonify(record.to_dict())"
+  ],
+  "vuln": 3,
+  "category": "Mass assignment",
+  "options": [
+   "Mass assignment",
+   "BOLA (IDOR)",
+   "BFLA",
+   "Broken authentication"
+  ],
+  "why": "Binding the whole JSON body lets an attacker set protected fields (is_admin, price, balance) that should not be user-controllable.",
+  "fixLines": [
+   "    allowed = ['name', 'description']",
+   "    data = {k: v for k, v in request.json.items() if k in ___}",
+   "    record.update(**data)"
+  ],
+  "slots": [
+   "allowed"
+  ],
+  "tokens": [
+   "allowed",
+   "request.json",
+   "record",
+   "data"
+  ],
+  "fixWhy": "Bind only an explicit allowlist of fields; never map the raw request body onto the model."
  }
 ]

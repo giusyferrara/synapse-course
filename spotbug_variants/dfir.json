@@ -1,93 +1,63 @@
 [
  {
   "lang": "acquisition",
-  "ctx": "order of collection during live acquisition of SRV-DC1",
+  "ctx": "acquire /dev/sdb and record an integrity hash",
   "code": [
-   "image the SRV-DC1 disk first, then capture RAM",
-   "(RAM is far more volatile than disk)"
+   "dd if=/dev/sdb of=evidence.dd bs=4096",
+   "# ready for analysis"
   ],
   "vuln": 0,
-  "category": "Wrong approach",
+  "category": "Missing integrity verification",
   "options": [
-   "Wrong approach",
+   "Missing integrity verification",
    "Wrong tool",
    "Wrong value",
-   "Wrong field"
+   "Wrong approach"
   ],
-  "why": "The order of volatility says collect what disappears first.",
+  "why": "Without hashing the source and the image, you cannot prove the copy was not altered.",
   "fixLines": [
-   "capture ___ first (order of volatility)"
+   "dd if=/dev/sdb of=evidence.dd bs=4096 && ___ /dev/sdb evidence.dd"
   ],
   "slots": [
-   "memory"
+   "sha256sum"
   ],
   "tokens": [
-   "memory",
-   "the disk",
-   "the logs",
-   "the backups"
+   "sha256sum",
+   "md5sum",
+   "file",
+   "ls"
   ],
-  "fixWhy": "Order of volatility: CPU/cache -> RAM -> network state -> disk -> archives. RAM dies on power-off."
+  "fixWhy": "Hash both the source and the image (SHA-256) and compare; matching hashes prove integrity."
  },
  {
   "lang": "acquisition",
-  "ctx": "on compromised LAPTOP-07: what do you collect first",
+  "ctx": "create a court-admissible image of /dev/sdc",
   "code": [
-   "image the LAPTOP-07 disk first, then capture RAM",
-   "(RAM is far more volatile than disk)"
+   "dd if=/dev/sdc of=evidence.dd bs=4096",
+   "# imaging done - but is it verifiable?"
   ],
   "vuln": 0,
-  "category": "Wrong approach",
+  "category": "Missing integrity verification",
   "options": [
-   "Wrong approach",
+   "Missing integrity verification",
    "Wrong tool",
    "Wrong value",
-   "Wrong field"
+   "Wrong approach"
   ],
-  "why": "The order of volatility says collect what disappears first.",
+  "why": "Plain dd computes no hash, so the image cannot be proven unaltered for court.",
   "fixLines": [
-   "capture ___ first (order of volatility)"
+   "___ if=/dev/sdc of=evidence.dd bs=4096 hash=sha256"
   ],
   "slots": [
-   "memory"
+   "dc3dd"
   ],
   "tokens": [
-   "memory",
-   "the disk",
-   "the logs",
-   "the backups"
+   "dc3dd",
+   "dd",
+   "cat",
+   "cp"
   ],
-  "fixWhy": "Order of volatility: CPU/cache -> RAM -> network state -> disk -> archives. RAM dies on power-off."
- },
- {
-  "lang": "acquisition",
-  "ctx": "order of collection during live acquisition of HOST-22",
-  "code": [
-   "image the HOST-22 disk first, then capture RAM",
-   "(RAM is far more volatile than disk)"
-  ],
-  "vuln": 0,
-  "category": "Wrong approach",
-  "options": [
-   "Wrong approach",
-   "Wrong tool",
-   "Wrong value",
-   "Wrong field"
-  ],
-  "why": "The order of volatility says collect what disappears first.",
-  "fixLines": [
-   "capture ___ first (order of volatility)"
-  ],
-  "slots": [
-   "memory"
-  ],
-  "tokens": [
-   "memory",
-   "the disk",
-   "the logs",
-   "the backups"
-  ],
-  "fixWhy": "Order of volatility: CPU/cache -> RAM -> network state -> disk -> archives. RAM dies on power-off."
+  "fixWhy": "dc3dd with hash=sha256 hashes during acquisition; ewfacquire (E01) is another forensic option."
  },
  {
   "lang": "acquisition",
@@ -118,5 +88,639 @@
    "the backups"
   ],
   "fixWhy": "Order of volatility: CPU/cache -> RAM -> network state -> disk -> archives. RAM dies on power-off."
+ },
+ {
+  "lang": "acquisition",
+  "ctx": "create a court-admissible image of /dev/nvme0n1",
+  "code": [
+   "dd if=/dev/nvme0n1 of=evidence.dd bs=4096",
+   "# imaging done - but is it verifiable?"
+  ],
+  "vuln": 0,
+  "category": "Missing integrity verification",
+  "options": [
+   "Missing integrity verification",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "Plain dd computes no hash, so the image cannot be proven unaltered for court.",
+  "fixLines": [
+   "___ if=/dev/nvme0n1 of=evidence.dd bs=4096 hash=sha256"
+  ],
+  "slots": [
+   "dc3dd"
+  ],
+  "tokens": [
+   "dc3dd",
+   "dd",
+   "cat",
+   "cp"
+  ],
+  "fixWhy": "dc3dd with hash=sha256 hashes during acquisition; ewfacquire (E01) is another forensic option."
+ },
+ {
+  "lang": "plaso",
+  "ctx": "build a super-timeline from the image C.vhdx",
+  "code": [
+   "psort.py -o l2tcsv -w timeline.csv timeline.plaso",
+   "# ...but timeline.plaso has not been created yet"
+  ],
+  "vuln": 0,
+  "category": "Wrong tool",
+  "options": [
+   "Wrong tool",
+   "Wrong order",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "psort.py only PROCESSES an existing plaso storage file; nothing has extracted the events yet.",
+  "fixLines": [
+   "___ timeline.plaso C.vhdx",
+   "psort.py -o l2tcsv -w timeline.csv timeline.plaso"
+  ],
+  "slots": [
+   "log2timeline.py"
+  ],
+  "tokens": [
+   "log2timeline.py",
+   "psort.py",
+   "vol.py",
+   "MFTECmd.exe"
+  ],
+  "fixWhy": "log2timeline.py <storage> <source> extracts events into the plaso file; psort.py then formats it."
+ },
+ {
+  "lang": "acquisition",
+  "ctx": "image /dev/nvme0n1 and prove the copy is intact",
+  "code": [
+   "dd if=/dev/nvme0n1 of=evidence.dd bs=4096",
+   "# ready for analysis"
+  ],
+  "vuln": 0,
+  "category": "Missing integrity verification",
+  "options": [
+   "Missing integrity verification",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "Without hashing the source and the image, you cannot prove the copy was not altered.",
+  "fixLines": [
+   "dd if=/dev/nvme0n1 of=evidence.dd bs=4096 && ___ /dev/nvme0n1 evidence.dd"
+  ],
+  "slots": [
+   "sha256sum"
+  ],
+  "tokens": [
+   "sha256sum",
+   "md5sum",
+   "file",
+   "ls"
+  ],
+  "fixWhy": "Hash both the source and the image (SHA-256) and compare; matching hashes prove integrity."
+ },
+ {
+  "lang": "DFIR",
+  "ctx": "find execution evidence for dropper.exe",
+  "code": [
+   "MFTECmd.exe -f C:\\$MFT --csv C:\\analysis",
+   "# trying to prove dropper.exe was executed"
+  ],
+  "vuln": 0,
+  "category": "Wrong artifact",
+  "options": [
+   "Wrong artifact",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "The $MFT records file creation/modification, not execution; it cannot prove a program ran.",
+  "fixLines": [
+   "___ -d C:\\Windows\\Prefetch --csv C:\\analysis"
+  ],
+  "slots": [
+   "PECmd.exe"
+  ],
+  "tokens": [
+   "PECmd.exe",
+   "MFTECmd.exe",
+   "EvtxECmd.exe",
+   "RegRipper"
+  ],
+  "fixWhy": "Prefetch (parsed by PECmd) holds run count + last-run times - the execution evidence; also ShimCache/AmCache."
+ },
+ {
+  "lang": "Volatility3",
+  "ctx": "recover the malware's C2 connections from WEB-SRV's memory",
+  "code": [
+   "vol.py -f host.lime windows.pslist",
+   "# goal: find the malware's C2 network connections"
+  ],
+  "vuln": 0,
+  "category": "Wrong plugin",
+  "options": [
+   "Wrong plugin",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "windows.pslist lists processes, not connections, so it cannot reveal the C2 endpoints.",
+  "fixLines": [
+   "vol.py -f host.lime ___"
+  ],
+  "slots": [
+   "windows.netscan"
+  ],
+  "tokens": [
+   "windows.netscan",
+   "windows.pslist",
+   "windows.psscan",
+   "windows.filescan"
+  ],
+  "fixWhy": "windows.netscan recovers TCP/UDP endpoints and their owning PIDs from the memory image."
+ },
+ {
+  "lang": "Volatility3",
+  "ctx": "recover the malware's C2 connections from WS-05's memory",
+  "code": [
+   "vol.py -f dump.mem windows.pslist",
+   "# goal: find the malware's C2 network connections"
+  ],
+  "vuln": 0,
+  "category": "Wrong plugin",
+  "options": [
+   "Wrong plugin",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "windows.pslist lists processes, not connections, so it cannot reveal the C2 endpoints.",
+  "fixLines": [
+   "vol.py -f dump.mem ___"
+  ],
+  "slots": [
+   "windows.netscan"
+  ],
+  "tokens": [
+   "windows.netscan",
+   "windows.pslist",
+   "windows.psscan",
+   "windows.filescan"
+  ],
+  "fixWhy": "windows.netscan recovers TCP/UDP endpoints and their owning PIDs from the memory image."
+ },
+ {
+  "lang": "plaso",
+  "ctx": "extract timeline events from /evidence/ into a plaso file",
+  "code": [
+   "psort.py -o l2tcsv -w timeline.csv timeline.plaso",
+   "# ...but timeline.plaso has not been created yet"
+  ],
+  "vuln": 0,
+  "category": "Wrong tool",
+  "options": [
+   "Wrong tool",
+   "Wrong order",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "psort.py only PROCESSES an existing plaso storage file; nothing has extracted the events yet.",
+  "fixLines": [
+   "___ timeline.plaso /evidence/",
+   "psort.py -o l2tcsv -w timeline.csv timeline.plaso"
+  ],
+  "slots": [
+   "log2timeline.py"
+  ],
+  "tokens": [
+   "log2timeline.py",
+   "psort.py",
+   "vol.py",
+   "MFTECmd.exe"
+  ],
+  "fixWhy": "log2timeline.py <storage> <source> extracts events into the plaso file; psort.py then formats it."
+ },
+ {
+  "lang": "DFIR",
+  "ctx": "find execution evidence for mimikatz.exe",
+  "code": [
+   "MFTECmd.exe -f C:\\$MFT --csv C:\\analysis",
+   "# trying to prove mimikatz.exe was executed"
+  ],
+  "vuln": 0,
+  "category": "Wrong artifact",
+  "options": [
+   "Wrong artifact",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "The $MFT records file creation/modification, not execution; it cannot prove a program ran.",
+  "fixLines": [
+   "___ -d C:\\Windows\\Prefetch --csv C:\\analysis"
+  ],
+  "slots": [
+   "PECmd.exe"
+  ],
+  "tokens": [
+   "PECmd.exe",
+   "MFTECmd.exe",
+   "EvtxECmd.exe",
+   "RegRipper"
+  ],
+  "fixWhy": "Prefetch (parsed by PECmd) holds run count + last-run times - the execution evidence; also ShimCache/AmCache."
+ },
+ {
+  "lang": "Volatility3",
+  "ctx": "list processes from host.lime, including unlinked ones",
+  "code": [
+   "vol.py -f host.lime windows.pslist",
+   "# a rootkit may have unlinked its process to hide"
+  ],
+  "vuln": 0,
+  "category": "Wrong plugin",
+  "options": [
+   "Wrong plugin",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "windows.pslist walks the active process list, which a rootkit can unlink from to stay hidden.",
+  "fixLines": [
+   "vol.py -f host.lime ___"
+  ],
+  "slots": [
+   "windows.psscan"
+  ],
+  "tokens": [
+   "windows.psscan",
+   "windows.pslist",
+   "windows.netscan",
+   "windows.malfind"
+  ],
+  "fixWhy": "windows.psscan pool-scans memory for EPROCESS structures, revealing unlinked/hidden processes (DKOM)."
+ },
+ {
+  "lang": "plaso",
+  "ctx": "extract timeline events from disk.raw into a plaso file",
+  "code": [
+   "psort.py -o l2tcsv -w timeline.csv timeline.plaso",
+   "# ...but timeline.plaso has not been created yet"
+  ],
+  "vuln": 0,
+  "category": "Wrong tool",
+  "options": [
+   "Wrong tool",
+   "Wrong order",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "psort.py only PROCESSES an existing plaso storage file; nothing has extracted the events yet.",
+  "fixLines": [
+   "___ timeline.plaso disk.raw",
+   "psort.py -o l2tcsv -w timeline.csv timeline.plaso"
+  ],
+  "slots": [
+   "log2timeline.py"
+  ],
+  "tokens": [
+   "log2timeline.py",
+   "psort.py",
+   "vol.py",
+   "MFTECmd.exe"
+  ],
+  "fixWhy": "log2timeline.py <storage> <source> extracts events into the plaso file; psort.py then formats it."
+ },
+ {
+  "lang": "plaso",
+  "ctx": "extract timeline events from image.dd into a plaso file",
+  "code": [
+   "psort.py -o l2tcsv -w timeline.csv timeline.plaso",
+   "# ...but timeline.plaso has not been created yet"
+  ],
+  "vuln": 0,
+  "category": "Wrong tool",
+  "options": [
+   "Wrong tool",
+   "Wrong order",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "psort.py only PROCESSES an existing plaso storage file; nothing has extracted the events yet.",
+  "fixLines": [
+   "___ timeline.plaso image.dd",
+   "psort.py -o l2tcsv -w timeline.csv timeline.plaso"
+  ],
+  "slots": [
+   "log2timeline.py"
+  ],
+  "tokens": [
+   "log2timeline.py",
+   "psort.py",
+   "vol.py",
+   "MFTECmd.exe"
+  ],
+  "fixWhy": "log2timeline.py <storage> <source> extracts events into the plaso file; psort.py then formats it."
+ },
+ {
+  "lang": "acquisition",
+  "ctx": "order of collection during live acquisition of LAPTOP-07",
+  "code": [
+   "image the LAPTOP-07 disk first, then capture RAM",
+   "(RAM is far more volatile than disk)"
+  ],
+  "vuln": 0,
+  "category": "Wrong approach",
+  "options": [
+   "Wrong approach",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong field"
+  ],
+  "why": "The order of volatility says collect what disappears first.",
+  "fixLines": [
+   "capture ___ first (order of volatility)"
+  ],
+  "slots": [
+   "memory"
+  ],
+  "tokens": [
+   "memory",
+   "the disk",
+   "the logs",
+   "the backups"
+  ],
+  "fixWhy": "Order of volatility: CPU/cache -> RAM -> network state -> disk -> archives. RAM dies on power-off."
+ },
+ {
+  "lang": "DFIR",
+  "ctx": "find execution evidence for suspicious.exe",
+  "code": [
+   "MFTECmd.exe -f C:\\$MFT --csv C:\\analysis",
+   "# trying to prove suspicious.exe was executed"
+  ],
+  "vuln": 0,
+  "category": "Wrong artifact",
+  "options": [
+   "Wrong artifact",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "The $MFT records file creation/modification, not execution; it cannot prove a program ran.",
+  "fixLines": [
+   "___ -d C:\\Windows\\Prefetch --csv C:\\analysis"
+  ],
+  "slots": [
+   "PECmd.exe"
+  ],
+  "tokens": [
+   "PECmd.exe",
+   "MFTECmd.exe",
+   "EvtxECmd.exe",
+   "RegRipper"
+  ],
+  "fixWhy": "Prefetch (parsed by PECmd) holds run count + last-run times - the execution evidence; also ShimCache/AmCache."
+ },
+ {
+  "lang": "Volatility3",
+  "ctx": "hunt rootkit-hidden processes in SRV-DB's memory image",
+  "code": [
+   "vol.py -f memory.dmp windows.pslist",
+   "# a rootkit may have unlinked its process to hide"
+  ],
+  "vuln": 0,
+  "category": "Wrong plugin",
+  "options": [
+   "Wrong plugin",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "windows.pslist walks the active process list, which a rootkit can unlink from to stay hidden.",
+  "fixLines": [
+   "vol.py -f memory.dmp ___"
+  ],
+  "slots": [
+   "windows.psscan"
+  ],
+  "tokens": [
+   "windows.psscan",
+   "windows.pslist",
+   "windows.netscan",
+   "windows.malfind"
+  ],
+  "fixWhy": "windows.psscan pool-scans memory for EPROCESS structures, revealing unlinked/hidden processes (DKOM)."
+ },
+ {
+  "lang": "DFIR",
+  "ctx": "find execution evidence for psexec.exe",
+  "code": [
+   "MFTECmd.exe -f C:\\$MFT --csv C:\\analysis",
+   "# trying to prove psexec.exe was executed"
+  ],
+  "vuln": 0,
+  "category": "Wrong artifact",
+  "options": [
+   "Wrong artifact",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "The $MFT records file creation/modification, not execution; it cannot prove a program ran.",
+  "fixLines": [
+   "___ -d C:\\Windows\\Prefetch --csv C:\\analysis"
+  ],
+  "slots": [
+   "PECmd.exe"
+  ],
+  "tokens": [
+   "PECmd.exe",
+   "MFTECmd.exe",
+   "EvtxECmd.exe",
+   "RegRipper"
+  ],
+  "fixWhy": "Prefetch (parsed by PECmd) holds run count + last-run times - the execution evidence; also ShimCache/AmCache."
+ },
+ {
+  "lang": "Volatility3",
+  "ctx": "find network connections in the dump mem.raw",
+  "code": [
+   "vol.py -f mem.raw windows.pslist",
+   "# goal: find the malware's C2 network connections"
+  ],
+  "vuln": 0,
+  "category": "Wrong plugin",
+  "options": [
+   "Wrong plugin",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "windows.pslist lists processes, not connections, so it cannot reveal the C2 endpoints.",
+  "fixLines": [
+   "vol.py -f mem.raw ___"
+  ],
+  "slots": [
+   "windows.netscan"
+  ],
+  "tokens": [
+   "windows.netscan",
+   "windows.pslist",
+   "windows.psscan",
+   "windows.filescan"
+  ],
+  "fixWhy": "windows.netscan recovers TCP/UDP endpoints and their owning PIDs from the memory image."
+ },
+ {
+  "lang": "acquisition",
+  "ctx": "on compromised SRV-DC1: what do you collect first",
+  "code": [
+   "image the SRV-DC1 disk first, then capture RAM",
+   "(RAM is far more volatile than disk)"
+  ],
+  "vuln": 0,
+  "category": "Wrong approach",
+  "options": [
+   "Wrong approach",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong field"
+  ],
+  "why": "The order of volatility says collect what disappears first.",
+  "fixLines": [
+   "capture ___ first (order of volatility)"
+  ],
+  "slots": [
+   "memory"
+  ],
+  "tokens": [
+   "memory",
+   "the disk",
+   "the logs",
+   "the backups"
+  ],
+  "fixWhy": "Order of volatility: CPU/cache -> RAM -> network state -> disk -> archives. RAM dies on power-off."
+ },
+ {
+  "lang": "acquisition",
+  "ctx": "forensically image /dev/sdb with integrity hashing",
+  "code": [
+   "dd if=/dev/sdb of=evidence.dd bs=4096",
+   "# imaging done - but is it verifiable?"
+  ],
+  "vuln": 0,
+  "category": "Missing integrity verification",
+  "options": [
+   "Missing integrity verification",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "Plain dd computes no hash, so the image cannot be proven unaltered for court.",
+  "fixLines": [
+   "___ if=/dev/sdb of=evidence.dd bs=4096 hash=sha256"
+  ],
+  "slots": [
+   "dc3dd"
+  ],
+  "tokens": [
+   "dc3dd",
+   "dd",
+   "cat",
+   "cp"
+  ],
+  "fixWhy": "dc3dd with hash=sha256 hashes during acquisition; ewfacquire (E01) is another forensic option."
+ },
+ {
+  "lang": "Volatility3",
+  "ctx": "recover the malware's C2 connections from WS-05's memory",
+  "code": [
+   "vol.py -f memory.dmp windows.pslist",
+   "# goal: find the malware's C2 network connections"
+  ],
+  "vuln": 0,
+  "category": "Wrong plugin",
+  "options": [
+   "Wrong plugin",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "windows.pslist lists processes, not connections, so it cannot reveal the C2 endpoints.",
+  "fixLines": [
+   "vol.py -f memory.dmp ___"
+  ],
+  "slots": [
+   "windows.netscan"
+  ],
+  "tokens": [
+   "windows.netscan",
+   "windows.pslist",
+   "windows.psscan",
+   "windows.filescan"
+  ],
+  "fixWhy": "windows.netscan recovers TCP/UDP endpoints and their owning PIDs from the memory image."
+ },
+ {
+  "lang": "PowerShell",
+  "ctx": "search Windows-PowerShell.evtx for a specific Event ID",
+  "code": [
+   "grep 4625 Windows-PowerShell.evtx",
+   "# .evtx is a binary event-log file"
+  ],
+  "vuln": 0,
+  "category": "Wrong tool",
+  "options": [
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach",
+   "Wrong field"
+  ],
+  "why": "EVTX is a binary format; grep cannot parse it and will miss or garble events.",
+  "fixLines": [
+   "___ -Path Windows-PowerShell.evtx -FilterXPath \"*[System[EventID=4625]]\""
+  ],
+  "slots": [
+   "Get-WinEvent"
+  ],
+  "tokens": [
+   "Get-WinEvent",
+   "grep",
+   "strings",
+   "cat"
+  ],
+  "fixWhy": "Get-WinEvent parses EVTX and filters by Event ID (4625 = failed logon); EvtxECmd --csv is the Zimmerman alternative."
+ },
+ {
+  "lang": "Volatility3",
+  "ctx": "hunt rootkit-hidden processes in LAPTOP-12's memory image",
+  "code": [
+   "vol.py -f mem.raw windows.pslist",
+   "# a rootkit may have unlinked its process to hide"
+  ],
+  "vuln": 0,
+  "category": "Wrong plugin",
+  "options": [
+   "Wrong plugin",
+   "Wrong tool",
+   "Wrong value",
+   "Wrong approach"
+  ],
+  "why": "windows.pslist walks the active process list, which a rootkit can unlink from to stay hidden.",
+  "fixLines": [
+   "vol.py -f mem.raw ___"
+  ],
+  "slots": [
+   "windows.psscan"
+  ],
+  "tokens": [
+   "windows.psscan",
+   "windows.pslist",
+   "windows.netscan",
+   "windows.malfind"
+  ],
+  "fixWhy": "windows.psscan pool-scans memory for EPROCESS structures, revealing unlinked/hidden processes (DKOM)."
  }
 ]

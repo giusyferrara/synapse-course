@@ -1,5 +1,689 @@
 [
  {
+  "lang": "Kotlin",
+  "ctx": "a WebView showing https://partner.example.com",
+  "code": [
+   "webView.settings.javaScriptEnabled = true",
+   "webView.settings.allowFileAccessFromFileURLs = true",
+   "webView.loadUrl(\"https://partner.example.com\")"
+  ],
+  "vuln": 1,
+  "category": "Insecure WebView",
+  "options": [
+   "Insecure WebView",
+   "Weak crypto",
+   "Exported component",
+   "Insecure storage"
+  ],
+  "why": "allowFileAccessFromFileURLs lets JavaScript in loaded content read local files via file:// URLs.",
+  "fixLines": [
+   "webView.settings.allowFileAccessFromFileURLs = ___"
+  ],
+  "slots": [
+   "false"
+  ],
+  "tokens": [
+   "false",
+   "true",
+   "null",
+   "1"
+  ],
+  "fixWhy": "Disable file-URL JS access (and AllowUniversalAccessFromFileURLs) for any WebView showing remote content."
+ },
+ {
+  "lang": "Java",
+  "ctx": "debugging the auth flow",
+  "code": [
+   "String authToken = generateAuthToken(user, pass);",
+   "Log.d(\"Auth\", \"Generated token: \" + authToken);",
+   "saveTokenToPrefs(authToken);"
+  ],
+  "vuln": 1,
+  "category": "Sensitive data in logs",
+  "options": [
+   "Sensitive data in logs",
+   "Insecure storage",
+   "Exported component",
+   "Weak crypto"
+  ],
+  "why": "Tokens written with Log.d land in logcat, readable via adb or by apps holding READ_LOGS.",
+  "fixLines": [
+   "Log.d(\"Auth\", \"token issued for user: \" + ___);"
+  ],
+  "slots": [
+   "user"
+  ],
+  "tokens": [
+   "user",
+   "authToken",
+   "pass",
+   "sessionId"
+  ],
+  "fixWhy": "Log only non-sensitive identifiers; never log tokens/passwords (and strip debug logs in release)."
+ },
+ {
+  "lang": "XML",
+  "ctx": "an internal SyncService in AndroidManifest.xml",
+  "code": [
+   "<service android:name=\".SyncService\"",
+   "         android:exported=\"true\" />"
+  ],
+  "vuln": 1,
+  "category": "Exported component",
+  "options": [
+   "Exported component",
+   "Insecure storage",
+   "Weak crypto",
+   "Hardcoded secret"
+  ],
+  "why": "Exported with no permission, any other app can bind to and trigger this internal service.",
+  "fixLines": [
+   "         android:exported=\"___\" />"
+  ],
+  "slots": [
+   "false"
+  ],
+  "tokens": [
+   "false",
+   "true",
+   "system",
+   "signature"
+  ],
+  "fixWhy": "Set exported=false for internal components (or require a signature permission if it must be reachable)."
+ },
+ {
+  "lang": "Java",
+  "ctx": "the app encrypts paymentInfo at rest",
+  "code": [
+   "Cipher cipher = Cipher.getInstance(\"AES/ECB/PKCS5Padding\");",
+   "cipher.init(Cipher.ENCRYPT_MODE, key);",
+   "byte[] out = cipher.doFinal(paymentInfo.getBytes());"
+  ],
+  "vuln": 0,
+  "category": "Weak crypto",
+  "options": [
+   "Weak crypto",
+   "Insecure storage",
+   "Exported component",
+   "Hardcoded secret"
+  ],
+  "why": "ECB encrypts identical plaintext blocks to identical ciphertext, leaking structure, and gives no integrity.",
+  "fixLines": [
+   "Cipher cipher = Cipher.getInstance(\"AES/___/NoPadding\");"
+  ],
+  "slots": [
+   "GCM"
+  ],
+  "tokens": [
+   "GCM",
+   "ECB",
+   "CBC",
+   "none"
+  ],
+  "fixWhy": "Use AES/GCM (authenticated) with a random nonce; ECB reveals patterns and offers no integrity."
+ },
+ {
+  "lang": "Swift",
+  "ctx": "where the iOS app keeps the refreshToken",
+  "code": [
+   "let defaults = UserDefaults.standard",
+   "defaults.set(refreshToken, forKey: \"refreshToken\")",
+   "defaults.synchronize()"
+  ],
+  "vuln": 1,
+  "category": "Insecure storage",
+  "options": [
+   "Insecure storage",
+   "Weak crypto",
+   "Exported component",
+   "Hardcoded secret"
+  ],
+  "why": "UserDefaults is a plaintext plist, readable from device backups or on a jailbroken device.",
+  "fixLines": [
+   "store refreshToken in the ___ instead of UserDefaults"
+  ],
+  "slots": [
+   "Keychain"
+  ],
+  "tokens": [
+   "Keychain",
+   "Documents",
+   "Cache",
+   "Bundle"
+  ],
+  "fixWhy": "Use the iOS Keychain (hardware-backed, access-controlled) for tokens/secrets; never UserDefaults."
+ },
+ {
+  "lang": "XML",
+  "ctx": "the AndroidManifest backup setting",
+  "code": [
+   "<application android:name=\".App\"",
+   "    android:allowBackup=\"true\"",
+   "    android:label=\"@string/app_name\">"
+  ],
+  "vuln": 1,
+  "category": "Insecure storage",
+  "options": [
+   "Insecure storage",
+   "Weak crypto",
+   "Exported component",
+   "Hardcoded secret"
+  ],
+  "why": "allowBackup=true lets anyone with adb pull the app's private data (SharedPreferences, databases) via backup.",
+  "fixLines": [
+   "    android:allowBackup=\"___\""
+  ],
+  "slots": [
+   "false"
+  ],
+  "tokens": [
+   "false",
+   "true",
+   "encrypted",
+   "secure"
+  ],
+  "fixWhy": "Set allowBackup=false so app-private data cannot be extracted through adb backup."
+ },
+ {
+  "lang": "Java",
+  "ctx": "the HTTPS client setup for the banking API",
+  "code": [
+   "HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();",
+   "conn.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);",
+   "conn.connect();"
+  ],
+  "vuln": 1,
+  "category": "Disabled certificate validation",
+  "options": [
+   "Disabled certificate validation",
+   "Insecure storage",
+   "Weak crypto",
+   "Exported component"
+  ],
+  "why": "ALLOW_ALL_HOSTNAME_VERIFIER accepts ANY hostname on the certificate, so a MITM cert is trusted — TLS validation is effectively off.",
+  "fixLines": [
+   "conn.setHostnameVerifier(___);"
+  ],
+  "slots": [
+   "HttpsURLConnection.getDefaultHostnameVerifier()"
+  ],
+  "tokens": [
+   "HttpsURLConnection.getDefaultHostnameVerifier()",
+   "SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER",
+   "(h, s) -> true",
+   "null"
+  ],
+  "fixWhy": "Keep the default strict hostname verifier (and ideally pin the certificate); never accept all hostnames."
+ },
+ {
+  "lang": "XML",
+  "ctx": "an internal KeyVaultService in AndroidManifest.xml",
+  "code": [
+   "<service android:name=\".KeyVaultService\"",
+   "         android:exported=\"true\" />"
+  ],
+  "vuln": 1,
+  "category": "Exported component",
+  "options": [
+   "Exported component",
+   "Insecure storage",
+   "Weak crypto",
+   "Hardcoded secret"
+  ],
+  "why": "Exported with no permission, any other app can bind to and trigger this internal service.",
+  "fixLines": [
+   "         android:exported=\"___\" />"
+  ],
+  "slots": [
+   "false"
+  ],
+  "tokens": [
+   "false",
+   "true",
+   "system",
+   "signature"
+  ],
+  "fixWhy": "Set exported=false for internal components (or require a signature permission if it must be reachable)."
+ },
+ {
+  "lang": "Java",
+  "ctx": "where the app keeps the PIN",
+  "code": [
+   "prefs.edit().putString(\"PIN\", value).apply()   // SharedPreferences, plaintext"
+  ],
+  "vuln": 0,
+  "category": "Insecure storage",
+  "options": [
+   "Insecure storage",
+   "Weak crypto",
+   "Exported component",
+   "Hardcoded secret"
+  ],
+  "why": "Plaintext SharedPreferences are readable on rooted devices or in backups.",
+  "fixLines": [
+   "store the PIN via ___ / EncryptedSharedPreferences"
+  ],
+  "slots": [
+   "Keystore"
+  ],
+  "tokens": [
+   "Keystore",
+   "SD card",
+   "logcat",
+   "clipboard"
+  ],
+  "fixWhy": "Use the Android Keystore (EncryptedSharedPreferences); never store secrets in plaintext."
+ },
+ {
+  "lang": "Java",
+  "ctx": "the app encrypts token at rest",
+  "code": [
+   "Cipher cipher = Cipher.getInstance(\"AES/ECB/PKCS5Padding\");",
+   "cipher.init(Cipher.ENCRYPT_MODE, key);",
+   "byte[] out = cipher.doFinal(token.getBytes());"
+  ],
+  "vuln": 0,
+  "category": "Weak crypto",
+  "options": [
+   "Weak crypto",
+   "Insecure storage",
+   "Exported component",
+   "Hardcoded secret"
+  ],
+  "why": "ECB encrypts identical plaintext blocks to identical ciphertext, leaking structure, and gives no integrity.",
+  "fixLines": [
+   "Cipher cipher = Cipher.getInstance(\"AES/___/NoPadding\");"
+  ],
+  "slots": [
+   "GCM"
+  ],
+  "tokens": [
+   "GCM",
+   "ECB",
+   "CBC",
+   "none"
+  ],
+  "fixWhy": "Use AES/GCM (authenticated) with a random nonce; ECB reveals patterns and offers no integrity."
+ },
+ {
+  "lang": "XML",
+  "ctx": "an exported receiver for com.app.PAYMENT_COMPLETE",
+  "code": [
+   "<receiver android:name=\".PaymentReceiver\"",
+   "          android:exported=\"true\">",
+   "    <intent-filter>",
+   "        <action android:name=\"com.app.PAYMENT_COMPLETE\" />",
+   "    </intent-filter>",
+   "</receiver>"
+  ],
+  "vuln": 1,
+  "category": "Exported component",
+  "options": [
+   "Exported component",
+   "Insecure storage",
+   "Weak crypto",
+   "Missing certificate pinning"
+  ],
+  "why": "The receiver is exported with no permission, so any app can send it forged broadcasts.",
+  "fixLines": [
+   "          android:exported=\"true\"",
+   "          android:permission=\"___\">"
+  ],
+  "slots": [
+   "com.app.PAYMENT_PERMISSION"
+  ],
+  "tokens": [
+   "com.app.PAYMENT_PERMISSION",
+   "android.permission.INTERNET",
+   "true",
+   "false"
+  ],
+  "fixWhy": "Guard an exported component that must stay reachable with a custom signature permission."
+ },
+ {
+  "lang": "Swift",
+  "ctx": "the iOS app stores the apiKey",
+  "code": [
+   "let defaults = UserDefaults.standard",
+   "defaults.set(apiKey, forKey: \"apiKey\")",
+   "defaults.synchronize()"
+  ],
+  "vuln": 1,
+  "category": "Insecure storage",
+  "options": [
+   "Insecure storage",
+   "Weak crypto",
+   "Exported component",
+   "Hardcoded secret"
+  ],
+  "why": "UserDefaults is a plaintext plist, readable from device backups or on a jailbroken device.",
+  "fixLines": [
+   "store apiKey in the ___ instead of UserDefaults"
+  ],
+  "slots": [
+   "Keychain"
+  ],
+  "tokens": [
+   "Keychain",
+   "Documents",
+   "Cache",
+   "Bundle"
+  ],
+  "fixWhy": "Use the iOS Keychain (hardware-backed, access-controlled) for tokens/secrets; never UserDefaults."
+ },
+ {
+  "lang": "Java",
+  "ctx": "where the app keeps the token",
+  "code": [
+   "prefs.edit().putString(\"token\", value).apply()   // SharedPreferences, plaintext"
+  ],
+  "vuln": 0,
+  "category": "Insecure storage",
+  "options": [
+   "Insecure storage",
+   "Weak crypto",
+   "Exported component",
+   "Hardcoded secret"
+  ],
+  "why": "Plaintext SharedPreferences are readable on rooted devices or in backups.",
+  "fixLines": [
+   "store the token via ___ / EncryptedSharedPreferences"
+  ],
+  "slots": [
+   "Keystore"
+  ],
+  "tokens": [
+   "Keystore",
+   "SD card",
+   "logcat",
+   "clipboard"
+  ],
+  "fixWhy": "Use the Android Keystore (EncryptedSharedPreferences); never store secrets in plaintext."
+ },
+ {
+  "lang": "XML",
+  "ctx": "an internal PaymentProcessorService in AndroidManifest.xml",
+  "code": [
+   "<service android:name=\".PaymentProcessorService\"",
+   "         android:exported=\"true\" />"
+  ],
+  "vuln": 1,
+  "category": "Exported component",
+  "options": [
+   "Exported component",
+   "Insecure storage",
+   "Weak crypto",
+   "Hardcoded secret"
+  ],
+  "why": "Exported with no permission, any other app can bind to and trigger this internal service.",
+  "fixLines": [
+   "         android:exported=\"___\" />"
+  ],
+  "slots": [
+   "false"
+  ],
+  "tokens": [
+   "false",
+   "true",
+   "system",
+   "signature"
+  ],
+  "fixWhy": "Set exported=false for internal components (or require a signature permission if it must be reachable)."
+ },
+ {
+  "lang": "XML",
+  "ctx": "an internal AdminService in AndroidManifest.xml",
+  "code": [
+   "<service android:name=\".AdminService\"",
+   "         android:exported=\"true\" />"
+  ],
+  "vuln": 1,
+  "category": "Exported component",
+  "options": [
+   "Exported component",
+   "Insecure storage",
+   "Weak crypto",
+   "Hardcoded secret"
+  ],
+  "why": "Exported with no permission, any other app can bind to and trigger this internal service.",
+  "fixLines": [
+   "         android:exported=\"___\" />"
+  ],
+  "slots": [
+   "false"
+  ],
+  "tokens": [
+   "false",
+   "true",
+   "system",
+   "signature"
+  ],
+  "fixWhy": "Set exported=false for internal components (or require a signature permission if it must be reachable)."
+ },
+ {
+  "lang": "Kotlin",
+  "ctx": "a WebView showing https://dash.example.com",
+  "code": [
+   "webView.settings.javaScriptEnabled = true",
+   "webView.settings.allowFileAccessFromFileURLs = true",
+   "webView.loadUrl(\"https://dash.example.com\")"
+  ],
+  "vuln": 1,
+  "category": "Insecure WebView",
+  "options": [
+   "Insecure WebView",
+   "Weak crypto",
+   "Exported component",
+   "Insecure storage"
+  ],
+  "why": "allowFileAccessFromFileURLs lets JavaScript in loaded content read local files via file:// URLs.",
+  "fixLines": [
+   "webView.settings.allowFileAccessFromFileURLs = ___"
+  ],
+  "slots": [
+   "false"
+  ],
+  "tokens": [
+   "false",
+   "true",
+   "null",
+   "1"
+  ],
+  "fixWhy": "Disable file-URL JS access (and AllowUniversalAccessFromFileURLs) for any WebView showing remote content."
+ },
+ {
+  "lang": "XML",
+  "ctx": "an exported receiver for com.app.JOB_FINISHED",
+  "code": [
+   "<receiver android:name=\".PaymentReceiver\"",
+   "          android:exported=\"true\">",
+   "    <intent-filter>",
+   "        <action android:name=\"com.app.JOB_FINISHED\" />",
+   "    </intent-filter>",
+   "</receiver>"
+  ],
+  "vuln": 1,
+  "category": "Exported component",
+  "options": [
+   "Exported component",
+   "Insecure storage",
+   "Weak crypto",
+   "Missing certificate pinning"
+  ],
+  "why": "The receiver is exported with no permission, so any app can send it forged broadcasts.",
+  "fixLines": [
+   "          android:exported=\"true\"",
+   "          android:permission=\"___\">"
+  ],
+  "slots": [
+   "com.app.PAYMENT_PERMISSION"
+  ],
+  "tokens": [
+   "com.app.PAYMENT_PERMISSION",
+   "android.permission.INTERNET",
+   "true",
+   "false"
+  ],
+  "fixWhy": "Guard an exported component that must stay reachable with a custom signature permission."
+ },
+ {
+  "lang": "Kotlin",
+  "ctx": "a WebView that loads remote content",
+  "code": [
+   "webView.settings.javaScriptEnabled = true",
+   "webView.settings.allowFileAccessFromFileURLs = true",
+   "webView.loadUrl(\"https://app.example.com/x\")"
+  ],
+  "vuln": 1,
+  "category": "Insecure WebView",
+  "options": [
+   "Insecure WebView",
+   "Weak crypto",
+   "Exported component",
+   "Insecure storage"
+  ],
+  "why": "allowFileAccessFromFileURLs lets JavaScript in loaded content read local files via file:// URLs.",
+  "fixLines": [
+   "webView.settings.allowFileAccessFromFileURLs = ___"
+  ],
+  "slots": [
+   "false"
+  ],
+  "tokens": [
+   "false",
+   "true",
+   "null",
+   "1"
+  ],
+  "fixWhy": "Disable file-URL JS access (and AllowUniversalAccessFromFileURLs) for any WebView showing remote content."
+ },
+ {
+  "lang": "Swift",
+  "ctx": "the iOS app stores the biometricToken",
+  "code": [
+   "let defaults = UserDefaults.standard",
+   "defaults.set(biometricToken, forKey: \"biometricToken\")",
+   "defaults.synchronize()"
+  ],
+  "vuln": 1,
+  "category": "Insecure storage",
+  "options": [
+   "Insecure storage",
+   "Weak crypto",
+   "Exported component",
+   "Hardcoded secret"
+  ],
+  "why": "UserDefaults is a plaintext plist, readable from device backups or on a jailbroken device.",
+  "fixLines": [
+   "store biometricToken in the ___ instead of UserDefaults"
+  ],
+  "slots": [
+   "Keychain"
+  ],
+  "tokens": [
+   "Keychain",
+   "Documents",
+   "Cache",
+   "Bundle"
+  ],
+  "fixWhy": "Use the iOS Keychain (hardware-backed, access-controlled) for tokens/secrets; never UserDefaults."
+ },
+ {
+  "lang": "Kotlin",
+  "ctx": "a WebView that loads remote content",
+  "code": [
+   "webView.settings.javaScriptEnabled = true",
+   "webView.settings.allowFileAccessFromFileURLs = true",
+   "webView.loadUrl(\"https://portal.example.com/orders\")"
+  ],
+  "vuln": 1,
+  "category": "Insecure WebView",
+  "options": [
+   "Insecure WebView",
+   "Weak crypto",
+   "Exported component",
+   "Insecure storage"
+  ],
+  "why": "allowFileAccessFromFileURLs lets JavaScript in loaded content read local files via file:// URLs.",
+  "fixLines": [
+   "webView.settings.allowFileAccessFromFileURLs = ___"
+  ],
+  "slots": [
+   "false"
+  ],
+  "tokens": [
+   "false",
+   "true",
+   "null",
+   "1"
+  ],
+  "fixWhy": "Disable file-URL JS access (and AllowUniversalAccessFromFileURLs) for any WebView showing remote content."
+ },
+ {
+  "lang": "XML",
+  "ctx": "a broadcast receiver that must stay exported",
+  "code": [
+   "<receiver android:name=\".PaymentReceiver\"",
+   "          android:exported=\"true\">",
+   "    <intent-filter>",
+   "        <action android:name=\"com.app.TOKEN_REFRESH\" />",
+   "    </intent-filter>",
+   "</receiver>"
+  ],
+  "vuln": 1,
+  "category": "Exported component",
+  "options": [
+   "Exported component",
+   "Insecure storage",
+   "Weak crypto",
+   "Missing certificate pinning"
+  ],
+  "why": "The receiver is exported with no permission, so any app can send it forged broadcasts.",
+  "fixLines": [
+   "          android:exported=\"true\"",
+   "          android:permission=\"___\">"
+  ],
+  "slots": [
+   "com.app.PAYMENT_PERMISSION"
+  ],
+  "tokens": [
+   "com.app.PAYMENT_PERMISSION",
+   "android.permission.INTERNET",
+   "true",
+   "false"
+  ],
+  "fixWhy": "Guard an exported component that must stay reachable with a custom signature permission."
+ },
+ {
+  "lang": "Java",
+  "ctx": "where the app keeps the refresh_token",
+  "code": [
+   "prefs.edit().putString(\"refresh_token\", value).apply()   // SharedPreferences, plaintext"
+  ],
+  "vuln": 0,
+  "category": "Insecure storage",
+  "options": [
+   "Insecure storage",
+   "Weak crypto",
+   "Exported component",
+   "Hardcoded secret"
+  ],
+  "why": "Plaintext SharedPreferences are readable on rooted devices or in backups.",
+  "fixLines": [
+   "store the refresh_token via ___ / EncryptedSharedPreferences"
+  ],
+  "slots": [
+   "Keystore"
+  ],
+  "tokens": [
+   "Keystore",
+   "SD card",
+   "logcat",
+   "clipboard"
+  ],
+  "fixWhy": "Use the Android Keystore (EncryptedSharedPreferences); never store secrets in plaintext."
+ },
+ {
   "lang": "Java",
   "ctx": "where the app keeps the api_key",
   "code": [
@@ -30,89 +714,33 @@
  },
  {
   "lang": "Java",
-  "ctx": "the app stores the refresh_token",
+  "ctx": "encrypting userData before storing it",
   "code": [
-   "prefs.edit().putString(\"refresh_token\", value).apply()   // SharedPreferences, plaintext"
+   "Cipher cipher = Cipher.getInstance(\"AES/ECB/PKCS5Padding\");",
+   "cipher.init(Cipher.ENCRYPT_MODE, key);",
+   "byte[] out = cipher.doFinal(userData.getBytes());"
   ],
   "vuln": 0,
-  "category": "Insecure storage",
+  "category": "Weak crypto",
   "options": [
-   "Insecure storage",
    "Weak crypto",
+   "Insecure storage",
    "Exported component",
    "Hardcoded secret"
   ],
-  "why": "Plaintext SharedPreferences are readable on rooted devices or in backups.",
+  "why": "ECB encrypts identical plaintext blocks to identical ciphertext, leaking structure, and gives no integrity.",
   "fixLines": [
-   "store the refresh_token via ___ / EncryptedSharedPreferences"
+   "Cipher cipher = Cipher.getInstance(\"AES/___/NoPadding\");"
   ],
   "slots": [
-   "Keystore"
+   "GCM"
   ],
   "tokens": [
-   "Keystore",
-   "SD card",
-   "logcat",
-   "clipboard"
+   "GCM",
+   "ECB",
+   "CBC",
+   "none"
   ],
-  "fixWhy": "Use the Android Keystore (EncryptedSharedPreferences); never store secrets in plaintext."
- },
- {
-  "lang": "Java",
-  "ctx": "the app stores the token",
-  "code": [
-   "prefs.edit().putString(\"token\", value).apply()   // SharedPreferences, plaintext"
-  ],
-  "vuln": 0,
-  "category": "Insecure storage",
-  "options": [
-   "Insecure storage",
-   "Weak crypto",
-   "Exported component",
-   "Hardcoded secret"
-  ],
-  "why": "Plaintext SharedPreferences are readable on rooted devices or in backups.",
-  "fixLines": [
-   "store the token via ___ / EncryptedSharedPreferences"
-  ],
-  "slots": [
-   "Keystore"
-  ],
-  "tokens": [
-   "Keystore",
-   "SD card",
-   "logcat",
-   "clipboard"
-  ],
-  "fixWhy": "Use the Android Keystore (EncryptedSharedPreferences); never store secrets in plaintext."
- },
- {
-  "lang": "Java",
-  "ctx": "where the app keeps the PIN",
-  "code": [
-   "prefs.edit().putString(\"PIN\", value).apply()   // SharedPreferences, plaintext"
-  ],
-  "vuln": 0,
-  "category": "Insecure storage",
-  "options": [
-   "Insecure storage",
-   "Weak crypto",
-   "Exported component",
-   "Hardcoded secret"
-  ],
-  "why": "Plaintext SharedPreferences are readable on rooted devices or in backups.",
-  "fixLines": [
-   "store the PIN via ___ / EncryptedSharedPreferences"
-  ],
-  "slots": [
-   "Keystore"
-  ],
-  "tokens": [
-   "Keystore",
-   "SD card",
-   "logcat",
-   "clipboard"
-  ],
-  "fixWhy": "Use the Android Keystore (EncryptedSharedPreferences); never store secrets in plaintext."
+  "fixWhy": "Use AES/GCM (authenticated) with a random nonce; ECB reveals patterns and offers no integrity."
  }
 ]
