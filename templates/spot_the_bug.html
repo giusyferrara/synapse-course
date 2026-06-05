@@ -5264,7 +5264,7 @@
 
     /* ---------------- state ---------------- */
     const el = id => document.getElementById(id);
-    let ci = 0, selectedSlot = null, solved = 0;
+    let ci = 0, selectedSlot = null, solved = 0, understandMisses = 0;
     let challenges = [], deckId = '', deckStrings = {};
     const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
     const shakeEl = e => { e.classList.remove('shake'); void e.offsetWidth; e.classList.add('shake'); };
@@ -5322,6 +5322,7 @@
         chips.appendChild(b);
       });
       el('whyBox').classList.add('hidden'); el('whyBox').textContent = '';
+      understandMisses = 0;
       el('understandNext').classList.add('hidden');
       // fix
       renderFix(c);
@@ -5356,6 +5357,12 @@
       } else {
         b.classList.add('wrong'); shakeEl(b);
         setTimeout(() => b.classList.remove('wrong'), 450);
+        understandMisses++;
+        if (understandMisses === 3) {
+          const w = el('whyBox');
+          w.textContent = 'Take a breath — look at what the snippet actually does and what kind of problem it creates, then try again.';
+          w.classList.remove('hidden');
+        }
       }
     }
 
