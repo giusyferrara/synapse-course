@@ -18,7 +18,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 # ========================================
 # AI MODEL SETTINGS
 # ========================================
-CLAUDE_MODEL = "claude-sonnet-4-20250514"  # Best for educational content
+CLAUDE_MODEL = "claude-sonnet-5"  # Best for educational content
 GEMINI_MODEL = "gemini-2.5-flash"      # Best for slides/flowcharts
 OPENAI_MODEL = "gpt-4o"                    # Best for exercises
 DALLE_MODEL = "dall-e-3"                   # For educational images

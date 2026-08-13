@@ -1474,7 +1474,7 @@ REMEMBER: Always use sections, bullets, and spacing!"""
             return "Claude is not available. Please check API key."
         try:
             response = self.ai_router._anthropic.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-5",
                 max_tokens=2048,
                 system="You are a helpful Python programming tutor.",
                 messages=[{"role": "user", "content": message}]

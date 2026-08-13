@@ -192,7 +192,7 @@ class AIRouter:
         if self._anthropic:
             try:
                 message = self._anthropic.messages.create(
-                    model="claude-sonnet-4-20250514",
+                    model="claude-sonnet-5",
                     max_tokens=2048,
                     system=system_prompt,
                     messages=[{"role": "user", "content": tutor_prompt}],
@@ -296,7 +296,7 @@ class AIRouter:
                         })
 
                 response = self._anthropic.messages.create(
-                    model="claude-sonnet-4-20250514",
+                    model="claude-sonnet-5",
                     max_tokens=2048,
                     system=system_prompt,
                     messages=formatted_messages
@@ -359,7 +359,7 @@ class AIRouter:
         if self._anthropic:
             try:
                 test = self._anthropic.messages.create(
-                    model="claude-sonnet-4-20250514",
+                    model="claude-sonnet-5",
                     max_tokens=10,
                     messages=[{"role": "user", "content": "Say 'ok'"}]
                 )

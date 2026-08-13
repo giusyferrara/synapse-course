@@ -934,7 +934,7 @@ Java security, Python security, C memory safety. Use this knowledge when relevan
         try:
             # STEP 1: Claude - Main tutor response (Socratic method)
             claude_response = tutor.ai_router._anthropic.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-5",
                 max_tokens=2048,
                 system=system_prompt,
                 messages=conversation_messages
