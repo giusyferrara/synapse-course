@@ -270,22 +270,23 @@ Return the JSON array directly with no ```json wrapper."""
         self,
         exercise_description: str,
         student_code: str,
-        hint_level: int = 1
+        hint_level: int = 1,
+        language: str = "Python"
     ) -> str:
         """Generate progressive hints for exercises"""
-        
+
         hint_prompts = {
             1: "Give a gentle nudge in the right direction. Point to which ??? to fill first and what kind of value goes there. Do NOT show the full answer yet.",
-            2: "Give a concrete example for ONE of the ??? placeholders. Show the actual Java code they should type for that one field. Explain why that value is correct.",
+            2: "Give a concrete example for ONE of the ??? placeholders. Show the actual code they should type for that one field. Explain why that value is correct.",
             3: "Show the complete working code with all ??? replaced with realistic values. The student has asked multiple times and needs to see a full example to learn from."
         }
-        
-        prompt = f"""You are the Synapse AI Security Tutor for a Java and cybersecurity course for neurodivergent learners. This is JAVA not Python. For knowledge exercises guide concepts step by step. Be encouraging. NEVER mention university or lectures.
+
+        prompt = f"""You are the Synapse AI Security Tutor for a {language} and cybersecurity course for neurodivergent learners. This is a {language} exercise — give {language} code and syntax, never another language. For knowledge exercises guide concepts step by step. Be encouraging. NEVER mention university or lectures.
 
 Exercise: {exercise_description}
 
 Student's current code:
-```java
+```{language.lower()}
 {student_code}
 ```
 

@@ -534,10 +534,15 @@ async def handle_get_hint(request):
                 'hint': 'Try breaking the problem into smaller steps. You can do it!'
             })
 
+        # Pick the language from the topic (Java for the Java-security topics, else Python)
+        java_prefixes = ('java_', 'owasp_', 'security_', 'memory_safety')
+        language = 'Java' if str(topic_id or '').startswith(java_prefixes) else 'Python'
+
         hint = await mcp_coordinator.claude.generate_hint(
             exercise_description=exercise_description,
             student_code=code,
-            hint_level=data.get('hint_level', 1)
+            hint_level=data.get('hint_level', 1),
+            language=language
         )
 
         return web.json_response({

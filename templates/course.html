@@ -3128,7 +3128,7 @@ function clearChatMessages(){var m=document.getElementById('chatMessages');if(!m
             { id: 'py_files_io', icon: '📂', title: 'Files & I/O Operations (60 Exercises)', desc: 'open, read, write, binary mode, CSV, JSON parsing', badge: 'INTERMEDIATE' },
             { id: 'py_image_metadata', icon: '📸', title: 'Image Metadata & EXIF Forensics (60 Exercises)', desc: 'Pillow, EXIF tags, GPS extraction, camera identification', badge: 'INTERMEDIATE' },
             { id: 'python_network_scanning', icon: '🔍', title: 'Network Scanning & Recon (60 Exercises)', desc: 'Build port scanners, banner grabbers, and recon tools with Python sockets, Scapy, and nmap', badge: 'INTERMEDIATE' },             
-            { id: 'py_steganography', icon: '🕵️', title: 'Steganography: Hidden Data (60 Exercises)', desc: 'LSB technique, hide/extract text in images, detection', badge: 'INTERMEDIATE' },
+            { id: 'py_steganography', icon: '🕵️', title: 'Steganography: Hidden Data (68 Exercises)', desc: 'LSB technique, hide/extract text in images, detection', badge: 'INTERMEDIATE' },
             { id: 'py_hex_ascii_encoding', icon: '🔢', title: 'Hex, ASCII & Binary Forensics (60 Exercises)', desc: 'hex, bin, ord, chr, base64, file signatures, magic bytes', badge: 'INTERMEDIATE' },
             { id: 'py_web_scraping_osint', icon: '🌐', title: 'Web Scraping & OSINT (60 Exercises)', desc: 'requests, BeautifulSoup, APIs, ethical data collection', badge: 'INTERMEDIATE' },
             { id: 'py_pdf_doc_forensics', icon: '📄', title: 'Document & PDF Forensics (60 Exercises)', desc: 'PyPDF2, python-docx, metadata extraction, hidden content', badge: 'INTERMEDIATE' },
@@ -3147,7 +3147,7 @@ function clearChatMessages(){var m=document.getElementById('chatMessages');if(!m
 
       for (const course of courses) {
         try {
-          const response = await fetch(`/static/course_content/${course.id}.json`);
+          const response = await fetch(`/static/course_content/${course.id}.json?v=${Date.now()}`);
           if (response.ok) {
             const data = await response.json();
             courseData[course.id] = data;
@@ -3732,12 +3732,62 @@ function clearChatMessages(){var m=document.getElementById('chatMessages');if(!m
     async function getAIHint() {
       const code = document.getElementById('codeEditor').value;
       addChatMessage('user', '💡 Can you give me a hint for this code?');
-      addChatMessage('ai', '🤔 Let me analyze your code... (This connects to AI tutor API)');
+      addChatMessage('ai', '🤔 Let me analyze your code...');
+      getAIHint._level = Math.min((getAIHint._level || 0) + 1, 3);
+      const title = ((document.getElementById('lessonTitle') || {}).textContent || '').trim();
+      const exerciseDesc = title ? ('Python exercise: ' + title) : 'General Python coding exercise';
+      try {
+        const response = await fetch('/api/course/get_hint', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic_id: currentCourse || '',
+            code: code,
+            exercise_description: exerciseDesc,
+            hint_level: getAIHint._level
+          })
+        });
+        const data = await response.json();
+        if (data && data.success && data.hint) {
+          addChatMessage('ai', '💡 ' + data.hint);
+        } else {
+          addChatMessage('ai', '💡 Try breaking the problem into smaller steps — re-read the exercise and check your syntax.');
+        }
+      } catch (error) {
+        console.error('Hint API error:', error);
+        addChatMessage('ai', '💡 Try breaking the problem into smaller steps. You can do this!');
+      }
     }
 
-    function checkSolution() {
+    async function checkSolution() {
+      const code = document.getElementById('codeEditor').value;
+      const outEl = document.getElementById('outputConsole');
       addChatMessage('user', '✅ Can you check if my solution is correct?');
       addChatMessage('ai', '👀 Checking your solution...');
+      const title = ((document.getElementById('lessonTitle') || {}).textContent || '').trim();
+      try {
+        const response = await fetch('/api/course/evaluate_code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic_id: currentCourse || '',
+            code: code,
+            user_output: outEl ? outEl.textContent : '',
+            exercise: { title: title, description: title, expected_output: '' }
+          })
+        });
+        const data = await response.json();
+        if (data && data.success && (data.correct || data.passed)) {
+          addChatMessage('ai', '🎉 ' + (data.feedback || 'Your solution looks correct!'));
+        } else if (data && data.success) {
+          addChatMessage('ai', '🔍 ' + (data.feedback || 'Not quite right yet — check the output and try again.'));
+        } else {
+          addChatMessage('ai', '🔍 Run your code first, then compare the output with what the exercise expects.');
+        }
+      } catch (error) {
+        console.error('Evaluate API error:', error);
+        addChatMessage('ai', '🔍 Run your code first, then compare the output with what the exercise expects.');
+      }
     }
 
     // ========================================
