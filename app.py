@@ -1088,6 +1088,30 @@ class HybridEducationalServer:
             except FileNotFoundError:
                 return web.Response(text="MCP page not found.", status=404)
 
+        async def serve_privacy(request):
+            privacy_path = Path(__file__).parent / 'templates' / 'privacy.html'
+            try:
+                with open(privacy_path, 'r', encoding='utf-8') as f:
+                    return web.Response(text=f.read(), content_type='text/html')
+            except FileNotFoundError:
+                return web.Response(text="Privacy page not found.", status=404)
+
+        async def serve_terms(request):
+            terms_path = Path(__file__).parent / 'templates' / 'terms.html'
+            try:
+                with open(terms_path, 'r', encoding='utf-8') as f:
+                    return web.Response(text=f.read(), content_type='text/html')
+            except FileNotFoundError:
+                return web.Response(text="Terms page not found.", status=404)
+
+        async def serve_cookies(request):
+            cookies_path = Path(__file__).parent / 'templates' / 'cookies.html'
+            try:
+                with open(cookies_path, 'r', encoding='utf-8') as f:
+                    return web.Response(text=f.read(), content_type='text/html')
+            except FileNotFoundError:
+                return web.Response(text="Cookie page not found.", status=404)
+
         async def serve_flashcards(request):
             user_cookie = request.cookies.get('synapse_user')
             participant_code = request.query.get('participant') or request.cookies.get('participant_code')
@@ -1106,6 +1130,9 @@ class HybridEducationalServer:
 
         app.router.add_get('/about', serve_about)
         app.router.add_get('/mcp', serve_mcp)
+        app.router.add_get('/privacy', serve_privacy)
+        app.router.add_get('/terms', serve_terms)
+        app.router.add_get('/cookies', serve_cookies)
         app.router.add_get('/robots.txt', serve_robots)
         app.router.add_get('/sitemap.xml', serve_sitemap)
         app.router.add_get('/', serve_landing)
