@@ -15,6 +15,7 @@ from ai_clients.gemini_client import GeminiClient
 from ai_clients.openai_client import OpenAIClient
 from ai_clients.dalle_client import DALLEClient
 import config
+from ai_response import response_text
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -58,7 +59,7 @@ class MCPCoordinator:
                     max_tokens=MAX_TOKENS,
                     messages=[{"role": "user", "content": prompt}],
                 )
-                return resp.content[0].text
+                return response_text(resp)
 
             self._quiz_ai = QuizAIService(_gen)
         return self._quiz_ai

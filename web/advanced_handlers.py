@@ -6,6 +6,7 @@
 # ============================================
 
 from mcp_coordinator import MCPCoordinator
+from ai_response import response_text
 import asyncio, re, json, traceback, random
 from aiohttp import web
 from datetime import datetime, timedelta
@@ -430,7 +431,7 @@ Remember: TEACH step-by-step, don't just give answers. Use emojis, clear structu
                     )
                 )
                 
-                ai_response = response.content[0].text.strip()
+                ai_response = response_text(response)
                 
                 # 🎯 ADAPT RESPONSE BASED ON STRUGGLE LEVEL
                 ai_response = adapt_response_to_struggle(ai_response, struggle_level, is_visual_learner)
@@ -589,7 +590,7 @@ Keep language clear and constructive. Be positive and professional."""
                     )
                 )
                 
-                content = response.content[0].text.strip()
+                content = response_text(response)
                 
                 # Clean JSON
                 if '```json' in content:
@@ -786,7 +787,7 @@ Make it practical and engaging."""
             )
         )
         
-        content = response.content[0].text.strip()
+        content = response_text(response)
         
         # Clean JSON
         if '```json' in content:
@@ -925,7 +926,7 @@ Return ONLY Mermaid code, no explanations."""
             )
         )
         
-        flowchart = response.content[0].text.strip()
+        flowchart = response_text(response)
         
         if '```mermaid' in flowchart:
             flowchart = flowchart.split('```mermaid')[1].split('```')[0].strip()
@@ -1073,7 +1074,7 @@ Keep language clear and accessible."""
                     )
                 )
                 
-                explanation = response.content[0].text.strip()
+                explanation = response_text(response)
                 return web.json_response({'success': True, 'explanation': explanation, 'student_level': profile['current_level']})
             except Exception as e:
                 return web.json_response({'success': False, 'explanation': 'AI unavailable. Try running the code!'})

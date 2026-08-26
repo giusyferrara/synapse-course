@@ -22,6 +22,7 @@ from datetime import datetime
 from mcp_coordinator import MCPCoordinator
 import asyncio
 from core.tfl_transport import get_lines
+from ai_response import response_text
 
 # Initialize course content and MCP
 course_content = PythonCourseContent()
@@ -944,7 +945,7 @@ Java security, Python security, C memory safety. Use this knowledge when relevan
                 system=system_prompt,
                 messages=conversation_messages
             )
-            ai_response = claude_response.content[0].text if claude_response.content else ""
+            ai_response = response_text(claude_response)
             models_used.append("claude")
             print(f"MCP Step 1: Claude responded ({len(ai_response)} chars)", flush=True)
 

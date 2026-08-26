@@ -7,6 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 import json
 import re
+from ai_response import response_text
 
 class ClaudeClient:
     """Claude AI client for generating educational theory content"""
@@ -109,7 +110,7 @@ Return the JSON directly with no ```json wrapper."""
                 )
             )
             
-            content = response.content[0].text
+            content = response_text(response)
             
             # Clean markdown formatting
             content = self._clean_json_response(content)
@@ -219,7 +220,7 @@ Return the JSON array directly with no ```json wrapper."""
                 )
             )
             
-            content = response.content[0].text
+            content = response_text(response)
             content = self._clean_json_response(content)
             
             try:
@@ -305,7 +306,7 @@ Give a helpful, encouraging hint (2-3 sentences max)."""
                 )
             )
             
-            return response.content[0].text.strip()
+            return response_text(response)
             
         except Exception as e:
             print(f"❌ Claude hint error: {e}")
@@ -348,7 +349,7 @@ Return only JSON, no markdown."""
                 )
             )
             
-            content = response.content[0].text
+            content = response_text(response)
             content = self._clean_json_response(content)
             
             try:

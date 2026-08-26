@@ -18,6 +18,7 @@ from mcp_advanced_tools import (
 
 from core.engine import TeachingEngine
 from ai.router import AIRouter
+from ai_response import response_text
 from database.config import SessionLocal
 from database.models import Student, LearningSession, AIResponse, ChatConversation, ChatMessage
 
@@ -1479,7 +1480,7 @@ REMEMBER: Always use sections, bullets, and spacing!"""
                 system="You are a helpful Python programming tutor.",
                 messages=[{"role": "user", "content": message}]
             )
-            return response.content[0].text if response.content else "No response"
+            return response_text(response, "No response")
         except Exception as e:
             return f"Claude error: {str(e)}"
 

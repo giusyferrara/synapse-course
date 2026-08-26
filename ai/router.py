@@ -4,6 +4,7 @@ import anthropic
 import openai
 import google.generativeai as genai
 from typing import Optional
+from ai_response import response_text
 
 # ============================================================
 # SYNAPSE AI TUTOR SYSTEM PROMPT
@@ -197,7 +198,7 @@ class AIRouter:
                     system=system_prompt,
                     messages=[{"role": "user", "content": tutor_prompt}],
                 )
-                return message.content[0].text if message.content else "AI failed to generate a response."
+                return response_text(message, "AI failed to generate a response.")
             except Exception as e:
                 print(f"❌ Claude API failed: {e}")
 
@@ -301,7 +302,7 @@ class AIRouter:
                     system=system_prompt,
                     messages=formatted_messages
                 )
-                return response.content[0].text if response.content else "I need a moment to think..."
+                return response_text(response, "I need a moment to think...")
             except Exception as e:
                 print(f"❌ Claude chat failed: {e}")
 
