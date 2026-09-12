@@ -571,10 +571,18 @@
   .cmpbar input[type=range] { flex: 1; min-width: 180px; }
   .cmpsay { margin-top: 14px; font-size: 17px; color: var(--ink); max-width: 70ch; }
   .cmpsay b { color: var(--amber-deep); }
+  /* Shown only when this page is the whole window. Inside the /try iframe
+     a way out would lead the reader out of the page they are reading. */
+  .back { display: inline-block; margin-bottom: 14px; font-family: var(--ff-mono);
+          font-size: 12px; font-weight: 700; letter-spacing: .06em;
+          text-transform: uppercase; color: var(--ink-soft); text-decoration: none;
+          border-bottom: 2px solid var(--rule); padding-bottom: 2px; }
+  .back:hover { color: var(--ink); border-bottom-color: var(--ink); }
 </style>
 
 <div class="wrap">
 
+  <a class="back" id="back-home" href="/" hidden>&#8592; Back to Synapse</a>
   <p class="eyebrow">Synapse · program-logic visualisation · one engine, any algorithm</p>
   <h1>See what the code is thinking</h1>
   <p class="stand">Reading code is not the same as understanding it. Every state below is a real moment in a real execution.</p>
@@ -3613,6 +3621,11 @@
   }
 
   cmpInit();
+
+  // A dead end is what /lessons would otherwise be: the player has no
+  // navigation of its own. Framed, it is a panel inside another page and a
+  // way out belongs to that page, not to this one.
+  if (window.top === window.self && $("back-home")) { $("back-home").hidden = false; }
 
   var q = new URLSearchParams(window.location.search);
   var theme = q.get("theme");

@@ -4,6 +4,7 @@ import sys
 import socket
 import requests
 import json
+import re as _re
 from datetime import datetime
 from pathlib import Path
 from aiohttp import web
@@ -1088,13 +1089,30 @@ class HybridEducationalServer:
             visual product needs one thing a stranger can see before deciding
             whether to make an account. It costs nothing to serve because the
             lesson makes no calls of its own.
+
+            Somebody who is already signed in sees the same lesson and a
+            different set of doors. Selling an account to a person who has
+            one reads as a page that does not know who it is talking to, and
+            it also hid the only route to the other sixteen lessons. The page
+            carries both sets, marked GUEST and MEMBER, and whichever does
+            not apply is taken out here rather than hidden with CSS: it never
+            reaches the browser, so there is nothing to flash and nothing to
+            read in the source.
             """
             try_path = Path(__file__).parent / 'templates' / 'try.html'
             try:
                 with open(try_path, 'r', encoding='utf-8') as f:
-                    return web.Response(text=f.read(), content_type='text/html')
+                    html = f.read()
             except FileNotFoundError:
                 return web.Response(text="Demo page not found.", status=404)
+
+            drop = 'MEMBER' if not request.cookies.get('synapse_user') else 'GUEST'
+            html = _re.sub(r'<!--' + drop + r'-->.*?<!--/' + drop + r'-->',
+                           '', html, flags=_re.S)
+            # and the markers of the half that stayed, so the page does not
+            # explain its own machinery to anyone reading the source
+            html = _re.sub(r'\s*<!--/?(?:GUEST|MEMBER)-->', '', html)
+            return web.Response(text=html, content_type='text/html')
 
         async def serve_mcp(request):
             mcp_path = Path(__file__).parent / 'templates' / 'mcp.html'
@@ -1136,6 +1154,24 @@ class HybridEducationalServer:
                 raise web.HTTPFound('/login?next=/flashcards')
             return web.FileResponse('templates/flashcards.html')
 
+        async def serve_lessons(request):
+            """Every lesson, not the one the demo shows.
+
+            The player was reachable only as a file under /static, which
+            meant that from inside the product there was no way to it at
+            all: the one button that pointed at lessons pointed at /try,
+            and /try runs the player with ?only=walk:each. Sixteen lessons
+            and the comparison view were built, shipped, and unreachable.
+            """
+            if not request.cookies.get('synapse_user'):
+                raise web.HTTPFound('/login?next=/lessons')
+            page = Path(__file__).parent / 'static' / 'lessons' / 'algorithm-player.html'
+            try:
+                with open(page, 'r', encoding='utf-8') as f:
+                    return web.Response(text=f.read(), content_type='text/html')
+            except FileNotFoundError:
+                return web.Response(text="Lessons not found.", status=404)
+
         async def serve_drawer(request):
             """The drawer: where a learner's own visualisations live.
 
@@ -1174,6 +1210,7 @@ class HybridEducationalServer:
         app.router.add_get("/course/java-security", serve_java_security_course)
         app.router.add_get('/flashcards', serve_flashcards)
         app.router.add_get('/spot-the-bug', serve_spot_the_bug)
+        app.router.add_get('/lessons', serve_lessons)
         app.router.add_get('/drawer', serve_drawer)
 
         # API endpoints
