@@ -270,6 +270,17 @@
   }
   .byhand b { color: var(--bink); font-weight: 700; }
 
+  /* what the machine is holding, while it runs */
+  .vars { display: flex; gap: 10px; margin: 0 0 18px; flex-wrap: wrap; }
+  .var {
+    font-family: var(--ff-mono); font-size: 17px; font-weight: 700;
+    padding: 6px 12px; border-radius: 5px;
+    border: 1px solid var(--line); color: var(--bdim);
+  }
+  .var.i { background: var(--row);   color: var(--row-ink);   border-color: var(--row-edge); }
+  .var.g { background: var(--count); color: var(--count-ink); border-color: var(--count-edge); }
+  .var.c { background: var(--col);   color: var(--col-ink);   border-color: var(--col-edge); }
+
   pre.code {
     margin: 0; font-family: var(--ff-mono); font-size: 16px; line-height: 1.95;
     color: var(--bsoft); white-space: pre; overflow-x: auto;
@@ -284,6 +295,10 @@
     min-height: 64px; margin-top: 16px;
     border-top: 1px solid var(--line); padding-top: 16px;
     font-family: var(--ff-body); font-size: 24px; color: var(--bsoft); line-height: 1.4;
+  }
+  .ruleline .tick {
+    font-family: var(--ff-mono); font-size: 26px; font-weight: 700;
+    color: var(--bink); letter-spacing: .01em;
   }
   .ruleline b, .ruleline u, .ruleline s {
     font-family: var(--ff-mono); font-size: 20px; font-weight: 700;
@@ -568,7 +583,6 @@
         <option value="1.05">Brisk</option>
       </select>
       <select id="voice" aria-label="Voice"><option>loading…</option></select>
-      <span class="count-lbl" id="voicetag" hidden></span>
     </div>
 
     <p class="warn" id="warn" hidden>No speech voices here, so it steps silently — use ▶ to move a line at a time. The captions carry the whole lesson.</p>
@@ -639,13 +653,6 @@
     </div>
   </section>
 
-  <div class="notes">
-    <h2>Why this, and not a filmed video</h2>
-    <p>A filmed lesson has to be re-filmed every time the lesson changes, and it can't be translated without redoing the whole thing. This is <b>one timeline</b>: a list of sentences, each pinned to the state of the drawing.</p>
-    <p>From that one list you get all of it — the page you're looking at, the caption track (the sentence <i>is</i> the cue, so <b>WCAG 2.1 AA captions come for free</b>), the transcript, and an <code>.mp4</code> rendered offline by stepping the same states frame by frame against the narration audio.</p>
-    <p>Colour carries meaning here, but never on its own: every coloured square also holds its own number, so the board still reads in greyscale and for colour-blind viewers.</p>
-  </div>
-
 </div>
 
 <script>
@@ -671,6 +678,9 @@
       rows: 0,               // how many rows have their squares drawn
       nums: 0,               // how many row pills are showing
       showCols: false,       // is the column header up
+      grid: null,            // when running: what each square shows right now
+      vars: null,            // when running: the values in play
+      ticker: "",            // when running: the machine thinking out loud
       lit: [],               // rows whose count badge is lit
       showGap: false, gapHdr: "",
       marks: [],             // rows showing their skipped columns in orange
@@ -707,6 +717,54 @@
     "    System.out.println();",
     "}"
   ];
+
+  // Watching it run. These frames come out of really executing the loop, so
+  // they cannot disagree with the code on the board. Nobody speaks over them:
+  // `say: null` means no narration, and the ticker does the talking.
+  function runFrames() {
+    var out = [];
+    var grid = [], r, c;
+    for (r = 0; r < N; r++) {
+      grid.push([null, null, null, null, null]);
+    }
+
+    function snap(vars, hi, ticker) {
+      return {
+        say: null,
+        scene: scene({
+          label: "watch it run", rows: 5, nums: 5, showCols: true,
+          grid: grid.map(function (row) { return row.slice(); }),
+          vars: vars, ticker: ticker,
+          code: CODE_DIAMOND, codeHi: hi
+        })
+      };
+    }
+
+    out.push(snap({ i: 0, gap: null, c: null }, [0], "n = 5 · here we go"));
+
+    for (r = 0; r < N; r++) {
+      var gap = Math.abs(r - Math.floor(N / 2));
+      out.push(snap({ i: r, gap: null, c: null }, [1], "row " + r));
+      out.push(snap({ i: r, gap: gap, c: null }, [2],
+                    "row " + r + " · abs(" + r + " − 2) = " + gap));
+
+      for (c = 0; c < gap; c++) {
+        grid[r][c] = "skip";
+        out.push(snap({ i: r, gap: gap, c: c }, [3, 4],
+                      "row " + r + " · column " + c + " → space"));
+      }
+      for (c = gap; c < N - gap; c++) {
+        grid[r][c] = "star";
+        out.push(snap({ i: r, gap: gap, c: c }, [5, 6],
+                      "row " + r + " · column " + c + " → ★"));
+      }
+      out.push(snap({ i: r, gap: gap, c: null }, [7],
+                    "row " + r + " done · next line"));
+    }
+
+    out.push(snap({ i: 4, gap: 2, c: null }, [8], "nothing left to repeat · stop"));
+    return out;
+  }
 
   var FILM = [
 
@@ -914,6 +972,17 @@
       scene: scene({ label: "the whole thing", rows: 5, nums: 5, showCols: true, showGap: true,
                      gapHdr: "steps", code: CODE_DIAMOND }) },
 
+    { say: "So now watch it go. I'll stop talking — this bit you just watch.",
+      scene: scene({ label: "watch it run", rows: 0, nums: 5, showCols: true,
+                     code: CODE_DIAMOND,
+                     rule: "no more words — just the machine" }) },
+
+    "RUN",
+
+    { say: "That's every square accounted for, one at a time, and the whole diamond out the other end.",
+      scene: scene({ label: "done", rows: 5, nums: 5, showCols: true, showGap: true,
+                     gapHdr: "steps", code: CODE_DIAMOND }) },
+
     /* ---- the payoff ---------------------------------------------------- */
 
     { say: "And here's your reward for sitting through all that counting. Change one question — from how far from the middle, to how far from the nearest edge…",
@@ -929,6 +998,15 @@
     { say: "That's usually what separates two shapes. Not the code. The question.",
       scene: scene({ mode: "title", title: ["Not the code.", "The <em>question</em>."] }) }
   ];
+
+  // swap the marker for the frames the algorithm produces
+  (function () {
+    var at = FILM.indexOf("RUN");
+    if (at >= 0) {
+      var run = runFrames();
+      FILM.splice.apply(FILM, [at, 1].concat(run));
+    }
+  })();
 
   /* ---------------------------------------------------------------- render */
 
@@ -973,6 +1051,18 @@
         var star = k >= gap && k <= N - 1 - gap;
         var picked = sc.pick && sc.pick[0] === r && sc.pick[1] === k;
         var cls, body;
+
+        if (sc.grid) {
+          // Running: show exactly what has been printed so far, nothing more.
+          var what = sc.grid[r][k];
+          var here = sc.vars && sc.vars.i === r && sc.vars.c === k;
+          cls = what === "star" ? "cell star"
+              : what === "skip" ? "cell skipped"
+              : "cell blank" + (here ? "" : " hidden");
+          body = what === "star" ? "&#9733;" : what === "skip" ? k : "·";
+          cells += '<div class="' + cls + (here ? " pick" : "") + '">' + body + "</div>";
+          continue;
+        }
 
         if (marked && k < gap) {
           cls = "cell skipped";  body = k;              // the column it leaves empty
@@ -1051,6 +1141,19 @@
   }
 
   function sideView(sc) {
+    if (sc.vars) {
+      var v = sc.vars;
+      var box = '<div class="vars">' +
+        '<span class="var i">i = ' + v.i + "</span>" +
+        (v.gap === null ? '<span class="var">gap = ?</span>'
+                        : '<span class="var g">gap = ' + v.gap + "</span>") +
+        (v.c === null ? "" : '<span class="var c">c = ' + v.c + "</span>") +
+        "</div>";
+      return box + (sc.code ? '<pre class="code">' + sc.code.map(function (l, n) {
+        return '<span class="ln' + (sc.codeHi.indexOf(n) >= 0 ? " hi" : "") + '">' +
+               l.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+      }).join("") + "</pre>" : "");
+    }
     if (sc.code) {
       return '<pre class="code">' + sc.code.slice(0, sc.codeUpto).map(function (l, n) {
         return '<span class="ln' + (sc.codeHi.indexOf(n) >= 0 ? " hi" : "") + '">' +
@@ -1075,12 +1178,16 @@
 
     // One subject per frame. If the sentence is about a line of code and points
     // at no row, the drawing steps back so there's one thing to look at.
-    var quiet = sc.code && sc.codeHi.length && !sc.lit.length && !sc.marks.length;
+    var quiet = sc.code && sc.codeHi.length && !sc.lit.length && !sc.marks.length && !sc.grid;
 
     var main = sc.mode === "strip" ? stripView(sc) : rowsView(sc);
     elCols.innerHTML = '<div class="main' + (quiet ? " back" : "") + '">' + main + "</div>" +
                        '<div class="side">' + sideView(sc) + "</div>";
-    elRule.innerHTML = sc.rule || "";
+    // While it runs, the ticker belongs ON the board: captions are hidden
+    // in the rendered video, and this is the only voice in that stretch.
+    elRule.innerHTML = sc.ticker
+      ? '<span class="tick">' + sc.ticker + "</span>"
+      : (sc.rule || "");
   }
 
   /* ---------------------------------------------------------------- scale */
@@ -1103,7 +1210,8 @@
   function show(i) {
     idx = Math.max(0, Math.min(FILM.length - 1, i));
     draw(idx);
-    elCap.textContent = FILM[idx].say;
+    // A silent frame still needs a caption — the ticker is what's "said".
+    elCap.textContent = FILM[idx].say || FILM[idx].scene.ticker || "";
     elCount.textContent = (idx + 1) + " / " + FILM.length;
     elFill.style.width = ((idx + 1) / FILM.length * 100) + "%";
   }
@@ -1118,8 +1226,18 @@
   // Real narration, when this lesson has been given some. Generated once,
   // offline; nothing here costs anything to play.
   var AUDIO_BASE = "audio/diamond-lesson/";
+  var RUN_MS = 620;            // how long a wordless frame stays up
   var track = null;            // manifest, or null for the browser voice
   var player = null;
+
+  // The audio files are numbered by SPOKEN line, so a frame with no words
+  // doesn't consume one.
+  var SPOKEN = (function () {
+    var map = [], n = 0, i;
+    for (i = 0; i < FILM.length; i++) { map.push(FILM[i].say ? n++ : -1); }
+    return map;
+  })();
+  function spokenIndex(i) { return SPOKEN[i]; }
 
   // The player waits for the sentence to finish rather than running on a timer.
   // A fixed timer and a voice always end up cutting each other off. That one
@@ -1131,12 +1249,18 @@
     show(i);
     var onDone = function () { speakFrom(i + 1); };
 
-    if (track && track.lines[i]) {
+    // Nothing to say: hold the frame just long enough to follow, then move on.
+    if (!FILM[i].say) {
+      window.setTimeout(onDone, RUN_MS);
+      return;
+    }
+
+    if (track && track.lines[spokenIndex(i)]) {
       if (!player) { player = new Audio(); }
       player.onended = onDone;
       player.onerror = onDone;
       player.playbackRate = parseFloat(elRate.value);
-      player.src = AUDIO_BASE + track.lines[i].file;
+      player.src = AUDIO_BASE + track.lines[spokenIndex(i)].file;
       var p = player.play();
       if (p && p.catch) { p.catch(onDone); }
       return;
@@ -1210,15 +1334,11 @@
     fetch(AUDIO_BASE + "manifest.json", { cache: "no-cache" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (m) {
-        if (!m || !m.lines || m.lines.length < FILM.length) { return; }
+        var spokenCount = FILM.filter(function (f) { return !!f.say; }).length;
+        if (!m || !m.lines || m.lines.length < spokenCount) { return; }
         track = m;
         elVoice.hidden = true;
         document.getElementById("warn").hidden = true;
-        var tag = document.getElementById("voicetag");
-        if (tag) {
-          tag.textContent = "\u25CF " + (m.voice || "narrated");
-          tag.hidden = false;
-        }
       })
       .catch(function () { /* no narration here — browser voice it is */ });
   }
@@ -1234,6 +1354,15 @@
   };
 
   var q = new URLSearchParams(window.location.search);
+
+  // ?dump=1 — hand the frame list to whatever is rendering this offline.
+  // The run frames don't exist until the algorithm has been executed, so the
+  // page is the only thing that can answer this honestly.
+  if (q.get("dump") === "1") {
+    document.body.textContent = JSON.stringify(
+      FILM.map(function (f) { return f.say || null; }));
+    return;
+  }
 
   // ?theme=dark|light pins the board, so an offline render never depends on
   // whatever the machine doing the rendering happens to prefer.
