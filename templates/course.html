@@ -2722,6 +2722,7 @@
           <button class="tab-btn active" onclick="switchTab('theory')">📖 Theory</button>
           <button class="tab-btn" onclick="switchTab('slides')">📊 Slides</button>
           <button class="tab-btn" onclick="switchTab('flowchart')">🔄 Flowchart</button>
+          <button class="tab-btn" onclick="switchTab('lesson')">🎬 Lesson</button>
           <button class="tab-btn" onclick="switchTab('practice')">💻 Practice</button>
         </div>
 
@@ -2738,6 +2739,10 @@
 
         <div id="flowchartTab" class="tab-content">
           <div id="flowchartContent"></div>
+        </div>
+
+        <div id="lessonTab" class="tab-content">
+          <div id="lessonContent"></div>
         </div>
 
         <div id="practiceTab" class="tab-content">
@@ -3824,6 +3829,34 @@ function clearChatMessages(){var m=document.getElementById('chatMessages');if(!m
           mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
         }, 100);
       }
+
+      if (tabName === 'lesson') {
+        loadDynamicLesson();
+      }
+    }
+
+    // The dynamic lesson lives as its own page under /static and runs in a
+    // frame, so it can't reach this page's styles or scripts. It is built the
+    // first time the tab is opened and costs nothing to anyone who never
+    // opens it. Whatever accessibility mode the course is in is handed over,
+    // so the lesson matches rather than fighting it.
+    function loadDynamicLesson() {
+      var host = document.getElementById('lessonContent');
+      if (!host || host.dataset.loaded === '1') return;
+      host.dataset.loaded = '1';
+
+      var note = document.createElement('p');
+      note.style.cssText = 'margin:0 0 14px;line-height:1.6;';
+      note.textContent = 'Watch it built, then try it yourself. This one draws a diamond of stars, and explains every number before it uses it.';
+      host.appendChild(note);
+
+      var dark = document.body.classList.contains('dark-mode');
+      var frame = document.createElement('iframe');
+      frame.src = '/static/lessons/diamond-lesson.html?theme=' + (dark ? 'dark' : 'light');
+      frame.title = 'Dynamic lesson: drawing a diamond';
+      frame.setAttribute('loading', 'lazy');
+      frame.style.cssText = 'width:100%;height:80vh;min-height:560px;border:1px solid rgba(128,128,128,.35);border-radius:10px;background:#fff;';
+      host.appendChild(frame);
     }
 
     // ========================================

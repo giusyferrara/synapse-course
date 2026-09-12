@@ -1,0 +1,1585 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>The Diamond Lesson</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Newsreader:opsz,wght@6..72,300;6..72,400&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+  :root {
+    color-scheme: light dark;
+
+    --paper:      #F4F6F5;
+    --paper-2:    #E8ECEA;
+    --ink:        #16202B;
+    --ink-soft:   #3D4A56;
+    --ink-faint:  #64727E;
+    --rule:       #C8D0D4;
+
+    /* ---- the board ----
+       Light is the flow look: white ground, saturated pills, white text.
+       FIVE meanings, one colour each, and the colour is never the only
+       signal — every pill also carries its own number or glyph, so the board
+       still reads in greyscale and for colour-blind viewers.
+         blue   = the row's name        (up and down)
+         purple = the column's name     (left and right)
+         orange = the count, and the columns it leaves empty
+         green  = the star, what actually gets drawn                       */
+    --board:      #FFFFFF;
+    --board-2:    #EEF1F3;
+    --line:       #7F8C94;   /* grid rule      3.3:1 */
+    --bink:       #16202B;   /* main text     16.5:1 */
+    --bsoft:      #2B3743;   /* secondary     12.4:1 */
+    --bdim:       #3D4A56;   /* quiet          9.1:1 */
+
+    --row:   #2563EB;  --row-ink:   #FFFFFF;  --row-edge:   #1D4ED8;
+    --col:   #7C3AED;  --col-ink:   #FFFFFF;  --col-edge:   #6D28D9;
+    --count: #F59E0B;  --count-ink: #3B2200;  --count-edge: #B45309;
+    --star:  #16A34A;  --star-ink:  #052E16;  --star-edge:  #15803D;
+
+    /* For text and outlines on the PAGE, where a bright fill would fail. */
+    --count-deep: #B45309;
+
+    --ff-display: "Zilla Slab", Georgia, serif;
+    --ff-body:    "Newsreader", Georgia, serif;
+    --ff-mono:    "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #121A18; --paper-2: #1A2320;
+      --ink: #E6EDEA; --ink-soft: #B4C1BC; --ink-faint: #85958F;
+      --rule: #2E3A36;
+
+      --board: #1B2622; --board-2: #141D1A;
+      --line: #6F807A;  --bink: #EDF2EF; --bsoft: #D2DCD8; --bdim: #AFBDB7;
+
+      --row:   #60A5FA; --row-ink:   #04102E; --row-edge:   #93C5FD;
+      --col:   #C084FC; --col-ink:   #1A0536; --col-edge:   #DDB4FE;
+      --count: #FBBF24; --count-ink: #3B2200; --count-edge: #FCD34D;
+      --star:  #4ADE80; --star-ink:  #052E16; --star-edge:  #86EFAC;
+      --count-deep: #FBBF24;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #121A18; --paper-2: #1A2320;
+    --ink: #E6EDEA; --ink-soft: #B4C1BC; --ink-faint: #85958F;
+    --rule: #2E3A36;
+
+    --board: #1B2622; --board-2: #141D1A;
+    --line: #6F807A;  --bink: #EDF2EF; --bsoft: #D2DCD8; --bdim: #AFBDB7;
+
+    --row:   #60A5FA; --row-ink:   #04102E; --row-edge:   #93C5FD;
+    --col:   #C084FC; --col-ink:   #1A0536; --col-edge:   #DDB4FE;
+    --count: #FBBF24; --count-ink: #3B2200; --count-edge: #FCD34D;
+    --star:  #4ADE80; --star-ink:  #052E16; --star-edge:  #86EFAC;
+    --count-deep: #FBBF24;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0; padding: 0 20px;
+    background: var(--paper); color: var(--ink);
+    font-family: var(--ff-body); font-size: 17px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1000px; margin: 0 auto; padding-block: 40px 80px; }
+
+  .eyebrow {
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-faint); margin: 0;
+  }
+
+  h1 {
+    font-family: var(--ff-display); font-weight: 700;
+    font-size: clamp(30px, 5vw, 44px); line-height: 1.05;
+    letter-spacing: -.015em; margin: 8px 0 0; text-wrap: balance;
+  }
+
+  .sub { color: var(--ink-soft); max-width: 62ch; margin: 12px 0 0; font-size: 18px; }
+
+  .key {
+    display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 0;
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .key span {
+    padding: 5px 11px; border-radius: 4px; color: #FFFFFF; font-weight: 700;
+  }
+
+  /* ------------------------------------------------ the player ---------- */
+
+  .player { margin-top: 24px; }
+
+  .screen {
+    position: relative; width: 100%; aspect-ratio: 16 / 9;
+    overflow: hidden; border-radius: 5px; background: var(--board);
+    border: 1px solid var(--rule);
+  }
+
+  /* Fixed design size so the browser and the offline render are identical. */
+  .stage {
+    position: absolute; top: 0; left: 0;
+    width: 1280px; height: 720px; transform-origin: top left;
+    background: var(--board); color: var(--bink);
+    padding: 44px 56px 36px;
+    display: flex; flex-direction: column;
+    font-family: var(--ff-mono);
+  }
+
+  .scenelbl {
+    font-size: 15px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--bdim); margin-bottom: 20px; min-height: 20px; font-weight: 700;
+  }
+
+  .cols { flex: 1; display: flex; gap: 46px; align-items: flex-start; }
+  .main { transition: opacity .25s ease; }
+  .main.back { opacity: .5; }
+
+  /* ---- the matrix ---- */
+
+  .grid { display: flex; flex-direction: column; gap: 8px; }
+  .row { display: flex; align-items: center; gap: 14px; }
+
+  .rowlbl {
+    width: 112px; text-align: right; font-size: 16px; color: var(--bdim);
+    display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  }
+
+  .pill {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 30px; height: 30px; padding: 0 7px; border-radius: 5px;
+    font-size: 16px; font-weight: 700;
+  }
+  .pill.rowp { background: var(--row);   color: var(--row-ink);
+               box-shadow: inset 0 0 0 1px var(--row-edge); }
+  .pill.colp { background: var(--col);   color: var(--col-ink);
+               box-shadow: inset 0 0 0 1px var(--col-edge); }
+  .pill.cnt  { background: var(--count); color: var(--count-ink);
+               box-shadow: inset 0 0 0 1px var(--count-edge); }
+  /* a row with no name yet: holds its place, shows nothing */
+  .pill.off  { background: transparent; border: 1px solid transparent; color: transparent; }
+
+  .cells { display: flex; gap: 7px; }
+
+  /* Ruled, not filled: one background behind every glyph. */
+  .cell {
+    width: 46px; height: 46px; border-radius: 4px;
+    background: transparent; border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; line-height: 1; color: var(--bink);
+    transition: background-color .2s ease, color .2s ease, opacity .2s ease;
+  }
+  .cell.blank   { color: var(--bdim); font-size: 16px; }
+  .cell.star    { background: var(--star); border-color: var(--star-edge);
+                  color: var(--star-ink); font-weight: 700; }
+  .cell.skipped { background: var(--count); border-color: var(--count-edge);
+                  color: var(--count-ink); font-size: 19px; font-weight: 700; }
+  .cell.hidden  { opacity: .12; }
+  .cell.pick    { box-shadow: 0 0 0 4px var(--bink); }
+
+  .gap { margin-left: 10px; min-width: 116px; display: flex; align-items: center; }
+
+  .gapnum {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: transparent; border: 1px solid var(--line);
+    color: var(--bdim); font-size: 17px; font-weight: 700;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+  }
+  .row.lit .gapnum { background: var(--count); border-color: var(--count-edge);
+                     color: var(--count-ink); }
+
+  .hdr {
+    font-size: 13px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--bdim); font-weight: 700;
+  }
+  .hdr.left  { width: 112px; text-align: right; }
+  .hdr.right { margin-left: 10px; min-width: 116px; max-width: 150px; line-height: 1.35; }
+
+  /* ---- the index laid out in a line ---- */
+
+  .strip { display: flex; flex-direction: column; padding-top: 10px; }
+  .striprow { display: grid; grid-template-columns: repeat(9, auto);
+              align-items: center; justify-content: start; }
+
+  .box {
+    width: 72px; height: 72px; border-radius: 8px;
+    background: transparent; color: var(--bdim);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 29px; font-weight: 700; border: 2px solid var(--line);
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+  }
+  .box.on   { background: var(--row); border-color: var(--row-edge); color: var(--row-ink); }
+
+  /* The middle is a target: outlined while you're still walking towards it,
+     FILLED the moment the count reaches it. */
+  .box.mid  { border-color: var(--count-deep); border-width: 4px; }
+  .box.hit  { background: var(--count); border-color: var(--count-edge);
+              color: var(--count-ink); }
+  .box.from { box-shadow: 0 0 0 4px var(--bink); }
+
+  .link    { width: 40px; height: 72px; display: flex; align-items: center; justify-content: center; }
+  .hopslot { width: 40px; height: 46px; display: flex; align-items: center; justify-content: center; }
+  .hopbox  { width: 72px; height: 46px; display: flex; align-items: center; justify-content: center; }
+  .hop {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--count); color: var(--count-ink);
+    box-shadow: inset 0 0 0 1px var(--count-edge);
+    font-size: 16px; font-weight: 700;
+  }
+  .arrow    { color: var(--bdim); font-size: 24px; }
+  .arrow.on { color: var(--count-deep); }
+
+  /* the target sitting over the middle, and the marker under where you stand */
+  .target {
+    display: flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 2px solid var(--count-deep); color: var(--count-deep);
+    font-size: 19px; line-height: 1; font-weight: 700;
+  }
+  .target.hit { background: var(--count); color: var(--count-ink); border-color: var(--count-edge); }
+
+  .standing { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .standing .tri { color: var(--bink); font-size: 17px; line-height: 1; }
+  .standing .lbl {
+    font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--bdim); font-weight: 700;
+  }
+  .midlbl {
+    font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--count-deep); font-weight: 700; text-align: center;
+  }
+
+  .stripcap {
+    grid-column: 1 / -1; margin-top: 18px;
+    font-family: var(--ff-body); font-size: 25px; color: var(--bsoft);
+  }
+
+  /* ---- right hand side ---- */
+
+  .side { flex: 1; min-width: 0; padding-top: 2px; }
+  .byhand {
+    font-family: var(--ff-body); font-size: 26px; line-height: 1.45;
+    color: var(--bsoft); max-width: 21ch;
+  }
+  .byhand b { color: var(--bink); font-weight: 700; }
+
+  pre.code {
+    margin: 0; font-family: var(--ff-mono); font-size: 16px; line-height: 1.95;
+    color: var(--bsoft); white-space: pre; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 12px; border-radius: 4px; }
+  pre.code .ln.hi { background: var(--count); color: var(--count-ink); font-weight: 700;
+                    box-shadow: inset 0 0 0 1px var(--count-edge); }
+
+  /* ---- the line at the foot of the board ---- */
+
+  .ruleline {
+    min-height: 64px; margin-top: 16px;
+    border-top: 1px solid var(--line); padding-top: 16px;
+    font-family: var(--ff-body); font-size: 24px; color: var(--bsoft); line-height: 1.4;
+  }
+  .ruleline b, .ruleline u, .ruleline s {
+    font-family: var(--ff-mono); font-size: 20px; font-weight: 700;
+    text-decoration: none; padding: 2px 7px; border-radius: 4px; color: #FFFFFF;
+  }
+  .ruleline b { background: var(--count); color: var(--count-ink);
+                box-shadow: inset 0 0 0 1px var(--count-edge); }
+  .ruleline u { background: var(--row);   color: var(--row-ink);
+                box-shadow: inset 0 0 0 1px var(--row-edge); }
+  .ruleline s { background: var(--col);   color: var(--col-ink);
+                box-shadow: inset 0 0 0 1px var(--col-edge); }
+
+  .stripcap b, .stripcap u, .stripcap s {
+    font-family: var(--ff-mono); font-size: 20px; font-weight: 700;
+    text-decoration: none; padding: 2px 7px; border-radius: 4px;
+  }
+  .stripcap b { background: var(--count); color: var(--count-ink);
+                box-shadow: inset 0 0 0 1px var(--count-edge); }
+  .stripcap u { background: var(--row);   color: var(--row-ink);
+                box-shadow: inset 0 0 0 1px var(--row-edge); }
+  .stripcap s { background: var(--col);   color: var(--col-ink);
+                box-shadow: inset 0 0 0 1px var(--col-edge); }
+
+  .title-card {
+    flex: 1; display: flex; flex-direction: column; justify-content: center;
+    font-family: var(--ff-display); font-weight: 700;
+    font-size: 56px; line-height: 1.12; letter-spacing: -.02em;
+    color: var(--bink); max-width: 20ch;
+  }
+  .title-card em { font-style: normal; color: var(--count-deep); }
+
+  /* ------------------------------------------------ captions ------------ */
+
+  .caption {
+    background: var(--board-2); color: var(--bink);
+    border: 1px solid var(--rule); border-top: none;
+    border-radius: 0 0 5px 5px; padding: 17px 22px 19px;
+    font-family: var(--ff-body); font-size: 20px; line-height: 1.5;
+    min-height: 84px; display: flex; align-items: center;
+  }
+  .caption[hidden] { display: none !important; }
+
+  /* ------------------------------------------------ controls ------------ */
+
+  .bar { margin-top: 16px; display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; }
+
+  button {
+    font-family: var(--ff-mono); font-size: 12px; letter-spacing: .07em;
+    text-transform: uppercase; padding: 10px 16px; font-weight: 700;
+    color: #FFFFFF; background: var(--ink); border: none; border-radius: 4px; cursor: pointer;
+  }
+  button.primary { background: var(--count); color: var(--count-ink); }
+  button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
+  button.ghost[aria-pressed="true"] { color: var(--row); border-color: var(--row); }
+
+  :focus-visible { outline: 3px solid var(--count-deep); outline-offset: 2px; }
+
+  .track { flex: 1; min-width: 150px; height: 5px; border-radius: 3px; background: var(--rule); overflow: hidden; }
+  .track i { display: block; height: 100%; width: 0; background: var(--count); }
+
+  .count-lbl {
+    font-family: var(--ff-mono); font-size: 12px; font-weight: 700;
+    color: var(--ink-soft); font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+
+  select {
+    font-family: var(--ff-mono); font-size: 12px; padding: 7px 8px;
+    color: var(--ink); background: var(--paper-2);
+    border: 1px solid var(--rule); border-radius: 4px;
+  }
+
+  .warn { color: var(--count-deep); font-size: 15px; margin: 14px 0 0; font-weight: 700; }
+
+  /* ------------------------------------------------ notes --------------- */
+
+  .notes { margin-top: 50px; border-top: 2px solid var(--ink); padding-top: 20px; max-width: 66ch; }
+  .notes h2 {
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 700; margin: 0 0 14px;
+  }
+  .notes p { margin: 0 0 12px; color: var(--ink-soft); }
+  .notes b { color: var(--ink); font-weight: 700; }
+  code { font-family: var(--ff-mono); font-size: .87em; background: var(--paper-2); padding: 1px 5px; border-radius: 3px; }
+
+
+  /* ------------------------------------------------ try it -------------- */
+
+  .tryit { margin-top: 54px; border-top: 2px solid var(--ink); padding-top: 24px; }
+
+  .tryit > h2 {
+    font-family: var(--ff-display); font-weight: 700; font-size: 30px;
+    margin: 0 0 6px; letter-spacing: -.01em;
+  }
+  .tryit > p.lede { margin: 0 0 20px; color: var(--ink-soft); max-width: 62ch; }
+
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .tab {
+    font-family: var(--ff-mono); font-size: 12px; letter-spacing: .06em;
+    text-transform: uppercase; font-weight: 700; padding: 10px 15px;
+    background: transparent; color: var(--ink-soft);
+    border: 1px solid var(--rule); border-radius: 4px; cursor: pointer;
+  }
+  .tab[aria-selected="true"] { background: var(--ink); color: #FFFFFF; border-color: var(--ink); }
+
+  .panel[hidden] { display: none !important; }
+
+  .ctrl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .ctrl > span.lbl {
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 700;
+    min-width: 108px;
+  }
+  .chip {
+    font-family: var(--ff-mono); font-size: 13px; font-weight: 700;
+    padding: 8px 13px; border-radius: 4px; cursor: pointer;
+    background: var(--paper-2); color: var(--ink);
+    border: 1px solid var(--rule);
+  }
+  .chip[aria-pressed="true"] { background: var(--row); border-color: var(--row-edge); color: var(--row-ink); }
+  .chip.q[aria-pressed="true"] { background: var(--count); border-color: var(--count-edge);
+                                 color: var(--count-ink); }
+
+  .liveboard {
+    background: var(--board); border: 1px solid var(--rule); border-radius: 5px;
+    padding: 22px; overflow-x: auto; margin-top: 6px;
+  }
+  .lb-grid { display: inline-flex; flex-direction: column; gap: 5px; font-family: var(--ff-mono); }
+  .lb-row { display: flex; align-items: center; gap: 10px; }
+  .lb-lbl { width: 74px; text-align: right; font-size: 13px; color: var(--bdim); }
+  .lb-cells { display: flex; gap: 4px; }
+  .lb-cell {
+    width: 26px; height: 26px; border-radius: 3px;
+    border: 1px solid var(--line); display: flex; align-items: center;
+    justify-content: center; font-size: 12px; font-weight: 700; color: var(--bdim);
+  }
+  .lb-cell.s { background: var(--star); border-color: var(--star-edge); color: var(--star-ink); }
+  .lb-cell.e { background: var(--count); border-color: var(--count-edge); color: var(--count-ink); }
+  .lb-badge {
+    margin-left: 8px; min-width: 26px; height: 26px; border-radius: 50%;
+    background: var(--count); color: var(--count-ink);
+    box-shadow: inset 0 0 0 1px var(--count-edge);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+  }
+  .ticker {
+    font-family: var(--ff-mono); font-size: 13px; color: var(--ink-soft);
+    margin-top: 14px; line-height: 1.7;
+  }
+  .ticker b { color: var(--count-deep); }
+
+  /* ---- build it ---- */
+
+  .slots { display: flex; flex-direction: column; gap: 5px; margin-bottom: 18px; }
+  .slot {
+    font-family: var(--ff-mono); font-size: 13px; padding: 9px 12px;
+    border-radius: 4px; border: 1px dashed var(--rule); color: var(--ink-faint);
+    background: var(--paper-2); min-height: 38px; white-space: pre;
+    overflow-x: auto;
+  }
+  .slot.done {
+    border-style: solid; border-color: var(--star); background: transparent;
+    color: var(--ink); font-weight: 700;
+  }
+  .slot.next { border-color: var(--count-deep); border-style: solid; }
+
+  .bank { display: flex; flex-direction: column; gap: 6px; }
+  .line-chip {
+    font-family: var(--ff-mono); font-size: 13px; text-align: left;
+    padding: 10px 12px; border-radius: 4px; cursor: pointer;
+    background: var(--paper-2); color: var(--ink);
+    border: 1px solid var(--rule); white-space: pre; overflow-x: auto;
+    text-transform: none; letter-spacing: 0; font-weight: 400;
+  }
+  .line-chip:disabled { opacity: .3; cursor: default; }
+
+  .verdict {
+    margin-top: 16px; padding: 14px 16px; border-radius: 5px;
+    border-left: 4px solid var(--rule); background: var(--paper-2);
+    font-size: 17px; line-height: 1.55; color: var(--ink);
+  }
+  .verdict.good { border-left-color: var(--star); }
+  .verdict.nope { border-left-color: var(--count-deep); }
+  .verdict[hidden] { display: none !important; }
+
+  /* ---- variants ---- */
+
+  .variant { margin-bottom: 22px; }
+  .variant h3 {
+    font-family: var(--ff-mono); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink); margin: 0 0 6px; font-weight: 700;
+  }
+  .variant p { margin: 0 0 8px; color: var(--ink-soft); max-width: 62ch; }
+  .variant pre {
+    margin: 0; background: var(--board); border: 1px solid var(--rule);
+    border-radius: 4px; padding: 14px 16px; overflow-x: auto;
+    font-family: var(--ff-mono); font-size: 13px; line-height: 1.8; color: var(--bink);
+  }
+
+  /* ---- problems ---- */
+
+  .prob { margin-bottom: 26px; }
+  .prob .q { font-size: 18px; margin: 0 0 10px; color: var(--ink); }
+  .prob .opts { display: flex; gap: 7px; flex-wrap: wrap; }
+
+  /* ---- ask the tutor ---- */
+
+  .ask { margin-top: 26px; border-top: 1px solid var(--rule); padding-top: 18px; }
+  .ask h3 {
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); margin: 0 0 10px; font-weight: 700;
+  }
+  .ask .row2 { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ask input {
+    flex: 1; min-width: 220px; font-family: var(--ff-body); font-size: 16px;
+    padding: 10px 12px; border: 1px solid var(--rule); border-radius: 4px;
+    background: var(--paper-2); color: var(--ink);
+  }
+  .answer {
+    margin-top: 14px; padding: 15px 17px; border-radius: 5px;
+    background: var(--paper-2); border-left: 4px solid var(--row);
+    font-size: 17px; line-height: 1.6; white-space: pre-wrap;
+  }
+  .answer[hidden] { display: none !important; }
+  .answer .mark {
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-faint); display: block;
+    margin-bottom: 8px; font-weight: 700;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cell, .gapnum, .box, .main { transition: none; }
+  }
+
+  @media (max-width: 560px) {
+    .caption { font-size: 17px; min-height: 72px; padding: 14px 16px 16px; }
+    .wrap { padding-block: 28px 56px; }
+  }
+
+  /* raw=1 : just the board at its true size, for the offline renderer */
+  body.raw { padding: 0; background: var(--board); }
+  body.raw .wrap { max-width: none; margin: 0; padding: 0; }
+  body.raw .eyebrow, body.raw h1, body.raw .sub, body.raw .key,
+  body.raw .caption, body.raw .bar, body.raw .warn, body.raw .notes,
+  body.raw .tryit { display: none; }
+  body.raw .screen { width: 1280px; height: 720px; aspect-ratio: auto; border: none; border-radius: 0; }
+  body.raw .stage { transform: none !important; }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">Synapse · lesson video · plays itself, no film crew</p>
+  <h1>The Diamond Lesson</h1>
+  <p class="sub">Nothing is asserted. Every number on this board is counted out in front of you before it gets used — the rows, the columns, and the one sum the whole thing turns on.</p>
+  <p class="key">
+    <span style="background:#2563EB">row · up and down</span>
+    <span style="background:#7C3AED">column · left and right</span>
+    <span style="background:#B45309">the count</span>
+    <span style="background:#15803D">the star</span>
+  </p>
+
+  <div class="player">
+    <div class="screen" id="screen">
+      <div class="stage" id="stage">
+        <div class="scenelbl" id="scenelbl"></div>
+        <div class="cols" id="cols"></div>
+        <div class="ruleline" id="ruleline"></div>
+      </div>
+    </div>
+
+    <div class="caption" id="caption">Press play to begin.</div>
+
+    <div class="bar">
+      <button class="primary" id="play" type="button">▶ Play the lesson</button>
+      <button id="prev" type="button" aria-label="Previous line">◀</button>
+      <button id="next" type="button" aria-label="Next line">▶</button>
+      <div class="track"><i id="fill"></i></div>
+      <span class="count-lbl" id="count">0 / 0</span>
+      <button class="ghost" id="cc" type="button" aria-pressed="true">CC</button>
+      <select id="rate" aria-label="Pace">
+        <option value="0.82">Slow</option>
+        <option value="0.93" selected>Teaching</option>
+        <option value="1.05">Brisk</option>
+      </select>
+      <select id="voice" aria-label="Voice"><option>loading…</option></select>
+      <span class="count-lbl" id="voicetag" hidden></span>
+    </div>
+
+    <p class="warn" id="warn" hidden>No speech voices here, so it steps silently — use ▶ to move a line at a time. The captions carry the whole lesson.</p>
+  </div>
+
+
+  <section class="tryit" id="tryit">
+    <h2>Now you try</h2>
+    <p class="lede">Four things to do with what you just watched. Nothing here is marked or scored — get one wrong and it tells you why, which is the useful part.</p>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="t-change"   aria-selected="true"  aria-controls="p-change">1 · Change it</button>
+      <button class="tab" role="tab" id="t-build"    aria-selected="false" aria-controls="p-build">2 · Build it</button>
+      <button class="tab" role="tab" id="t-variants" aria-selected="false" aria-controls="p-variants">3 · Other ways</button>
+      <button class="tab" role="tab" id="t-problems" aria-selected="false" aria-controls="p-problems">4 · Problems</button>
+    </div>
+
+    <!-- ---------------------------------------------------- change it -->
+    <div class="panel" id="p-change" role="tabpanel" aria-labelledby="t-change">
+      <div class="ctrl">
+        <span class="lbl">how big</span>
+        <button class="chip" data-n="5"  aria-pressed="true">n = 5</button>
+        <button class="chip" data-n="7"  aria-pressed="false">n = 7</button>
+        <button class="chip" data-n="9"  aria-pressed="false">n = 9</button>
+        <button class="chip" data-n="11" aria-pressed="false">n = 11</button>
+      </div>
+      <div class="ctrl">
+        <span class="lbl">the question</span>
+        <button class="chip q" data-q="mid"  aria-pressed="true">how far from the middle</button>
+        <button class="chip q" data-q="edge" aria-pressed="false">how far from the nearest edge</button>
+      </div>
+
+      <div class="liveboard"><div class="lb-grid" id="lbgrid"></div></div>
+      <div class="ticker" id="lbticker"></div>
+    </div>
+
+    <!-- ---------------------------------------------------- build it -->
+    <div class="panel" id="p-build" role="tabpanel" aria-labelledby="t-build" hidden>
+      <p class="lede">The nine lines, shuffled. Tap them in the order they have to run. If one can't go next, you'll be told why it can't.</p>
+      <div class="slots" id="slots"></div>
+      <div class="bank" id="bank"></div>
+      <div class="verdict" id="buildsay" hidden></div>
+      <div class="ctrl" style="margin-top:16px">
+        <button class="chip" id="buildreset" aria-pressed="false">Start again</button>
+      </div>
+    </div>
+
+    <!-- ---------------------------------------------------- variants -->
+    <div class="panel" id="p-variants" role="tabpanel" aria-labelledby="t-variants" hidden>
+      <p class="lede">The same five-row diamond, written four different ways. Every one of them draws exactly the same picture — which is the point. The shape is not the code.</p>
+      <div id="variants"></div>
+    </div>
+
+    <!-- ---------------------------------------------------- problems -->
+    <div class="panel" id="p-problems" role="tabpanel" aria-labelledby="t-problems" hidden>
+      <div id="problems"></div>
+    </div>
+
+    <!-- ---------------------------------------------------- ask -->
+    <div class="ask" id="ask" hidden>
+      <h3>Stuck, or just curious? Ask the tutor</h3>
+      <div class="row2">
+        <input id="askq" type="text" placeholder="e.g. why does it start at nought?" autocomplete="off">
+        <button id="asksend">Ask</button>
+        <button class="ghost" id="askvariant">Show me another way to write it</button>
+      </div>
+      <div class="answer" id="askout" hidden></div>
+    </div>
+  </section>
+
+  <div class="notes">
+    <h2>Why this, and not a filmed video</h2>
+    <p>A filmed lesson has to be re-filmed every time the lesson changes, and it can't be translated without redoing the whole thing. This is <b>one timeline</b>: a list of sentences, each pinned to the state of the drawing.</p>
+    <p>From that one list you get all of it — the page you're looking at, the caption track (the sentence <i>is</i> the cue, so <b>WCAG 2.1 AA captions come for free</b>), the transcript, and an <code>.mp4</code> rendered offline by stepping the same states frame by frame against the narration audio.</p>
+    <p>Colour carries meaning here, but never on its own: every coloured square also holds its own number, so the board still reads in greyscale and for colour-blind viewers.</p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var N = 5, MID = 2;
+
+  function diamondGap(i) { return Math.abs(i - MID); }
+  function hourglassGap(i) { return Math.min(i, N - 1 - i); }
+
+  /* ------------------------------------------------------------------ film
+     One entry = one spoken sentence = one caption cue = one audio file.
+     `scene` is the whole state of the board while that sentence is said, so
+     any frame rebuilds from its index alone — which is what lets the same
+     lesson render to a video file offline. */
+
+  function scene(o) {
+    var s = {
+      mode: "rows",          // rows | strip | title
+      label: "", title: null,
+      shape: "diamond",
+      rows: 0,               // how many rows have their squares drawn
+      nums: 0,               // how many row pills are showing
+      showCols: false,       // is the column header up
+      lit: [],               // rows whose count badge is lit
+      showGap: false, gapHdr: "",
+      marks: [],             // rows showing their skipped columns in orange
+      pick: null,            // [row, col] — one square singled out
+      from: null, hops: 0, mid: false, stripcap: "",
+      code: null, codeHi: [], codeUpto: 99,
+      rule: "", side: null
+    };
+    for (var k in o) { if (Object.prototype.hasOwnProperty.call(o, k)) { s[k] = o[k]; } }
+    return s;
+  }
+
+  // Real Java, each body on its own line so nothing runs off the board.
+  var CODE_DIAMOND = [
+    "int n = 5;",
+    "for (int i = 0; i < n; i++) {",
+    "    int gap = Math.abs(i - n / 2);",
+    "    for (int c = 0; c < gap; c++)",
+    "        System.out.print(\" \");",
+    "    for (int c = gap; c < n - gap; c++)",
+    "        System.out.print(\"*\");",
+    "    System.out.println();",
+    "}"
+  ];
+
+  var CODE_HOURGLASS = [
+    "int n = 5;",
+    "for (int i = 0; i < n; i++) {",
+    "    int gap = Math.min(i, n - 1 - i);",
+    "    for (int c = 0; c < gap; c++)",
+    "        System.out.print(\" \");",
+    "    for (int c = gap; c < n - gap; c++)",
+    "        System.out.print(\"*\");",
+    "    System.out.println();",
+    "}"
+  ];
+
+  var FILM = [
+
+    /* ---- what we're making ------------------------------------------- */
+
+    { say: "Here's what we're going to draw. Five rows, and the stars step in and back out again.",
+      scene: scene({ label: "the goal", rows: 5 }) },
+
+    { say: "Easy enough to look at. The whole question is how you'd tell a computer to make it.",
+      scene: scene({ label: "the goal", rows: 5, rule: "easy to see, harder to say" }) },
+
+    { say: "And before we draw a single star, there are two things we have to get straight. Skip them and everything after is magic — and magic's no use to you.",
+      scene: scene({ mode: "title", title: ["First, the two things", "everybody <em>skips</em>."] }) },
+
+    /* ---- rows ---------------------------------------------------------- */
+
+    { say: "Five rows. To talk about them at all, we need a way of saying which one we mean.",
+      scene: scene({ label: "naming the rows", rows: 0 }) },
+
+    { say: "So we number them going down. And here's the bit that catches everybody out — we start at nought, not one.",
+      scene: scene({ label: "naming the rows", rows: 0, nums: 1,
+                     rule: "the first row is called <u>0</u>" }) },
+
+    { say: "Nought. One. Two. Three. Four.",
+      scene: scene({ label: "naming the rows", rows: 0, nums: 5,
+                     rule: "<u>0</u> <u>1</u> <u>2</u> <u>3</u> <u>4</u>" }) },
+
+    { say: "Five rows, and the last one is called four. That number is the row's name. It's called the index, and rows run up and down.",
+      scene: scene({ label: "naming the rows", rows: 0, nums: 5,
+                     side: ["Rows", "run up and down."],
+                     rule: "five rows, and the last is <u>4</u>" }) },
+
+    /* ---- columns ------------------------------------------------------- */
+
+    { say: "Now the same thing sideways, because I've been quietly using it and I haven't told you.",
+      scene: scene({ label: "naming the columns", rows: 0, nums: 5, showCols: true }) },
+
+    { say: "Every row is five squares across, and those get numbered too. Nought to four, left to right. Those are the columns.",
+      scene: scene({ label: "naming the columns", rows: 0, nums: 5, showCols: true,
+                     side: ["Columns", "run left and right."],
+                     rule: "<s>0</s> <s>1</s> <s>2</s> <s>3</s> <s>4</s> — left to right" }) },
+
+    { say: "So rows go up and down, columns go left and right. And that means every single square on this board has two names, not one.",
+      scene: scene({ label: "naming the columns", rows: 0, nums: 5, showCols: true,
+                     rule: "every square has <u>a row</u> and <s>a column</s>" }) },
+
+    { say: "This one is row two, column nought. That pair is the square's address — give me a row and a column and I can find any square there is.",
+      scene: scene({ label: "an address", rows: 0, nums: 5, showCols: true, pick: [2, 0],
+                     rule: "<u>row 2</u> , <s>column 0</s>" }) },
+
+    { say: "And this one is row four, column three. Two names, always in that order: row first, then column.",
+      scene: scene({ label: "an address", rows: 0, nums: 5, showCols: true, pick: [4, 3],
+                     rule: "<u>row 4</u> , <s>column 3</s>" }) },
+
+    /* ---- the middle ---------------------------------------------------- */
+
+    { say: "Right. Now back to the rows, because that's where the pattern lives. Let's lay them out in a line so we can count along them.",
+      scene: scene({ mode: "strip", label: "the rows, in a line", nums: 5 }) },
+
+    { say: "Which one's in the middle? Come in one from the left, and one from the right. You land on row two.",
+      scene: scene({ mode: "strip", label: "the rows, in a line", nums: 5, mid: true,
+                     stripcap: "two rows above, two rows below" }) },
+
+    { say: "Two above it, two below it. Row two is the middle, and it stays the middle for the rest of the lesson.",
+      scene: scene({ mode: "strip", label: "the rows, in a line", nums: 5, mid: true,
+                     stripcap: "the middle is <u>row 2</u>" }) },
+
+    /* ---- counting the steps -------------------------------------------- */
+
+    { say: "And now the only sum in this whole lesson. How many steps is a row from the middle? We're going to count them, one hop at a time.",
+      scene: scene({ mode: "strip", label: "counting the steps", nums: 5, mid: true,
+                     stripcap: "how far is each row from <u>row 2</u>?" }) },
+
+    { say: "Start on row nought. Hop across to row one. That's one step.",
+      scene: scene({ mode: "strip", label: "counting the steps", nums: 5, mid: true,
+                     from: 0, hops: 1, stripcap: "from <u>row 0</u> … <b>1</b>" }) },
+
+    { say: "Hop again, onto row two. That's two — and we've arrived. So row nought is two steps from the middle.",
+      scene: scene({ mode: "strip", label: "counting the steps", nums: 5, mid: true,
+                     from: 0, hops: 2, stripcap: "<u>row 0</u> is <b>2</b> steps from the middle" }) },
+
+    { say: "Row one. One hop and you're there. One step.",
+      scene: scene({ mode: "strip", label: "counting the steps", nums: 5, mid: true,
+                     from: 1, hops: 1, stripcap: "<u>row 1</u> is <b>1</b> step from the middle" }) },
+
+    { say: "And row two? Row two is the middle. You're already standing on it, so you don't move at all. Nought steps.",
+      scene: scene({ mode: "strip", label: "counting the steps", nums: 5, mid: true,
+                     from: 2, hops: 0, stripcap: "<u>row 2</u> is <b>0</b> steps from the middle" }) },
+
+    { say: "Row three. One hop back up. One step.",
+      scene: scene({ mode: "strip", label: "counting the steps", nums: 5, mid: true,
+                     from: 3, hops: 1, stripcap: "<u>row 3</u> is <b>1</b> step from the middle" }) },
+
+    { say: "And row four. Two hops. Two steps.",
+      scene: scene({ mode: "strip", label: "counting the steps", nums: 5, mid: true,
+                     from: 4, hops: 2, stripcap: "<u>row 4</u> is <b>2</b> steps from the middle" }) },
+
+    { say: "Write them down in the order we found them. Two, one, nought, one, two. That's every number this lesson needs, and you counted all five yourself.",
+      scene: scene({ label: "what you counted", rows: 0, nums: 5, showGap: true,
+                     gapHdr: "steps from the middle", lit: [0, 1, 2, 3, 4],
+                     rule: "<b>2</b> <b>1</b> <b>0</b> <b>1</b> <b>2</b> — in, and back out" }) },
+
+    /* ---- what the count is for ----------------------------------------- */
+
+    { say: "So what's it for? Here it is. That count tells you how many columns to leave empty at the start of the row, before the first star goes down.",
+      scene: scene({ label: "what the count is for", rows: 0, nums: 5, showCols: true,
+                     showGap: true, gapHdr: "steps from the middle",
+                     side: ["The count", "is how many columns you leave empty."] }) },
+
+    { say: "Row nought counted two. So columns nought and one stay empty — those two, there.",
+      scene: scene({ label: "row 0", rows: 0, nums: 5, showCols: true, showGap: true,
+                     gapHdr: "steps from the middle", lit: [0], marks: [0],
+                     rule: "<u>row 0</u> counted <b>2</b> → <s>column 0</s> and <s>column 1</s> empty" }) },
+
+    { say: "And the star lands on column two. One star, and the row is done.",
+      scene: scene({ label: "row 0", rows: 1, nums: 5, showCols: true, showGap: true,
+                     gapHdr: "steps from the middle", lit: [0],
+                     rule: "star at <s>column 2</s> — <b>5 − 2 − 2 = 1</b>" }) },
+
+    { say: "Row one counted one. Only column nought is empty, so the stars run from column one across to column three. Three of them.",
+      scene: scene({ label: "row 1", rows: 2, nums: 5, showCols: true, showGap: true,
+                     gapHdr: "steps from the middle", lit: [1],
+                     rule: "stars from <s>column 1</s> to <s>column 3</s> — <b>3</b>" }) },
+
+    { say: "Row two counted nought. Nothing is left empty at all. Stars from column nought right across to column four. Five.",
+      scene: scene({ label: "row 2", rows: 3, nums: 5, showCols: true, showGap: true,
+                     gapHdr: "steps from the middle", lit: [2],
+                     rule: "stars from <s>column 0</s> to <s>column 4</s> — <b>5</b>" }) },
+
+    { say: "Row three counted one again, the same as row one. So it gets the same row of stars back.",
+      scene: scene({ label: "row 3", rows: 4, nums: 5, showCols: true, showGap: true,
+                     gapHdr: "steps from the middle", lit: [1, 3],
+                     rule: "<u>row 1</u> and <u>row 3</u> both counted <b>1</b>" }) },
+
+    { say: "And row four counted two, like row nought. Two columns empty, one star. There's your diamond.",
+      scene: scene({ label: "row 4", rows: 5, nums: 5, showCols: true, showGap: true,
+                     gapHdr: "steps from the middle", lit: [0, 4],
+                     rule: "<u>row 0</u> and <u>row 4</u> both counted <b>2</b>" }) },
+
+    { say: "Look at the pairs. Row nought and row four match. Row one and row three match. That's not luck — they're the same distance from the middle, so they get the same row.",
+      scene: scene({ label: "the pairs", rows: 5, nums: 5, showGap: true,
+                     gapHdr: "steps from the middle", lit: [0, 1, 3, 4],
+                     rule: "same distance → same row" }) },
+
+    { say: "So the rule, in words: the empty columns are how far you are from the middle, and the stars are whatever's left once you've taken those off both ends.",
+      scene: scene({ label: "the rule", rows: 5, nums: 5, showGap: true,
+                     gapHdr: "steps from the middle",
+                     rule: "empty = <b>steps</b> · stars = <b>5 − 2 × steps</b>" }) },
+
+    /* ---- the code ------------------------------------------------------ */
+
+    { say: "Right. Now we write it down. Not all at once though — one line at a time, and you'll see every single one is something you already did by hand.",
+      scene: scene({ label: "writing it out", rows: 5, nums: 5, showGap: true,
+                     gapHdr: "steps", code: CODE_DIAMOND, codeUpto: 0 }) },
+
+    { say: "First line. We're just telling it how big this thing is. Five. Everything else works off that one number, so if you ever want a bigger diamond, this is the only line you'd touch.",
+      scene: scene({ label: "writing it out", rows: 5, nums: 5, showGap: true,
+                     gapHdr: "steps", code: CODE_DIAMOND, codeUpto: 1, codeHi: [0],
+                     rule: "one number decides the whole shape: <b>n = 5</b>" }) },
+
+    { say: "Second line walks down the rows. That i is the row you're standing on — the index, the name we gave each row at the start.",
+      scene: scene({ label: "writing it out", rows: 5, nums: 5, showGap: true,
+                     gapHdr: "steps", code: CODE_DIAMOND, codeUpto: 2, codeHi: [1],
+                     rule: "<u>i</u> is the row you're on" }) },
+
+    { say: "The three bits in its brackets read in the order you'd say them out loud. Start at nought. Keep going while i is under five. Add one each time round.",
+      scene: scene({ label: "writing it out", rows: 5, nums: 5, showGap: true,
+                     gapHdr: "steps", code: CODE_DIAMOND, codeUpto: 2, codeHi: [1],
+                     rule: "<u>0</u> <u>1</u> <u>2</u> <u>3</u> <u>4</u> — and stop" }) },
+
+    { say: "Third line is your counting, squeezed into one line. n divided by two is two, the middle row. Take away the row you're on, and abs throws the minus sign away — you only ever cared how far, not which side.",
+      scene: scene({ label: "writing it out", rows: 5, nums: 5, showGap: true,
+                     gapHdr: "steps", lit: [0, 4],
+                     code: CODE_DIAMOND, codeUpto: 3, codeHi: [2],
+                     rule: "abs(<u>0</u> − 2) = <b>2</b> · abs(<u>4</u> − 2) = <b>2</b>" }) },
+
+    { say: "Next two lines walk the empty columns. c is the column now, not the row — it starts at nought and stops when it reaches the gap. On row nought that's columns nought and one.",
+      scene: scene({ label: "writing it out", rows: 5, nums: 5, showCols: true, showGap: true,
+                     gapHdr: "steps", lit: [0], marks: [0],
+                     code: CODE_DIAMOND, codeUpto: 5, codeHi: [3, 4],
+                     rule: "<s>c</s> is the column — <s>0</s>, then <s>1</s>, then stop" }) },
+
+    { say: "And that's the same for we just met, doing a smaller job. Repeating something a set number of times is the only thing a for loop ever does. Once you know it, you know it everywhere.",
+      scene: scene({ label: "writing it out", rows: 5, nums: 5, showGap: true,
+                     gapHdr: "steps", code: CODE_DIAMOND, codeUpto: 5, codeHi: [1, 3],
+                     rule: "same tool, twice: repeat this, that many times" }) },
+
+    { say: "Then the stars, and read this one carefully — it carries on from where the spaces stopped. It starts at the gap and runs until five minus the gap. On row nought, that's column two, and then it's done.",
+      scene: scene({ label: "writing it out", rows: 1, nums: 5, showCols: true, showGap: true,
+                     gapHdr: "steps", lit: [0],
+                     code: CODE_DIAMOND, codeUpto: 7, codeHi: [5, 6],
+                     rule: "from <s>column 2</s> up to <s>column 3</s> — one star" }) },
+
+    { say: "This one just means the row is finished. Drop the pen to the next line down. It's pressing Enter, nothing more.",
+      scene: scene({ label: "writing it out", rows: 5, nums: 5, showGap: true,
+                     gapHdr: "steps", code: CODE_DIAMOND, codeUpto: 8, codeHi: [7],
+                     rule: "row done → next line" }) },
+
+    { say: "And the closing bracket says where the repeating stops. Everything inside it happens once per row — so five times over.",
+      scene: scene({ label: "writing it out", rows: 5, nums: 5, showGap: true,
+                     gapHdr: "steps", code: CODE_DIAMOND, codeUpto: 9, codeHi: [8],
+                     rule: "everything inside runs <b>5</b> times" }) },
+
+    { say: "That's the lot. Nine lines, and there isn't one in there you didn't work out by hand first.",
+      scene: scene({ label: "the whole thing", rows: 5, nums: 5, showCols: true, showGap: true,
+                     gapHdr: "steps", code: CODE_DIAMOND }) },
+
+    /* ---- the payoff ---------------------------------------------------- */
+
+    { say: "And here's your reward for sitting through all that counting. Change one question — from how far from the middle, to how far from the nearest edge…",
+      scene: scene({ label: "one line changes", rows: 5, nums: 5, showGap: true,
+                     gapHdr: "steps from the edge", code: CODE_HOURGLASS, codeHi: [2],
+                     rule: "abs(i − n / 2) → min(i, n − 1 − i)" }) },
+
+    { say: "…and the very same program draws an hourglass instead. Same rows, same columns, same counting. One different question.",
+      scene: scene({ label: "one line changes", shape: "hourglass", rows: 5, nums: 5,
+                     showCols: true, showGap: true, gapHdr: "steps from the edge",
+                     code: CODE_HOURGLASS, codeHi: [2] }) },
+
+    { say: "That's usually what separates two shapes. Not the code. The question.",
+      scene: scene({ mode: "title", title: ["Not the code.", "The <em>question</em>."] }) }
+  ];
+
+  /* ---------------------------------------------------------------- render */
+
+  var stage = document.getElementById("stage");
+  var elLabel = document.getElementById("scenelbl");
+  var elCols = document.getElementById("cols");
+  var elRule = document.getElementById("ruleline");
+  var elCap = document.getElementById("caption");
+  var elCount = document.getElementById("count");
+  var elFill = document.getElementById("fill");
+
+  function gapOf(shape, i) {
+    return shape === "hourglass" ? hourglassGap(i) : diamondGap(i);
+  }
+
+  function rowsView(sc) {
+    var html = "", r, k;
+
+    if (sc.nums || sc.showGap || sc.showCols) {
+      var head = "";
+      for (k = 0; k < N; k++) {
+        head += sc.showCols
+          ? '<div class="cell" style="border-color:transparent">' +
+              '<span class="pill colp">' + k + "</span></div>"
+          : '<div class="cell" style="border-color:transparent"></div>';
+      }
+      html += '<div class="row">' +
+                '<span class="hdr left">' + (sc.showCols ? "column" : (sc.nums ? "row" : "")) + "</span>" +
+                '<div class="cells">' + head + "</div>" +
+                (sc.showGap ? '<span class="hdr right">' + sc.gapHdr + "</span>" : "") +
+              "</div>";
+    }
+
+    for (r = 0; r < N; r++) {
+      var gap = gapOf(sc.shape, r);
+      var drawn = r < sc.rows;
+      var marked = sc.marks.indexOf(r) >= 0;
+      var lit = sc.lit.indexOf(r) >= 0;
+
+      var cells = "";
+      for (k = 0; k < N; k++) {
+        var star = k >= gap && k <= N - 1 - gap;
+        var picked = sc.pick && sc.pick[0] === r && sc.pick[1] === k;
+        var cls, body;
+
+        if (marked && k < gap) {
+          cls = "cell skipped";  body = k;              // the column it leaves empty
+        } else if (drawn && star) {
+          cls = "cell star";     body = "&#9733;";
+        } else if (drawn) {
+          cls = "cell blank";    body = "·";
+        } else {
+          cls = "cell blank" + (picked ? "" : " hidden"); body = picked ? "" : "·";
+        }
+        cells += '<div class="' + cls + (picked ? " pick" : "") + '">' + body + "</div>";
+      }
+
+      html += '<div class="row' + (lit ? " lit" : "") + '">' +
+                '<span class="rowlbl">row<span class="pill rowp' +
+                  (r < sc.nums ? "" : " off") + '">' + r + "</span></span>" +
+                '<div class="cells">' + cells + "</div>" +
+                (sc.showGap ? '<span class="gap"><span class="gapnum">' + gap + "</span></span>" : "") +
+              "</div>";
+    }
+
+    return '<div class="grid">' + html + "</div>";
+  }
+
+  function stripView(sc) {
+    var hopRow = "", boxRow = "", footRow = "", i;
+    var steps = sc.from === null ? 0 : Math.abs(sc.from - MID);
+
+    // Have the hops actually got there yet? Worked out, not annotated, so the
+    // target lights up on exactly the sentence that says you've arrived.
+    var arrived = sc.from !== null && sc.hops >= steps;
+
+    function hopAt(g) {
+      if (sc.from === null) { return 0; }
+      for (var k = 1; k <= Math.min(sc.hops, steps); k++) {
+        if ((sc.from < MID ? sc.from + k - 1 : sc.from - k) === g) { return k; }
+      }
+      return 0;
+    }
+
+    for (i = 0; i < N; i++) {
+      var isMid = sc.mid && i === MID;
+      var cls = "box";
+      if (i < sc.nums) { cls += " on"; }
+      if (isMid) { cls += " mid" + (arrived ? " hit" : ""); }
+      if (sc.from === i) { cls += " from"; }
+      boxRow += '<div class="' + cls + '">' + i + "</div>";
+
+      hopRow += '<div class="hopbox">' +
+                (isMid ? '<div class="target' + (arrived ? " hit" : "") + '">&#9678;</div>' : "") +
+                "</div>";
+
+      footRow += '<div class="hopbox">' +
+                 (sc.from === i
+                   ? '<div class="standing"><span class="tri">&#9650;</span>' +
+                     '<span class="lbl">here</span></div>'
+                   : (isMid ? '<div class="midlbl">middle</div>' : "")) +
+                 "</div>";
+
+      if (i < N - 1) {
+        var h = hopAt(i);
+        var back = sc.from !== null && sc.from > MID;
+        hopRow += '<div class="hopslot">' + (h ? '<span class="hop">' + h + "</span>" : "") + "</div>";
+        boxRow += '<div class="link"><span class="arrow' + (h ? " on" : "") + '">' +
+                  (back ? "‹" : "›") + "</span></div>";
+        footRow += '<div class="hopslot"></div>';
+      }
+    }
+
+    return '<div class="strip">' +
+             '<div class="striprow">' + hopRow + "</div>" +
+             '<div class="striprow">' + boxRow + "</div>" +
+             '<div class="striprow">' + footRow + "</div>" +
+             (sc.stripcap ? '<div class="stripcap">' + sc.stripcap + "</div>" : "") +
+           "</div>";
+  }
+
+  function sideView(sc) {
+    if (sc.code) {
+      return '<pre class="code">' + sc.code.slice(0, sc.codeUpto).map(function (l, n) {
+        return '<span class="ln' + (sc.codeHi.indexOf(n) >= 0 ? " hi" : "") + '">' +
+               l.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+      }).join("") + "</pre>";
+    }
+    if (sc.side) {
+      return '<div class="byhand"><b>' + sc.side[0] + "</b><br>" + sc.side[1] + "</div>";
+    }
+    return "";
+  }
+
+  function draw(i) {
+    var sc = FILM[i].scene;
+    elLabel.textContent = sc.label || "";
+
+    if (sc.mode === "title") {
+      elCols.innerHTML = '<div class="title-card">' + sc.title.join("<br>") + "</div>";
+      elRule.innerHTML = "";
+      return;
+    }
+
+    // One subject per frame. If the sentence is about a line of code and points
+    // at no row, the drawing steps back so there's one thing to look at.
+    var quiet = sc.code && sc.codeHi.length && !sc.lit.length && !sc.marks.length;
+
+    var main = sc.mode === "strip" ? stripView(sc) : rowsView(sc);
+    elCols.innerHTML = '<div class="main' + (quiet ? " back" : "") + '">' + main + "</div>" +
+                       '<div class="side">' + sideView(sc) + "</div>";
+    elRule.innerHTML = sc.rule || "";
+  }
+
+  /* ---------------------------------------------------------------- scale */
+
+  function fit() {
+    var screen = document.getElementById("screen");
+    stage.style.transform = "scale(" + (screen.clientWidth / 1280) + ")";
+  }
+  window.addEventListener("resize", fit);
+
+  /* --------------------------------------------------------------- player */
+
+  var idx = 0, playing = false;
+  var synth = window.speechSynthesis, voices = [];
+  var elPlay = document.getElementById("play");
+  var elCC = document.getElementById("cc");
+  var elRate = document.getElementById("rate");
+  var elVoice = document.getElementById("voice");
+
+  function show(i) {
+    idx = Math.max(0, Math.min(FILM.length - 1, i));
+    draw(idx);
+    elCap.textContent = FILM[idx].say;
+    elCount.textContent = (idx + 1) + " / " + FILM.length;
+    elFill.style.width = ((idx + 1) / FILM.length * 100) + "%";
+  }
+
+  function stop() {
+    playing = false;
+    if (synth) { synth.cancel(); }
+    if (player) { player.pause(); player.onended = null; }
+    elPlay.textContent = idx >= FILM.length - 1 ? "↻ Play again" : "▶ Play the lesson";
+  }
+
+  // Real narration, when this lesson has been given some. Generated once,
+  // offline; nothing here costs anything to play.
+  var AUDIO_BASE = "audio/diamond-lesson/";
+  var track = null;            // manifest, or null for the browser voice
+  var player = null;
+
+  // The player waits for the sentence to finish rather than running on a timer.
+  // A fixed timer and a voice always end up cutting each other off. That one
+  // promise is why swapping the browser voice for real audio is this small.
+  function speakFrom(i) {
+    if (!playing) { return; }
+    if (i >= FILM.length) { show(FILM.length - 1); stop(); return; }
+
+    show(i);
+    var onDone = function () { speakFrom(i + 1); };
+
+    if (track && track.lines[i]) {
+      if (!player) { player = new Audio(); }
+      player.onended = onDone;
+      player.onerror = onDone;
+      player.playbackRate = parseFloat(elRate.value);
+      player.src = AUDIO_BASE + track.lines[i].file;
+      var p = player.play();
+      if (p && p.catch) { p.catch(onDone); }
+      return;
+    }
+
+    if (!voices.length || !synth) {
+      window.setTimeout(onDone, 2600);
+      return;
+    }
+
+    var u = new SpeechSynthesisUtterance(FILM[i].say);
+    u.rate = parseFloat(elRate.value);
+    var v = voices[parseInt(elVoice.value, 10)];
+    if (v) { u.voice = v; u.lang = v.lang; }
+    u.onend = onDone;
+    u.onerror = onDone;
+    synth.speak(u);
+  }
+
+  elPlay.addEventListener("click", function () {
+    if (playing) { stop(); return; }
+    playing = true;
+    elPlay.textContent = "❚❚ Pause";
+    speakFrom(idx >= FILM.length - 1 ? 0 : idx);
+  });
+
+  document.getElementById("prev").addEventListener("click", function () { stop(); show(idx - 1); });
+  document.getElementById("next").addEventListener("click", function () { stop(); show(idx + 1); });
+
+  elCC.addEventListener("click", function () {
+    var on = elCC.getAttribute("aria-pressed") === "true";
+    elCC.setAttribute("aria-pressed", on ? "false" : "true");
+    elCap.hidden = on;
+  });
+
+  elRate.addEventListener("change", stop);
+  elVoice.addEventListener("change", stop);
+
+  document.addEventListener("keydown", function (e) {
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) { return; }
+    if (e.key === " ") { e.preventDefault(); elPlay.click(); }
+    else if (e.key === "ArrowRight") { stop(); show(idx + 1); }
+    else if (e.key === "ArrowLeft") { stop(); show(idx - 1); }
+  });
+
+  function loadVoices() {
+    if (!synth) { return; }
+    var all = synth.getVoices();
+    voices = all.filter(function (v) { return /^en(-|_|$)/i.test(v.lang); });
+    if (!voices.length) { voices = all; }
+    if (!voices.length) { return; }
+    elVoice.innerHTML = "";
+    voices.forEach(function (v, i) {
+      var o = document.createElement("option");
+      o.value = String(i);
+      o.textContent = v.name.replace(/\s*\(.*\)$/, "") + " · " + v.lang;
+      elVoice.appendChild(o);
+    });
+    var uk = voices.findIndex(function (v) { return /en-GB/i.test(v.lang); });
+    elVoice.value = String(uk >= 0 ? uk : 0);
+  }
+
+  if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
+  window.setTimeout(function () {
+    if (!voices.length && !track) { document.getElementById("warn").hidden = false; }
+  }, 1400);
+
+  // If narration has been generated for this lesson, use it and retire the
+  // browser-voice picker. If not, nothing changes.
+  if (window.fetch) {
+    fetch(AUDIO_BASE + "manifest.json", { cache: "no-cache" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (m) {
+        if (!m || !m.lines || m.lines.length < FILM.length) { return; }
+        track = m;
+        elVoice.hidden = true;
+        document.getElementById("warn").hidden = true;
+        var tag = document.getElementById("voicetag");
+        if (tag) {
+          tag.textContent = "\u25CF " + (m.voice || "narrated");
+          tag.hidden = false;
+        }
+      })
+      .catch(function () { /* no narration here — browser voice it is */ });
+  }
+
+  window.addEventListener("beforeunload", function () { if (synth) { synth.cancel(); } });
+
+  /* Hook for the offline renderer: it fixes a frame and screenshots the stage,
+     so the file it produces is this lesson, not a second implementation. */
+  window.LESSON = {
+    total: FILM.length,
+    lines: FILM.map(function (f) { return f.say; }),
+    setFrame: function (i) { stop(); show(i); }
+  };
+
+  var q = new URLSearchParams(window.location.search);
+
+  // ?theme=dark|light pins the board, so an offline render never depends on
+  // whatever the machine doing the rendering happens to prefer.
+  var theme = q.get("theme");
+  if (theme === "dark" || theme === "light") {
+    document.documentElement.setAttribute("data-theme", theme);
+  }
+
+  if (q.get("raw") === "1") { document.body.classList.add("raw"); } else { fit(); }
+
+  var f0 = parseInt(q.get("f"), 10);
+  show(isNaN(f0) ? 0 : f0);
+})();
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ===================================================================== *
+   *  NOW YOU TRY
+   *
+   *  Two different jobs, done two different ways on purpose:
+   *
+   *  - Telling a student WHY their answer is wrong has to be right every
+   *    single time, so every one of those lines is written by hand below.
+   *    Generating them per-click would be cheaper to author and worse to
+   *    receive — and it would cost money on every wrong tap.
+   *  - Answering a question nobody anticipated is the opposite job, and
+   *    that is what the tutor is for. That, and only that, calls Claude.
+   * ===================================================================== */
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ------------------------------------------------------------- tabs */
+
+  var TABS = [["t-change", "p-change"], ["t-build", "p-build"],
+              ["t-variants", "p-variants"], ["t-problems", "p-problems"]];
+
+  TABS.forEach(function (pair) {
+    $(pair[0]).addEventListener("click", function () {
+      TABS.forEach(function (p) {
+        var on = p[0] === pair[0];
+        $(p[0]).setAttribute("aria-selected", on ? "true" : "false");
+        $(p[1]).hidden = !on;
+      });
+    });
+  });
+
+  /* -------------------------------------------------------- change it */
+
+  var st = { n: 5, q: "mid" };
+
+  function gapFor(n, i, q) {
+    return q === "edge" ? Math.min(i, n - 1 - i) : Math.abs(i - Math.floor(n / 2));
+  }
+
+  function drawLive() {
+    var n = st.n, html = "", i, c;
+    for (i = 0; i < n; i++) {
+      var gap = gapFor(n, i, st.q);
+      var cells = "";
+      for (c = 0; c < n; c++) {
+        var star = c >= gap && c <= n - 1 - gap;
+        cells += '<div class="lb-cell' + (star ? " s" : (c < gap ? " e" : "")) +
+                 '">' + (star ? "&#9733;" : c) + "</div>";
+      }
+      html += '<div class="lb-row"><span class="lb-lbl">row ' + i + "</span>" +
+              '<div class="lb-cells">' + cells + "</div>" +
+              '<span class="lb-badge">' + gap + "</span></div>";
+    }
+    $("lbgrid").innerHTML = html;
+
+    var mid = Math.floor(n / 2);
+    var g0 = gapFor(n, 0, st.q);
+    $("lbticker").innerHTML =
+      st.q === "mid"
+        ? "middle row is <b>" + mid + "</b> · row 0 is <b>" + g0 +
+          "</b> steps away · so <b>" + g0 + "</b> columns empty and <b>" +
+          (n - 2 * g0) + "</b> star" + (n - 2 * g0 === 1 ? "" : "s") +
+          " · widest row has <b>" + n + "</b>"
+        : "row 0 is <b>" + g0 + "</b> steps from the nearest edge · <b>" +
+          (n - 2 * g0) + "</b> stars · the narrow point is row <b>" + mid + "</b>";
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("#p-change .chip"), function (b) {
+    b.addEventListener("click", function () {
+      var group = b.dataset.n ? "[data-n]" : "[data-q]";
+      Array.prototype.forEach.call(document.querySelectorAll("#p-change " + group),
+        function (o) { o.setAttribute("aria-pressed", o === b ? "true" : "false"); });
+      if (b.dataset.n) { st.n = parseInt(b.dataset.n, 10); } else { st.q = b.dataset.q; }
+      drawLive();
+    });
+  });
+
+  drawLive();
+
+  /* --------------------------------------------------------- build it */
+
+  // Every "not yet" line below is written out, because a student who is
+  // already unsure deserves the same quality of answer every time.
+  var LINES = [
+    { t: "int n = 5;",
+      yes: "Yes. Size first — every other line asks how big this thing is.",
+      no:  "Too late for this one. Everything underneath asks “how big?”, so it has to be answered before any of it runs." },
+
+    { t: "for (int i = 0; i < n; i++) {",
+      yes: "Right. This walks down the rows, one at a time.",
+      no:  "Hold on — this one keeps going until it reaches n, so n has to exist first. Otherwise you’re telling someone to walk until they get to a place you haven’t named yet." },
+
+    { t: "    int gap = Math.abs(i - n / 2);",
+      yes: "Yes — and inside the loop, so it gets worked out afresh for every row.",
+      no:  "Not yet. This works out how far the current row is from the middle, so we have to be standing on a row first. Put it outside the loop and you’d work it out once and reuse the same answer five times — which gives you a rectangle." },
+
+    { t: "    for (int c = 0; c < gap; c++)",
+      yes: "Good. Now we skip that many columns.",
+      no:  "Careful — this one uses gap, and gap hasn’t been worked out yet at this point in the program." },
+
+    { t: "        System.out.print(\" \");",
+      yes: "One space, repeated as many times as the loop above says.",
+      no:  "This is the body of the skipping loop. On its own it prints a single space and shrugs — it needs its loop first." },
+
+    { t: "    for (int c = gap; c < n - gap; c++)",
+      yes: "Now the stars, starting exactly where the spaces stopped.",
+      no:  "Not yet — the spaces have to go down before the stars, or your diamond comes out shoved against the left margin looking very sorry for itself." },
+
+    { t: "        System.out.print(\"*\");",
+      yes: "A star, repeated to the end of the row.",
+      no:  "Same as before: this is a body looking for its loop." },
+
+    { t: "    System.out.println();",
+      yes: "Row finished — drop the pen to the next line.",
+      no:  "Too early. End the row before you’ve drawn it and you get five blank lines and a lot of confusion." },
+
+    { t: "}",
+      yes: "And that’s the loop closed. Nine lines, and you put them in order yourself.",
+      no:  "That closes the row loop, so everything that happens once per row has to be inside it first." }
+  ];
+
+  var placed = 0;
+
+  function shuffled() {
+    var a = LINES.map(function (l, i) { return i; }), i, j, t;
+    for (i = a.length - 1; i > 0; i--) {
+      j = Math.floor(Math.random() * (i + 1));
+      t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  var order = shuffled();
+
+  function renderBuild() {
+    var s = "", i;
+    for (i = 0; i < LINES.length; i++) {
+      s += '<div class="slot' + (i < placed ? " done" : (i === placed ? " next" : "")) + '">' +
+           (i < placed ? esc(LINES[i].t) : "&nbsp;") + "</div>";
+    }
+    $("slots").innerHTML = s;
+
+    var b = "";
+    order.forEach(function (ix) {
+      b += '<button class="line-chip" data-ix="' + ix + '"' +
+           (ix < placed ? " disabled" : "") + ">" + esc(LINES[ix].t) + "</button>";
+    });
+    $("bank").innerHTML = b;
+  }
+
+  function esc(x) {
+    return x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function say(el, text, good) {
+    el.className = "verdict " + (good ? "good" : "nope");
+    el.innerHTML = text;
+    el.hidden = false;
+  }
+
+  $("bank").addEventListener("click", function (e) {
+    var btn = e.target.closest(".line-chip");
+    if (!btn || btn.disabled) { return; }
+    var ix = parseInt(btn.dataset.ix, 10);
+
+    if (ix === placed) {
+      placed++;
+      renderBuild();
+      say($("buildsay"),
+          placed === LINES.length
+            ? LINES[ix].yes + " That is the whole program, and it runs."
+            : LINES[ix].yes,
+          true);
+    } else {
+      say($("buildsay"), LINES[ix].no, false);
+    }
+  });
+
+  $("buildreset").addEventListener("click", function () {
+    placed = 0; order = shuffled(); renderBuild(); $("buildsay").hidden = true;
+  });
+
+  renderBuild();
+
+  /* --------------------------------------------------------- variants */
+
+  var VARIANTS = [
+    { name: "the one we wrote",
+      note: "Two inner loops: one to skip, one to draw. Longest to write, and the easiest to follow line by line, which is why we started here.",
+      code: "for (int i = 0; i < n; i++) {\n    int gap = Math.abs(i - n / 2);\n    for (int c = 0; c < gap; c++)\n        System.out.print(\" \");\n    for (int c = gap; c < n - gap; c++)\n        System.out.print(\"*\");\n    System.out.println();\n}" },
+
+    { name: "let java do the repeating",
+      note: "Java can repeat a string for you, so the two inner loops collapse into one line. Same picture, far fewer moving parts — but you have to already know what repeat does.",
+      code: "for (int i = 0; i < n; i++) {\n    int gap = Math.abs(i - n / 2);\n    System.out.println(\" \".repeat(gap) + \"*\".repeat(n - 2 * gap));\n}" },
+
+    { name: "build the row, then show it",
+      note: "Put the row together in memory first and print it once at the end. Handy when you want to look at a row, change it, or send it somewhere that isn’t the screen.",
+      code: "for (int i = 0; i < n; i++) {\n    int gap = Math.abs(i - n / 2);\n    StringBuilder row = new StringBuilder();\n    for (int c = 0; c < n; c++)\n        row.append(c >= gap && c < n - gap ? \"*\" : \" \");\n    System.out.println(row);\n}" },
+
+    { name: "a while loop instead",
+      note: "Exactly the same walk down the rows, spelled differently. A for loop is a while loop with the counting tidied into one line — that is the only difference between these two.",
+      code: "int i = 0;\nwhile (i < n) {\n    int gap = Math.abs(i - n / 2);\n    System.out.println(\" \".repeat(gap) + \"*\".repeat(n - 2 * gap));\n    i++;\n}" }
+  ];
+
+  $("variants").innerHTML = VARIANTS.map(function (v) {
+    return '<div class="variant"><h3>' + v.name + "</h3><p>" + v.note +
+           "</p><pre>" + esc(v.code) + "</pre></div>";
+  }).join("");
+
+  /* --------------------------------------------------------- problems */
+
+  var PROBLEMS = [
+    { q: "You want a diamond with seven rows instead of five. Which line do you change?",
+      opts: ["int n = 5;", "int gap = Math.abs(i - n / 2);", "System.out.println();", "all of them"],
+      a: 0,
+      yes: "Just that one. That is what it means for a program to be written in terms of n rather than in terms of five — the size lives in one place, and everything else asks.",
+      no:  "Not that one. Look for the line that actually names the size; the rest only ever ask about it." },
+
+    { q: "With seven rows, which row is the middle?",
+      opts: ["2", "3", "4", "there isn’t one"],
+      a: 1,
+      yes: "Three. Three rows above it, three below — and seven divided by two, whole numbers only, is three.",
+      no:  "Count it the way we did: come in one from each end until you meet. With seven rows you meet at row three." },
+
+    { q: "In that seven-row diamond, how many columns stay empty on row nought?",
+      opts: ["1", "2", "3", "4"],
+      a: 2,
+      yes: "Three — row nought is three hops from row three, and the hops are the empty columns. Which leaves one star.",
+      no:  "Work it from the distance, not from the picture. How many hops from row nought to row three? That is your answer." },
+
+    { q: "You want an hourglass instead of a diamond. Which line changes?",
+      opts: ["the size", "the one that works out gap", "both print lines", "the loop"],
+      a: 1,
+      yes: "That one, and only that one. The question changes — how far from the edge, instead of how far from the middle — and the drawing does exactly what it did before.",
+      no:  "Think about which line asks the question. Everything else just does as it is told." }
+  ];
+
+  $("problems").innerHTML = PROBLEMS.map(function (p, n) {
+    return '<div class="prob" data-p="' + n + '"><p class="q">' + p.q + "</p>" +
+           '<div class="opts">' + p.opts.map(function (o, i) {
+             return '<button class="chip" data-o="' + i + '">' + esc(o) + "</button>";
+           }).join("") + "</div>" +
+           '<div class="verdict" hidden></div></div>';
+  }).join("");
+
+  $("problems").addEventListener("click", function (e) {
+    var btn = e.target.closest(".chip");
+    if (!btn) { return; }
+    var box = btn.closest(".prob");
+    var p = PROBLEMS[parseInt(box.dataset.p, 10)];
+    var pick = parseInt(btn.dataset.o, 10);
+    var right = pick === p.a;
+
+    Array.prototype.forEach.call(box.querySelectorAll(".chip"), function (o) {
+      o.setAttribute("aria-pressed", o === btn ? "true" : "false");
+    });
+    say(box.querySelector(".verdict"), right ? p.yes : p.no, right);
+  });
+
+  /* ------------------------------------------------------------- ask */
+
+  var CONTEXT =
+    "You are a programming tutor inside a lesson that has just taught how to " +
+    "draw a five-row diamond of stars in Java. The lesson covered: row indexes " +
+    "starting at 0, column indexes, the address (row, column), finding the " +
+    "middle row, counting how many steps each row is from the middle, using " +
+    "that count as the number of empty columns, and then this program:\n\n" +
+    "int n = 5;\n" +
+    "for (int i = 0; i < n; i++) {\n" +
+    "    int gap = Math.abs(i - n / 2);\n" +
+    "    for (int c = 0; c < gap; c++)\n" +
+    "        System.out.print(\" \");\n" +
+    "    for (int c = gap; c < n - gap; c++)\n" +
+    "        System.out.print(\"*\");\n" +
+    "    System.out.println();\n" +
+    "}\n\n" +
+    "HOW TO ANSWER. Talk like a person sitting next to them, not like a manual. " +
+    "Use contractions. Say each thing once. Give an everyday example before any " +
+    "code. Never read the code back to them line by line — say what a line MEANS. " +
+    "Never write \"Line 1:\" or number the lines. Assume they know nothing about " +
+    "maths notation. Keep it short: four sentences unless they asked for code. " +
+    "No headings, no bullet lists, no emoji.\n\n";
+
+  (function wireAsk() {
+    if (!window.claude || typeof window.claude.use !== "function") { return; }
+
+    window.claude.use("sample").then(function (sample) {
+      if (!sample) { return; }      // not granted, or not available here
+      $("ask").hidden = false;
+
+      function run(prompt, busyLabel) {
+        var out = $("askout");
+        out.hidden = false;
+        out.innerHTML = '<span class="mark">✨ the tutor</span>' + busyLabel;
+        sample(CONTEXT + prompt, {
+          modelTier: "default",
+          onText: function (e) {
+            out.innerHTML = '<span class="mark">✨ the tutor</span>' + esc(e.text);
+          }
+        }).then(function (r) {
+          out.innerHTML = '<span class="mark">✨ the tutor</span>' + esc(r.text);
+        }).catch(function (err) {
+          out.innerHTML = '<span class="mark">✨ the tutor</span>' +
+            "Couldn’t reach the tutor just now (" + (err && err.code ? err.code : "error") +
+            "). The lesson and everything else on this page still work.";
+        });
+      }
+
+      $("asksend").addEventListener("click", function () {
+        var q = $("askq").value.trim();
+        if (!q) { return; }
+        run("The student asks: " + q, "Thinking…");
+      });
+
+      $("askq").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { $("asksend").click(); }
+      });
+
+      $("askvariant").addEventListener("click", function () {
+        run("Show the student ONE more way to write this same diamond in Java that " +
+            "wasn't in the lesson, and say in a sentence what it trades off. Give the " +
+            "code in a fenced block. Keep the whole answer under 120 words.",
+            "Looking for another way…");
+      });
+    });
+  })();
+})();
+</script>
+
+</body>
+</html>
