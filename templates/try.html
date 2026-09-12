@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>See what the code is thinking · SYNAPSE</title>
+<meta name="description" content="Watch every variable, loop and decision change while the program runs. Rewind any step, ask why that line ran, predict what happens next. A full lesson, open to anyone.">
+<link rel="icon" href="/icons/favicon.ico">
+<style>
+  :root {
+    --ground: #F8FAFC;
+    --sheet: #FFFFFF;
+    --sunk: #EEF2F7;
+    --ink: #1E293B;
+    --ink-soft: #475569;
+    --ink-faint: #64748B;
+    --rule: #E2E8F0;
+    --brand: #667EEA;
+    --brand-deep: #5A4BC4;
+    --brand-2: #764BA2;
+    --go: #0E7C55;
+    --go-soft: #E3F4EC;
+    --was: #B45309;
+    --now: #15803D;
+    --now-soft: #E3F4EC;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0F1720;
+      --sheet: #17202B;
+      --sunk: #1D2836;
+      --ink: #E6EDF5;
+      --ink-soft: #B3C0D0;
+      --ink-faint: #8A9AAC;
+      --rule: #27323F;
+      --brand: #8FA2FF;
+      --brand-deep: #A9B6FF;
+      --brand-2: #B98BE0;
+      --go: #4ADE9B;
+      --go-soft: #10281F;
+      --was: #F0A93C;
+      --now: #4ADE9B;
+      --now-soft: #10281F;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0F1720;
+    --sheet: #17202B;
+    --sunk: #1D2836;
+    --ink: #E6EDF5;
+    --ink-soft: #B3C0D0;
+    --ink-faint: #8A9AAC;
+    --rule: #27323F;
+    --brand: #8FA2FF;
+    --brand-deep: #A9B6FF;
+    --brand-2: #B98BE0;
+    --go: #4ADE9B;
+    --go-soft: #10281F;
+    --was: #F0A93C;
+    --now: #4ADE9B;
+    --now-soft: #10281F;
+  }
+
+  .theme {
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    background: var(--sheet); color: var(--ink-soft);
+    border: 1px solid var(--rule); border-radius: 999px; padding: 7px 13px;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .theme:hover { color: var(--ink); border-color: var(--brand-deep); }
+  .theme .dot {
+    width: 9px; height: 9px; border-radius: 50%; background: var(--brand);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0 18px;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-block: 16px 64px; }
+
+  .skip {
+    position: absolute; left: -9999px; background: var(--sheet); color: var(--ink);
+    padding: 10px 14px; border-radius: 8px; z-index: 10;
+  }
+  .skip:focus { left: 18px; top: 12px; }
+
+  header.bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; padding-block: 8px 20px;
+  }
+  .mark { font-weight: 800; letter-spacing: .14em; font-size: 15px; text-decoration: none; color: var(--ink); }
+  .bar nav { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .lnk { font-size: 15px; text-decoration: none; color: var(--ink-soft); padding: 8px 12px; border-radius: 8px; }
+  .lnk:hover { background: var(--sheet); color: var(--ink); }
+  .btn {
+    display: inline-block; text-decoration: none; font-weight: 600; font-size: 15px;
+    padding: 10px 18px; border-radius: 10px; border: 1px solid transparent;
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+    color: #FFFFFF; cursor: pointer;
+  }
+  .btn.quiet { background: var(--sheet); color: var(--ink); border-color: var(--rule); }
+  .btn.big { font-size: 17px; padding: 14px 26px; }
+
+  /* the hero is three short lines and then the thing itself */
+  h1 {
+    font-size: clamp(30px, 5.2vw, 46px); line-height: 1.05; letter-spacing: -.022em;
+    margin: 0; text-wrap: balance; max-width: 20ch;
+  }
+  .lead { margin: 14px 0 0; font-size: clamp(18px, 2.1vw, 21px); color: var(--ink-soft); max-width: 58ch; }
+  .verbs {
+    margin: 10px 0 0; font-size: clamp(16px, 1.8vw, 18px); color: var(--ink);
+    font-weight: 600; max-width: 58ch;
+  }
+  .verbs span { color: var(--ink-faint); font-weight: 400; }
+
+  .open {
+    display: inline-flex; align-items: center; gap: 9px; margin: 18px 0 0;
+    font-size: 14.5px; font-weight: 600; color: var(--go); background: var(--go-soft);
+    border: 1px solid var(--go); padding: 8px 14px; border-radius: 999px;
+  }
+
+  /* Two ways through the same lesson, because the pilot asked for both:
+     something you drive yourself, and someone explaining it. */
+  .stage {
+    margin-top: 18px; background: var(--sheet); border: 1px solid var(--rule);
+    border-radius: 14px; overflow: hidden;
+  }
+  .ways { display: flex; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
+  .way {
+    font: inherit; font-size: 15px; font-weight: 600; text-align: left;
+    background: transparent; color: var(--ink-soft); border: 1px solid transparent;
+    padding: 9px 14px; border-radius: 9px; cursor: pointer; line-height: 1.25;
+  }
+  .way small { display: block; font-weight: 400; font-size: 13px; color: var(--ink-faint); }
+  .way:hover { background: var(--sunk); }
+  .way[aria-selected="true"] { background: var(--sunk); color: var(--ink); border-color: var(--rule); }
+  .way[aria-selected="true"] small { color: var(--ink-soft); }
+  .lip {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--rule);
+    font-size: 13.5px; color: var(--ink-faint); background: var(--sunk);
+  }
+  .lip b { color: var(--ink); font-weight: 600; }
+  .stage iframe {
+    /* a starting height only: the script below measures what the lesson
+       actually needs, so there is never a screen of white inside the frame
+       or a scrollbar inside a scrollbar */
+    display: block; width: 100%; height: 78vh; min-height: 520px; border: 0; background: var(--sheet);
+  }
+
+  /* three things, each one showing rather than describing */
+  .benefits { margin-top: 22px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .benefit {
+    background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px;
+    padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .benefit h2 { margin: 0; font-size: 16.5px; letter-spacing: -.01em; }
+  .benefit p { margin: 0; font-size: 15px; color: var(--ink-soft); }
+  .shown {
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 15px;
+    background: var(--sunk); border-radius: 8px; padding: 9px 12px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .shown .k { font-weight: 700; }
+  .shown .old { color: var(--was); text-decoration: line-through; }
+  .shown .arrow { color: var(--ink-faint); }
+  .shown .new { color: var(--now); font-weight: 700; }
+  .shown .t { color: var(--now); font-weight: 700; }
+
+  .claim {
+    margin: 26px 0 0; font-size: 18px; color: var(--ink-soft); max-width: 74ch;
+    border-left: 3px solid var(--brand); padding-left: 16px;
+  }
+  .claim b { color: var(--ink); font-weight: 600; }
+
+  /* the close: what you just saw, and what else there is */
+  .close {
+    margin-top: 44px; background: var(--sheet); border: 1px solid var(--rule);
+    border-radius: 14px; padding: 34px 30px;
+    display: flex; gap: 26px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  }
+  .close h2 { margin: 0 0 10px; font-size: clamp(21px, 2.6vw, 26px); letter-spacing: -.018em; max-width: 22ch; }
+  .close p { margin: 0; color: var(--ink-soft); max-width: 54ch; }
+  .close .acts { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+  .all { margin-top: 44px; border: 1px solid var(--rule); border-radius: 12px;
+         background: var(--sheet); padding: 6px 20px; }
+  .all summary {
+    cursor: pointer; padding: 14px 4px; font-size: 18px; font-weight: 600;
+    letter-spacing: -.01em; list-style: none; display: flex; align-items: center; gap: 10px;
+  }
+  .all summary::-webkit-details-marker { display: none; }
+  .all summary::before {
+    content: "B8"; color: var(--ink-faint); transition: transform .15s;
+  }
+  .all[open] summary::before { transform: rotate(90deg); }
+  .all summary span { color: var(--ink-faint); font-weight: 400; font-size: 15px; }
+  .all .note { margin: 0 0 16px; color: var(--ink-faint); font-size: 15px; }
+  .all .inner { padding-bottom: 18px; }
+  .lessons { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  .lesson {
+    display: flex; align-items: baseline; gap: 10px;
+    background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 12px 14px; font-size: 15.5px;
+  }
+  .lesson .n {
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px;
+    color: var(--ink-faint); min-width: 20px;
+  }
+  .lesson.here { border-color: var(--go); background: var(--go-soft); }
+  .lesson .tag {
+    margin-left: auto; font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--go);
+  }
+
+  footer {
+    margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--rule);
+    color: var(--ink-faint); font-size: 14.5px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  footer a { color: var(--ink-faint); }
+  footer p { margin: 0; }
+  /* centred, like the footer on every other page of the site */
+  footer { align-items: center; text-align: center; }
+  footer .promise { max-width: 62ch; margin-inline: auto; }
+  footer .legal { align-items: center; }
+  /* who you are actually buying from: required of a UK company, and the first
+     thing a school's finance office looks for */
+  footer .legal { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+  footer .legal .links { font-weight: 600; }
+  footer .legal .small { font-size: 12.5px; line-height: 1.65; }
+
+  a:focus-visible, .btn:focus-visible, .way:focus-visible, .theme:focus-visible, iframe:focus-visible {
+    outline: 3px solid var(--brand-deep); outline-offset: 3px;
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#lesson">Skip to the lesson</a>
+
+<div class="wrap">
+
+  <header class="bar">
+    <a class="mark" href="/">SYNAPSE</a>
+    <nav>
+      <button class="theme" type="button" id="themeBtn"><span class="dot"></span><span>Theme: auto</span></button>
+      <a class="lnk" href="/about">About</a>
+      <a class="lnk" href="/login">Sign in</a>
+      <a class="btn" href="/register">Create a free account</a>
+    </nav>
+  </header>
+
+  <h1>See what the code is thinking.</h1>
+  <p class="lead">Watch every variable, loop and decision change while the program runs.</p>
+  <p class="verbs">Rewind any step. <span>Ask why that line ran. Predict what happens next.</span></p>
+
+  <p class="open">Try a full lesson &mdash; no account required</p>
+
+  <div class="stage">
+    <div class="ways" role="tablist" aria-label="Two ways through this lesson">
+      <button class="way" type="button" role="tab" id="way-drive"
+              aria-selected="true" aria-controls="lesson">
+        Take the controls
+        <small>Step, rewind, ask why</small>
+      </button>
+      <button class="way" type="button" role="tab" id="way-watch"
+              aria-selected="false" aria-controls="lesson">
+        Watch it explained
+        <small>Narrated, with subtitles</small>
+      </button>
+    </div>
+    <div class="lip" id="lip">
+      <span id="lipText"><b>What a loop really does</b> &mdash; press Play, then drag the slider
+        backwards.</span>
+      <span>Keyboard: &larr; &rarr; to step, space to play</span>
+    </div>
+    <iframe id="lesson" title="Lesson" src="about:blank"></iframe>
+  </div>
+
+  <section class="benefits" aria-label="What you are looking at">
+    <div class="benefit">
+      <h2>See what changed</h2>
+      <div class="shown"><span class="k">best</span><span class="old">4</span><span class="arrow">&rarr;</span><span class="new">9</span></div>
+      <p>One line names the thing that moved, its value before and after, and everything that
+        stayed exactly where it was.</p>
+    </div>
+    <div class="benefit">
+      <h2>Understand why</h2>
+      <div class="shown"><span class="t">9 &gt; 4</span> <span class="arrow">was true, so this line ran</span></div>
+      <p>Not what the line means &mdash; why the program is standing on it, and what would have
+        happened if the answer had gone the other way.</p>
+    </div>
+    <div class="benefit">
+      <h2>Rewind the real execution</h2>
+      <div class="shown"><span class="arrow">&#9664;</span><span class="k">step 14</span><span class="arrow">of 29</span></div>
+      <p>Move backwards through actual program states, not a recording. Every position on that
+        slider is a real moment of a real run.</p>
+    </div>
+  </section>
+
+  <p class="claim">Most coding platforms focus on solving and marking problems. <b>SYNAPSE also
+    exposes the execution state behind the answer</b> &mdash; what changed, what stayed the
+    same, and why each line ran.</p>
+
+  <section class="close">
+    <div>
+      <h2>You just watched one algorithm think.</h2>
+      <p>Inside SYNAPSE you can explore loops, functions, arrays, recursion, search, data
+        structures and secure coding in the same way &mdash; each one a problem stated properly,
+        then solved in front of you.</p>
+    </div>
+    <div class="acts">
+      <a class="btn big" href="/register">Create a free account</a>
+      <a class="btn quiet" href="#all">See all lessons</a>
+    </div>
+  </section>
+
+  <details class="all" id="all">
+    <summary>The fifteen lessons <span>&mdash; one is open above</span></summary>
+    <div class="inner">
+    <p class="note">The rest come with a free account, and more are being built &mdash;
+      sliding windows, references, linked lists and trees are next.</p>
+    <div class="lessons">
+      <div class="lesson here"><span class="n">1</span> What a loop really does <span class="tag">open above</span></div>
+      <div class="lesson"><span class="n">2</span> Carrying a value through a loop</div>
+      <div class="lesson"><span class="n">3</span> Two pointers instead of one</div>
+      <div class="lesson"><span class="n">4</span> What adding and removing really cost</div>
+      <div class="lesson"><span class="n">5</span> A loop inside a loop</div>
+      <div class="lesson"><span class="n">6</span> A word is just a list of letters</div>
+      <div class="lesson"><span class="n">7</span> Finding it without looking at everything</div>
+      <div class="lesson"><span class="n">8</span> A pile you can only reach the top of</div>
+      <div class="lesson"><span class="n">9</span> A line where the first one in leaves first</div>
+      <div class="lesson"><span class="n">10</span> Asking a table instead of hunting through a list</div>
+      <div class="lesson"><span class="n">11</span> Have I seen this before?</div>
+      <div class="lesson"><span class="n">12</span> Putting them in order, watched slowly</div>
+      <div class="lesson"><span class="n">13</span> A function that calls itself</div>
+      <div class="lesson"><span class="n">14</span> Find the two that add up</div>
+      <div class="lesson"><span class="n">15</span> Fizz, Buzz, and the order of your checks</div>
+    </div>
+    </div>
+  </details>
+
+  <footer>
+    <p class="promise">These lessons make no network calls while they run, work from the
+      keyboard, never autoplay, and never use colour as the only way of telling you
+      something.</p>
+    <div class="legal">
+      <p class="links"><a href="/about">About</a> &middot; <a href="/privacy">Privacy</a>
+        &middot; <a href="/terms">Terms</a> &middot; <a href="/cookies">Cookies</a></p>
+      <p>&copy; 2026 Synapse &mdash; <strong>GyEffe Technologies Ltd</strong>, a company
+        registered in Scotland, company number SC899700.</p>
+      <p class="small">Registered office: 5 South Charlotte Street, Edinburgh EH2 4AN,
+        United Kingdom<br>Company: <a href="mailto:hello@gyeffe.co.uk">hello@gyeffe.co.uk</a>
+        &middot; Synapse support:
+        <a href="mailto:synapse_4ai@outlook.com">synapse_4ai@outlook.com</a></p>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+/* Auto, light, dark - in that order, remembered, and passed on to the lesson
+   in the frame, which takes its theme from the URL. Wrapped in try/catch
+   because a browser with storage switched off must still get a working page,
+   just without the memory of the choice. */
+(function () {
+  var KEY = 'synapse-theme';
+  var order = ['auto', 'light', 'dark'];
+  var label = { auto: 'Theme: auto', light: 'Theme: light', dark: 'Theme: dark' };
+  var btn = document.getElementById('themeBtn');
+  var choice = 'auto';
+
+  try { choice = localStorage.getItem(KEY) || 'auto'; } catch (e) { choice = 'auto'; }
+  if (order.indexOf(choice) < 0) { choice = 'auto'; }
+
+  function effective() {
+    if (choice !== 'auto') { return choice; }
+    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+      ? 'dark' : 'light';
+  }
+
+  function apply(reloadFrames) {
+    if (choice === 'auto') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', choice);
+    }
+    if (btn) {
+      btn.lastChild.textContent = label[choice];
+      btn.setAttribute('aria-label', label[choice] + ' — press to change');
+    }
+    if (reloadFrames && window.SYNAPSE_THEME_CHANGED) { window.SYNAPSE_THEME_CHANGED(effective()); }
+  }
+
+  if (btn) {
+    btn.addEventListener('click', function () {
+      choice = order[(order.indexOf(choice) + 1) % order.length];
+      try { localStorage.setItem(KEY, choice); } catch (e) { /* nothing to do */ }
+      apply(true);
+    });
+  }
+
+  window.SYNAPSE_EFFECTIVE_THEME = effective;
+  apply(false);
+})();
+</script>
+
+<script>
+(function () {
+  var frame = document.getElementById('lesson');
+  var lip = document.getElementById('lipText');
+  var watch = document.getElementById('way-watch');
+  var drive = document.getElementById('way-drive');
+
+  // The lesson takes its theme from its URL, so the page's theme has to be read
+  // at the moment a lesson is opened - not once at load - or the control would
+  // change the frame around the lesson and leave the lesson itself behind.
+  function themeNow() {
+    return window.SYNAPSE_EFFECTIVE_THEME ? window.SYNAPSE_EFFECTIVE_THEME() : 'light';
+  }
+
+  var WAYS = {
+    drive: {
+      src: '/static/lessons/algorithm-player.html?only=walk:each&',
+      title: 'Interactive lesson: what a loop really does',
+      lip: '<b>What a loop really does</b> &mdash; press Play, then drag the slider backwards.',
+      note: 'Keyboard: ← → to step, space to play'
+    },
+    watch: {
+      src: '/static/lessons/diamond-lesson.html?',
+      title: 'Narrated lesson: drawing a diamond',
+      lip: '<b>Drawing a diamond</b> &mdash; press Play. Every number is counted in front of ' +
+           'you before it gets used.',
+      note: 'Narrated, with subtitles. Nothing starts on its own'
+    }
+  };
+
+  var showing = 'drive';
+
+  function show(which) {
+    var w = WAYS[which];
+    showing = which;
+    frame.src = w.src + 'theme=' + themeNow();
+    frame.title = w.title;
+    lip.innerHTML = w.lip;
+    lip.parentNode.lastElementChild.textContent = w.note;
+    drive.setAttribute('aria-selected', which === 'drive' ? 'true' : 'false');
+    watch.setAttribute('aria-selected', which === 'watch' ? 'true' : 'false');
+  }
+
+  // Changing the theme reloads the lesson in the new one, which does restart it.
+  // Better than a page in one theme with a lesson in the other.
+  window.SYNAPSE_THEME_CHANGED = function () { show(showing); };
+
+  // Same origin, so the frame's own height can simply be asked for. Measured
+  // twice: once when it loads, once after the fonts have settled, because a
+  // lesson measured mid-layout comes out short.
+  function fit() {
+    try {
+      var d = frame.contentDocument;
+      if (!d || !d.body) { return; }
+      var h = Math.max(d.body.scrollHeight, d.documentElement.scrollHeight);
+      if (h > 300) { frame.style.height = Math.min(h + 8, 2000) + 'px'; }
+    } catch (e) { /* leave the CSS height alone */ }
+  }
+  frame.addEventListener('load', function () { fit(); window.setTimeout(fit, 700); });
+
+  // "See all lessons" points at a folded list, so opening it is part of following
+  // the link - a button that scrolls to something invisible is a broken button.
+  var all = document.getElementById('all');
+  Array.prototype.forEach.call(document.querySelectorAll('a[href="#all"]'), function (a) {
+    a.addEventListener('click', function () { if (all) { all.open = true; } });
+  });
+  if (window.location.hash === '#all' && all) { all.open = true; }
+
+  drive.addEventListener('click', function () { show('drive'); });
+  watch.addEventListener('click', function () { show('watch'); });
+  show('drive');
+})();
+</script>
+</body>
+</html>

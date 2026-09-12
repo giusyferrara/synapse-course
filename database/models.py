@@ -431,3 +431,37 @@ class QuizReview(Base):
 
 
 from .london_transport_models import TubeLineModel, TransportStop, TransportArrival, TfLAPIRequest, LondonTransportExercise
+
+class SavedView(Base):
+    """One thing a learner kept in their drawer — the recipe, never the film.
+
+    A row is a couple of hundred bytes: which lesson, or which snippet of their
+    own code. The visualisation is rebuilt from it on demand, so an improvement
+    to the engine reaches everything already saved. A stored recording would do
+    the opposite and keep showing the old one.
+
+    user_id is auth users.id (the synapse_user cookie), indexed but not a hard
+    foreign key — the users table is managed outside this metadata, and
+    declaring it twice would be worse than the constraint is worth. Deleting a
+    learner's rows is therefore an explicit step, not a cascade.
+    """
+    __tablename__ = "saved_views"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, nullable=False, index=True)     # auth users.id (cookie synapse_user)
+    kind = Column(String(10), nullable=False, default="library")   # 'library' | 'mine'
+    concept = Column(String(60), nullable=False, index=True)       # how the drawer is grouped
+    title = Column(String(140), nullable=False)
+    prog = Column(String(80), nullable=True)        # library: the lesson id, e.g. "find:binary"
+    language = Column(String(20), nullable=True)    # mine: 'python' | 'java'
+    code = Column(Text, nullable=True)              # mine: the snippet, a few KB at most
+    note = Column(Text, nullable=True)              # the learner's own words
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
+    opened_at = Column(DateTime, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "kind", "prog", name="uq_saved_views_user_prog"),
+    )
+
+    def __repr__(self):
+        return f"<SavedView(user={self.user_id}, kind={self.kind}, title={self.title!r})>"

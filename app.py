@@ -32,6 +32,7 @@ from web.metrics_handlers import setup_metrics_routes
 from web.auth_handlers import setup_auth_routes
 from web.research_handlers import setup_research_routes as setup_research_api_routes
 from web.quiz_handlers import setup_quiz_routes
+from web.drawer_handlers import setup_drawer_routes
 from web.research.research_dashboard_handler import setup_research_routes as setup_research_dashboard_routes
 
 # Advanced MCP Tools Integration
@@ -1080,6 +1081,21 @@ class HybridEducationalServer:
             except FileNotFoundError:
                 return web.Response(text="About page not found.", status=404)
 
+        async def serve_try(request):
+            """One complete lesson, open to anyone: the demo the site is sold on.
+
+            Deliberately NOT behind the login. Everything else stays gated; a
+            visual product needs one thing a stranger can see before deciding
+            whether to make an account. It costs nothing to serve because the
+            lesson makes no calls of its own.
+            """
+            try_path = Path(__file__).parent / 'templates' / 'try.html'
+            try:
+                with open(try_path, 'r', encoding='utf-8') as f:
+                    return web.Response(text=f.read(), content_type='text/html')
+            except FileNotFoundError:
+                return web.Response(text="Demo page not found.", status=404)
+
         async def serve_mcp(request):
             mcp_path = Path(__file__).parent / 'templates' / 'mcp.html'
             try:
@@ -1120,6 +1136,22 @@ class HybridEducationalServer:
                 raise web.HTTPFound('/login?next=/flashcards')
             return web.FileResponse('templates/flashcards.html')
 
+        async def serve_drawer(request):
+            """The drawer: where a learner's own visualisations live.
+
+            Login only - deliberately without the participant_code / admin_key
+            doors the older tool pages carry, since this is personal work rather
+            than an anonymous exercise.
+            """
+            if not request.cookies.get('synapse_user'):
+                raise web.HTTPFound('/login?next=/drawer')
+            drawer_path = Path(__file__).parent / 'templates' / 'drawer.html'
+            try:
+                with open(drawer_path, 'r', encoding='utf-8') as f:
+                    return web.Response(text=f.read(), content_type='text/html')
+            except FileNotFoundError:
+                return web.Response(text="Drawer page not found.", status=404)
+
         async def serve_spot_the_bug(request):
             user_cookie = request.cookies.get('synapse_user')
             participant_code = request.query.get('participant') or request.cookies.get('participant_code')
@@ -1129,6 +1161,7 @@ class HybridEducationalServer:
             return web.FileResponse('templates/spot_the_bug.html')
 
         app.router.add_get('/about', serve_about)
+        app.router.add_get('/try', serve_try)
         app.router.add_get('/mcp', serve_mcp)
         app.router.add_get('/privacy', serve_privacy)
         app.router.add_get('/terms', serve_terms)
@@ -1141,6 +1174,7 @@ class HybridEducationalServer:
         app.router.add_get("/course/java-security", serve_java_security_course)
         app.router.add_get('/flashcards', serve_flashcards)
         app.router.add_get('/spot-the-bug', serve_spot_the_bug)
+        app.router.add_get('/drawer', serve_drawer)
 
         # API endpoints
         app.router.add_post('/api/chat', chat_ai)
@@ -1174,6 +1208,7 @@ class HybridEducationalServer:
         setup_research_dashboard_routes(app)
         setup_metrics_routes(app)
         setup_quiz_routes(app)
+        setup_drawer_routes(app)
 
         # ====================================================================
         # SYNAPSE LABS - Multi-tenant isolated container system

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your drawer · SYNAPSE</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/icons/favicon.ico">
+<style>
+  :root {
+    --ground: #F8FAFC;
+    --sheet: #FFFFFF;
+    --sunk: #EEF2F7;
+    --ink: #1E293B;
+    --ink-soft: #475569;
+    --ink-faint: #64748B;
+    --rule: #E2E8F0;
+    --brand: #667EEA;
+    --brand-deep: #5A4BC4;
+    --brand-2: #764BA2;
+    --mine: #B45309;
+    --mine-soft: #FBF0DD;
+    --go: #0E7C55;
+    --go-soft: #E3F4EC;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0F1720;
+      --sheet: #17202B;
+      --sunk: #1D2836;
+      --ink: #E6EDF5;
+      --ink-soft: #B3C0D0;
+      --ink-faint: #8A9AAC;
+      --rule: #27323F;
+      --brand: #8FA2FF;
+      --brand-deep: #A9B6FF;
+      --brand-2: #B98BE0;
+      --mine: #F0A93C;
+      --mine-soft: #33230C;
+      --go: #4ADE9B;
+      --go-soft: #10281F;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0F1720;
+    --sheet: #17202B;
+    --sunk: #1D2836;
+    --ink: #E6EDF5;
+    --ink-soft: #B3C0D0;
+    --ink-faint: #8A9AAC;
+    --rule: #27323F;
+    --brand: #8FA2FF;
+    --brand-deep: #A9B6FF;
+    --brand-2: #B98BE0;
+    --mine: #F0A93C;
+    --mine-soft: #33230C;
+    --go: #4ADE9B;
+    --go-soft: #10281F;
+  }
+
+  .theme {
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    background: var(--sheet); color: var(--ink-soft);
+    border: 1px solid var(--rule); border-radius: 999px; padding: 7px 13px;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .theme:hover { color: var(--ink); border-color: var(--brand-deep); }
+  .theme .dot {
+    width: 9px; height: 9px; border-radius: 50%; background: var(--brand);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0 18px; background: var(--ground); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding-block: 18px 70px; }
+
+  header.bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; padding-block: 10px 22px;
+  }
+  .mark { font-weight: 800; letter-spacing: .14em; font-size: 15px; text-decoration: none; color: var(--ink); }
+  .bar nav { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .lnk { font-size: 15px; text-decoration: none; color: var(--ink-soft); padding: 8px 12px; border-radius: 8px; }
+  .lnk:hover { background: var(--sheet); color: var(--ink); }
+
+  h1 { font-size: clamp(26px, 4vw, 36px); line-height: 1.1; letter-spacing: -.02em; margin: 0; }
+  .stand { margin: 12px 0 0; color: var(--ink-soft); max-width: 62ch; }
+
+  /* what you opened sits at the top, in place - a drawer you have to leave to
+     use is not a drawer */
+  .stage { margin-top: 22px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 14px; overflow: hidden; }
+  .stage[hidden] { display: none; }
+  .stage .lip {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    padding: 10px 16px; border-bottom: 1px solid var(--rule); background: var(--sunk);
+    font-size: 14px;
+  }
+  .stage iframe { display: block; width: 100%; height: 74vh; min-height: 520px; border: 0; background: var(--sheet); }
+
+  .concept { margin-top: 34px; }
+  .concept > h2 {
+    font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+    margin: 0 0 12px; font-weight: 700;
+  }
+  .items { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+
+  .item {
+    background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px;
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .item h3 { margin: 0; font-size: 17px; line-height: 1.3; letter-spacing: -.01em; }
+  .badge {
+    align-self: flex-start; font-size: 11px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
+  }
+  .badge.library { background: var(--sunk); color: var(--ink-soft); }
+  .badge.mine { background: var(--mine-soft); color: var(--mine); box-shadow: inset 0 0 0 1px var(--mine); }
+  .item .note { margin: 0; font-size: 15px; color: var(--ink-soft); }
+  .item pre {
+    margin: 0; background: var(--sunk); border-radius: 8px; padding: 10px 12px;
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.5;
+    max-height: 132px; overflow: auto;
+  }
+  .item .when { font-size: 13px; color: var(--ink-faint); }
+  .item .acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+
+  button {
+    font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    padding: 8px 14px; border-radius: 9px; border: 1px solid var(--rule);
+    background: var(--sheet); color: var(--ink);
+  }
+  button.go { background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%); color: #FFF; border-color: transparent; }
+  button.drop { color: var(--ink-soft); }
+  button:hover { border-color: var(--brand-deep); }
+
+  .empty {
+    margin-top: 28px; background: var(--sheet); border: 1px dashed var(--rule);
+    border-radius: 14px; padding: 32px 28px; max-width: 62ch;
+  }
+  .empty h2 { margin: 0 0 10px; font-size: 20px; }
+  .empty p { margin: 0 0 14px; color: var(--ink-soft); }
+  .empty a { color: var(--brand-deep); }
+
+  .say {
+    margin-top: 16px; font-size: 15px; color: var(--go); background: var(--go-soft);
+    border: 1px solid var(--go); border-radius: 9px; padding: 9px 13px; display: inline-block;
+  }
+  .say[hidden] { display: none; }
+  .say.bad { color: var(--mine); background: var(--mine-soft); border-color: var(--mine); }
+
+  footer {
+    margin-top: 46px; padding-top: 20px; border-top: 1px solid var(--rule);
+    color: var(--ink-faint); font-size: 14.5px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  footer a { color: var(--ink-faint); }
+  footer p { margin: 0; }
+  /* centred, like the footer on every other page of the site */
+  footer { align-items: center; text-align: center; }
+  footer .promise { max-width: 62ch; margin-inline: auto; }
+  footer .legal { align-items: center; }
+  /* who you are actually buying from: required of a UK company, and the first
+     thing a school's finance office looks for */
+  footer .legal { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+  footer .legal .links { font-weight: 600; }
+  footer .legal .small { font-size: 12.5px; line-height: 1.65; }
+
+  a:focus-visible, button:focus-visible, iframe:focus-visible { outline: 3px solid var(--brand-deep); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="bar">
+    <a class="mark" href="/app">SYNAPSE</a>
+    <nav>
+      <button class="theme" type="button" id="themeBtn"><span class="dot"></span><span>Theme: auto</span></button>
+      <a class="lnk" href="/app">Home</a>
+      <a class="lnk" href="/course">Course</a>
+      <a class="lnk" href="/try">Lessons</a>
+    </nav>
+  </header>
+
+  <h1>Your drawer</h1>
+  <p class="stand">Everything you kept, grouped by what it is about rather than when you
+    saved it. Nothing here is a recording: each one is rebuilt when you open it, so it always
+    runs on the current engine.</p>
+
+  <p class="say" id="say" hidden role="status"></p>
+
+  <div class="stage" id="stage" hidden>
+    <div class="lip">
+      <span id="stageTitle"></span>
+      <button type="button" id="stageClose">Close</button>
+    </div>
+    <iframe id="stageFrame" title="A saved visualisation" src="about:blank"></iframe>
+  </div>
+
+  <div id="groups"></div>
+
+  <div class="empty" id="empty" hidden>
+    <h2>It is empty, which is the normal start.</h2>
+    <p>Open any lesson and press <b>Keep this</b>. It will appear here, under the idea it
+      belongs to — loops, dictionaries, recursion — so you can come back to the one you need
+      without hunting through anything.</p>
+    <p><a href="/try">Go to the lessons</a></p>
+  </div>
+
+  <footer>
+    <p class="promise">Kept on the server, under your account &mdash; not in this browser, so a
+      shared machine never hands your drawer to the next person who sits down.</p>
+    <div class="legal">
+      <p class="links"><a href="/about">About</a> &middot; <a href="/privacy">Privacy</a>
+        &middot; <a href="/terms">Terms</a> &middot; <a href="/cookies">Cookies</a></p>
+      <p>&copy; 2026 Synapse &mdash; <strong>GyEffe Technologies Ltd</strong>, a company
+        registered in Scotland, company number SC899700.</p>
+      <p class="small">Registered office: 5 South Charlotte Street, Edinburgh EH2 4AN,
+        United Kingdom<br>Company: <a href="mailto:hello@gyeffe.co.uk">hello@gyeffe.co.uk</a>
+        &middot; Synapse support:
+        <a href="mailto:synapse_4ai@outlook.com">synapse_4ai@outlook.com</a></p>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+/* Auto, light, dark - in that order, remembered, and passed on to the lesson
+   in the frame, which takes its theme from the URL. Wrapped in try/catch
+   because a browser with storage switched off must still get a working page,
+   just without the memory of the choice. */
+(function () {
+  var KEY = 'synapse-theme';
+  var order = ['auto', 'light', 'dark'];
+  var label = { auto: 'Theme: auto', light: 'Theme: light', dark: 'Theme: dark' };
+  var btn = document.getElementById('themeBtn');
+  var choice = 'auto';
+
+  try { choice = localStorage.getItem(KEY) || 'auto'; } catch (e) { choice = 'auto'; }
+  if (order.indexOf(choice) < 0) { choice = 'auto'; }
+
+  function effective() {
+    if (choice !== 'auto') { return choice; }
+    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+      ? 'dark' : 'light';
+  }
+
+  function apply(reloadFrames) {
+    if (choice === 'auto') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', choice);
+    }
+    if (btn) {
+      btn.lastChild.textContent = label[choice];
+      btn.setAttribute('aria-label', label[choice] + ' \u2014 press to change');
+    }
+    if (reloadFrames && window.SYNAPSE_THEME_CHANGED) { window.SYNAPSE_THEME_CHANGED(effective()); }
+  }
+
+  if (btn) {
+    btn.addEventListener('click', function () {
+      choice = order[(order.indexOf(choice) + 1) % order.length];
+      try { localStorage.setItem(KEY, choice); } catch (e) { /* nothing to do */ }
+      apply(true);
+    });
+  }
+
+  window.SYNAPSE_EFFECTIVE_THEME = effective;
+  apply(false);
+})();
+</script>
+<script>
+(function () {
+  var groups = document.getElementById('groups');
+  var empty = document.getElementById('empty');
+  var say = document.getElementById('say');
+  var stage = document.getElementById('stage');
+  var frame = document.getElementById('stageFrame');
+  var stageTitle = document.getElementById('stageTitle');
+
+  // read when something is opened, not once at load, so the theme control
+  // reaches the visualisation and not only the page around it
+  function themeNow() {
+    return window.SYNAPSE_EFFECTIVE_THEME ? window.SYNAPSE_EFFECTIVE_THEME() : 'light';
+  }
+  var openItem = null;
+
+  function tell(text, bad) {
+    say.textContent = text;
+    say.className = bad ? 'say bad' : 'say';
+    say.hidden = !text;
+  }
+
+  function esc(t) {
+    return String(t == null ? '' : t)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function when(iso) {
+    if (!iso) { return ''; }
+    var d = new Date(iso);
+    return isNaN(d) ? '' : 'kept ' + d.toLocaleDateString(undefined,
+      { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function open(item) {
+    // The recipe, turned back into the thing: a lesson id becomes a lesson.
+    openItem = item;
+    frame.src = '/static/lessons/algorithm-player.html?prog=' +
+                encodeURIComponent(item.prog) + '&theme=' + themeNow();
+    stageTitle.innerHTML = '<b>' + esc(item.title) + '</b>';
+    stage.hidden = false;
+    stage.scrollIntoView({ block: 'start' });
+  }
+
+  function card(item) {
+    var el = document.createElement('div');
+    el.className = 'item';
+    var kind = item.kind === 'mine' ? 'your code' : 'lesson';
+    el.innerHTML =
+      '<span class="badge ' + esc(item.kind) + '">' + kind + '</span>' +
+      '<h3>' + esc(item.title) + '</h3>' +
+      (item.note ? '<p class="note">' + esc(item.note) + '</p>' : '') +
+      (item.code ? '<pre>' + esc(item.code) + '</pre>' : '') +
+      '<span class="when">' + when(item.created_at) + '</span>' +
+      '<div class="acts"></div>';
+
+    var acts = el.querySelector('.acts');
+    if (item.prog) {
+      var openBtn = document.createElement('button');
+      openBtn.type = 'button';
+      openBtn.className = 'go';
+      openBtn.textContent = item.kind === 'mine' ? 'Open the lesson for this' : 'Open';
+      openBtn.addEventListener('click', function () { open(item); });
+      acts.appendChild(openBtn);
+    }
+    var drop = document.createElement('button');
+    drop.type = 'button';
+    drop.className = 'drop';
+    drop.textContent = 'Remove';
+    drop.addEventListener('click', function () { remove(item, el); });
+    acts.appendChild(drop);
+    return el;
+  }
+
+  function remove(item, el) {
+    fetch('/api/drawer/' + item.id, { method: 'DELETE', credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : r.json().then(function (e) { throw e; }); })
+      .then(function () {
+        el.remove();
+        tell('Removed “' + item.title + '”.');
+        if (!groups.querySelector('.item')) { load(); }
+      })
+      .catch(function (e) {
+        tell(e && e.detail ? e.detail : 'That could not be removed. Try again in a moment.', true);
+      });
+  }
+
+  function load() {
+    fetch('/api/drawer', { credentials: 'same-origin' })
+      .then(function (r) {
+        if (r.status === 401) { window.location.href = '/login?next=/drawer'; return null; }
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) { return; }
+        groups.innerHTML = '';
+        if (!data.count) { empty.hidden = false; return; }
+        empty.hidden = true;
+        data.concepts.forEach(function (g) {
+          var sec = document.createElement('section');
+          sec.className = 'concept';
+          var h = document.createElement('h2');
+          h.textContent = g.concept + ' · ' + g.items.length;
+          var list = document.createElement('div');
+          list.className = 'items';
+          g.items.forEach(function (item) { list.appendChild(card(item)); });
+          sec.appendChild(h);
+          sec.appendChild(list);
+          groups.appendChild(sec);
+        });
+      })
+      .catch(function () {
+        tell('The drawer could not be read just now. Reload the page.', true);
+      });
+  }
+
+  window.SYNAPSE_THEME_CHANGED = function () {
+    if (openItem && !stage.hidden) { open(openItem); }
+  };
+
+  document.getElementById('stageClose').addEventListener('click', function () {
+    stage.hidden = true;
+    openItem = null;
+    frame.src = 'about:blank';
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
