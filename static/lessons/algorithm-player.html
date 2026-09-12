@@ -514,6 +514,63 @@
   .foot .vnote { margin: 0 0 12px; }
 
   @media (prefers-reduced-motion: reduce) { .cell, .gc, .v { transition: none; } }
+
+  /* ------------------------------------------------ which one costs less
+     Two programs already in the library, put next to each other. The only
+     new idea on the page is that they are stepped TOGETHER: one finishes
+     while the other is still going, and that gap is the whole lesson. */
+  .cmp { margin-top: 54px; border-top: 3px solid var(--ink); padding-top: 26px; }
+  .cmp h2 { font-family: var(--ff-display); font-size: 30px; line-height: 1.15;
+            letter-spacing: -.01em; margin: 0 0 6px; }
+  .cmp .cmpstand { color: var(--ink-soft); margin: 0 0 18px; max-width: 62ch; }
+  .cmprow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+            margin-bottom: 18px; }
+
+  .cmpgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 820px) { .cmpgrid { grid-template-columns: 1fr; } }
+
+  .cmpside { border: 1px solid var(--rule); border-radius: 10px;
+             background: var(--panel); padding: 16px 16px 18px; min-width: 0; }
+  .cmpside.won { border-color: var(--green); box-shadow: 0 0 0 1px var(--green); }
+
+  .cmphd { display: flex; align-items: baseline; justify-content: space-between;
+           gap: 10px; margin-bottom: 12px; }
+  .cmpname { font-family: var(--ff-mono); font-size: 13px; font-weight: 700;
+             letter-spacing: .02em; }
+  .cmpflag { font-family: var(--ff-mono); font-size: 10px; font-weight: 700;
+             letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px;
+             border-radius: 999px; white-space: nowrap; }
+  .cmpflag.run { background: var(--amber); color: var(--amber-ink); }
+  .cmpflag.done { background: var(--green); color: var(--green-ink); }
+
+  /* The row is the same cells as the main board, at a size that lets two
+     of them sit next to each other without either having to scroll. */
+  .cmprowcells { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 12px; }
+  .cmpside .cell { min-width: 34px; height: 38px; font-size: 16px; }
+  .cmpside .pos { font-size: 10px; }
+
+  .cmptab { font-family: var(--ff-mono); font-size: 11px; color: var(--ink-soft);
+            background: var(--panel-2); border-radius: 6px; padding: 6px 8px;
+            margin-bottom: 12px; overflow-x: auto; white-space: nowrap; }
+  .cmptab b { color: var(--ink); }
+
+  .cmpcode { font-family: var(--ff-mono); font-size: 12px; line-height: 1.55;
+             background: var(--panel-2); border-radius: 6px; padding: 8px 4px;
+             margin-bottom: 12px; overflow-x: auto; }
+  .cmpcode .ln { display: block; padding: 0 8px; white-space: pre; }
+  .cmpcode .ln.on { background: var(--amber); color: var(--amber-ink); font-weight: 700; }
+
+  .cmpops { display: flex; gap: 16px; flex-wrap: wrap; }
+  .cmpops .n { font-family: var(--ff-mono); font-size: 21px; font-weight: 700;
+               color: var(--amber-deep); font-variant-numeric: tabular-nums; }
+  .cmpops .k { font-family: var(--ff-mono); font-size: 9px; letter-spacing: .1em;
+               text-transform: uppercase; color: var(--ink-faint); font-weight: 700; }
+
+  .cmpbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+            margin-top: 18px; }
+  .cmpbar input[type=range] { flex: 1; min-width: 180px; }
+  .cmpsay { margin-top: 14px; font-size: 17px; color: var(--ink); max-width: 70ch; }
+  .cmpsay b { color: var(--amber-deep); }
 </style>
 
 <div class="wrap">
@@ -607,6 +664,34 @@
     <button type="button" data-panel="p-ops" aria-pressed="true">Cost</button>
   </div>
 
+  <section class="cmp" id="cmp">
+    <h2>Which one actually costs less?</h2>
+    <p class="cmpstand">Two programs from the library that give the same answer off the same list.
+      They are stepped together, so one of them finishes while the other is still working, and
+      the counters underneath say by how much.</p>
+
+    <div class="cmprow">
+      <label class="lbl" for="cmppick">Compare</label>
+      <select id="cmppick" class="pick"></select>
+    </div>
+
+    <div class="cmpgrid">
+      <div class="cmpside" id="cmpA"></div>
+      <div class="cmpside" id="cmpB"></div>
+    </div>
+
+    <div class="cmpbar">
+      <button id="cmprestart" type="button" aria-label="Back to the start">&#8634;</button>
+      <button id="cmpback" type="button" aria-label="One step back">&#9664;</button>
+      <button class="primary" id="cmpplay" type="button">&#9654; Play both</button>
+      <button id="cmpfwd" type="button" aria-label="One step on">&#9654;</button>
+      <input type="range" id="cmpscrub" min="0" value="0" step="1"
+             aria-label="Step both programs together">
+      <span class="at" id="cmpat"></span>
+    </div>
+
+    <p class="cmpsay" id="cmpsay"></p>
+  </section>
   <div class="foot">
     <p class="vnote">Everything here is recorded with these seventeen words. <b>Pick one to watch it happen.</b></p>
     <div class="verbs" id="verbs"></div>
@@ -3320,6 +3405,214 @@
   }
 
   $("keep").addEventListener("click", keepThis);
+
+
+  /* ===================================================================
+     WHICH ONE COSTS LESS
+     Not one line of new lesson content: every pair below is two programs
+     that were already in the library, written as versions of one question
+     precisely so they could be compared. What is new is stepping them
+     TOGETHER off one slider. The shorter one finishes and sits there
+     saying so while the other is still going, and that wait is the part
+     a counter alone never manages to say.
+
+     Pairs are only listed where both sides draw a row of cells, so the
+     two halves are the same kind of picture. word:build against
+     word:builder is a real comparison but one side is a grid, and a
+     grid next to a row reads as two different subjects.
+
+     fizz:wrong against fizz:right is deliberately NOT here. Those two
+     cost the same; what differs is that one of them is wrong. Putting it
+     under a heading about cost would teach the wrong thing.
+     =================================================================== */
+
+  var PAIRS = [
+    { a: "find:linear",    b: "find:binary",
+      label: "Finding one value in a sorted list" },
+    { a: "window:rescan",  b: "window:slide",
+      label: "The biggest four readings in a row" },
+    { a: "pair:pairs",     b: "pair:table",
+      label: "Finding the two that add up" },
+    { a: "table:hunt",     b: "table:count",
+      label: "Counting how many times each one appears" },
+    { a: "sort:selection", b: "sort:bubble",
+      label: "Putting them in order, two ways" }
+  ];
+
+  var cmpPair = PAIRS[0], cmpSA = null, cmpSB = null, cmpPA = null, cmpPB = null,
+      cmpAt = 0, cmpPlaying = false, cmpTimer = null;
+
+  function cmpTotal(S) { return S[S.length - 1].ops; }
+
+  function cmpWork(o) { return o.reads + o.compares + o.writes + o.moves; }
+
+  function cmpCells(s) {
+    if (!s.list) { return ""; }
+    var html = "", k, mk, mi, cls;
+    for (k = 0; k < s.list.length; k++) {
+      mk = null;
+      for (mi = 0; mi < s.marks.length; mi++) {
+        if (s.marks[mi].at === k) { mk = s.marks[mi]; }
+      }
+      cls = "cell";
+      if (s.win && (k < s.win[0] || k > s.win[1]) && s.kept !== k) { cls += " out"; }
+      if (s.kept === k || (s.fixed && k >= s.fixed[0] && k <= s.fixed[1])) { cls += " kept"; }
+      if (s.flash.indexOf(k) >= 0) { cls += " flash"; }
+      if (mk) { cls += " m" + mk.tone; }
+      html += '<div class="slot"><span class="pos">' + k + '</span><div class="' + cls + '">' +
+              (s.list[k] === null ? "" : esc(s.list[k])) + "</div></div>";
+    }
+    return '<div class="cmprowcells">' + html + "</div>";
+  }
+
+  function cmpTable(s) {
+    if (!s.table || !s.table.length) { return ""; }
+    return '<div class="cmptab">' + s.table.map(function (row) {
+      return esc(row[0]) + " <b>" + esc(row[1]) + "</b>";
+    }).join(" · ") + "</div>";
+  }
+
+  function cmpCode(prog, s) {
+    return '<div class="cmpcode">' + prog.code.map(function (l, n) {
+      return '<span class="ln' + (n === s.line ? " on" : "") + '">' + esc(l) + "</span>";
+    }).join("") + "</div>";
+  }
+
+  function cmpOps(o) {
+    return '<div class="cmpops">' +
+      '<div class="op"><div class="n">' + o.compares + '</div><div class="k">comparisons</div></div>' +
+      '<div class="op"><div class="n">' + o.reads + '</div><div class="k">reads</div></div>' +
+      '<div class="op"><div class="n">' + o.writes + '</div><div class="k">writes</div></div>' +
+      (o.moves ? '<div class="op"><div class="n">' + o.moves + '</div><div class="k">things moved</div></div>' : "") +
+      "</div>";
+  }
+
+  function cmpSide(el, prog, S, won) {
+    // Past its own last state a program does not carry on doing work: it
+    // holds the picture it finished with, which is the honest thing to
+    // show and also the thing that makes the wait visible.
+    var i = Math.min(cmpAt, S.length - 1), s = S[i], done = cmpAt >= S.length - 1;
+    el.className = "cmpside" + (done && won ? " won" : "");
+    el.innerHTML =
+      '<div class="cmphd"><span class="cmpname">' + esc(prog.versionTitle) + "</span>" +
+      '<span class="cmpflag ' + (done ? "done" : "run") + '">' +
+      (done ? "finished in " + S.length + " steps" : "step " + (i + 1) + " of " + S.length) +
+      "</span></div>" +
+      cmpCells(s) + cmpTable(s) + cmpCode(prog, s) + cmpOps(s.ops);
+  }
+
+  function cmpSay() {
+    // Steps, not the sum of the counters, decide which one won. Summing
+    // reads and comparisons quietly treats one question to a dictionary as
+    // equal to one comparison inside a list, and on a short input that makes
+    // two very different programs tie. Steps are what the machine actually
+    // did, and they do not lie about it.
+    var la = cmpSA.length, lb = cmpSB.length,
+        wa = cmpWork(cmpTotal(cmpSA)), wb = cmpWork(cmpTotal(cmpSB)),
+        fast, slow, fastN, slowN, msg, times;
+
+    if (cmpAt < Math.max(la, lb) - 1) {
+      if (cmpAt >= la - 1) {
+        return "<b>" + esc(cmpPA.versionTitle) + "</b> has finished. The other one is still going.";
+      }
+      if (cmpAt >= lb - 1) {
+        return "<b>" + esc(cmpPB.versionTitle) + "</b> has finished. The other one is still going.";
+      }
+      return "Both are still working. Keep going and watch which one stops first.";
+    }
+
+    fast = Math.min(la, lb); slow = Math.max(la, lb);
+    fastN = esc(la <= lb ? cmpPA.versionTitle : cmpPB.versionTitle);
+    slowN = esc(la <= lb ? cmpPB.versionTitle : cmpPA.versionTitle);
+
+    if (fast === slow && wa === wb) {
+      return "These two cost the same, step for step. When that happens the choice is not " +
+             "about speed, and pretending otherwise is how people end up optimising the " +
+             "wrong thing.";
+    }
+
+    msg = "<b>" + fastN + "</b> got there in " + fast + " steps. <b>" + slowN +
+          "</b> took " + slow + ".";
+
+    if (wa !== wb) {
+      times = Math.max(wa, wb) / Math.min(wa, wb);
+      msg += " Counted as reads, comparisons and writes that is " + Math.min(wa, wb) +
+             " against " + Math.max(wa, wb) + " — " +
+             (times >= 1.95 ? times.toFixed(1) + " times as much work"
+                            : "about " + Math.round((Math.max(wa, wb) - Math.min(wa, wb)) /
+                                                    Math.min(wa, wb) * 100) + "% more") +
+             " for exactly the same answer, off exactly the same list.";
+    } else {
+      msg += " The reads, comparisons and writes happen to total the same here — " +
+             wa + " each — and that is worth stopping on, because they are not the " +
+             "same work. One of them does its looking <b>inside a list</b>, which gets " +
+             "slower as the list grows; the other <b>asks a table</b>, which does not. " +
+             "On an input this short the totals tie. They stop tying the moment it is longer.";
+      return msg;
+    }
+
+    return msg + " And this input is small: the gap is not a fixed amount, it grows.";
+  }
+
+  function cmpRender() {
+    var la = cmpSA.length, lb = cmpSB.length;
+    cmpSide($("cmpA"), cmpPA, cmpSA, la < lb);
+    cmpSide($("cmpB"), cmpPB, cmpSB, lb < la);
+    $("cmpscrub").value = cmpAt;
+    $("cmpat").textContent = "step " + (cmpAt + 1) + " / " + Math.max(cmpSA.length, cmpSB.length);
+    $("cmpsay").innerHTML = cmpSay();
+  }
+
+  function cmpGo(i) {
+    cmpAt = Math.max(0, Math.min(Math.max(cmpSA.length, cmpSB.length) - 1, i));
+    cmpRender();
+  }
+
+  function cmpStop() {
+    cmpPlaying = false;
+    if (cmpTimer) { window.clearInterval(cmpTimer); cmpTimer = null; }
+    $("cmpplay").innerHTML = "▶ Play both";
+  }
+
+  function cmpLoad(pair) {
+    cmpStop();
+    cmpPair = pair;
+    cmpPA = byId(pair.a); cmpPB = byId(pair.b);
+    cmpSA = build(cmpPA); cmpSB = build(cmpPB);
+    cmpAt = 0;
+    $("cmpscrub").max = Math.max(cmpSA.length, cmpSB.length) - 1;
+    cmpRender();
+  }
+
+  function cmpInit() {
+    $("cmppick").innerHTML = PAIRS.map(function (p, i) {
+      return '<option value="' + i + '">' + esc(p.label) + "</option>";
+    }).join("");
+    $("cmppick").addEventListener("change", function () {
+      cmpLoad(PAIRS[parseInt(this.value, 10)]);
+    });
+    $("cmpscrub").addEventListener("input", function () {
+      cmpStop();
+      cmpGo(parseInt(this.value, 10));
+    });
+    $("cmpback").addEventListener("click", function () { cmpStop(); cmpGo(cmpAt - 1); });
+    $("cmpfwd").addEventListener("click", function () { cmpStop(); cmpGo(cmpAt + 1); });
+    $("cmprestart").addEventListener("click", function () { cmpStop(); cmpGo(0); });
+    $("cmpplay").addEventListener("click", function () {
+      var last = Math.max(cmpSA.length, cmpSB.length) - 1;
+      if (cmpPlaying) { cmpStop(); return; }
+      if (cmpAt >= last) { cmpGo(0); }
+      cmpPlaying = true;
+      $("cmpplay").innerHTML = "■ Pause";
+      cmpTimer = window.setInterval(function () {
+        if (cmpAt >= Math.max(cmpSA.length, cmpSB.length) - 1) { cmpStop(); return; }
+        cmpGo(cmpAt + 1);
+      }, 320);
+    });
+    cmpLoad(PAIRS[0]);
+  }
+
+  cmpInit();
 
   var q = new URLSearchParams(window.location.search);
   var theme = q.get("theme");
