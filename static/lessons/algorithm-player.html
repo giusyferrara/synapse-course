@@ -1722,6 +1722,211 @@
              "    else                   print(i);",
              "}"],
       run: function (r) { return fizz(r, [[15, 1, "FizzBuzz"], [3, 2, "Fizz"], [5, 3, "Buzz"]], 4, true); } },
+
+    /* ---- 16. the window that moves instead of starting again ------
+       Two versions of one question, and the code is deliberately the
+       only thing that differs: same list, same window, same answer.
+       The op counter is the lesson. */
+    { family: "window", familyTitle: "16 · Move the window, don't start again",
+      version: "rescan", versionTitle: "Start again at every step",
+      board: listBoard([2, 1, 5, 1, 3, 2, 4, 1], "the readings"),
+      code: ["int best = 0;",
+             "for (int s = 0; s + 4 <= list.length; s++) {",
+             "    int sum = 0;",
+             "    for (int j = s; j < s + 4; j++)",
+             "        sum = sum + list[j];",
+             "    if (sum > best) best = sum;",
+             "}",
+             "return best;"],
+      run: function (r) {
+        var v = this.board.values, K = 4, s, j, sum, best = 0, was, better;
+        function M(s0, j0) {
+          var a = [["s", s0, 0]];
+          if (j0 !== undefined && j0 !== null) { a.push(["j", j0, 3]); }
+          return a;
+        }
+        r.e("CREATE", { line: 0, name: "best", value: 0 });
+        r.e("ENTER", { line: 1, loop: { name: "s", from: 0, of: v.length - K + 1,
+                                        label: "loop", word: "window" } });
+        for (s = 0; s + K <= v.length; s++) {
+          r.e("MOVE", { line: 1, name: "s", to: s, win: [s, s + K - 1], marks: M(s),
+                        human: "The window starts at " + s + ".",
+                        why: s === 0
+                          ? "Four in a row, and the question is which four add up to the most. The dark slots have not gone anywhere — they are simply outside the window being looked at right now."
+                          : undefined });
+          sum = 0;
+          r.e("CREATE", { line: 2, name: "sum", value: 0, win: [s, s + K - 1], marks: M(s) });
+          r.e("ENTER", { line: 3, loop: { name: "j", from: s, of: s + K,
+                                          label: "inner", word: "item" } });
+          for (j = s; j < s + K; j++) {
+            r.e("READ", { line: 4, from: "list", at: j, value: v[j],
+                          win: [s, s + K - 1], marks: M(s, j) });
+            was = sum;
+            sum = sum + v[j];
+            r.e("UPDATE", { line: 4, name: "sum", from: was, to: sum,
+                            win: [s, s + K - 1], marks: M(s, j) });
+          }
+          r.e("EXIT", { line: 3, loop: "j", win: [s, s + K - 1], marks: M(s) });
+          better = sum > best;
+          r.e("COMPARE", { line: 5, text: "sum > best", real: sum + " > " + best,
+                           result: better,
+                           then: better ? "so this window is the new best"
+                                        : "so the best one so far still stands",
+                           win: [s, s + K - 1], marks: M(s) });
+          if (better) {
+            was = best;
+            best = sum;
+            r.e("UPDATE", { line: 5, name: "best", from: was, to: best,
+                            win: [s, s + K - 1], marks: M(s) });
+          }
+        }
+        r.e("EXIT", { line: 1, loop: "s",
+                      why: "Count the reads: <b>twenty</b>, for five windows of four. Now look at what happened between one window and the next — three of the four numbers were the same ones, read a second time, to work out an answer that was mostly already known. That is the waste, and it grows with the window: a window of a hundred would read ninety-nine numbers it had just finished reading." });
+        r.e("RETURN", { line: 7, value: best, fn: "biggestRun", win: [2, 5], fixed: [2, 5] });
+      } },
+
+    { family: "window", familyTitle: "16 · Move the window, don't start again",
+      version: "slide", versionTitle: "Move it instead",
+      board: listBoard([2, 1, 5, 1, 3, 2, 4, 1], "the readings"),
+      code: ["int sum = 0;",
+             "for (int j = 0; j < 4; j++) sum = sum + list[j];",
+             "int best = sum;",
+             "for (int s = 1; s + 4 <= list.length; s++) {",
+             "    sum = sum + list[s + 3] - list[s - 1];",
+             "    if (sum > best) best = sum;",
+             "}",
+             "return best;"],
+      run: function (r) {
+        var v = this.board.values, K = 4, s, j, sum = 0, best, was, better, gone, came;
+        r.e("CREATE", { line: 0, name: "sum", value: 0 });
+        r.e("ENTER", { line: 1, loop: { name: "j", from: 0, of: K, label: "loop", word: "item" } });
+        for (j = 0; j < K; j++) {
+          r.e("READ", { line: 1, from: "list", at: j, value: v[j],
+                        win: [0, K - 1], marks: [["j", j, 3]] });
+          was = sum;
+          sum = sum + v[j];
+          r.e("UPDATE", { line: 1, name: "sum", from: was, to: sum,
+                          win: [0, K - 1], marks: [["j", j, 3]] });
+        }
+        r.e("EXIT", { line: 1, loop: "j", win: [0, K - 1] });
+        best = sum;
+        r.e("CREATE", { line: 2, name: "best", value: best, win: [0, K - 1],
+                        why: "The first window costs full price, because there is nothing yet to reuse. Every window after this one is where the saving lives." });
+        r.e("ENTER", { line: 3, loop: { name: "s", from: 1, of: v.length - K + 1,
+                                        label: "loop", word: "window" } });
+        for (s = 1; s + K <= v.length; s++) {
+          came = v[s + K - 1];
+          gone = v[s - 1];
+          r.e("MOVE", { line: 3, name: "s", to: s, win: [s, s + K - 1],
+                        marks: [["s", s, 0]],
+                        human: "The window moves to " + s + "." });
+          r.e("READ", { line: 4, from: "list", at: s + K - 1, value: came,
+                        win: [s, s + K - 1], marks: [["in", s + K - 1, 2]],
+                        human: "One number came in on the right: " + came + "." });
+          r.e("READ", { line: 4, from: "list", at: s - 1, value: gone,
+                        win: [s, s + K - 1], marks: [["out", s - 1, 1]],
+                        human: "One number fell off the left: " + gone + ".",
+                        why: s === 1
+                          ? "Here is the whole idea, and it is one line long. Moving a window by one changes exactly <b>two</b> things: one number joins on the right and one drops off the left. Everything between them is untouched, so there is no reason to look at any of it again. Add the one, subtract the other, and the total is right without re-adding a thing."
+                          : undefined });
+          was = sum;
+          sum = sum + came - gone;
+          r.e("UPDATE", { line: 4, name: "sum", from: was, to: sum,
+                          win: [s, s + K - 1], marks: [["s", s, 0]] });
+          better = sum > best;
+          r.e("COMPARE", { line: 5, text: "sum > best", real: sum + " > " + best,
+                           result: better,
+                           then: better ? "so this window is the new best"
+                                        : "so the best one so far still stands",
+                           win: [s, s + K - 1], marks: [["s", s, 0]] });
+          if (better) {
+            was = best;
+            best = sum;
+            r.e("UPDATE", { line: 5, name: "best", from: was, to: best,
+                            win: [s, s + K - 1], marks: [["s", s, 0]] });
+          }
+        }
+        r.e("EXIT", { line: 3, loop: "s",
+                      why: "<b>Twelve</b> reads against twenty, for the same answer off the same list. Four to build the first window, then two for every step after it — and those two do not grow when the window does. Widen it to a hundred and the other version reads a hundred numbers per step while this one still reads two." });
+        r.e("RETURN", { line: 7, value: best, fn: "biggestRun", win: [2, 5], fixed: [2, 5] });
+      } },
+
+    /* ---- 17. the longest run with nothing repeated in it -----------
+       The window is here again, but it changes size, and the left edge
+       jumps rather than creeping. Nothing is ever removed, which is why
+       a plain table is enough. */
+    { family: "longest", familyTitle: "17 · The longest run without repeating",
+      version: "run", versionTitle: "Jump the left edge past the repeat",
+      board: { kind: "table", input: ["a", "b", "c", "a", "b", "c", "b", "b"],
+               label: "the letters, read left to right",
+               tableLabel: "where each letter was last seen",
+               emptyLabel: "nothing seen yet" },
+      code: ["int left = 0, best = 0;",
+             "for (int right = 0; right < text.length; right++) {",
+             "    char c = text[right];",
+             "    if (last.containsKey(c) && last.get(c) >= left)",
+             "        left = last.get(c) + 1;",
+             "    last.put(c, right);",
+             "    best = max(best, right - left + 1);",
+             "}",
+             "return best;"],
+      run: function (r) {
+        var v = this.board.input, left = 0, right, best = 0, last = {}, c, seen,
+            inside, len, was, told = false;
+        function M() { return [["left", left, 0], ["right", right, 3]]; }
+        r.e("CREATE", { line: 0, name: "left", value: 0 });
+        r.e("CREATE", { line: 0, name: "best", value: 0,
+                        why: "Two numbers hold the whole answer: where the run being looked at starts, and the length of the best one found so far. The letters themselves are never copied anywhere." });
+        r.e("ENTER", { line: 1, loop: { name: "right", from: 0, of: v.length,
+                                        label: "loop", word: "letter" } });
+        for (right = 0; right < v.length; right++) {
+          c = v[right];
+          r.e("MOVE", { line: 1, name: "right", to: right, win: [left, right], marks: M(),
+                        human: "The run reaches out to letter " + right + "." });
+          r.e("READ", { line: 2, from: "text", at: right, value: c,
+                        win: [left, right], marks: M() });
+          seen = Object.prototype.hasOwnProperty.call(last, c);
+          inside = seen && last[c] >= left;
+          r.e("READ", { line: 3, key: c, value: seen ? last[c] : null,
+                        win: [left, right], marks: M() });
+          r.e("COMPARE", { line: 3, text: "last.get(c) >= left",
+                           real: seen ? last[c] + " >= " + left
+                                      : "“" + c + "” has never been seen",
+                           result: inside,
+                           then: inside ? "so it is inside the run, and the run has to give ground"
+                                        : "so the run can keep growing",
+                           win: [left, right], marks: M(),
+                           why: (inside && !told)
+                             ? "This is the part people get wrong twice over. Seeing a letter again is <b>not</b> enough to shorten the run — the earlier one has to still be inside it. And when it is, the left edge does not crawl one step at a time and it does not go back to the start: it <b>jumps</b> to just past that earlier copy, which is the nearest place the run is legal again."
+                             : undefined });
+          if (inside) {
+            told = true;
+            left = last[c] + 1;
+            r.e("MOVE", { line: 4, name: "left", to: left, win: [left, right], marks: M(),
+                          human: "The left edge jumps to " + left + "." });
+          }
+          last[c] = right;
+          r.e("WRITE", { line: 5, key: c, value: right, win: [left, right], marks: M(),
+                         human: "“" + c + "” was last seen at " + right + ".",
+                         code: "last.put(\"" + c + "\", " + right + ")" });
+          len = right - left + 1;
+          r.e("COMPARE", { line: 6, text: "right - left + 1 > best",
+                           real: len + " > " + best, result: len > best,
+                           then: len > best ? "so this run is the longest so far"
+                                            : "so the longest so far still stands",
+                           win: [left, right], marks: M() });
+          if (len > best) {
+            was = best;
+            best = len;
+            r.e("UPDATE", { line: 6, name: "best", from: was, to: best,
+                            win: [left, right], marks: M() });
+          }
+        }
+        r.e("EXIT", { line: 1, loop: "right",
+                      why: "Eight letters, and <b>neither edge ever went backwards</b>. Right only moved right; left only moved right. Between them they took at most sixteen steps, not eight times eight — and that is the whole reason this is fast. The obvious version checks every run against every other one, and does square the work to reach the same three." });
+        r.e("RETURN", { line: 8, value: best, fn: "longestRun",
+                        win: [0, 2], fixed: [0, 2] });
+      } },
   ];
 
 
@@ -1938,8 +2143,27 @@
       returns: "Nothing. It prints, one line per number.",
       sig: "void fizzBuzz(int n)",
       watch: "15 divides by 3 <b>and</b> by 5. Ask about that case <b>first</b> or it never gets asked at all \u2014 and that single line is the entire reason this problem is famous."
-    }
+    },
 
+
+    "window": {
+      ask: "Eight readings came off a machine, one a minute. Which four in a row add up to the most? Not any four — four <b>next to each other</b>.",
+      ex: { "in": "[2, 1, 5, 1, 3, 2, 4, 1], four in a row", out: "11",
+            why: "5 + 1 + 3 + 2, starting at position 2" },
+      input: "A list of whole numbers, and how many in a row to add up. There are always at least that many.",
+      returns: "One whole number: the biggest total any run of that length reaches.",
+      sig: "int biggestRun(int[] readings, int k)",
+      watch: "The last window starts at <b>length minus k</b>, not at the end. Run the start one slot too far and you are adding up numbers that were never there."
+    },
+
+    "longest": {
+      ask: "How long is the longest stretch of a word in which no letter appears twice? In <i>abcabcbb</i> it is <i>abc</i>, so the answer is three.",
+      ex: { "in": "\"abcabcbb\"", out: "3", why: "abc, and nothing longer manages it" },
+      input: "One word, up to a million letters.",
+      returns: "One whole number: the length of the longest stretch with no letter repeated.",
+      sig: "int longestRun(String text)",
+      watch: "Seeing a letter for the second time is not by itself a reason to shorten the run. It only matters if the <b>earlier copy is still inside</b> the stretch being measured — and it very often is not."
+    },
   };
 
   // family title carries down to every version in that family, and so does the
@@ -3064,7 +3288,7 @@
     cost: "Lists and what they cost", nested: "Nested loops", word: "Strings",
     find: "Searching", pile: "Stacks and queues", table: "Dictionaries",
     sort: "Sorting", calls: "Recursion", pair: "Interview classics",
-    fizz: "Conditions", queue: "Stacks and queues", set: "Sets"
+    fizz: "Conditions", queue: "Stacks and queues", set: "Sets", window: "Sliding window", longest: "Sliding window"
   };
 
   function keepThis() {
