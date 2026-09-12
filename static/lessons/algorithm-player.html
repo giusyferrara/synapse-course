@@ -1,0 +1,3165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<!-- This file is an artifact BODY, not a whole page: the doctype, the
+     charset and the viewport are written around it at publish time. That is
+     why there is no <head> here, and why one must not be added - a second
+     <head> inside <body> is invalid and the charset in it would be ignored.
+     To open it locally, serve it with serve_utf8.py, which declares UTF-8
+     the way the published page does. -->
+<title>Algorithm Player</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Newsreader:opsz,wght@6..72,300;6..72,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  :root {
+    color-scheme: light dark;
+    --paper: #F4F6F5; --panel: #FFFFFF; --panel-2: #EEF1F3;
+    --ink: #16202B; --ink-soft: #3D4A56; --ink-faint: #64727E; --rule: #C9D1D6;
+
+    --blue: #2563EB;  --blue-ink: #FFFFFF; --blue-edge: #1D4ED8;
+    --purple: #7C3AED; --purple-ink: #FFFFFF; --purple-edge: #6D28D9;
+    --amber: #F59E0B; --amber-ink: #3B2200; --amber-edge: #B45309; --amber-deep: #B45309;
+    --green: #16A34A; --green-ink: #FFFFFF; --green-edge: #15803D;
+    --red: #B91C1C;
+
+    --ff-display: "Zilla Slab", Georgia, serif;
+    --ff-body: "Newsreader", Georgia, serif;
+    --ff-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #10171A; --panel: #182125; --panel-2: #1F2A2E;
+      --ink: #E6EDEA; --ink-soft: #B4C1BC; --ink-faint: #85958F; --rule: #2C393E;
+      --blue: #60A5FA; --blue-ink: #04102E; --blue-edge: #93C5FD;
+      --purple: #C084FC; --purple-ink: #1A0536; --purple-edge: #DDB4FE;
+      --amber: #FBBF24; --amber-ink: #3B2200; --amber-edge: #FCD34D; --amber-deep: #FBBF24;
+      --green: #4ADE80; --green-ink: #052E16; --green-edge: #86EFAC;
+      --red: #FCA5A5;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #10171A; --panel: #182125; --panel-2: #1F2A2E;
+    --ink: #E6EDEA; --ink-soft: #B4C1BC; --ink-faint: #85958F; --rule: #2C393E;
+    --blue: #60A5FA; --blue-ink: #04102E; --blue-edge: #93C5FD;
+    --purple: #C084FC; --purple-ink: #1A0536; --purple-edge: #DDB4FE;
+    --amber: #FBBF24; --amber-ink: #3B2200; --amber-edge: #FCD34D; --amber-deep: #FBBF24;
+    --green: #4ADE80; --green-ink: #052E16; --green-edge: #86EFAC;
+    --red: #FCA5A5;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0 18px; background: var(--paper); color: var(--ink);
+    font-family: var(--ff-body); font-size: 17px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding-block: 38px 72px; }
+
+  .eyebrow {
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-faint); margin: 0;
+  }
+  h1 {
+    font-family: var(--ff-display); font-weight: 700;
+    font-size: clamp(30px, 5vw, 46px); line-height: 1.04;
+    letter-spacing: -.018em; margin: 8px 0 0; text-wrap: balance;
+  }
+  .stand { color: var(--ink-soft); max-width: 60ch; margin: 12px 0 0; font-size: 19px; }
+  [hidden] { display: none !important; }
+  .claim {
+    display: inline-block; margin-top: 14px; font-family: var(--ff-mono);
+    font-size: 12px; font-weight: 700; letter-spacing: .06em;
+    background: var(--amber); color: var(--amber-ink);
+    padding: 8px 14px; border-radius: 6px;
+    box-shadow: inset 0 0 0 1px var(--amber-edge);
+  }
+
+  .pickrow { margin-top: 22px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .vwrap { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  /* the lesson list is thirteen long: a dropdown, not four rows of chips */
+  select.pick {
+    max-width: 100%; font-size: 14px; font-weight: 700; padding: 9px 10px;
+    border-color: var(--ink-faint);
+  }
+
+  /* a pointer sitting under a cell, one colour per name */
+  .arrow.p0 { color: var(--blue); }
+  .arrow.p1 { color: var(--purple); }
+  .arrow.p2 { color: var(--green-edge); }
+  .arrow.p3 { color: var(--amber-deep); }
+  .cell.m0 { border-color: var(--blue); border-width: 3px; }
+  .cell.m1 { border-color: var(--purple); border-width: 3px; }
+  .cell.m2 { border-color: var(--green-edge); border-width: 3px; }
+  .cell.flash { background: var(--amber); border-color: var(--amber-edge); color: var(--amber-ink); }
+  .cell.kept { background: var(--green); border-color: var(--green-edge); color: var(--green-ink); }
+  .cell.ghost { opacity: .25; }
+  /* ruled out of the search. Three channels, not one: faded ink, a dashed
+     edge and a line through it, so it still reads without colour. */
+  .cell.out {
+    color: var(--ink-faint); border-style: dashed; background: transparent;
+    text-decoration: line-through; text-decoration-thickness: 2px;
+  }
+  .cell.m3 { border-color: var(--amber-edge); border-width: 3px; }
+  .cell.fresh { box-shadow: 0 0 0 4px var(--amber); }
+  .lbl {
+    font-family: var(--ff-mono); font-size: 10px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 700;
+  }
+
+  /* ------------------------------------------------------------ the brief */
+
+  .brief {
+    margin-top: 18px; background: var(--panel); border: 1px solid var(--rule);
+    border-left: 5px solid var(--blue); border-radius: 9px; padding: 17px 21px;
+  }
+  .brief[hidden] { display: none !important; }
+  .briefhd {
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--blue); font-weight: 700; margin-bottom: 9px;
+  }
+  .bmain { display: flex; flex-wrap: wrap; gap: 10px 30px; align-items: flex-start; }
+  .bleft { flex: 1 1 330px; }
+  .brief .ask { margin: 0; font-size: 19px; line-height: 1.5; }
+  .bgrid { flex: 1 1 290px; display: flex; flex-direction: column; gap: 8px; }
+  .brow { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  .bl {
+    font-family: var(--ff-mono); font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 700;
+    min-width: 92px; flex: none;
+  }
+  .bv { font-size: 16.5px; color: var(--ink-soft); flex: 1 1 260px; }
+  .bv code {
+    font-family: var(--ff-mono); font-size: 14.5px; color: var(--ink);
+    background: var(--panel-2); padding: 3px 7px; border-radius: 4px;
+  }
+  .bv code.bout {
+    background: var(--green); color: var(--green-ink); font-weight: 700;
+    box-shadow: inset 0 0 0 1px var(--green-edge);
+  }
+  .bv .barr { color: var(--ink-faint); margin: 0 4px; }
+  .bv .bwhy { color: var(--ink-faint); font-size: 15px; margin-left: 9px; }
+  .sig {
+    margin-top: 13px; font-family: var(--ff-mono); font-size: 15px; font-weight: 700;
+    background: var(--panel-2); border: 1px dashed var(--rule);
+    border-radius: 6px; padding: 11px 14px; overflow-x: auto; white-space: nowrap;
+  }
+  .sig::before {
+    content: "write this"; display: block; font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 700; margin-bottom: 6px;
+  }
+  .watch {
+    margin: 13px 0 0; font-size: 16.5px; color: var(--ink-soft);
+    border-top: 1px solid var(--rule); padding-top: 12px;
+  }
+  .watch .wl {
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--amber-deep); margin-right: 8px;
+  }
+  .watch b { color: var(--ink); }
+  /* the signature and closing brace around a body: real, but nothing ever
+     happens on them, so they never light up */
+  pre.code .ln.chrome { color: var(--ink-faint); }
+
+  /* ------------------------------------------------------------- board */
+
+  .board {
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 9px;
+    padding: 20px 22px; margin-top: 14px;
+  }
+  #boardbody { overflow-x: auto; }
+  .boardhd {
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 700; margin-bottom: 13px;
+  }
+  .cells { display: flex; gap: 7px; flex-wrap: wrap; }
+  .slot { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .pos { font-family: var(--ff-mono); font-size: 12px; font-weight: 700; color: var(--ink-faint); }
+  .cell {
+    width: 68px; height: 54px; border-radius: 6px; border: 1px solid var(--rule);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--ff-mono); font-size: 21px; font-weight: 700;
+    transition: background-color .18s, color .18s, border-color .18s, transform .18s;
+  }
+  .cell.at   { border-color: var(--blue); border-width: 3px; transform: translateY(-3px); }
+  .cell.best { background: var(--green); border-color: var(--green-edge); color: var(--green-ink); }
+  .cell.seen { color: var(--ink-faint); }
+  .arrowrow { height: 28px; display: flex; gap: 7px; }
+  .arrow { width: 68px; text-align: center; font-family: var(--ff-mono);
+           font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--blue); }
+  .arrow b { display: block; font-size: 14px; line-height: 1.1; }
+  .arrow.g { color: var(--green-edge); }
+
+  /* the pile, and the queue. A stack is drawn standing up because that is
+     what it is: you can only reach the top. A queue is drawn lying down
+     because that is what it is: you join the back and leave the front. */
+  .pilewrap { margin-top: 20px; border-top: 1px solid var(--rule); padding-top: 15px; }
+  .pilelbl {
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 700; margin-bottom: 11px;
+  }
+  .pile { display: flex; gap: 6px; align-items: flex-start; }
+  .pile.up { flex-direction: column-reverse; justify-content: flex-start; }
+  .pile.along { flex-direction: row; min-height: 60px; align-items: center; }
+  .pi {
+    width: 176px; height: 42px; padding: 0 13px; border-radius: 6px;
+    border: 1px solid var(--rule); background: var(--panel);
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--ff-mono); font-size: 19px; font-weight: 700;
+    transition: background-color .18s, border-color .18s;
+  }
+  /* room for the deepest this pile ever gets, so the page never jumps and
+     never looks empty either. One step is 42px of box plus 6px of gap. */
+  .pile.up.d1 { min-height: 54px; }
+  .pile.up.d2 { min-height: 102px; }
+  .pile.up.d3 { min-height: 150px; }
+  .pile.up.d4 { min-height: 198px; }
+  .pile.up.d5 { min-height: 246px; }
+  .pile.up.d6 { min-height: 294px; }
+  .pi.top { border-color: var(--amber-edge); border-width: 3px; }
+  .pi.hot { background: var(--amber); color: var(--amber-ink); border-color: var(--amber-edge); }
+  .pi.empty {
+    border-style: dashed; color: var(--ink-faint); font-size: 14px;
+    font-weight: 400; justify-content: flex-start;
+  }
+  .ptag {
+    font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    font-weight: 700; color: var(--amber-deep);
+  }
+  .pi.hot .ptag { color: var(--amber-ink); }
+
+  /* the table that grows */
+  .trows {
+    display: flex; flex-direction: column; gap: 6px;
+    flex-wrap: wrap; max-height: 396px; align-content: flex-start;
+  }
+  .trow {
+    width: 232px; height: 42px; padding: 0 14px; border-radius: 6px;
+    border: 1px solid var(--rule); background: var(--panel);
+    display: flex; align-items: center; gap: 12px;
+    font-family: var(--ff-mono); font-size: 18px; font-weight: 700;
+    transition: background-color .18s, border-color .18s;
+  }
+  .trow .tk { min-width: 34px; }
+  .trow .tar { color: var(--ink-faint); font-weight: 400; }
+  .trow .tv { color: var(--amber-deep); }
+  .trow.look { border-color: var(--blue); border-width: 3px; }
+  .trow.hot { background: var(--amber); color: var(--amber-ink); border-color: var(--amber-edge); }
+  .trow.hot .tv, .trow.hot .tar { color: var(--amber-ink); }
+  .trow.empty {
+    border-style: dashed; color: var(--ink-faint); font-size: 14px; font-weight: 400;
+  }
+
+  /* the call tree */
+  .trees { display: flex; flex-direction: column; gap: 5px; }
+  .tnode { display: flex; align-items: center; gap: 9px; font-family: var(--ff-mono); font-size: 15px; }
+  .tnode .tin { color: var(--ink-faint); }
+  /* one step of indent per level of call. Deeper than eight stops indenting
+     rather than walking off the side of a phone. */
+  .tnode.i1 { margin-left: 30px; }
+  .tnode.i2 { margin-left: 60px; }
+  .tnode.i3 { margin-left: 90px; }
+  .tnode.i4 { margin-left: 120px; }
+  .tnode.i5 { margin-left: 150px; }
+  .tnode.i6 { margin-left: 180px; }
+  .tnode.i7 { margin-left: 210px; }
+  .tnode.i8 { margin-left: 240px; }
+  .tnode .tbox {
+    border: 1px solid var(--rule); border-radius: 6px; padding: 7px 13px;
+    background: var(--panel); font-weight: 700;
+  }
+  .tnode.now .tbox {
+    border-color: var(--amber-edge); border-width: 3px; padding: 5px 11px;
+    background: var(--amber); color: var(--amber-ink);
+  }
+  .tnode .tval {
+    background: var(--green); color: var(--green-ink); font-weight: 700;
+    padding: 6px 12px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--green-edge);
+  }
+  .tnode .twait { color: var(--ink-faint); font-size: 13px; }
+  .tnode .tagain {
+    font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700;
+    color: var(--amber-deep); border: 1px dashed var(--amber-edge);
+    border-radius: 5px; padding: 3px 7px;
+  }
+  .frame.call { border-left-color: var(--green-edge); }
+  .frame.call .tagl { background: var(--green); color: var(--green-ink); }
+
+  /* grid board */
+  .grid-rows { display: flex; flex-direction: column; gap: 6px; }
+  .grid-row { display: flex; gap: 6px; align-items: center; }
+  .rl { font-family: var(--ff-mono); font-size: 12px; font-weight: 700;
+        color: var(--ink-faint); width: 44px; text-align: right; }
+  .gc {
+    width: 44px; height: 40px; border-radius: 5px; border: 1px solid var(--rule);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--ff-mono); font-size: 17px; font-weight: 700; color: var(--ink-faint);
+    transition: background-color .18s, border-color .18s, color .18s;
+  }
+  .gc.on   { background: var(--green); border-color: var(--green-edge); color: var(--green-ink); }
+  .gc.here { border-color: var(--blue); border-width: 3px; }
+
+  .ret {
+    margin-top: 15px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    font-family: var(--ff-mono); font-size: 15px;
+  }
+  .ret[hidden] { display: none !important; }
+  .ret .fn { color: var(--ink-faint); }
+  .ret .fly {
+    background: var(--green); color: var(--green-ink); font-weight: 700;
+    padding: 8px 15px; border-radius: 7px; font-size: 19px;
+    box-shadow: inset 0 0 0 1px var(--green-edge);
+  }
+  .ret .to { color: var(--ink-soft); }
+
+  /* ------------------------------------------------------------ panels */
+
+  .grid2 { display: grid; grid-template-columns: 1.12fr 1fr; gap: 15px; margin-top: 15px; }
+  @media (max-width: 820px) { .grid2 { grid-template-columns: 1fr; } }
+  .stack { display: flex; flex-direction: column; gap: 15px; }
+
+  .panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 9px; padding: 15px 17px; }
+  .panel[hidden] { display: none !important; }
+  .panel h3 {
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 700; margin: 0 0 11px;
+  }
+
+  pre.code {
+    margin: 0; font-family: var(--ff-mono); font-size: 13.5px; line-height: 1.95;
+    color: var(--ink-soft); white-space: pre; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 9px; border-radius: 4px; }
+  pre.code .ln.on {
+    background: var(--amber); color: var(--amber-ink); font-weight: 700;
+    box-shadow: inset 0 0 0 1px var(--amber-edge);
+  }
+  pre.code .gut { display: inline-block; width: 20px; color: var(--ink-faint); font-size: 11px; font-weight: 400; }
+  pre.code .ln.on .gut { color: var(--amber-ink); }
+
+  .vars { display: flex; flex-direction: column; gap: 6px; }
+  .v {
+    display: flex; align-items: center; gap: 9px; font-family: var(--ff-mono); font-size: 14.5px;
+    padding: 7px 11px; border-radius: 6px; border: 1px solid var(--rule);
+  }
+  .v .nm { font-weight: 700; min-width: 66px; }
+  .v .eq { color: var(--ink-faint); }
+  .v .vl { font-weight: 700; }
+  .v .was { color: var(--ink-faint); opacity: .55; margin-right: 3px; }
+  .v .to { color: var(--ink-faint); margin: 0 5px; }
+  .v.changed { background: var(--amber); border-color: var(--amber-edge); color: var(--amber-ink); }
+  .v.changed .eq, .v.changed .was, .v.changed .to { color: var(--amber-ink); opacity: .6; }
+  .v.gone { opacity: .35; text-decoration: line-through; }
+
+  .frames { display: flex; flex-direction: column; gap: 10px; }
+  .frame { border-left: 3px solid var(--purple); padding-left: 12px; }
+  .frame.inner { border-left-color: var(--amber-deep); }
+  .frame .tagl {
+    display: inline-block; font-family: var(--ff-mono); font-size: 10px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
+    background: var(--purple); color: var(--purple-ink); margin-bottom: 6px;
+  }
+  .frame.inner .tagl { background: var(--amber); color: var(--amber-ink); }
+  .frame .human { font-family: var(--ff-body); font-size: 18px; color: var(--ink); }
+  .bars { display: flex; gap: 4px; margin-top: 8px; }
+  .bars i { height: 7px; flex: 1; border-radius: 2px; background: var(--rule); display: block; }
+  .bars i.done { background: var(--purple); }
+  .bars i.now { background: var(--amber); }
+  .frame.inner .bars i.done { background: var(--amber-deep); }
+
+  /* what changed, and what did not */
+  .chg { display: flex; flex-direction: column; gap: 7px; }
+  .chg .row {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    font-family: var(--ff-mono); font-size: 14.5px;
+    padding: 8px 11px; border-radius: 6px; border: 1px solid var(--rule);
+  }
+  .chg .row.moved { background: var(--amber); border-color: var(--amber-edge); color: var(--amber-ink); }
+  .chg .row.same { border-style: dashed; color: var(--ink-faint); font-size: 13.5px; }
+  .chg .nm { font-weight: 700; }
+  .chg .old { opacity: .62; text-decoration: line-through; }
+  .chg .arr { opacity: .62; }
+  .chg .new { font-weight: 700; }
+  .chg .board { background: var(--panel-2); }
+  .chg .none { font-family: var(--ff-body); }
+  .chg .cause {
+    margin-top: 3px; font-family: var(--ff-mono); font-size: 13px;
+    color: var(--ink-soft); border-left: 3px solid var(--amber-deep); padding-left: 10px;
+  }
+  .chg .cause b { color: var(--amber-deep); }
+
+  .cond { font-family: var(--ff-mono); font-size: 15.5px; }
+  .cond .q { display: block; margin-bottom: 8px; }
+  .cond .res { display: inline-block; padding: 4px 12px; border-radius: 5px; font-weight: 700;
+               font-size: 13px; letter-spacing: .08em; }
+  .cond .res.t { background: var(--green); color: var(--green-ink); }
+  .cond .res.f { background: var(--panel-2); color: var(--red); border: 1px solid var(--red); }
+  .cond .then { display: block; margin-top: 9px; font-family: var(--ff-body);
+                font-size: 16px; color: var(--ink-soft); }
+  .none { color: var(--ink-faint); font-family: var(--ff-body); font-size: 16px; }
+
+  .ops { display: flex; gap: 20px; flex-wrap: wrap; }
+  .op .n { font-family: var(--ff-mono); font-size: 23px; font-weight: 700;
+           color: var(--amber-deep); font-variant-numeric: tabular-nums; }
+  .op .k { font-family: var(--ff-mono); font-size: 10px; letter-spacing: .1em;
+           text-transform: uppercase; color: var(--ink-faint); font-weight: 700; }
+
+  /* --------------------------------------------------------- narration */
+
+  .say {
+    margin-top: 15px; background: var(--panel); border: 1px solid var(--rule);
+    border-radius: 9px; padding: 17px 19px; display: flex; gap: 15px;
+    align-items: flex-start; min-height: 84px;
+  }
+  .say .txt { flex: 1; font-size: 19.5px; line-height: 1.5; }
+  .say .txt.mono { font-family: var(--ff-mono); font-size: 14.5px; line-height: 1.8; }
+  button.why {
+    flex: none; background: transparent; color: var(--amber-deep);
+    border: 1px solid var(--amber-deep); border-radius: 6px;
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .08em;
+    text-transform: uppercase; font-weight: 700; padding: 8px 12px; cursor: pointer;
+  }
+  button.why[aria-pressed="true"] { background: var(--amber); color: var(--amber-ink); border-color: var(--amber-edge); }
+
+  .whybox {
+    margin-top: 9px; background: var(--panel-2); border-left: 4px solid var(--amber-deep);
+    border-radius: 0 7px 7px 0; padding: 15px 18px; font-size: 17px; line-height: 1.6;
+  }
+  .whybox[hidden] { display: none !important; }
+  .whybox b { font-family: var(--ff-mono); font-size: .92em; }
+  .whybox .wlab {
+    font-family: var(--ff-mono); font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--amber-deep); font-weight: 700; margin-bottom: 6px;
+  }
+  .whybox .wsplit { height: 1px; background: var(--rule); margin: 14px 0; }
+  .whybox .whatif {
+    margin-top: 11px; padding-top: 11px; border-top: 1px solid var(--rule);
+    color: var(--ink-soft); font-size: 16px;
+  }
+
+  .predict { margin-top: 15px; background: var(--panel); border: 2px solid var(--amber-deep);
+             border-radius: 9px; padding: 17px 19px; }
+  .predict[hidden] { display: none !important; }
+  .predict .now {
+    font-family: var(--ff-mono); font-size: 14.5px; color: var(--ink-soft); margin: 0 0 10px;
+  }
+  .predict .q { font-size: 19.5px; margin: 0 0 13px; }
+  .predict .opts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .predict .verdict { margin: 13px 0 0; font-size: 17px; }
+  .predict .verdict[hidden] { display: none !important; }
+  .predict .verdict.right { color: var(--green-edge); }
+  .predict .verdict.wrong { color: var(--red); }
+
+  /* ---------------------------------------------------------- controls */
+
+  .bar { margin-top: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  button {
+    font-family: var(--ff-mono); font-size: 12px; letter-spacing: .07em;
+    text-transform: uppercase; font-weight: 700; padding: 10px 13px;
+    color: var(--paper); background: var(--ink); border: none; border-radius: 6px; cursor: pointer;
+  }
+  button.primary { background: var(--amber); color: var(--amber-ink); }
+  button.chip { background: var(--panel); color: var(--ink); border: 1px solid var(--rule);
+                text-transform: none; letter-spacing: 0; font-size: 14px; }
+  button.chip[aria-pressed="true"] { background: var(--blue); color: var(--blue-ink); border-color: var(--blue-edge); }
+  :focus-visible { outline: 3px solid var(--amber-deep); outline-offset: 2px; }
+
+  .scrub { flex: 1 1 200px; display: flex; align-items: center; gap: 10px; }
+  #keep { background: var(--panel); color: var(--ink); border: 1px solid var(--rule);
+          text-transform: none; letter-spacing: 0; font-size: 14px; }
+  #keep[hidden] { display: none !important; }
+  #keep.done { background: var(--green); color: var(--green-ink); border-color: var(--green-edge); }
+  input[type="range"] { flex: 1; accent-color: var(--amber-deep); min-width: 120px; }
+  .at { font-family: var(--ff-mono); font-size: 11px; font-weight: 700; color: var(--ink-faint);
+        font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .at[hidden] { display: none !important; }
+
+  .opts-row { margin-top: 13px; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+  .set { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .toggles { margin-top: 11px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .toggles button { background: transparent; color: var(--ink-faint); border: 1px solid var(--rule);
+                    font-size: 10px; padding: 6px 9px; }
+  .toggles button[aria-pressed="true"] { color: var(--ink); border-color: var(--ink); }
+
+  select {
+    font-family: var(--ff-mono); font-size: 12px; padding: 7px 8px;
+    color: var(--ink); background: var(--panel);
+    border: 1px solid var(--rule); border-radius: 6px; max-width: 210px;
+  }
+  select[hidden] { display: none !important; }
+
+  .foot { margin-top: 42px; border-top: 2px solid var(--ink); padding-top: 19px; max-width: 66ch; }
+  .foot p { color: var(--ink-soft); }
+  .foot b { color: var(--ink); }
+  .verbs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 0; }
+  .verbs button {
+    font-family: var(--ff-mono); font-size: 11px; font-weight: 700; letter-spacing: .08em;
+    padding: 6px 11px; border-radius: 4px; text-transform: none;
+    background: var(--panel-2); color: var(--ink-soft);
+    border: 1px solid var(--rule); cursor: pointer;
+  }
+  .verbs button:hover, .verbs button:focus-visible {
+    background: var(--blue); color: var(--blue-ink); border-color: var(--blue-edge);
+  }
+  .verbs button.on { background: var(--blue); color: var(--blue-ink); border-color: var(--blue-edge); }
+  .vmean {
+    /* its own row: .verbs is a flex row, so without this the meaning would
+       sit next to the last chip instead of under them all */
+    width: 100%; margin: 12px 0 0; font-size: 16.5px;
+    color: var(--ink-soft); min-height: 26px;
+  }
+  .vmean b { font-family: var(--ff-mono); font-size: .92em; color: var(--ink); }
+  .foot .vnote { margin: 0 0 12px; }
+
+  @media (prefers-reduced-motion: reduce) { .cell, .gc, .v { transition: none; } }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">Synapse · program-logic visualisation · one engine, any algorithm</p>
+  <h1>See what the code is thinking</h1>
+  <p class="stand">Reading code is not the same as understanding it. Every state below is a real moment in a real execution.</p>
+  <p class="claim">Rewind the algorithm, not the video.</p>
+
+  <div class="pickrow">
+    <label class="lbl" for="lessonpick">Lesson</label>
+    <select id="lessonpick" class="pick"></select>
+    <span class="vwrap" id="versions"></span>
+  </div>
+
+  <section class="brief" id="p-brief"></section>
+
+  <div class="board">
+    <div class="boardhd" id="boardhd"></div>
+    <div id="boardbody"></div>
+    <div class="ret" id="ret" hidden></div>
+  </div>
+
+  <div class="grid2">
+    <div class="stack">
+      <div class="panel" id="p-code"><h3>The program</h3><pre class="code" id="code"></pre></div>
+      <div class="panel" id="p-change"><h3>What changed, and what did not</h3><div class="chg" id="chg"></div></div>
+      <div class="panel" id="p-ops"><h3>What it has cost so far</h3><div class="ops" id="ops"></div></div>
+    </div>
+    <div class="stack">
+      <div class="panel" id="p-loop"><h3>Where we are</h3><div class="frames" id="loop"></div></div>
+      <div class="panel" id="p-vars"><h3>Current state</h3><div class="vars" id="vars"></div></div>
+      <div class="panel" id="p-cond"><h3>The question it is asking</h3><div class="cond" id="cond"></div></div>
+    </div>
+  </div>
+
+  <div class="say">
+    <div class="txt" id="say"></div>
+    <button class="why" id="whylinebtn" type="button" aria-pressed="false">Why this line?</button>
+    <button class="why" id="whybtn" type="button" aria-pressed="false">Why?</button>
+  </div>
+  <div class="whybox" id="whybox" hidden></div>
+
+  <div class="predict" id="predict" hidden>
+    <p class="now" id="pnow"></p>
+    <p class="q" id="pq"></p>
+    <div class="opts" id="popts"></div>
+    <p class="verdict" id="pv" hidden></p>
+  </div>
+
+  <div class="bar">
+    <button id="restart" type="button" aria-label="Back to the start">↺</button>
+    <button id="back" type="button" aria-label="One step back">◀</button>
+    <button class="primary" id="play" type="button">▶ Play</button>
+    <button id="fwd" type="button" aria-label="One step on">▶</button>
+    <div class="scrub">
+      <input type="range" id="scrub" min="0" value="0" step="1" aria-label="Scrub through the execution">
+      <span class="at" id="at"></span>
+    </div>
+    <button id="keep" type="button" hidden>☆ Keep this</button>
+  </div>
+
+  <div class="opts-row">
+    <div class="set">
+      <span class="lbl">Mode</span>
+      <button type="button" class="chip" data-mode="explain" aria-pressed="true">Explain it</button>
+      <button type="button" class="chip" data-mode="guide" aria-pressed="false">Guide me</button>
+      <button type="button" class="chip" data-mode="run" aria-pressed="false">Just run it</button>
+    </div>
+    <div class="set">
+      <span class="lbl">Depth</span>
+      <button type="button" class="chip" data-depth="beginner" aria-pressed="true">Beginner</button>
+      <button type="button" class="chip" data-depth="code" aria-pressed="false">Code</button>
+      <button type="button" class="chip" data-depth="machine" aria-pressed="false">Machine state</button>
+    </div>
+    <div class="set">
+      <span class="lbl">Voice</span>
+      <button type="button" class="chip" id="readaloud" aria-pressed="false">Read it aloud</button>
+      <select id="voice" aria-label="Which voice"><option>loading…</option></select>
+    </div>
+  </div>
+
+  <div class="toggles" id="toggles">
+    <span class="lbl">Panels</span>
+    <button type="button" data-panel="p-brief" aria-pressed="true">Problem</button>
+    <button type="button" data-panel="p-code" aria-pressed="true">Program</button>
+    <button type="button" data-panel="p-change" aria-pressed="true">What changed</button>
+    <button type="button" data-panel="p-loop" aria-pressed="true">Where we are</button>
+    <button type="button" data-panel="p-vars" aria-pressed="true">Current state</button>
+    <button type="button" data-panel="p-cond" aria-pressed="true">Question</button>
+    <button type="button" data-panel="p-ops" aria-pressed="true">Cost</button>
+  </div>
+
+  <div class="foot">
+    <p class="vnote">Everything here is recorded with these seventeen words. <b>Pick one to watch it happen.</b></p>
+    <div class="verbs" id="verbs"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ===================================================================
+     THE VOCABULARY
+     An algorithm is recorded as things the machine did. Nine verbs cover
+     both programs here; a stack or a sort adds push/pop/swap and nothing
+     about the player changes. Every panel is a view of this one stream.
+     =================================================================== */
+
+  function Recorder() {
+    this.events = [];
+  }
+  Recorder.prototype.e = function (op, o) {
+    o = o || {};
+    o.op = op;
+    this.events.push(o);
+    return o;
+  };
+
+  /* ==================================================================
+     THE LIBRARY
+     Her order, and her reason for it: a student has to know what one
+     step IS before "removing from the front shifts everything" can mean
+     anything. So the foundation comes first and the cost comes fourth.
+     Each entry is a run(r) that emits events. No panel knows or cares
+     which algorithm it is looking at.
+     ================================================================== */
+
+
+  /* The same search, run on whatever list it is handed. Version two and
+     version three share this function on purpose: the code is identical,
+     only the list is not. */
+  function binarySearch(r, v, target, sorted) {
+    var lo = 0, hi = v.length - 1, mid = null, was = null, pass = 0, eq, less;
+    function M(m) {
+      var a = [["lo", lo, 0], ["hi", hi, 1]];
+      if (m !== null && m !== undefined) { a.push(["mid", m, 3]); }
+      return a;
+    }
+    r.e("CALL", { line: 0, fn: "search", args: "target = " + target });
+    r.e("CREATE", { line: 0, name: "lo", value: 0, marks: M(), win: [0, hi] });
+    r.e("CREATE", { line: 0, name: "hi", value: hi, marks: M(), win: [0, hi],
+                    why: "These two are not the answer, and they are not where we are looking. They are the two edges of <b>the part still worth looking at</b> \u2014 and the entire algorithm is the business of pulling them together." });
+    r.e("ENTER", { line: 1, loop: { name: "pass", from: 0, of: 4, label: "loop", word: "pass",
+                                    synthetic: true } });
+
+    while (lo <= hi) {
+      r.e("COMPARE", { line: 1, text: "lo <= hi", real: lo + " <= " + hi, result: true,
+                       then: "so there is still a stretch left to look in",
+                       marks: M(), win: [lo, hi], loopAt: pass });
+      was = mid;
+      mid = Math.floor((lo + hi) / 2);
+      if (was === null) {
+        r.e("CREATE", { line: 2, name: "mid", value: mid, marks: M(mid), win: [lo, hi],
+                        why: "Halfway between the two edges. Not halfway through the list \u2014 halfway through <b>what is left</b>, which is a different place every pass." });
+      } else {
+        r.e("UPDATE", { line: 2, name: "mid", from: was, to: mid, quiet: true, marks: M(mid), win: [lo, hi],
+                        why: "Halfway between the two edges again. The edges moved, so the middle moved with them." });
+      }
+      r.e("READ", { line: 3, from: "values", at: mid, value: v[mid], marks: M(mid), win: [lo, hi] });
+      eq = v[mid] === target;
+      r.e("COMPARE", { line: 3, text: "values[mid] == target", real: v[mid] + " == " + target, result: eq,
+                       then: eq ? "so that is the answer" : "so it is not this one",
+                       marks: M(mid), win: [lo, hi] });
+      if (eq) {
+        r.e("RETURN", { line: 3, value: mid, fn: "search", keep: mid, marks: M(mid), win: [lo, hi],
+                        why: "Three looks instead of eleven. Not because it is cleverer at looking, but because every look it did take <b>threw away half of what was left</b> \u2014 and it could only do that because the list was in order." });
+        return;
+      }
+      less = v[mid] < target;
+      r.e("COMPARE", { line: 4, text: "values[mid] < target", real: v[mid] + " < " + target, result: less,
+                       then: less ? "so the target has to be to the right of it"
+                                  : "so the target has to be to the left of it",
+                       marks: M(mid), win: [lo, hi],
+                       why: sorted
+                         ? "This is the one line of reasoning the whole algorithm rests on. If the list is in order and this one is too small, then <b>everything to its left is too small as well</b> \u2014 all of it, without looking."
+                         : "Read that sentence again and check it against the board. \u201cToo small, so the target must be further right\u201d is only true if the numbers climb as you go right. Look at them. They do not." });
+      if (less) {
+        lo = mid + 1;
+        r.e("UPDATE", { line: 4, name: "lo", from: mid, to: lo, quiet: true, marks: M(mid), win: [lo, hi],
+                        why: "Half of what was left has just been ruled out, and not one of those was ever looked at. That is the whole trick, and it is why the cost panel stays so quiet." });
+      } else {
+        hi = mid - 1;
+        r.e("UPDATE", { line: 5, name: "hi", from: mid, to: hi, quiet: true, marks: M(mid), win: [lo, hi],
+                        why: "Half of what was left has just been ruled out, and not one of those was ever looked at. That is the whole trick, and it is why the cost panel stays so quiet." });
+      }
+      pass++;
+    }
+
+    r.e("COMPARE", { line: 1, text: "lo <= hi", real: lo + " <= " + hi, result: false,
+                     then: "so there is nothing left to look in", win: [lo, hi] });
+    r.e("EXIT", { line: 1, loop: "pass" });
+    r.e("RETURN", { line: 7, value: -1, fn: "search", keep: v.indexOf(target),
+                    marks: [[String(target), v.indexOf(target), 2]],
+                    why: "<b>-1</b> means not found. And there it is, in green, sitting in the list the whole time.<br><br>The algorithm is not broken and it is not buggy. It answered the question it was actually asked, which was never \u201cis 77 in this list?\u201d but \u201cwhere would 77 be if this list were in order?\u201d Binary search does not search a list. It trusts an order \u2014 and if you hand it one that has not got one, it will confidently tell you a thing that is not true. <b>Sorting first is not a tidiness habit. It is the precondition.</b>" });
+  }
+
+
+  /* FizzBuzz, both ways round. The rules are data here on purpose: the two
+     versions of this lesson differ ONLY in the order of the three checks,
+     and writing the loop out twice would hide the one thing being taught. */
+  function fizz(r, rules, elseLine, correct) {
+    var n = 15, i, k, printed, matched, matchedLine, by, line, word, yes;
+    r.e("CALL", { line: 0, fn: "fizzBuzz", args: "n = " + n });
+    r.e("ENTER", { line: 0, loop: { name: "i", from: 1, of: n, label: "loop", word: "number" } });
+    for (i = 1; i <= n; i++) {
+      r.e("MOVE", { line: 0, name: "i", to: i, human: "We are on number " + i + "." });
+      matched = null;
+      matchedLine = elseLine;
+      for (k = 0; k < rules.length; k++) {
+        by = rules[k][0]; line = rules[k][1]; word = rules[k][2]; yes = i % by === 0;
+        r.e("COMPARE", { line: line, text: "i % " + by + " == 0",
+                         real: i + " % " + by + " = " + (i % by), result: yes,
+                         then: yes ? "so it prints " + word : "so try the next rule",
+                         why: (i === 1 && k === 0)
+                           ? "The <b>%</b> sign is the remainder left over after dividing. <b>15 % 3 = 0</b> means 3 goes into 15 exactly, with nothing left \u2014 which is the whole of what \u201cdivides by 3\u201d means, and the only new idea in this problem."
+                           : (i === 15 && k === 0 && !correct)
+                             ? "Stop here and read the board. 15 divides by 3, so this rule catches it and the other two never get asked. The code below them is not wrong \u2014 it is <b>unreachable</b>, which is worse, because nothing complains."
+                             : undefined });
+        if (yes) { matched = word; matchedLine = line; break; }
+      }
+      printed = matched === null ? String(i) : matched;
+      r.e("WRITE", { line: matchedLine, key: i, value: printed,
+                     human: matched === null
+                       ? "Nothing matched, so it prints the number itself."
+                       : "It prints " + printed + ".",
+                     code: "print(" + (matched === null ? i : "\"" + printed + "\"") + ")",
+                     why: i === 15
+                       ? (correct
+                          ? "<b>15 is the whole question.</b> It divides by 3 and by 5, so the answer has to be FizzBuzz \u2014 and the only way to get there is to ask about <b>both</b> before asking about either. Compare the other version: same three rules, same numbers, wrong answer on exactly one line out of fifteen."
+                          : "<b>There it is.</b> 15 should print FizzBuzz, and it has printed Fizz. Fourteen of fifteen answers are right, which is precisely what makes this the question it is: the bug is not in a rule, it is in the <b>order</b> of the rules, and no single rule is wrong.")
+                       : undefined });
+    }
+    r.e("EXIT", { line: 0, loop: "i",
+                  why: correct
+                    ? "Fifteen numbers, and the only one that ever mattered was 15. When a problem has a case where two rules are both true, that case is not an afterthought \u2014 it is the <b>first</b> thing to handle."
+                    : "Read down the table. Everything is right except one line, and that one line is the reason this question gets asked in interviews at all." });
+  }
+
+  function listBoard(values, label) {
+    return { kind: "list", values: values.slice(), label: label || "the list" };
+  }
+
+  var LIB = [
+
+    /* ---- 1. what one step actually is ----------------------------- */
+    { family: "walk", familyTitle: "1 · What a loop really does",
+      version: "each", versionTitle: "Visit every item",
+      board: listBoard([5, 3, 8, 1, 6], "the list"),
+      code: ["for (int i = 0; i < list.length; i++) {",
+             "    look_at(list[i]);",
+             "}"],
+      run: function (r) {
+        var v = this.board.values, i;
+        r.e("ENTER", { line: 0, loop: { name: "i", from: 0, of: v.length, label: "loop", word: "item" } });
+        for (i = 0; i < v.length; i++) {
+          r.e("MOVE", { line: 0, name: "i", to: i, marks: [["i", i, 0]],
+                        human: "We are on item " + i + "." });
+          r.e("READ", { line: 1, from: "list", at: i, value: v[i], marks: [["i", i, 0]] });
+        }
+        r.e("COMPARE", { line: 0, text: "i < list.length", real: v.length + " < " + v.length,
+                         result: false, then: "so the loop stops" });
+        r.e("EXIT", { line: 0, loop: "i" });
+      } },
+
+    /* ---- 2. carrying a value: three versions ---------------------- */
+    { family: "carry", familyTitle: "2 · Carrying a value through a loop",
+      version: "sum", versionTitle: "Add them up",
+      board: listBoard([5, 3, 8, 1, 6], "the list"),
+      code: ["int total = 0;",
+             "for (int i = 0; i < list.length; i++) {",
+             "    total = total + list[i];",
+             "}",
+             "return total;"],
+      run: function (r) {
+        var v = this.board.values, i, total = 0;
+        r.e("CREATE", { line: 0, name: "total", value: 0,
+                        why: "It starts at nothing, because nothing has been added yet." });
+        r.e("ENTER", { line: 1, loop: { name: "i", from: 0, of: v.length, label: "loop", word: "item" } });
+        for (i = 0; i < v.length; i++) {
+          r.e("MOVE", { line: 1, name: "i", to: i, marks: [["i", i, 0]],
+                        human: "We are on item " + i + "." });
+          r.e("READ", { line: 2, from: "list", at: i, value: v[i], marks: [["i", i, 0]] });
+          r.e("UPDATE", { line: 2, name: "total", from: total, to: total + v[i],
+                          marks: [["i", i, 0]],
+                          why: "The running total is the only thing carried between passes. The items already added are never looked at again." });
+          total += v[i];
+        }
+        r.e("COMPARE", { line: 1, text: "i < list.length", real: v.length + " < " + v.length,
+                         result: false, then: "so the loop stops" });
+        r.e("EXIT", { line: 1, loop: "i" });
+        r.e("RETURN", { line: 4, value: total, fn: "sum" });
+      } },
+
+    { family: "carry", version: "count", versionTitle: "Count the big ones",
+      board: listBoard([5, 3, 8, 1, 6], "the list"),
+      code: ["int count = 0;",
+             "for (int i = 0; i < list.length; i++) {",
+             "    if (list[i] > 4)",
+             "        count = count + 1;",
+             "}",
+             "return count;"],
+      run: function (r) {
+        var v = this.board.values, i, count = 0;
+        r.e("CREATE", { line: 0, name: "count", value: 0 });
+        r.e("ENTER", { line: 1, loop: { name: "i", from: 0, of: v.length, label: "loop", word: "item" } });
+        for (i = 0; i < v.length; i++) {
+          r.e("MOVE", { line: 1, name: "i", to: i, marks: [["i", i, 0]],
+                        human: "We are on item " + i + "." });
+          r.e("READ", { line: 2, from: "list", at: i, value: v[i], marks: [["i", i, 0]] });
+          var big = v[i] > 4;
+          r.e("COMPARE", { line: 2, text: "list[i] > 4", real: v[i] + " > 4", result: big,
+                           then: big ? "so it counts" : "so it does not count",
+                           marks: [["i", i, 0]] });
+          if (big) {
+            r.e("UPDATE", { line: 3, name: "count", from: count, to: count + 1,
+                            marks: [["i", i, 0]], keep: i });
+            count++;
+          }
+        }
+        r.e("COMPARE", { line: 1, text: "i < list.length", real: v.length + " < " + v.length,
+                         result: false, then: "so the loop stops" });
+        r.e("EXIT", { line: 1, loop: "i" });
+        r.e("RETURN", { line: 5, value: count, fn: "count" });
+      } },
+
+    { family: "carry", version: "max", versionTitle: "Keep the biggest",
+      board: listBoard([4, 9, 2, 7, 15, 6], "the list"),
+      code: ["int best = list[0];",
+             "for (int i = 1; i < list.length; i++) {",
+             "    if (list[i] > best)",
+             "        best = list[i];",
+             "}",
+             "return best;"],
+      run: function (r) {
+        var v = this.board.values, i, best = v[0], bestAt = 0;
+        r.e("READ", { line: 0, from: "list", at: 0, value: v[0], marks: [["i", 0, 0]] });
+        r.e("CREATE", { line: 0, name: "best", value: v[0], keep: 0,
+                        why: "Starting from zero would be a bug the moment the list holds negatives. The first value is always safe: it really is the best of the one item seen." });
+        r.e("ENTER", { line: 1, loop: { name: "i", from: 1, of: v.length - 1, label: "loop", word: "item" } });
+        for (i = 1; i < v.length; i++) {
+          r.e("MOVE", { line: 1, name: "i", to: i, marks: [["i", i, 0]], keep: bestAt,
+                        human: "We are on item " + i + "." });
+          r.e("READ", { line: 2, from: "list", at: i, value: v[i], marks: [["i", i, 0]], keep: bestAt });
+          var wins = v[i] > best;
+          r.e("COMPARE", { line: 2, text: "list[i] > best", real: v[i] + " > " + best, result: wins,
+                           then: wins ? "so we replace it" : "so nothing changes",
+                           marks: [["i", i, 0]], keep: bestAt });
+          if (wins) {
+            r.e("UPDATE", { line: 3, name: "best", from: best, to: v[i], marks: [["i", i, 0]], keep: i });
+            best = v[i]; bestAt = i;
+          }
+        }
+        r.e("COMPARE", { line: 1, text: "i < list.length", real: v.length + " < " + v.length,
+                         result: false, then: "so the loop stops", keep: bestAt });
+        r.e("EXIT", { line: 1, loop: "i" });
+        r.e("RETURN", { line: 5, value: best, fn: "find_max", keep: bestAt });
+      } },
+
+    /* ---- 3. two pointers ------------------------------------------ */
+    { family: "two", familyTitle: "3 · Two pointers instead of one",
+      version: "reverse", versionTitle: "Reverse it in place",
+      board: listBoard([1, 2, 3, 4, 5], "the list"),
+      code: ["int left = 0, right = list.length - 1;",
+             "while (left < right) {",
+             "    swap(list[left], list[right]);",
+             "    left = left + 1;",
+             "    right = right - 1;",
+             "}"],
+      run: function (r) {
+        var v = this.board.values, left = 0, right = v.length - 1;
+        r.e("CREATE", { line: 0, name: "left", value: 0, marks: [["left", 0, 0]] });
+        r.e("CREATE", { line: 0, name: "right", value: right, marks: [["left", 0, 0], ["right", right, 1]],
+                        why: "No second list is made. Everything happens inside the one we were given, which is what <b>in place</b> means." });
+        r.e("ENTER", { line: 1, loop: { name: "pass", from: 0, of: Math.floor(v.length / 2), label: "loop", word: "pass",
+                                    synthetic: true } });
+        while (left < right) {
+          r.e("COMPARE", { line: 1, text: "left < right", real: left + " < " + right, result: true,
+                           then: "so there is still a pair to swap",
+                           marks: [["left", left, 0], ["right", right, 1]] });
+          r.e("SWAP", { line: 2, a: left, b: right, marks: [["left", left, 0], ["right", right, 1]] });
+          r.e("MOVE", { line: 3, name: "left", to: left + 1,
+                        marks: [["left", left + 1, 0], ["right", right, 1]],
+                        human: "The left pointer steps in." });
+          r.e("MOVE", { line: 4, name: "right", to: right - 1,
+                        marks: [["left", left + 1, 0], ["right", right - 1, 1]],
+                        human: "And the right pointer steps in too." });
+          left++; right--;
+        }
+        r.e("COMPARE", { line: 1, text: "left < right", real: left + " < " + right, result: false,
+                         then: "so they have met, and the job is done",
+                         marks: [["left", left, 0], ["right", right, 1]] });
+        r.e("EXIT", { line: 1, loop: "pass" });
+      } },
+
+    { family: "two", version: "palindrome", versionTitle: "Is it the same backwards?",
+      board: listBoard(["r", "a", "c", "e", "c", "a", "r"], "the letters"),
+      code: ["int left = 0, right = word.length - 1;",
+             "while (left < right) {",
+             "    if (word[left] != word[right])",
+             "        return false;",
+             "    left = left + 1;",
+             "    right = right - 1;",
+             "}",
+             "return true;"],
+      run: function (r) {
+        var v = this.board.values, left = 0, right = v.length - 1;
+        r.e("CREATE", { line: 0, name: "left", value: 0, marks: [["left", 0, 0]] });
+        r.e("CREATE", { line: 0, name: "right", value: right, marks: [["left", 0, 0], ["right", right, 1]] });
+        r.e("ENTER", { line: 1, loop: { name: "pass", from: 0, of: Math.floor(v.length / 2), label: "loop", word: "pass",
+                                    synthetic: true } });
+        while (left < right) {
+          r.e("COMPARE", { line: 1, text: "left < right", real: left + " < " + right, result: true,
+                           then: "so there is still a pair to check",
+                           marks: [["left", left, 0], ["right", right, 1]] });
+          r.e("COMPARE", { line: 2, text: "word[left] != word[right]",
+                           real: '"' + v[left] + '" != "' + v[right] + '"', result: false,
+                           then: "they match, so keep going",
+                           marks: [["left", left, 0], ["right", right, 1]], keep: left });
+          r.e("MOVE", { line: 4, name: "left", to: left + 1,
+                        marks: [["left", left + 1, 0], ["right", right, 1]],
+                        human: "Both pointers step inwards." });
+          r.e("MOVE", { line: 5, name: "right", to: right - 1,
+                        marks: [["left", left + 1, 0], ["right", right - 1, 1]],
+                        human: "Both pointers step inwards." });
+          left++; right--;
+        }
+        r.e("COMPARE", { line: 1, text: "left < right", real: left + " < " + right, result: false,
+                         then: "they have met without ever disagreeing" });
+        r.e("EXIT", { line: 1, loop: "pass" });
+        r.e("RETURN", { line: 7, value: "true", fn: "is_palindrome" });
+      } },
+
+    /* ---- 4. and only now, the cost -------------------------------- */
+    { family: "cost", familyTitle: "4 · What adding and removing really cost",
+      version: "end", versionTitle: "Add at the end",
+      board: listBoard([4, 7, 2, 9], "the list"),
+      code: ["list.add(6);"],
+      run: function (r) {
+        r.e("INSERT", { line: 0, at: 4, value: 6, shifts: 0,
+                        why: "There was nothing after it, so nothing had to move out of the way. One step, and it would still be one step with a million items in front." });
+      } },
+
+    { family: "cost", version: "front", versionTitle: "Add at the front",
+      board: listBoard([4, 7, 2, 9], "the list"),
+      code: ["list.add(0, 6);"],
+      run: function (r) {
+        var v = this.board.values, k;
+        // Every element really does move. One event each, so you can watch it.
+        for (k = v.length - 1; k >= 0; k--) {
+          r.e("SHIFT", { line: 0, from: k, to: k + 1, value: v[k],
+                         human: "The item at " + k + " has to move to " + (k + 1) + " to make room." });
+        }
+        r.e("INSERT", { line: 0, at: 0, value: 6, shifts: v.length,
+                        why: "Same one line of code as adding at the end. But every single item behind had to move up first \u2014 four moves here, and a million moves in a list of a million. <b>The code looks identical; the cost is not.</b>" });
+      } },
+
+    { family: "cost", version: "removefront", versionTitle: "Remove from the front",
+      board: listBoard([4, 7, 2, 9], "the list"),
+      code: ["list.remove(0);"],
+      run: function (r) {
+        var v = this.board.values, k;
+        r.e("REMOVE", { line: 0, at: 0, value: v[0] });
+        for (k = 1; k < v.length; k++) {
+          r.e("SHIFT", { line: 0, from: k, to: k - 1, value: v[k],
+                         human: "The item at " + k + " slides down into the gap." });
+        }
+        r.e("SETTLE", { line: 0,
+                        why: "A list has to stay one unbroken run of slots, so the hole cannot be left there. Everything behind it closes up \u2014 which is exactly why a <b>linked list</b> exists." });
+      } },
+
+    /* ---- 5. a loop inside a loop ---------------------------------- */
+    { family: "nested", familyTitle: "5 · A loop inside a loop",
+      version: "triangle", versionTitle: "Draw a triangle",
+      board: { kind: "grid", rows: 4, cols: 4, label: "what gets drawn" },
+      code: ["for (int i = 0; i < 4; i++) {",
+             "    for (int j = 0; j <= i; j++) {",
+             "        print(\"*\");",
+             "    }",
+             "    newline();",
+             "}"],
+      run: function (r) {
+        var n = 4, i, j;
+        r.e("ENTER", { line: 0, loop: { name: "i", from: 0, of: n, label: "outer loop", word: "row" } });
+        for (i = 0; i < n; i++) {
+          r.e("MOVE", { line: 0, name: "i", to: i, human: "We are building row " + i + "." });
+          r.e("ENTER", { line: 1, loop: { name: "j", from: 0, of: i + 1, label: "inner loop", word: "position" },
+                         restart: i > 0 });
+          for (j = 0; j <= i; j++) {
+            r.e("MOVE", { line: 1, name: "j", to: j, human: "We are at position " + j + " of this row." });
+            r.e("COMPARE", { line: 1, text: "j <= i", real: j + " <= " + i, result: true,
+                             then: "so we print one more" });
+            r.e("WRITE", { line: 2, cell: [i, j], value: "\u2605" });
+          }
+          r.e("COMPARE", { line: 1, text: "j <= i", real: (i + 1) + " <= " + i, result: false,
+                           then: "so the inner loop stops" });
+          r.e("EXIT", { line: 1, loop: "j" });
+          r.e("WRITE", { line: 4, cell: null, newline: true, row: i });
+        }
+        r.e("COMPARE", { line: 0, text: "i < 4", real: "4 < 4", result: false,
+                         then: "so the outer loop stops too" });
+        r.e("EXIT", { line: 0, loop: "i" });
+      } },
+
+    /* ---- 6. a word is a list of letters ---------------------------- */
+    { family: "word", familyTitle: "6 \u00b7 A word is just a list of letters",
+      version: "vowels", versionTitle: "Count the vowels",
+      board: listBoard(["m", "a", "c", "h", "i", "n", "e"], "the word, one letter per slot"),
+      code: ["int count = 0;",
+             "for (int i = 0; i < word.length; i++) {",
+             "    if (\"aeiou\".contains(word[i]))",
+             "        count = count + 1;",
+             "}",
+             "return count;"],
+      run: function (r) {
+        var v = this.board.values, i, count = 0, vow;
+        r.e("CREATE", { line: 0, name: "count", value: 0,
+                        why: "There is nothing new in this loop \u2014 it is the counter from lesson two, unchanged. The only difference is what sits in the slots: letters instead of numbers. A word is kept the same way a list is, and <b>word[3]</b> still means \u201cwhatever is in slot 3\u201d." });
+        r.e("ENTER", { line: 1, loop: { name: "i", from: 0, of: v.length, label: "loop", word: "letter" } });
+        for (i = 0; i < v.length; i++) {
+          r.e("MOVE", { line: 1, name: "i", to: i, marks: [["i", i, 0]],
+                        human: "We are on letter " + i + "." });
+          r.e("READ", { line: 2, from: "word", at: i, value: v[i], marks: [["i", i, 0]] });
+          vow = "aeiou".indexOf(v[i]) >= 0;
+          r.e("COMPARE", { line: 2, text: "\"aeiou\" contains word[i]",
+                           real: "\"aeiou\" contains \"" + v[i] + "\"", result: vow,
+                           then: vow ? "so it counts" : "so it does not count",
+                           marks: [["i", i, 0]],
+                           why: "Asking \u201cis this letter a vowel?\u201d is really asking \u201cdoes it turn up anywhere in <b>aeiou</b>?\u201d \u2014 a tiny search inside a tiny list. There is no letter type in the machine; there are only slots and what is in them." });
+          if (vow) {
+            r.e("UPDATE", { line: 3, name: "count", from: count, to: count + 1,
+                            marks: [["i", i, 0]], keep: i });
+            count++;
+          }
+        }
+        r.e("COMPARE", { line: 1, text: "i < word.length", real: v.length + " < " + v.length,
+                         result: false, then: "so the loop stops" });
+        r.e("EXIT", { line: 1, loop: "i" });
+        r.e("RETURN", { line: 5, value: count, fn: "countVowels" });
+      } },
+
+    { family: "word", version: "build", versionTitle: "Build a word, letter by letter",
+      board: { kind: "grid", rows: 4, cols: 4, rowWord: "pass",
+               label: "every string the machine is forced to make" },
+      code: ["String result = \"\";",
+             "for (int i = 0; i < word.length; i++) {",
+             "    result = result + word[i];",
+             "}",
+             "return result;"],
+      run: function (r) {
+        var w = ["c", "o", "d", "e"], i, k, so = "";
+        r.e("CREATE", { line: 0, name: "result", value: "\"\"",
+                        why: "An empty string to start from, and one fact that decides everything below it: once a String exists it can never be altered. Not \u201cshould not\u201d \u2014 <b>cannot</b>." });
+        r.e("ENTER", { line: 1, loop: { name: "i", from: 0, of: w.length, label: "loop", word: "letter" } });
+        for (i = 0; i < w.length; i++) {
+          r.e("MOVE", { line: 1, name: "i", to: i, human: "We are on letter " + i + "." });
+          r.e("READ", { line: 2, from: "word", at: i, value: w[i] });
+          for (k = 0; k < i; k++) {
+            r.e("WRITE", { line: 2, cell: [i, k], value: w[k],
+                           human: "\u201c" + w[k] + "\u201d has to be copied across into the new string.",
+                           code: "copy " + (k + 1) + " of " + i,
+                           why: "Here is the part the code does not show you. <b>+</b> cannot add onto the old string, because the old string cannot change. So it makes a brand-new one \u2014 and every letter already written has to be copied into it first." });
+          }
+          r.e("WRITE", { line: 2, cell: [i, i], value: w[i],
+                         human: "And only now does \u201c" + w[i] + "\u201d go on the end.",
+                         code: "result + word[" + i + "]",
+                         why: "One letter of actual progress. Everything before it on this row was copying." });
+          r.e("UPDATE", { line: 2, name: "result", quiet: true,
+                          from: "\"" + so + "\"", to: "\"" + so + w[i] + "\"",
+                          why: "The name <b>result</b> now points at a different string altogether. The old one is dropped the moment the new one is finished \u2014 that whole row above is rubbish already." });
+          so += w[i];
+        }
+        r.e("COMPARE", { line: 1, text: "i < word.length", real: w.length + " < " + w.length,
+                         result: false, then: "so the loop stops" });
+        r.e("EXIT", { line: 1, loop: "i" });
+        r.e("RETURN", { line: 4, value: "\"code\"", fn: "join",
+                        why: "Look at the shape. You wrote one <b>+</b>, and the machine wrote <b>10</b> letters to obey it: 1 + 2 + 3 + 4. That triangle is the same one from lesson five \u2014 you have built a loop inside a loop without typing one. Four letters cost 10 writes; a thousand letters cost half a million." });
+      } },
+
+    { family: "word", version: "builder", versionTitle: "The same word, without the copying",
+      board: listBoard([null, null, null, null], "one buffer, written into"),
+      code: ["StringBuilder sb = new StringBuilder();",
+             "for (int i = 0; i < word.length; i++) {",
+             "    sb.append(word[i]);",
+             "}",
+             "return sb.toString();"],
+      run: function (r) {
+        var w = ["c", "o", "d", "e"], i;
+        r.e("CREATE", { line: 0, name: "sb", value: "empty",
+                        why: "A StringBuilder is not a String. It is a box with room already set aside, and \u2014 unlike a String \u2014 you are allowed to write inside it." });
+        r.e("ENTER", { line: 1, loop: { name: "i", from: 0, of: w.length, label: "loop", word: "letter" } });
+        for (i = 0; i < w.length; i++) {
+          r.e("MOVE", { line: 1, name: "i", to: i, human: "We are on letter " + i + "." });
+          r.e("READ", { line: 2, from: "word", at: i, value: w[i] });
+          r.e("INSERT", { line: 2, at: i, value: w[i], shifts: 0,
+                          human: "\u201c" + w[i] + "\u201d is written into the next free slot. Nothing else is touched.",
+                          why: "One write, and no copying, because nothing had to be re-made. The letters already there never move." });
+        }
+        r.e("COMPARE", { line: 1, text: "i < word.length", real: w.length + " < " + w.length,
+                         result: false, then: "so the loop stops" });
+        r.e("EXIT", { line: 1, loop: "i" });
+        r.e("RETURN", { line: 4, value: "\"code\"", fn: "join",
+                        why: "Same word, same loop, same number of letters read. <b>10 writes became 4.</b> Watch the cost panel when you flick between these two versions \u2014 that gap is the whole reason StringBuilder exists, and it is the honest answer to \u201cwhy is my program slow?\u201d" });
+      } },
+
+    /* ---- 7. searching: the same question, three ways --------------- */
+    { family: "find", familyTitle: "7 \u00b7 Finding it without looking at everything",
+      version: "linear", versionTitle: "Look at every one",
+      board: listBoard([3, 7, 11, 18, 24, 31, 45, 52, 60, 68, 77, 91], "the list, smallest first"),
+      code: ["for (int i = 0; i < values.length; i++) {",
+             "    if (values[i] == target)",
+             "        return i;",
+             "}",
+             "return -1;"],
+      run: function (r) {
+        var v = this.board.values, target = 77, i, hit;
+        r.e("CALL", { line: 0, fn: "find", args: "target = " + target,
+                      why: "<b>target</b> is the number we are hunting for. It never changes \u2014 only where we are looking does." });
+        r.e("ENTER", { line: 0, loop: { name: "i", from: 0, of: v.length, label: "loop", word: "item" } });
+        for (i = 0; i < v.length; i++) {
+          r.e("MOVE", { line: 0, name: "i", to: i, marks: [["i", i, 0]],
+                        human: "We are on item " + i + "." });
+          r.e("READ", { line: 1, from: "values", at: i, value: v[i], marks: [["i", i, 0]] });
+          hit = v[i] === target;
+          r.e("COMPARE", { line: 1, text: "values[i] == target", real: v[i] + " == " + target, result: hit,
+                           then: hit ? "so that is it" : "so keep walking",
+                           marks: [["i", i, 0]] });
+          if (hit) {
+            r.e("RETURN", { line: 2, value: i, fn: "find", keep: i, marks: [["i", i, 0]],
+                            why: "Eleven of the twelve were looked at to find one. Notice what this loop never used: the list is in order, and it took no advantage of that whatsoever. Now watch the next version." });
+            break;
+          }
+        }
+      } },
+
+    { family: "find", version: "binary", versionTitle: "Halve it every time",
+      board: listBoard([3, 7, 11, 18, 24, 31, 45, 52, 60, 68, 77, 91], "the list, smallest first"),
+      code: ["int lo = 0, hi = values.length - 1;",
+             "while (lo <= hi) {",
+             "    int mid = (lo + hi) / 2;",
+             "    if (values[mid] == target) return mid;",
+             "    if (values[mid] < target) lo = mid + 1;",
+             "    else                      hi = mid - 1;",
+             "}",
+             "return -1;"],
+      run: function (r) { return binarySearch(r, this.board.values, 77, true); } },
+
+    { family: "find", version: "unsorted", versionTitle: "The rule everyone forgets",
+      board: listBoard([45, 3, 77, 18, 91, 7, 60, 24, 11, 68, 31, 52], "the same twelve numbers, shuffled"),
+      code: ["int lo = 0, hi = values.length - 1;",
+             "while (lo <= hi) {",
+             "    int mid = (lo + hi) / 2;",
+             "    if (values[mid] == target) return mid;",
+             "    if (values[mid] < target) lo = mid + 1;",
+             "    else                      hi = mid - 1;",
+             "}",
+             "return -1;"],
+      run: function (r) { return binarySearch(r, this.board.values, 77, false); } },
+
+    /* ---- 8. a pile you can only reach the top of ------------------- */
+    { family: "pile", familyTitle: "8 \u00b7 A pile you can only reach the top of",
+      version: "lifo", versionTitle: "Last in, first out",
+      board: { kind: "stack", input: ["A", "B", "C", "D"],
+               maxDepth: 4, label: "four things arriving, in this order",
+               pileLabel: "the pile \u00b7 only the top one can be touched",
+               emptyLabel: "nothing on it yet" },
+      code: ["stack.push(\"A\");",
+             "stack.push(\"B\");",
+             "stack.push(\"C\");",
+             "stack.push(\"D\");",
+             "while (!stack.isEmpty())",
+             "    print(stack.pop());"],
+      run: function (r) {
+        var v = this.board.input, i;
+        for (i = 0; i < v.length; i++) {
+          r.e("PUSH", { line: i, value: v[i], marks: [["now", i, 0]],
+                        why: i === 0
+                          ? "Watch where it lands, and watch what happens to the one underneath it: nothing. It is still there, still in order, and completely out of reach until the ones above it are gone."
+                          : undefined });
+        }
+        for (i = 0; i < v.length; i++) {
+          r.e("COMPARE", { line: 4, text: "!stack.isEmpty()", real: (4 - i) + " on the pile",
+                           result: true, then: "so there is still something to take" });
+          r.e("POP", { line: 5 });
+        }
+        r.e("COMPARE", { line: 4, text: "!stack.isEmpty()", real: "0 on the pile",
+                         result: false, then: "so we are done" });
+        r.e("RETURN", { line: 5, value: "D C B A", fn: "print",
+                        why: "A, B, C, D went in. D, C, B, A came out. Nothing in that code reversed anything \u2014 there is no reversing step to point at. The order came out backwards <b>because of the shape of the container</b>, and that is worth sitting with for a second: choosing a structure is choosing a behaviour you then get for free, or suffer for free." });
+      } },
+
+    { family: "pile", version: "brackets", versionTitle: "Brackets that have to match",
+      board: { kind: "stack", input: ["(", "[", "]", ")", "(", ")"],
+               maxDepth: 2, label: "the brackets, read left to right",
+               pileLabel: "the pile \u00b7 what is still open",
+               emptyLabel: "nothing open" },
+      code: ["for (int i = 0; i < text.length; i++) {",
+             "    char c = text[i];",
+             "    if (c == '(' || c == '[') {",
+             "        stack.push(c);",
+             "    } else {",
+             "        char open = stack.pop();",
+             "        if (!matches(open, c)) return false;",
+             "    }",
+             "}",
+             "return stack.isEmpty();"],
+      run: function (r) {
+        var v = this.board.input, i, c, opener, open, pairs = { ")": "(", "]": "[" }, held = [];
+        r.e("ENTER", { line: 0, loop: { name: "i", from: 0, of: v.length, label: "loop", word: "bracket" } });
+        for (i = 0; i < v.length; i++) {
+          c = v[i];
+          r.e("MOVE", { line: 0, name: "i", to: i, marks: [["c", i, 0]],
+                        human: "We are on bracket " + i + "." });
+          r.e("READ", { line: 1, from: "text", at: i, value: c, marks: [["c", i, 0]] });
+          opener = c === "(" || c === "[";
+          r.e("COMPARE", { line: 2, text: "c is an opener", real: "\u201c" + c + "\u201d opens",
+                           result: opener,
+                           then: opener ? "so it goes on the pile" : "so it has to close whatever is on top",
+                           marks: [["c", i, 0]] });
+          if (opener) {
+            held.push(c);
+            r.e("PUSH", { line: 3, value: c, marks: [["c", i, 0]],
+                          why: "An open bracket is a promise. It goes on the pile and stays there until something closes it \u2014 and the pile remembers the order the promises were made in, which is the only thing that makes nesting possible to check." });
+          } else {
+            open = held.pop();
+            r.e("POP", { line: 5, marks: [["c", i, 0]],
+                         why: "Here is why a pile and not a list: the bracket that has to be closed now is always <b>the most recent one still open</b>. That is the definition of a stack, so the structure does the thinking." });
+            r.e("COMPARE", { line: 6, text: "matches(open, c)",
+                             real: "\u201c" + open + "\u201d and \u201c" + c + "\u201d",
+                             result: pairs[c] === open,
+                             then: pairs[c] === open ? "so that pair is closed properly"
+                                                     : "so the whole thing is wrong",
+                             marks: [["c", i, 0]],
+                             why: "Two things have to be true, and people only ever check the first: the right <b>kind</b> of bracket, and the right <b>one</b>. \u201c(]\u201d fails the kind. \u201c([)]\u201d passes the kind and fails the order, which is the bug you will actually hit." });
+          }
+        }
+        r.e("EXIT", { line: 0, loop: "i" });
+        r.e("COMPARE", { line: 9, text: "stack.isEmpty()", real: "0 still open", result: true,
+                         then: "so every bracket was closed",
+                         why: "The last check, and the one that is always forgotten. \u201c(((\u201d never fails a match \u2014 there is nothing to mismatch it against. It fails <b>here</b>, because three promises were made and none was kept." });
+        r.e("RETURN", { line: 9, value: "true", fn: "balanced" });
+      } },
+
+    /* ---- 9. a queue: the other end of the same idea ---------------- */
+    { family: "queue", familyTitle: "9 \u00b7 A line where the first one in leaves first",
+      version: "fifo", versionTitle: "First in, first out",
+      board: { kind: "stack", input: ["A", "B", "C", "D"], takeFrom: "front",
+               label: "the same four things, arriving in the same order",
+               pileLabel: "the queue \u00b7 you join at the back, you leave from the front",
+               emptyLabel: "nobody waiting" },
+      code: ["queue.add(\"A\");",
+             "queue.add(\"B\");",
+             "queue.add(\"C\");",
+             "queue.add(\"D\");",
+             "while (!queue.isEmpty())",
+             "    print(queue.remove());"],
+      run: function (r) {
+        var v = this.board.input, i;
+        for (i = 0; i < v.length; i++) {
+          r.e("PUSH", { line: i, value: v[i], marks: [["now", i, 0]],
+                        human: "\u201c" + v[i] + "\u201d joins the back of the queue.",
+                        why: i === 0
+                          ? "Exactly the same instruction as the pile: put this on the end. The difference is not in how things go <b>in</b>. It is entirely in which end you are allowed to take them out of."
+                          : undefined });
+        }
+        for (i = 0; i < v.length; i++) {
+          r.e("COMPARE", { line: 4, text: "!queue.isEmpty()", real: (4 - i) + " still waiting",
+                           result: true, then: "so someone is still waiting" });
+          r.e("POP", { line: 5, end: "front" });
+        }
+        r.e("COMPARE", { line: 4, text: "!queue.isEmpty()", real: "0 still waiting",
+                         result: false, then: "so everyone has been served" });
+        r.e("RETURN", { line: 5, value: "A B C D", fn: "print",
+                        why: "Same four things, same order in, same six lines of code with two words changed \u2014 and now A comes out first instead of last.<br><br>Put the two versions side by side in your head: a pile is what you want when the most recent thing matters most (undo, brackets, going back a page). A queue is what you want when waiting longest should count for something (printers, messages, anyone at a counter). Picking the wrong one is not a slow program. It is a program that serves the wrong person." });
+      } },
+
+    /* ---- 9. a table you ask instead of hunt through ---------------- */
+    { family: "table", familyTitle: "10 \u00b7 Asking a table instead of hunting through a list",
+      version: "count", versionTitle: "Count how many times each one appears",
+      board: { kind: "table", input: ["b", "a", "n", "a", "n", "a"],
+               label: "the letters, read left to right",
+               tableLabel: "the table \u00b7 it grows to fit what turns up",
+               emptyLabel: "nothing in it yet" },
+      code: ["for (int i = 0; i < text.length; i++) {",
+             "    char c = text[i];",
+             "    if (counts.containsKey(c))",
+             "        counts.put(c, counts.get(c) + 1);",
+             "    else",
+             "        counts.put(c, 1);",
+             "}"],
+      run: function (r) {
+        var v = this.board.input, i, c, seen = {}, had;
+        r.e("ENTER", { line: 0, loop: { name: "i", from: 0, of: v.length, label: "loop", word: "letter" } });
+        for (i = 0; i < v.length; i++) {
+          c = v[i];
+          had = Object.prototype.hasOwnProperty.call(seen, c);
+          r.e("MOVE", { line: 0, name: "i", to: i, marks: [["c", i, 0]],
+                        human: "We are on letter " + i + "." });
+          r.e("READ", { line: 1, from: "text", at: i, value: c, marks: [["c", i, 0]] });
+          r.e("READ", { line: 2, key: c, value: had ? seen[c] : null, marks: [["c", i, 0]] });
+          r.e("COMPARE", { line: 2, text: "counts.containsKey(c)",
+                           real: "\u201c" + c + "\u201d seen before", result: had,
+                           then: had ? "so add one to what it had" : "so put it in at 1",
+                           marks: [["c", i, 0]] });
+          seen[c] = had ? seen[c] + 1 : 1;
+          r.e("WRITE", { line: had ? 3 : 5, key: c, value: seen[c], marks: [["c", i, 0]] });
+        }
+        r.e("EXIT", { line: 0, loop: "i" });
+        r.e("RETURN", { line: 6, value: "b\u21921  a\u21923  n\u21922", fn: "count",
+                        why: "Look at the cost panel, and then at what it is counting. Six lookups, six writes, six yes-or-no questions \u2014 <b>and not one letter was ever compared with another letter</b>. Every letter cost exactly the same as every other: the sixth was no dearer than the first, and it would not be dearer if the table already held a million entries.<br><br>Now open the next version, which answers the very same question without a table." });
+      } },
+
+    { family: "table", version: "hunt", versionTitle: "The same count, hunting through a list",
+      board: { kind: "table", input: ["b", "a", "n", "a", "n", "a"],
+               label: "the same six letters",
+               tableLabel: "two lists, kept side by side \u2014 no table anywhere",
+               emptyLabel: "nothing in them yet" },
+      code: ["for (int i = 0; i < text.length; i++) {",
+             "    char c = text[i];",
+             "    int found = -1;",
+             "    for (int j = 0; j < keys.size(); j++)",
+             "        if (keys.get(j) == c) found = j;",
+             "    if (found >= 0) counts.set(found, counts.get(found) + 1);",
+             "    else { keys.add(c); counts.add(1); }",
+             "}"],
+      run: function (r) {
+        var v = this.board.input, i, j, c, keys = [], vals = [], found;
+        r.e("ENTER", { line: 0, loop: { name: "i", from: 0, of: v.length, label: "outer loop", word: "letter" } });
+        for (i = 0; i < v.length; i++) {
+          c = v[i];
+          r.e("MOVE", { line: 0, name: "i", to: i, marks: [["c", i, 0]],
+                        human: "We are on letter " + i + "." });
+          r.e("READ", { line: 1, from: "text", at: i, value: c, marks: [["c", i, 0]] });
+          found = -1;
+          r.e("ENTER", { line: 3, restart: i > 0,
+                         loop: { name: "j", from: 0, of: Math.max(keys.length, 1), label: "inner loop", word: "row" } });
+          for (j = 0; j < keys.length; j++) {
+            r.e("MOVE", { line: 3, name: "j", to: j, marks: [["c", i, 0]], look: j,
+                          human: "We are at row " + j + " of what we have written down." });
+            r.e("COMPARE", { line: 4, text: "keys.get(j) == c",
+                             real: "\u201c" + keys[j] + "\u201d == \u201c" + c + "\u201d",
+                             result: keys[j] === c,
+                             then: keys[j] === c ? "so this is its row" : "so keep looking",
+                             marks: [["c", i, 0]], look: j });
+            if (keys[j] === c) { found = j; }
+          }
+          r.e("EXIT", { line: 3, loop: "j",
+                        why: i === 0
+                          ? "Nothing to look through yet, so this pass costs nothing. Watch what happens to it as the table fills up \u2014 that is the entire lesson."
+                          : undefined });
+          if (found >= 0) {
+            vals[found] += 1;
+            r.e("WRITE", { line: 5, key: c, value: vals[found], marks: [["c", i, 0]],
+                           human: "\u201c" + c + "\u201d goes up to " + vals[found] + " \u2014 after " +
+                                  keys.length + " comparisons to find out where it lived." });
+          } else {
+            keys.push(c); vals.push(1);
+            r.e("WRITE", { line: 6, key: c, value: 1, marks: [["c", i, 0]],
+                           human: "\u201c" + c + "\u201d was nowhere in the list, so it gets added on the end." });
+          }
+        }
+        r.e("EXIT", { line: 0, loop: "i" });
+        r.e("RETURN", { line: 7, value: "b\u21921  a\u21923  n\u21922", fn: "count",
+                        why: "Same six letters, same three answers, <b>twelve letter-against-letter comparisons the other version never made at all</b> \u2014 and this one is not being careless. It is doing the obvious thing, which is to look.<br><br>Now the shape of that cost. Every new letter has to be checked against everything written down so far, so the later letters cost more than the earlier ones, and the fuller it gets the worse it gets. On six letters nobody would notice. On a book, this version is still running when the other one has finished. <b>The dictionary did not make the hunting faster. It removed the hunting.</b>" });
+      } },
+
+
+    /* ---- 11. have I seen this before? ------------------------------ */
+    { family: "set", familyTitle: "11 \u00b7 Have I seen this before?",
+      version: "firstrepeat", versionTitle: "The first letter that repeats",
+      board: { kind: "table", input: ["p", "r", "o", "g", "r", "a", "m"], isSet: true,
+               label: "the letters, read left to right",
+               tableLabel: "what has been seen \u00b7 a set holds keys and nothing else",
+               emptyLabel: "nothing seen yet" },
+      code: ["for (int i = 0; i < text.length; i++) {",
+             "    char c = text[i];",
+             "    if (seen.contains(c))",
+             "        return c;",
+             "    seen.add(c);",
+             "}",
+             "return '?';"],
+      run: function (r) {
+        var v = this.board.input, i, c, seen = {}, had;
+        r.e("ENTER", { line: 0, loop: { name: "i", from: 0, of: v.length, label: "loop", word: "letter" } });
+        for (i = 0; i < v.length; i++) {
+          c = v[i];
+          had = Object.prototype.hasOwnProperty.call(seen, c);
+          r.e("MOVE", { line: 0, name: "i", to: i, marks: [["c", i, 0]],
+                        human: "We are on letter " + i + "." });
+          r.e("READ", { line: 1, from: "text", at: i, value: c, marks: [["c", i, 0]] });
+          r.e("READ", { line: 2, key: c, value: had ? "yes" : null, marks: [["c", i, 0]],
+                        why: "A set answers one question and only one: <b>is this in you?</b> It keeps no counts and no order \u2014 and because it keeps less, the question costs one step however much it holds." });
+          r.e("COMPARE", { line: 2, text: "seen.contains(c)",
+                           real: "\u201c" + c + "\u201d already seen", result: had,
+                           then: had ? "so this is the first repeat" : "so it is new",
+                           marks: [["c", i, 0]] });
+          if (had) {
+            r.e("RETURN", { line: 3, value: "\u201c" + c + "\u201d", fn: "firstRepeat",
+                            marks: [["c", i, 0]], keep: i,
+                            why: "Found at letter " + i + ", and <b>nothing was compared with anything</b>. The obvious version of this checks each letter against every letter before it \u2014 which on a long word does the same work a hundred times over. Remembering costs a little memory and removes all of that." });
+            r.e("EXIT", { line: 0, loop: "i" });
+            return;
+          }
+          seen[c] = true;
+          r.e("WRITE", { line: 4, key: c, value: "seen", marks: [["c", i, 0]],
+                         human: "\u201c" + c + "\u201d goes into the set. It is remembered, not counted.",
+                         code: "seen.add(\"" + c + "\")",
+                         why: "This is the whole difference from lesson ten: a dictionary remembers <b>how many</b>, a set remembers <b>whether</b>. When the count is not needed, not keeping it is the honest choice." });
+        }
+      } },
+    /* ---- 10. sorting, watched slowly ------------------------------- */
+    { family: "sort", familyTitle: "12 \u00b7 Putting them in order, watched slowly",
+      version: "selection", versionTitle: "Find the smallest, put it in front",
+      board: listBoard([5, 2, 9, 1, 7], "the list, in no order at all"),
+      code: ["for (int i = 0; i < n - 1; i++) {",
+             "    int min = i;",
+             "    for (int j = i + 1; j < n; j++)",
+             "        if (values[j] < values[min]) min = j;",
+             "    if (min != i)",
+             "        swap(values[i], values[min]);",
+             "}"],
+      run: function (r) {
+        var v = this.board.values.slice(), n = v.length, i, j, min, tmp, better;
+        function M(jj, mm) {
+          var a = [["i", i, 0]];
+          if (jj !== null) { a.push(["j", jj, 1]); }
+          if (mm !== null && mm !== undefined) { a.push(["min", mm, 3]); }
+          return a;
+        }
+        r.e("ENTER", { line: 0, loop: { name: "i", from: 0, of: n - 1, label: "outer loop", word: "pass" } });
+        for (i = 0; i < n - 1; i++) {
+          min = i;
+          r.e("MOVE", { line: 0, name: "i", to: i, marks: M(null, min),
+                        human: "This is pass " + (i + 1) + " of the loop.",
+                        why: i === 0
+                          ? "One pass, one number put in its final place. Five numbers, four passes \u2014 the last one has nowhere else to be."
+                          : undefined });
+          r.e("CREATE", { line: 1, name: "min", value: i, marks: M(null, min),
+                          why: "A guess, and deliberately the worst one: whatever is here. The inner loop exists to beat it." });
+          r.e("ENTER", { line: 2, restart: i > 0,
+                         loop: { name: "j", from: i + 1, of: n - 1 - i, label: "inner loop", word: "item" } });
+          for (j = i + 1; j < n; j++) {
+            r.e("MOVE", { line: 2, name: "j", to: j, marks: M(j, min),
+                          human: "Looking at item " + j + "." });
+            better = v[j] < v[min];
+            r.e("COMPARE", { line: 3, text: "values[j] < values[min]",
+                             real: v[j] + " < " + v[min], result: better,
+                             then: better ? "so this one is the smallest so far" : "so the smallest is unchanged",
+                             marks: M(j, min) });
+            if (better) {
+              r.e("UPDATE", { line: 3, name: "min", from: min, to: j, quiet: true, marks: M(j, j),
+                              why: "Only the <b>position</b> is remembered, not the value. Nothing has moved anywhere yet \u2014 the list is exactly as it was." });
+              min = j;
+            }
+          }
+          r.e("EXIT", { line: 2, loop: "j" });
+          r.e("COMPARE", { line: 4, text: "min != i", real: min + " != " + i, result: min !== i,
+                           then: min !== i ? "so those two have to change places"
+                                           : "so it is already where it belongs",
+                           marks: M(null, min) });
+          if (min !== i) {
+            r.e("SWAP", { line: 5, a: i, b: min, marks: M(null, min), fixed: [0, i],
+                          why: "One swap per pass, however long the list is. That is what selection sort buys you: it looks a great deal and moves almost nothing." });
+            tmp = v[i]; v[i] = v[min]; v[min] = tmp;
+          } else {
+            r.e("MOVE", { line: 4, name: "i", to: i, marks: M(null, min), fixed: [0, i],
+                          human: "Nothing moves. It was already the smallest of what was left." });
+          }
+        }
+        r.e("EXIT", { line: 0, loop: "i", fixed: [0, n - 1] });
+        r.e("RETURN", { line: 6, value: v.join(" "), fn: "sort", fixed: [0, n - 1],
+                        why: "Fourteen comparisons, and <b>ten</b> of them are the inner loop looking at what is left: four, then three, then two, then one. On ten numbers that is 45, on a hundred 4,950, on a thousand nearly half a million \u2014 the work does not grow with the length of the list, it grows with the <b>square</b> of it.<br><br>That sentence is usually taught as a formula. It is really only this picture: every pass has to look at everything still unsorted, and the passes do not get cheap fast enough to save you." });
+      } },
+
+    { family: "sort", version: "bubble", versionTitle: "Swap the neighbours that are out of order",
+      board: listBoard([5, 2, 9, 1, 7], "the same five, in the same mess"),
+      code: ["for (int pass = 0; pass < n - 1; pass++) {",
+             "    for (int j = 0; j < n - 1 - pass; j++)",
+             "        if (values[j] > values[j + 1])",
+             "            swap(values[j], values[j + 1]);",
+             "}"],
+      run: function (r) {
+        var v = this.board.values.slice(), n = v.length, pass, j, tmp, wrong;
+        r.e("ENTER", { line: 0, loop: { name: "pass", from: 0, of: n - 1, label: "outer loop", word: "pass" } });
+        for (pass = 0; pass < n - 1; pass++) {
+          r.e("MOVE", { line: 0, name: "pass", to: pass,
+                        human: "This is pass " + (pass + 1) + " of the loop.",
+                        fixed: pass ? [n - pass, n - 1] : null,
+                        why: pass === 0
+                          ? "This one never looks at the whole list at once. It only ever compares two <b>neighbours</b> \u2014 and out of that, somehow, comes an ordered list."
+                          : undefined });
+          r.e("ENTER", { line: 1, restart: pass > 0,
+                         loop: { name: "j", from: 0, of: n - 1 - pass, label: "inner loop", word: "pair" } });
+          for (j = 0; j < n - 1 - pass; j++) {
+            r.e("MOVE", { line: 1, name: "j", to: j, marks: [["j", j, 0], ["j+1", j + 1, 1]],
+                          human: "Comparing the pair at " + j + " and " + (j + 1) + "." });
+            wrong = v[j] > v[j + 1];
+            r.e("COMPARE", { line: 2, text: "values[j] > values[j + 1]",
+                             real: v[j] + " > " + v[j + 1], result: wrong,
+                             then: wrong ? "so they are the wrong way round" : "so leave them alone",
+                             marks: [["j", j, 0], ["j+1", j + 1, 1]] });
+            if (wrong) {
+              r.e("SWAP", { line: 3, a: j, b: j + 1, marks: [["j", j, 0], ["j+1", j + 1, 1]],
+                            why: "Watch the biggest number in the stretch: once it is picked up it keeps being swapped along, one place at a time, until it hits the end. That is where the name comes from \u2014 it rises to the top like a bubble." });
+              tmp = v[j]; v[j] = v[j + 1]; v[j + 1] = tmp;
+            }
+          }
+          r.e("EXIT", { line: 1, loop: "j", fixed: [n - 1 - pass, n - 1],
+                        why: "End of a pass, and one more is guaranteed finished: whatever is biggest cannot have stopped anywhere but the end. That is why the next pass is one shorter." });
+        }
+        r.e("EXIT", { line: 0, loop: "pass", fixed: [0, n - 1] });
+        r.e("RETURN", { line: 4, value: v.join(" "), fn: "sort", fixed: [0, n - 1],
+                        why: "Same five numbers, same answer, and <b>fewer</b> comparisons than the other version \u2014 ten against fourteen. Now look at <b>things moved</b>: ten against six. Selection sort swapped three times; this one swapped five, because it corrects the disorder one neighbour at a time instead of finding the right number and going straight there.<br><br>And now the honest ending: <b>do not write either of these.</b> <code>Arrays.sort()</code> is the work of people who have thought about this for forty years, and it will beat anything you type by hand. What you have just watched is not how to sort. It is why a list of a thousand costs so much more than twice a list of five hundred \u2014 and that you can use every day." });
+      } },
+
+    /* ---- 11. a function that calls itself -------------------------- */
+    { family: "calls", familyTitle: "13 \u00b7 A function that calls itself",
+      version: "factorial", versionTitle: "Four times three times two times one",
+      board: { kind: "tree", label: "every call that gets made, and what it hands back" },
+      code: ["int factorial(int n) {",
+             "    if (n <= 1) return 1;",
+             "    return n * factorial(n - 1);",
+             "}"],
+      run: function (r) {
+        var id = 0;
+        function fact(n, depth, parent) {
+          var me = id++, inner;
+          r.e("CALL", { line: 0, fn: "factorial", args: "n = " + n, frame: "factorial(" + n + ")",
+                        node: me, parent: parent, depth: depth,
+                        why: depth === 0
+                          ? "One function. It is about to call <b>itself</b>, which is the sentence everyone nods at and nobody believes. Watch the board: each call is a separate line, with its own private n, and none of them can finish until the one underneath does."
+                          : undefined });
+          if (n <= 1) {
+            r.e("COMPARE", { line: 1, text: "n <= 1", real: n + " <= 1", result: true,
+                             then: "so this one can answer without asking anybody",
+                             why: "The <b>base case</b>. Every recursion needs one, and this is the only call in the whole chain that knows an answer outright. Take this line away and the calls never stop \u2014 that is not a slow program, it is a crash." });
+            r.e("RETURN", { line: 1, value: 1, fn: "factorial", frame: true, node: me,
+                            human: "factorial(1) is 1, and it says so. That is the bottom \u2014 now everything above it can finish.",
+                            why: "Nothing is solved yet. But the line above has been stuck waiting for exactly this, and it can now move." });
+            return 1;
+          }
+          r.e("COMPARE", { line: 1, text: "n <= 1", real: n + " <= 1", result: false,
+                           then: "so it has to ask a smaller version of itself" });
+          inner = fact(n - 1, depth + 1, me);
+          r.e("RETURN", { line: 2, value: n * inner, fn: "factorial", frame: true, node: me,
+                          human: "factorial(" + (n - 1) + ") came back with " + inner + ", so this one can finish: " +
+                                 n + " \u00d7 " + inner + " = " + (n * inner) + ".",
+                          why: depth === 0
+                            ? "And there it is. Nothing was worked out on the way <b>down</b> \u2014 the whole journey down was just promises being stacked up. All the arithmetic happened on the way back <b>up</b>, in the reverse order, which is why recursion feels backwards the first few times you meet it."
+                            : "Its own n is still " + n + ", exactly as it was left before the call. It was never touched, because the call underneath had its own." });
+          return n * inner;
+        }
+        fact(4, 0, undefined);
+      } },
+
+    { family: "calls", version: "fib", versionTitle: "The same idea, asking twice",
+      board: { kind: "tree", label: "every call fib(5) has to make" },
+      code: ["int fib(int n) {",
+             "    if (n <= 1) return n;",
+             "    return fib(n - 1) + fib(n - 2);",
+             "}"],
+      run: function (r) {
+        var id = 0;
+        function fib(n, depth, parent) {
+          var me = id++, a, b;
+          r.e("CALL", { line: 0, fn: "fib", args: "n = " + n, frame: "fib(" + n + ")",
+                        node: me, parent: parent, depth: depth,
+                        why: depth === 0
+                          ? "Three lines, and one word different from the last one: it asks <b>twice</b>. Keep an eye on how far down the page this goes." : undefined });
+          if (n <= 1) {
+            r.e("COMPARE", { line: 1, text: "n <= 1", real: n + " <= 1", result: true,
+                             then: "so it answers straight away" });
+            r.e("RETURN", { line: 1, value: n, fn: "fib", frame: true, node: me,
+                            human: "fib(" + n + ") is " + n + ", and it says so." });
+            return n;
+          }
+          r.e("COMPARE", { line: 1, text: "n <= 1", real: n + " <= 1", result: false,
+                           then: "so it has to ask twice" });
+          a = fib(n - 1, depth + 1, me);
+          b = fib(n - 2, depth + 1, me);
+          r.e("RETURN", { line: 2, value: a + b, fn: "fib", frame: true, node: me,
+                          human: "Both answers are in: " + a + " + " + b + ". fib(" + n + ") hands back " + (a + b) + ".",
+                          why: depth === 0
+                            ? "Fifteen calls to work out the fifth number in a sequence you could count on your fingers.<br><br>Now read down the board and look at the tags. <b>fib(3) was worked out twice. fib(2) three times. fib(1) five times</b> \u2014 the same question, asked again from scratch, because nothing kept the answer. Add one to n and the tree very nearly doubles; fib(50) this way would outlive you.<br><br>That picture is the argument for <b>memoisation</b>, and it is why a sentence like \u201cremember answers you have already worked out\u201d never lands until somebody shows you this. The fix is one line: keep a table of answers, and look in it first. You have already met that table \u2014 lesson nine."
+                            : undefined });
+          return a + b;
+        }
+        fib(5, 0, undefined);
+      } },
+
+    /* ---- 12. the one every interview asks -------------------------- */
+    { family: "pair", familyTitle: "14 \u00b7 Find the two that add up",
+      version: "pairs", versionTitle: "Try every pair",
+      board: listBoard([4, 9, 2, 7, 15, 6], "the numbers"),
+      code: ["for (int i = 0; i < values.length; i++)",
+             "    for (int j = i + 1; j < values.length; j++)",
+             "        if (values[i] + values[j] == target)",
+             "            return new int[] { i, j };",
+             "return null;"],
+      run: function (r) {
+        var v = this.board.values, n = v.length, target = 16, i, j, hit;
+        r.e("CALL", { line: 0, fn: "twoThatAddUp", args: "target = " + target });
+        r.e("ENTER", { line: 0, loop: { name: "i", from: 0, of: n - 1, label: "outer loop", word: "item" } });
+        for (i = 0; i < n - 1; i++) {
+          r.e("MOVE", { line: 0, name: "i", to: i, marks: [["i", i, 0]],
+                        human: "We are on item " + i + "." });
+          r.e("ENTER", { line: 1, restart: i > 0,
+                         loop: { name: "j", from: i + 1, of: n - 1 - i, label: "inner loop", word: "partner" } });
+          for (j = i + 1; j < n; j++) {
+            r.e("MOVE", { line: 1, name: "j", to: j, marks: [["i", i, 0], ["j", j, 1]],
+                          human: "Trying it against item " + j + "." });
+            hit = v[i] + v[j] === target;
+            r.e("COMPARE", { line: 2, text: "values[i] + values[j] == target",
+                             real: v[i] + " + " + v[j] + " = " + (v[i] + v[j]), result: hit,
+                             then: hit ? "so that is the pair" : "so try the next partner",
+                             marks: [["i", i, 0], ["j", j, 1]],
+                             why: (i === 0 && j === 1)
+                               ? "Notice where <b>j</b> starts: at i + 1, never at 0. Starting it at 0 would check every pair twice and let a number pair up with <b>itself</b>, which is the commonest wrong answer to this question."
+                               : undefined });
+            if (hit) {
+              r.e("RETURN", { line: 3, value: i + " and " + j, fn: "twoThatAddUp",
+                              marks: [[String(v[i]), i, 2], [String(v[j]), j, 2]], keep: j,
+                              why: "Found, after <b>7</b> comparisons of six numbers. That is not bad here \u2014 but count the shape rather than the number: every item is tried against every later item, so doubling the list roughly <b>quadruples</b> the work. A thousand numbers is around half a million comparisons.<br><br>Now open the next version, which answers the same question by asking a different one." });
+              r.e("EXIT", { line: 1, loop: "j" });
+              r.e("EXIT", { line: 0, loop: "i" });
+              return;
+            }
+          }
+          r.e("EXIT", { line: 1, loop: "j" });
+        }
+      } },
+
+    { family: "pair", version: "table", versionTitle: "One pass, asking a table",
+      board: { kind: "table", input: [4, 9, 2, 7, 15, 6],
+               label: "the same six numbers",
+               tableLabel: "everything walked past so far \u00b7 number \u2192 where it was",
+               emptyLabel: "nothing walked past yet" },
+      code: ["for (int i = 0; i < values.length; i++) {",
+             "    int need = target - values[i];",
+             "    if (seen.containsKey(need))",
+             "        return new int[] { seen.get(need), i };",
+             "    seen.put(values[i], i);",
+             "}",
+             "return null;"],
+      run: function (r) {
+        var v = this.board.input, n = v.length, target = 16, i, need, seen = {}, had, was = null;
+        r.e("CALL", { line: 0, fn: "twoThatAddUp", args: "target = " + target });
+        r.e("ENTER", { line: 0, loop: { name: "i", from: 0, of: n, label: "loop", word: "item" } });
+        for (i = 0; i < n; i++) {
+          r.e("MOVE", { line: 0, name: "i", to: i, marks: [["i", i, 0]],
+                        human: "We are on item " + i + "." });
+          r.e("READ", { line: 1, from: "values", at: i, value: v[i], marks: [["i", i, 0]] });
+          need = target - v[i];
+          if (was === null) {
+            r.e("CREATE", { line: 1, name: "need", value: need, marks: [["i", i, 0]],
+                            why: "Here is the whole trick, and it is a change of question rather than a change of code. Instead of asking <b>which two of these add up to 16</b>, it asks <b>what would this one need for a partner</b> \u2014 and that has exactly one answer, which can simply be looked up." });
+          } else {
+            r.e("UPDATE", { line: 1, name: "need", from: was, to: need, quiet: true, marks: [["i", i, 0]] });
+          }
+          was = need;
+          had = Object.prototype.hasOwnProperty.call(seen, need);
+          r.e("READ", { line: 2, key: need, value: had ? seen[need] : null, marks: [["i", i, 0]] });
+          r.e("COMPARE", { line: 2, text: "seen.containsKey(need)",
+                           real: need + " seen already", result: had,
+                           then: had ? "so the partner is already behind us" : "so it has not turned up yet",
+                           marks: [["i", i, 0]] });
+          if (had) {
+            r.e("RETURN", { line: 3, value: seen[need] + " and " + i, fn: "twoThatAddUp",
+                            marks: [["i", i, 0]], keep: i,
+                            why: "Same six numbers, same answer, <b>no pair was ever added up</b>. Each number was looked at once and asked one question of the table.<br><br>That is the real shape of this problem: the slow version grows with the <b>square</b> of the list, this one grows in step with it. A thousand numbers costs a thousand look-ups instead of half a million comparisons \u2014 and the price is one table's worth of memory. That trade is the single most common move in the whole of this subject." });
+            r.e("EXIT", { line: 0, loop: "i" });
+            return;
+          }
+          seen[v[i]] = i;
+          r.e("WRITE", { line: 4, key: v[i], value: i, marks: [["i", i, 0]],
+                         human: v[i] + " goes into the table, with where it was found.",
+                         code: "seen.put(" + v[i] + ", " + i + ")",
+                         why: "Nothing is searched and nothing is compared. It is written down so that a <b>later</b> number can find it in one step \u2014 which is why this works in a single pass, and why the pair is always found by its second half." });
+        }
+      } },
+
+    /* ---- 13. the order of your checks ------------------------------ */
+    { family: "fizz", familyTitle: "15 \u00b7 Fizz, Buzz, and the order of your checks",
+      version: "wrong", versionTitle: "Three, then five \u2014 watch 15",
+      board: { kind: "table", input: null, label: "counting from 1 to 15",
+               tableLabel: "what actually gets printed", emptyLabel: "nothing printed yet" },
+      code: ["for (int i = 1; i <= n; i++) {",
+             "    if (i % 3 == 0)        print(\"Fizz\");",
+             "    else if (i % 5 == 0)   print(\"Buzz\");",
+             "    else if (i % 15 == 0)  print(\"FizzBuzz\");",
+             "    else                   print(i);",
+             "}"],
+      run: function (r) { return fizz(r, [[3, 1, "Fizz"], [5, 2, "Buzz"], [15, 3, "FizzBuzz"]], 4, false); } },
+
+    { family: "fizz", version: "right", versionTitle: "Fifteen first",
+      board: { kind: "table", input: null, label: "counting from 1 to 15",
+               tableLabel: "what actually gets printed", emptyLabel: "nothing printed yet" },
+      code: ["for (int i = 1; i <= n; i++) {",
+             "    if (i % 15 == 0)       print(\"FizzBuzz\");",
+             "    else if (i % 3 == 0)   print(\"Fizz\");",
+             "    else if (i % 5 == 0)   print(\"Buzz\");",
+             "    else                   print(i);",
+             "}"],
+      run: function (r) { return fizz(r, [[15, 1, "FizzBuzz"], [3, 2, "Fizz"], [5, 3, "Buzz"]], 4, true); } },
+  ];
+
+
+  /* ==================================================================
+     THE PROBLEMS
+     Not multiple choice. The problem the way it actually turns up: a
+     scenario, a worked example, what goes in, what comes back, and the
+     trap. Written from scratch on purpose \u2014 an algorithm belongs to
+     nobody, but somebody else's wording belongs to them.
+     Keyed by family, or by family:version where a version is really
+     answering a different question.
+     ================================================================== */
+
+  var PROBLEMS = {
+
+    "walk": {
+      ask: "Before any of the rest of it. You are handed a list and told to do something with every item \u2014 print them, check them, add them up. Reach all of them, exactly once, in order, without counting them yourself first.",
+      ex: { "in": "[5, 3, 8, 1, 6]", out: "5, 3, 8, 1, 6", why: "every slot, once, left to right" },
+      input: "A list of whole numbers. It might be empty.",
+      returns: "Nothing. This one is about reaching them all.",
+      sig: "void visitEach(int[] list)",
+      watch: "The list holds five things and the last one lives at position <b>4</b>. Stop at 5 and you have asked for a slot that was never there \u2014 the first crash nearly everybody meets."
+    },
+
+    "carry:sum": {
+      ask: "Five readings came off a sensor overnight. Add them up, carrying one running total \u2014 not five names, and not a second list.",
+      ex: { "in": "[5, 3, 8, 1, 6]", out: "23", why: "5, 8, 16, 17, 23" },
+      input: "A list of whole numbers, up to a thousand of them.",
+      returns: "One whole number: all of them added together.",
+      sig: "int total(int[] readings)",
+      watch: "Start the total at <b>0</b>, not at the first reading. Start it at the first reading and an empty list has no answer at all."
+    },
+
+    "carry:count": {
+      ask: "The same five readings. How many of them came in above 4?",
+      ex: { "in": "[5, 3, 8, 1, 6], limit 4", out: "3", why: "5, 8 and 6 clear it" },
+      input: "A list of whole numbers, and the limit to beat.",
+      returns: "One whole number: how many were above the limit.",
+      sig: "int countAbove(int[] readings, int limit)",
+      watch: "<b>Above</b> 4 means strictly above. A reading of exactly 4 does not count, and that single word is where most wrong answers come from."
+    },
+
+    "carry:max": {
+      ask: "Six readings, and you want the biggest one. One pass through, and no sorting it first.",
+      ex: { "in": "[4, 9, 2, 7, 15, 6]", out: "15" },
+      input: "A list of whole numbers, at least one.",
+      returns: "The biggest value in it.",
+      sig: "int biggest(int[] readings)",
+      watch: "Start from the <b>first reading</b>, not from 0. Start from 0 and a list where everything is below zero hands you back 0 \u2014 a number that was never in the list."
+    },
+
+    "two:reverse": {
+      ask: "Turn a list back to front, inside the list you were given. No second list, no copy.",
+      ex: { "in": "[1, 2, 3, 4, 5]", out: "[5, 4, 3, 2, 1]" },
+      input: "A list of whole numbers.",
+      returns: "Nothing. The list you were handed is the one that changes.",
+      sig: "void reverse(int[] list)",
+      watch: "Stop the moment the two pointers meet. Let them cross and you will carry on swapping everything <b>back</b> to where it started."
+    },
+
+    "two:palindrome": {
+      ask: "Does the word read the same backwards as forwards? <i>racecar</i> does.",
+      ex: { "in": "\"racecar\"", out: "true", why: "r-r, a-a, c-c" },
+      input: "One word, lower case, up to a million letters.",
+      returns: "true or false.",
+      sig: "boolean isPalindrome(String word)",
+      watch: "A word with an odd number of letters has a middle letter that never gets compared with anything. That is not a case you have forgotten \u2014 it is always equal to itself."
+    },
+
+    "cost": {
+      kind: "question",
+      ask: "Two lines of code that look like twins: <code>list.add(6)</code> and <code>list.add(0, 6)</code>. One of them is nearly free and the other is not. Which, and why?",
+      ex: { "in": "a list of four", out: "1 step, or 5" },
+      returns: "Nothing to write. This one is a measurement.",
+      watch: "Cost is not in the line you typed. It is in everything the machine has to do underneath it, and the line does not mention any of that."
+    },
+
+    "nested": {
+      ask: "Print a triangle of stars, four rows tall: one star on the first row, two on the second, and so on down.",
+      ex: { "in": "4", out: "\u2605 / \u2605\u2605 / \u2605\u2605\u2605 / \u2605\u2605\u2605\u2605" },
+      input: "How many rows, from 1 to 100.",
+      returns: "Nothing. It prints.",
+      sig: "void triangle(int rows)",
+      watch: "Where you put the new line decides whether you get a triangle or one long row of ten stars. It belongs to the <b>outer</b> loop, and that is the only difference between the two."
+    },
+
+    "word:vowels": {
+      ask: "Count the vowels in a word. a, e, i, o, u \u2014 y is not invited today.",
+      ex: { "in": "\"machine\"", out: "3", why: "a, i and e" },
+      input: "One word, lower case, up to a hundred letters.",
+      returns: "One whole number.",
+      sig: "int countVowels(String word)",
+      watch: "There is no such thing as a vowel to the machine. \u201cIs this letter a vowel?\u201d is really \u201cdoes it turn up anywhere in <b>aeiou</b>?\u201d \u2014 a tiny search hiding inside an innocent question."
+    },
+
+    "word:build": {
+      ask: "You are handed the letters c, o, d, e and asked to hand back the word they spell. The obvious answer is <code>result = result + letter</code> in a loop. Write that \u2014 then watch what it actually costs.",
+      ex: { "in": "['c', 'o', 'd', 'e']", out: "\"code\"" },
+      input: "Up to a million letters.",
+      returns: "The word they spell.",
+      sig: "String join(char[] letters)",
+      watch: "A String can never be changed after it is made. Every <b>+</b> you write quietly builds a whole new one and copies everything into it."
+    },
+
+    "word:builder": {
+      ask: "The same problem, and the tool that exists for it. Hand back the word, without building a brand-new String on every single pass.",
+      ex: { "in": "['c', 'o', 'd', 'e']", out: "\"code\"" },
+      input: "Up to a million letters.",
+      returns: "The word they spell.",
+      sig: "String join(char[] letters)",
+      watch: "Same answer, same loop, a quarter of the writing. Flick between this version and the last one with the cost panel open \u2014 that gap is the reason StringBuilder was invented."
+    },
+
+    "find": {
+      ask: "Twelve numbers, in order, smallest first. Find <b>where</b> 77 is sitting \u2014 its position, not the number itself \u2014 and say so plainly if it is not there.",
+      ex: { "in": "[3, 7, 11, \u2026, 77, 91], target 77", out: "10", why: "counting from 0" },
+      input: "Up to a million numbers, each one larger than the one before it.",
+      returns: "The position, counting from 0 \u2014 or -1 if it is not in the list.",
+      sig: "int find(int[] values, int target)",
+      watch: "\u201cIn order\u201d is not scene-setting in this problem. The fast answer is only <b>correct</b> because of it, and the third version shows you exactly what happens when that quietly stops being true."
+    },
+
+    "pile:lifo": {
+      kind: "question",
+      ask: "Four things arrive: A, then B, then C, then D. They go into a container you can only reach the top of. Which one comes out first \u2014 and why is that not a choice anybody made?",
+      ex: { "in": "A, B, C, D", out: "D, C, B, A" },
+      returns: "Nothing to write yet. This one is about the shape of the container.",
+      watch: "Nothing in the code reverses anything. The order comes out backwards because of what the container will let you touch."
+    },
+
+    "pile:brackets": {
+      ask: "Somebody has typed a line with brackets in it. Are they all closed \u2014 in the right order, with the right kind? <code>([])()</code> is fine. <code>([)]</code> is not.",
+      ex: { "in": "\"([])()\"", out: "true" },
+      input: "A line of up to a million characters, only ( ) [ ] in it.",
+      returns: "true or false.",
+      sig: "boolean isBalanced(String text)",
+      watch: "There are three ways to fail and people check one of them: the wrong <b>kind</b>, the wrong <b>order</b>, and \u2014 the one always forgotten \u2014 something still open when you reach the end."
+    },
+
+    "pile:queue": {
+      kind: "question",
+      ask: "The same four arrivals, the same six lines, two words changed: things now leave from the other end. Who gets served first, and which of the two would you want at a ticket desk?",
+      ex: { "in": "A, B, C, D", out: "A, B, C, D" },
+      returns: "Nothing to write. This one is a contrast.",
+      watch: "Choosing a structure is choosing a behaviour. Pick the wrong one here and you have not written a slow program \u2014 you have written one that serves the wrong person."
+    },
+
+    "table": {
+      ask: "Count how many times each letter turns up in a word. <i>banana</i> gives b once, a three times, n twice.",
+      ex: { "in": "\"banana\"", out: "b\u21921, a\u21923, n\u21922" },
+      input: "A word of up to a million letters.",
+      returns: "Each letter with its count.",
+      sig: "Map<Character,Integer> countEach(String text)",
+      watch: "The <b>first</b> time a letter turns up there is nothing there to add one to. That missing case is the bug, and it is why the two versions here both have to ask before they write."
+    },
+
+    "sort": {
+      ask: "Put five numbers in order, smallest first, by hand \u2014 no library call. You will write it twice, two different ways, and then be told never to write it again.",
+      ex: { "in": "[5, 2, 9, 1, 7]", out: "[1, 2, 5, 7, 9]" },
+      input: "A list of whole numbers.",
+      returns: "Nothing. The list you were handed ends up in order.",
+      sig: "void sort(int[] values)",
+      watch: "Both versions here are <b>correct</b>. Neither is fast. Knowing precisely why is the entire reason for writing them once."
+    },
+
+    "calls:factorial": {
+      ask: "4 \u00d7 3 \u00d7 2 \u00d7 1. Write it as a function that calls <b>itself</b>: factorial(4) is 4 \u00d7 factorial(3), and so on down to the bottom.",
+      ex: { "in": "4", out: "24" },
+      input: "A whole number from 1 to 12.",
+      returns: "The product of every number from n down to 1.",
+      sig: "int factorial(int n)",
+      watch: "Every recursion needs one case that can answer <b>without asking again</b>. Leave it out and the calls never stop \u2014 that is not a slow program, it is a crash."
+    },
+
+    "calls:fib": {
+      ask: "Each number is the two before it added together: 0, 1, 1, 2, 3, 5, 8. Write fib(n) exactly the way that definition reads \u2014 then count what it cost you.",
+      ex: { "in": "5", out: "5", why: "0, 1, 1, 2, 3, 5" },
+      input: "A whole number from 0 to 40.",
+      returns: "The nth number in the sequence, counting the first as 0.",
+      sig: "int fib(int n)",
+      watch: "This is the honest translation of the definition, and it is also the slowest thing in this library. Both of those are worth seeing on the same screen."
+    },
+
+    "pair": {
+      ask: "Six numbers and a target of exactly 16. Find the <b>two</b> of them that add up to it, and hand back <b>where</b> they are. Exactly one pair works.",
+      ex: { "in": "[4, 9, 2, 7, 15, 6], target 16", out: "[1, 3]", why: "9 + 7" },
+      input: "Up to a hundred thousand whole numbers, and a target. Exactly one pair adds up to it.",
+      returns: "The two positions, earliest first.",
+      sig: "int[] twoThatAddUp(int[] values, int target)",
+      watch: "A number cannot pair with <b>itself</b>. One 8 and a target of 16 is not an answer \u2014 you need two of them, in two different positions."
+    },
+
+    "queue": {
+      kind: "question",
+      ask: "Four jobs arrive in this order: A, B, C, D. They go into a line you join at the back and leave from the front. Which one is served first \u2014 and what would change if you used the pile from lesson eight instead?",
+      ex: { "in": "A, B, C, D", out: "A, B, C, D" },
+      returns: "Nothing to write. This one is about which end you are allowed to touch.",
+      watch: "Six lines, two words different from the pile, and the opposite behaviour. Choosing a structure is choosing a behaviour: get it wrong here and you have not written a slow program, you have written one that serves the wrong person."
+    },
+
+    "set": {
+      ask: "Find the first letter in a word that you have <b>already seen</b>. In <i>program</i> it is <b>r</b>: p, r, o, g, and then r again.",
+      ex: { "in": "\"program\"", out: "\"r\"", why: "p, r, o, g, then r again" },
+      input: "A word of up to a million letters.",
+      returns: "The first letter that repeats \u2014 or '?' if none of them does.",
+      sig: "char firstRepeat(String text)",
+      watch: "The obvious version checks each letter against every letter before it, which on a long word is the same work done hundreds of times over. A set turns \u201chave I seen this?\u201d into <b>one</b> step \u2014 and unlike a dictionary it keeps no counts, because here none are needed."
+    },
+
+    "fizz": {
+      ask: "Count from 1 to 15 and print each number \u2014 except that a number divisible by 3 prints <i>Fizz</i>, one divisible by 5 prints <i>Buzz</i>, and one divisible by both prints <i>FizzBuzz</i>.",
+      ex: { "in": "15", out: "1, 2, Fizz, 4, Buzz, \u2026, 14, FizzBuzz" },
+      input: "How far to count, from 1 to a million.",
+      returns: "Nothing. It prints, one line per number.",
+      sig: "void fizzBuzz(int n)",
+      watch: "15 divides by 3 <b>and</b> by 5. Ask about that case <b>first</b> or it never gets asked at all \u2014 and that single line is the entire reason this problem is famous."
+    }
+
+  };
+
+  // family title carries down to every version in that family, and so does the
+  // problem \u2014 unless a version is really answering a different question.
+  (function () {
+    var title = "";
+    LIB.forEach(function (p) {
+      if (p.familyTitle) { title = p.familyTitle; } else { p.familyTitle = title; }
+      p.id = p.family + ":" + p.version;
+      p.problem = PROBLEMS[p.id] || PROBLEMS[p.family] || null;
+      // the recursion lessons carry their own signature inside the code
+      p.hasOwnSignature = /\(.*\)\s*\{\s*$/.test(p.code[0]) &&
+                          !/^\s*(for|while|if|do|switch|else)\b/.test(p.code[0]);
+    });
+  })();
+
+  function byId(id) {
+    for (var k = 0; k < LIB.length; k++) { if (LIB[k].id === id) { return LIB[k]; } }
+    return LIB[0];
+  }
+
+  /* ===================================================================
+     THE REDUCER — events in, states out.
+     A state is the whole picture at one moment, so the panels never have
+     to work anything out and scrubbing is free.
+     =================================================================== */
+
+  function build(prog) {
+    var r = new Recorder();
+    prog.run.call(prog, r);
+
+    var vars = {}, loops = [], grid = null, states = [];
+    // A stack board is a row of things arriving plus the pile they land on,
+    // so the row is just a list and every bit of list drawing is reused.
+    var list = prog.board.kind === "list" ? prog.board.values.slice()
+             : (prog.board.kind === "stack" || prog.board.kind === "table")
+               ? (prog.board.input ? prog.board.input.slice() : null) : null;
+    var pile = prog.board.kind === "stack" ? [] : null, pileHot = -1;
+    var table = prog.board.kind === "table" ? [] : null, tableHot = -1, tableAt = -1;
+    var tree = prog.board.kind === "tree" ? [] : null, treeAt = -1, frames = [];
+
+    function tIndex(key) {
+      for (var t = 0; t < table.length; t++) { if (table[t][0] === key) { return t; } }
+      return -1;
+    }
+    var ops = { reads: 0, compares: 0, writes: 0, moves: 0 };
+    var marks = [], kept = null, ret = null, win = null, fixed = null;
+
+    if (prog.board.kind === "grid") {
+      grid = [];
+      for (var g = 0; g < prog.board.rows; g++) {
+        grid.push(new Array(prog.board.cols).fill(null));
+      }
+    }
+
+    function snap(ev, say, why, whatif, changed, cond, predict, flash, ghost) {
+      states.push({
+        op: ev.op, line: ev.line,
+        vars: JSON.parse(JSON.stringify(vars)),
+        loops: JSON.parse(JSON.stringify(loops)),
+        grid: grid ? grid.map(function (row) { return row.slice(); }) : null,
+        list: list ? list.slice() : null,
+        marks: marks.slice(), kept: kept, ret: ret, win: win ? win.slice() : null,
+        fixed: fixed ? fixed.slice() : null,
+        pile: pile ? pile.slice() : null, pileHot: pileHot,
+        table: table ? table.map(function (row) { return row.slice(); }) : null,
+        tableHot: tableHot, tableAt: tableAt,
+        tree: tree ? tree.map(function (nd) {
+          return { id: nd.id, parent: nd.parent, depth: nd.depth, label: nd.label, value: nd.value };
+        }) : null,
+        treeAt: treeAt,
+        ops: { reads: ops.reads, compares: ops.compares, writes: ops.writes, moves: ops.moves },
+        changed: changed || [], gone: [], flash: flash || [], ghost: ghost || [],
+        cond: cond || null, say: say, why: ev.why || why, whatif: whatif || null,
+        predict: predict || null
+      });
+    }
+
+    r.events.forEach(function (ev) {
+      if (ev.marks) { marks = ev.marks.map(function (m) { return { name: m[0], at: m[1], tone: m[2] }; }); }
+      if (ev.keep !== undefined) { kept = ev.keep; }
+      if (ev.win) { win = ev.win.slice(); }
+      if (ev.fixed) { fixed = ev.fixed.slice(); }
+      pileHot = -1; tableHot = -1; tableAt = -1;
+      if (ev.look !== undefined) { tableAt = ev.look; }
+      // A while-loop has no counter of its own. This lets an algorithm say
+      // "this is pass 3" without inventing a variable its code never had.
+      if (ev.loopAt !== undefined && loops.length) { loops[loops.length - 1].at = ev.loopAt; }
+
+      switch (ev.op) {
+
+      case "CALL":
+        var an = ev.args.split(" = ")[0], av = ev.args.split(" = ")[1];
+        if (ev.frame) {
+          // A call does not add to the names already there. It puts a fresh,
+          // private set on top of them, and that is the thing nobody is told.
+          frames.push(vars);
+          vars = {};
+          loops.push({ call: true, label: ev.frame, name: an, at: 0, of: 0 });
+          if (tree) {
+            tree.push({ id: ev.node, parent: ev.parent === undefined ? null : ev.parent,
+                        depth: ev.depth, label: ev.frame, value: null });
+            treeAt = ev.node;
+          }
+        }
+        vars[an] = av;
+        snap(ev, {
+          beginner: ev.human || (ev.frame
+            ? ev.frame + " starts, with its own private " + an + " of " + av + "."
+            : "The function is handed its numbers."),
+          code: ev.fn + "(" + av + ")",
+          machine: "call " + ev.fn + " \u00b7 depth " + loops.length
+        },
+        ev.frame
+          ? "Nothing was overwritten. The <b>" + an + "</b> belonging to the call that made this one is still sitting underneath, untouched, and will be exactly as it was when this finishes. Every call gets its own."
+          : "A <b>parameter</b> is the name the function gives to whatever it was handed.",
+        null, [an]);
+        break;
+
+      case "CREATE":
+        vars[ev.name] = ev.value;
+        snap(ev, {
+          beginner: "We set aside a place called " + ev.name + ", starting at " + ev.value + ".",
+          code: ev.name + " = " + ev.value,
+          machine: "local " + ev.name + " = " + ev.value
+        },
+        "A name and a starting value. Everything the loop does from here changes this and nothing else.",
+        null, [ev.name]);
+        break;
+
+      case "READ":
+        ops.reads++;
+        if (ev.key !== undefined) {
+          tableAt = tIndex(ev.key);
+          snap(ev, {
+            beginner: ev.value === null
+              ? "\u201c" + ev.key + "\u201d is not in the table at all."
+              : "Look up \u201c" + ev.key + "\u201d in the table: " + ev.value + ".",
+            code: "counts.get(\"" + ev.key + "\")  \u2192  " +
+                  (ev.value === null ? "nothing" : ev.value),
+            machine: "get " + ev.key + " = " + (ev.value === null ? "null" : ev.value) +
+                     " \u00b7 reads " + ops.reads
+          },
+          "Finding a key is <b>one</b> step. Not one step for each thing in the table \u2014 one step, whether it holds three entries or three million. The machine works out from the key itself where the answer would be kept, and goes straight there.",
+          "How would you find it if you only had a list?", []);
+          break;
+        }
+        snap(ev, {
+          beginner: "Look at what is sitting in position " + ev.at + ": " + ev.value + ".",
+          code: ev.from + "[" + ev.at + "]  \u2192  " + ev.value,
+          machine: "read " + ev.from + "[" + ev.at + "] = " + ev.value + " \u00b7 reads " + ops.reads
+        },
+        "Reaching into a list by position is <b>one</b> step, however long the list is. The machine works out where that slot sits and goes straight to it.",
+        null, [], null, null, [ev.at]);
+        break;
+
+      case "COMPARE":
+        ops.compares++;
+        snap(ev, {
+          beginner: (ev.result ? "Yes \u2014 " : "No \u2014 ") + ev.real + ". " +
+                    ev.then.charAt(0).toUpperCase() + ev.then.slice(1) + ".",
+          code: ev.text + "  \u2192  " + (ev.result ? "True" : "False"),
+          machine: "compare " + ev.real + " = " + ev.result + " \u00b7 compares " + ops.compares
+        },
+        "It is asking <b>" + ev.text + "</b>, which right now means <b>" + ev.real +
+          "</b>. That comes out <b>" + (ev.result ? "true" : "false") + "</b>, " + ev.then + ".",
+        ev.result ? "What if the two had been equal?" : "What would have to change for this to come out true?",
+        [], { q: ev.text, real: ev.real, result: ev.result, then: ev.then });
+        break;
+
+      case "UPDATE":
+        if (!ev.quiet) { ops.writes++; }
+        vars[ev.name] = ev.to;
+        snap(ev, {
+          beginner: ev.name + " goes from " + ev.from + " to " + ev.to + ".",
+          code: ev.name + " = " + ev.to,
+          machine: "write " + ev.name + ": " + ev.from + " \u2192 " + ev.to + " \u00b7 writes " + ops.writes
+        },
+        "Only <b>one</b> value is carried between passes. The list could be a million long and this would still hold a single number.",
+        null, [ev.name], null,
+        typeof ev.from === "number" && typeof ev.to === "number"
+          ? { name: ev.name, was: ev.from, now: ev.to } : null);
+        break;
+
+      case "MOVE":
+        vars[ev.name] = ev.to;
+        if (loops.length) { loops[loops.length - 1].at = ev.to; }
+        snap(ev, { beginner: ev.human, code: ev.name + " = " + ev.to,
+                   machine: ev.name + " = " + ev.to + " \u00b7 depth " + loops.length },
+        "The counter <b>" + ev.name + "</b> is the only thing different between one pass and the next. Everything else is the same instruction, run again.",
+        null, [ev.name]);
+        break;
+
+      case "PUSH":
+        ops.writes++;
+        pile.push(ev.value);
+        pileHot = pile.length - 1;
+        snap(ev, {
+          beginner: ev.human || ("\u201c" + ev.value + "\u201d goes on top of the pile."),
+          code: "stack.push(" + ev.value + ")",
+          machine: "push " + ev.value + " \u00b7 height " + pile.length
+        },
+        "A pile has one door. Things go on at the top and come off at the top, and nothing underneath can be reached at all \u2014 that restriction is not a limitation here, it is the entire reason to use one.",
+        null, []);
+        break;
+
+      case "POP":
+        ops.writes++;
+        var taken = ev.end === "front" ? pile.shift() : pile.pop();
+        snap(ev, {
+          beginner: ev.human || ("\u201c" + taken + "\u201d comes off " +
+                                 (ev.end === "front" ? "the front." : "the top.")),
+          code: (ev.end === "front" ? "queue.remove()" : "stack.pop()") + "  \u2192  " + taken,
+          machine: "pop " + taken + " \u00b7 height " + pile.length
+        },
+        ev.end === "front"
+          ? "First in, first out. Whatever has been waiting longest is served next \u2014 the fair one, and the one every queue in the world runs on."
+          : "Last in, first out. What comes off is always the most recent thing that went on. Nothing decided that; it is simply the only thing you could reach.",
+        null, []);
+        break;
+
+      case "SWAP":
+        ops.writes += 2; ops.moves += 2;
+        var tmp = list[ev.a]; list[ev.a] = list[ev.b]; list[ev.b] = tmp;
+        snap(ev, {
+          beginner: "Those two change places.",
+          code: "swap(list[" + ev.a + "], list[" + ev.b + "])",
+          machine: "swap " + ev.a + " \u2194 " + ev.b + " \u00b7 moves " + ops.moves
+        },
+        "Nothing new is made. The two values change places inside the list we already had \u2014 that is what <b>in place</b> means, and it is why this costs no extra memory.",
+        "What would it cost to build a reversed copy instead?",
+        [], null, null, [ev.a, ev.b]);
+        break;
+
+      case "SHIFT":
+        ops.moves++;
+        list[ev.to] = ev.value;
+        if (ev.to > ev.from) { list[ev.from] = null; } else { list[ev.from] = null; }
+        snap(ev, {
+          beginner: ev.human,
+          code: "list[" + ev.to + "] = list[" + ev.from + "]",
+          machine: "move " + ev.from + " \u2192 " + ev.to + " \u00b7 moves " + ops.moves
+        },
+        "This is a real move, not a label change. Count them: every one of these is work the machine has to do before the line of code you wrote can finish.",
+        null, [], null, null, [ev.to], [ev.from]);
+        break;
+
+      case "INSERT":
+        ops.writes++;
+        list[ev.at] = ev.value;
+        snap(ev, {
+          beginner: ev.human || (ev.shifts
+            ? "And only now does " + ev.value + " go in at the front \u2014 after " + ev.shifts + " things had to move."
+            : "And " + ev.value + " goes straight on the end. Nothing had to move."),
+          code: "list.add(" + (ev.shifts ? "0, " : "") + ev.value + ")",
+          machine: "write [" + ev.at + "] = " + ev.value + " \u00b7 " + ev.shifts + " moves before it"
+        },
+        "One line of code either way. The difference is everything that had to happen underneath it.",
+        null, [], null, null, [ev.at]);
+        break;
+
+      case "REMOVE":
+        snap(ev, {
+          beginner: "Take the item at " + ev.at + " out. That leaves a hole.",
+          code: "list.remove(" + ev.at + ")",
+          machine: "remove [" + ev.at + "] = " + ev.value
+        },
+        "A list is one unbroken run of slots, so a hole is not allowed to stay there.",
+        null, [], null, null, [], [ev.at]);
+        list[ev.at] = null;
+        break;
+
+      case "SETTLE":
+        list = list.filter(function (x) { return x !== null; });
+        snap(ev, {
+          beginner: "And the list closes up. Shorter by one, and everything behind it has moved.",
+          code: "\u2014",
+          machine: "length " + list.length + " \u00b7 moves " + ops.moves
+        },
+        "That is the cost of a tidy list: one instruction for you, and one move for every item behind the hole.",
+        "How would you avoid all that shifting?", []);
+        break;
+
+      case "WRITE":
+        if (ev.key !== undefined) {
+          ops.writes++;
+          var ti = tIndex(ev.key);
+          if (ti < 0) { table.push([ev.key, ev.value]); tableHot = table.length - 1; }
+          else { table[ti][1] = ev.value; tableHot = ti; }
+          snap(ev, {
+            beginner: ev.human || (ti < 0
+              ? "\u201c" + ev.key + "\u201d has never been seen, so it goes in with " + ev.value + "."
+              : "\u201c" + ev.key + "\u201d goes up to " + ev.value + "."),
+            code: ev.code || ("counts.put(\"" + ev.key + "\", " + ev.value + ")"),
+            machine: "put " + ev.key + " = " + ev.value + " \u00b7 writes " + ops.writes
+          },
+          ti < 0
+            ? "The table did not have to be told in advance what keys were coming, or how many. It grows to fit what it is handed."
+            : "The same one step as looking it up, in the other direction. Nothing is searched for and nothing is moved out of the way.",
+          null, []);
+          break;
+        }
+        if (ev.newline) {
+          snap(ev, { beginner: "That row is finished, so the pen drops to the next line.",
+                     code: "newline()", machine: "row " + ev.row + " flushed" },
+          "This sits in the <b>outer</b> loop, not the inner one \u2014 once per row, not once per star. That placement is the whole difference between a triangle and one long line.",
+          "What if this line were inside the inner loop?", []);
+        } else {
+          ops.writes++;
+          grid[ev.cell[0]][ev.cell[1]] = ev.value;
+          snap(ev, { beginner: ev.human || "Put one star down here.",
+                     code: ev.code || "print(\"*\")",
+                     machine: "write cell [" + ev.cell[0] + "][" + ev.cell[1] + "]" },
+          "This line runs once per pass of the <b>inner</b> loop. Row " + ev.cell[0] + " gets it " +
+            (ev.cell[0] + 1) + (ev.cell[0] === 0 ? " time" : " times") + ", which is why the rows get longer.",
+          null, []);
+        }
+        break;
+
+      case "ENTER":
+        loops.push({ name: ev.loop.name, at: ev.loop.from, of: ev.loop.of,
+                     label: ev.loop.label, word: ev.loop.word });
+        if (!ev.loop.synthetic) { vars[ev.loop.name] = ev.loop.from; }
+        snap(ev, {
+          beginner: ev.restart
+            ? "And the inner loop starts again from the beginning. It does that on every single pass of the outer one."
+            : "The loop begins.",
+          code: "for " + ev.loop.name + " ...",
+          machine: "enter loop " + ev.loop.name + " \u00b7 depth " + loops.length
+        },
+        ev.restart
+          ? "This is the part that catches everyone. <b>" + ev.loop.name + "</b> goes back to the start every time the outer loop moves on, while the outer counter stays where it is."
+          : "A loop is one instruction plus a rule for when to stop. Nothing else.",
+        ev.restart ? "How many times does the inner line run altogether?" : null,
+        [ev.loop.name]);
+        break;
+
+      case "EXIT":
+        loops.pop();
+        snap(ev, { beginner: "So that loop is done, and we carry on with whatever came after it.",
+                   code: "leave the " + ev.loop + " loop",
+                   machine: "exit loop " + ev.loop + " \u00b7 depth " + loops.length },
+        "The loop did not stop because the work was finished. It stopped because the question <b>finally came out false</b> \u2014 that is the only way a loop ever ends.",
+        null, []);
+        break;
+
+      case "RETURN":
+        ret = { value: ev.value, fn: ev.fn };
+        if (tree && ev.node !== undefined) {
+          for (var tn = 0; tn < tree.length; tn++) {
+            if (tree[tn].id === ev.node) {
+              tree[tn].value = ev.value;
+              treeAt = tree[tn].parent === null ? -1 : tree[tn].parent;
+            }
+          }
+        }
+        snap(ev, {
+          beginner: ev.human || "And it hands back " + ev.value + ". That value leaves the function and goes to whoever asked.",
+          code: "return " + ev.value,
+          machine: "return " + ev.value + " \u00b7 frame discarded"
+        },
+        "<b>return</b> ends the function and sends exactly one value out. Everything else in here stops existing at this moment.",
+        "Where does that value go if nobody catches it?", []);
+        states[states.length - 1].gone = Object.keys(vars);
+        if (ev.frame) {
+          // The frame is thrown away and the caller's names come back exactly
+          // as they were. This is the line that makes recursion make sense.
+          loops.pop();
+          if (frames.length) { vars = frames.pop(); }
+        }
+        break;
+      }
+    });
+
+    return states;
+  }
+
+  /* =================================================================== */
+
+  var prog = LIB[0], S = build(prog);
+  var mode = "explain", depth = "beginner", at = 0, playing = false, timer = null;
+  var solo = false;   // one lesson only: the public demo, embedded in a page
+                      // that has its own title - so this one hides its furniture
+
+  function drawBoard(s) {
+    $("boardhd").textContent = prog.board.label;
+
+    if (prog.board.kind === "list" || prog.board.kind === "stack" ||
+        prog.board.kind === "table") {
+      var v = s.list, html = "", arrows = "", k;
+      for (k = 0; v && k < v.length; k++) {
+        var mk = null, mi;
+        for (mi = 0; mi < s.marks.length; mi++) { if (s.marks[mi].at === k) { mk = s.marks[mi]; } }
+
+        var cls = "cell";
+        if (s.win && (k < s.win[0] || k > s.win[1]) && s.kept !== k) { cls += " out"; }
+        if (s.kept === k || (s.fixed && k >= s.fixed[0] && k <= s.fixed[1])) { cls += " kept"; }
+        if (s.flash.indexOf(k) >= 0) { cls += " flash"; }
+        if (s.ghost.indexOf(k) >= 0) { cls += " ghost"; }
+        if (mk) { cls += " m" + mk.tone; }
+
+        html += '<div class="slot"><span class="pos">' + k + '</span><div class="' + cls + '">' +
+                (v[k] === null ? "" : v[k]) + "</div></div>";
+
+        // every pointer that lands here, named, so two of them read clearly
+        var names = s.marks.filter(function (m) { return m.at === k; });
+        arrows += '<div class="arrow' + (names.length ? " p" + names[0].tone : "") + '">' +
+                  (names.length ? "<b>&#9650;</b>" + names.map(function (m) { return m.name; }).join(" ")
+                                : (s.kept === k ? "<b>&#9650;</b>kept" : "")) + "</div>";
+      }
+      $("boardbody").innerHTML = (v ? '<div class="cells">' + html + '</div><div class="arrowrow">' +
+                                       arrows + "</div>" : "") +
+                                 (prog.board.kind === "stack" ? drawPile(s) : "") +
+                                 (prog.board.kind === "table" ? drawTable(s) : "");
+    } else if (prog.board.kind === "tree") {
+      $("boardbody").innerHTML = drawTree(s);
+    } else {
+      var rowsHtml = "", i, j;
+      for (i = 0; i < prog.board.rows; i++) {
+        var cellsH = "";
+        for (j = 0; j < prog.board.cols; j++) {
+          var on = s.grid[i][j] !== null;
+          var here = s.vars.i === i && s.vars.j === j && s.loops.length > 1;
+          cellsH += '<div class="gc' + (on ? " on" : "") + (here ? " here" : "") + '">' +
+                    (on ? s.grid[i][j] : "") + "</div>";
+        }
+        rowsHtml += '<div class="grid-row"><span class="rl">' + (prog.board.rowWord || "row") +
+                   " " + i + "</span>" + cellsH + "</div>";
+      }
+      $("boardbody").innerHTML = '<div class="grid-rows">' + rowsHtml + "</div>";
+    }
+
+    var rr = $("ret");
+    if (!s.ret) { rr.hidden = true; }
+    else {
+      rr.hidden = false;
+      rr.innerHTML = '<span class="fn">' + s.ret.fn + "(...)</span><span class=\"to\">hands back</span>" +
+                     '<span class="fly">' + s.ret.value + '</span><span class="to">\u2192 to whoever called it</span>';
+    }
+  }
+
+  /* The pile. Same data either way; a stack stands up and a queue lies down,
+     and the end you are allowed to touch is the one that carries the tag. */
+  function drawPile(s) {
+    var p = s.pile || [], front = prog.board.takeFrom === "front", out = "", k, tag;
+    if (!p.length) {
+      out = '<div class="pi empty">' + (prog.board.emptyLabel || "nothing on it yet") + "</div>";
+    } else {
+      for (k = 0; k < p.length; k++) {
+        tag = (front ? k === 0 : k === p.length - 1)
+          ? '<span class="ptag">' + (front ? "next out" : "top") + "</span>" : "";
+        out += '<div class="pi' + (tag ? " top" : "") + (k === s.pileHot ? " hot" : "") + '">' +
+               "<span>" + p[k] + "</span>" + tag + "</div>";
+      }
+    }
+    // Deepest this board ever gets, as a class: .pile.up.d4 keeps room for four.
+    var room = front ? "along" : "up d" + Math.min(prog.board.maxDepth || 4, 6);
+    return '<div class="pilewrap"><div class="pilelbl">' +
+           (prog.board.pileLabel || "the pile") + "</div>" +
+           '<div class="pile ' + room + '">' + out + "</div></div>";
+  }
+
+  /* The table. Drawn in the order the keys first turned up, which is not
+     something a real hash table promises - but a picture has to be in SOME
+     order, and "when it first appeared" is the only one a student can follow. */
+  function drawTable(s) {
+    var t = s.table || [], out = "", k, cls;
+    if (!t.length) {
+      out = '<div class="trow empty">' + (prog.board.emptyLabel || "empty so far") + "</div>";
+    } else {
+      for (k = 0; k < t.length; k++) {
+        cls = "trow" + (k === s.tableHot ? " hot" : "") + (k === s.tableAt ? " look" : "");
+        // A set holds keys and nothing else, so it is drawn that way: the arrow
+        // and the value column would be two empty promises.
+        out += prog.board.isSet
+          ? '<div class="' + cls + '"><span class="tk">' + t[k][0] + "</span></div>"
+          : '<div class="' + cls + '"><span class="tk">' + t[k][0] +
+            '</span><span class="tar">\u2192</span><span class="tv">' + t[k][1] + "</span></div>";
+      }
+    }
+    return '<div class="pilewrap"><div class="pilelbl">' +
+           (prog.board.tableLabel || "the table") + "</div>" +
+           '<div class="trows">' + out + "</div></div>";
+  }
+
+  /* The call tree, as an indented outline rather than a drawing, because an
+     outline stays readable at fifteen calls and a drawing does not. "Worked
+     out before" is counted from the nodes themselves, never annotated. */
+  function drawTree(s) {
+    var t = s.tree || [], out = "", k, n, seen = {}, again, val;
+    for (k = 0; k < t.length; k++) {
+      n = t[k];
+      again = seen[n.label] && n.value !== null;
+      seen[n.label] = true;
+      val = n.value === null
+        ? '<span class="twait">still waiting\u2026</span>'
+        : '<span class="tval">' + n.value + "</span>";
+      out += '<div class="tnode i' + Math.min(n.depth, 8) +
+             (n.id === s.treeAt ? " now" : "") + '">' +
+             (n.depth ? '<span class="tin">\u21b3</span>' : "") +
+             '<span class="tbox">' + n.label + "</span>" + val +
+             (again ? '<span class="tagain">worked out before</span>' : "") + "</div>";
+    }
+    return '<div class="trees">' + (out || '<span class="none">Nothing has been called yet.</span>') + "</div>";
+  }
+
+  function esc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+  function drawCode(s) {
+    // Where the library holds only a body, the signature and the closing brace
+    // are drawn around it: the student is being asked to write a FUNCTION, and
+    // a loose fragment of one quietly teaches otherwise.
+    var sig = prog.problem && prog.problem.sig && !prog.hasOwnSignature
+      ? prog.problem.sig + " {" : null;
+    var body = prog.code.map(function (l, n) {
+      return '<span class="ln' + (n === s.line ? " on" : "") + '"><span class="gut">' + n + "</span>" +
+             esc(sig ? "    " + l : l) + "</span>";
+    }).join("");
+    $("code").innerHTML = sig
+      ? '<span class="ln chrome"><span class="gut"></span>' + esc(sig) + "</span>" + body +
+        '<span class="ln chrome"><span class="gut"></span>}</span>'
+      : body;
+  }
+
+  /* The brief. Everything in it is written out by hand, per problem: a wrong
+     explanation of why an answer is wrong has to be wrong every single time,
+     and generated text cannot promise that. */
+  function drawBrief() {
+    var p = prog.problem, h;
+    if (!p) { $("p-brief").innerHTML = ""; return; }
+    h = '<div class="briefhd">' + (p.kind === "question" ? "The question" : "The problem") + "</div>" +
+        '<div class="bmain"><div class="bleft"><p class="ask">' + p.ask + "</p>" +
+        (p.sig ? '<div class="sig">' + esc(p.sig) + "</div>" : "") + "</div>";
+    h += '<div class="bgrid">';
+    if (p.ex) {
+      h += '<div class="brow"><span class="bl">Example</span><span class="bv"><code>' +
+           esc(p.ex["in"]) + '</code><span class="barr">\u2192</span><code class="bout">' +
+           esc(p.ex.out) + "</code>" +
+           (p.ex.why ? '<span class="bwhy">' + p.ex.why + "</span>" : "") + "</span></div>";
+    }
+    if (p.input) {
+      h += '<div class="brow"><span class="bl">Goes in</span><span class="bv">' + p.input + "</span></div>";
+    }
+    if (p.returns) {
+      h += '<div class="brow"><span class="bl">Comes back</span><span class="bv">' + p.returns + "</span></div>";
+    }
+    h += "</div></div>";
+    if (p.watch) { h += '<p class="watch"><span class="wl">Watch out</span>' + p.watch + "</p>"; }
+    $("p-brief").innerHTML = h;
+  }
+
+  function drawVars(s) {
+    var prev = at > 0 ? S[at - 1].vars : {};
+    var html = "", k;
+    for (k in s.vars) {
+      if (!Object.prototype.hasOwnProperty.call(s.vars, k)) { continue; }
+      var ch = s.changed.indexOf(k) >= 0, was = prev[k];
+      var gone = s.gone.indexOf(k) >= 0;
+      html += '<div class="v' + (ch ? " changed" : "") + (gone ? " gone" : "") + '">' +
+              '<span class="nm">' + k + '</span><span class="eq">=</span><span class="vl">' +
+              (ch && was !== undefined && was !== s.vars[k]
+                ? '<span class="was">' + was + '</span><span class="to">→</span>' : "") +
+              s.vars[k] + "</span></div>";
+    }
+    $("vars").innerHTML = html || '<span class="none">Nothing yet.</span>';
+  }
+
+  function drawLoop(s) {
+    if (!s.loops.length) {
+      $("loop").innerHTML = '<span class="none">Not inside a loop at this moment.</span>';
+      return;
+    }
+    $("loop").innerHTML = s.loops.map(function (L, d) {
+      var bars = "", k;
+      if (L.call) {
+        // A call has no progress to show. It is either running, or stopped
+        // dead waiting for something it asked for.
+        return '<div class="frame call"><span class="tagl">call \u00b7 ' + L.label + "</span>" +
+               '<div class="human">' +
+               (d === s.loops.length - 1
+                  ? "This is the one running right now."
+                  : "Stopped here, waiting for the call it made.") +
+               "</div></div>";
+      }
+      for (k = 0; k < L.of; k++) {
+        bars += '<i class="' + (k < L.at ? "done" : (k === L.at ? "now" : "")) + '"></i>';
+      }
+      // Say it the way a person would for THIS kind of loop, not one phrase for all.
+      var human = L.word === "row"      ? "We are building row " + L.at + "."
+                : L.word === "position" ? "We are at position " + L.at + " of this row."
+                : L.word === "item"     ? "We are on item " + L.at + "."
+                : L.word === "pass"     ? "This is pass " + (L.at + 1) + " of the loop."
+                : "We are on " + L.word + " " + L.at + ".";
+      return '<div class="frame' + (d > 0 ? " inner" : "") + '">' +
+             '<span class="tagl">' + L.label + " · " + L.name + " = " + L.at + "</span>" +
+             '<div class="human">' + human + "</div>" +
+             '<div class="bars">' + bars + "</div></div>";
+    }).join("");
+  }
+
+  function drawCond(s) {
+    if (!s.cond) { $("cond").innerHTML = '<span class="none">It is not deciding anything at this moment.</span>'; return; }
+    $("cond").innerHTML =
+      '<span class="q">' + s.cond.q.replace(/</g, "&lt;").replace(/>/g, "&gt;") + "<br>" +
+      s.cond.real.replace(/</g, "&lt;").replace(/>/g, "&gt;") + " ?</span>" +
+      '<span class="res ' + (s.cond.result ? "t" : "f") + '">' + (s.cond.result ? "TRUE" : "FALSE") + "</span>" +
+      '<span class="then">' + s.cond.then + "</span>";
+  }
+
+
+  /* ------------------------------------------------------- what changed
+     Everything below is worked out by comparing this state with the one
+     before it. No lesson annotates any of it, which is why it is correct
+     on programs written after this code was.                            */
+
+  function pad(n) { return n < 10 ? " " + n : String(n); }
+
+  // A short, true sentence about what moved on the board, or null if nothing did.
+  function boardDiff(a, b) {
+    var i, j, moved = [], out;
+    if (!a) { return null; }
+
+    if (b.list && a.list) {
+      if (a.list.length !== b.list.length) {
+        return "the list is now " + b.list.length + " long, it was " + a.list.length;
+      }
+      for (i = 0; i < b.list.length; i++) {
+        if (a.list[i] !== b.list[i]) { moved.push(i); }
+      }
+      if (moved.length === 2) {
+        return "slots " + moved[0] + " and " + moved[1] + " changed places";
+      }
+      if (moved.length === 1) {
+        return "slot " + moved[0] + " now holds " +
+               (b.list[moved[0]] === null ? "nothing" : b.list[moved[0]]);
+      }
+      if (moved.length) { return moved.length + " slots changed"; }
+    }
+
+    if (b.grid && a.grid) {
+      for (i = 0; i < b.grid.length; i++) {
+        for (j = 0; j < b.grid[i].length; j++) {
+          if (a.grid[i][j] !== b.grid[i][j]) { moved.push(i + "," + j); }
+        }
+      }
+      if (moved.length === 1) { return "one more cell written: row " + moved[0].split(",")[0] +
+                                       ", column " + moved[0].split(",")[1]; }
+      if (moved.length) { return moved.length + " cells written"; }
+    }
+
+    if (b.table && a.table) {
+      if (b.table.length > a.table.length) {
+        out = b.table[b.table.length - 1];
+        return "a new row: " + out[0] + " \u2192 " + out[1];
+      }
+      for (i = 0; i < b.table.length; i++) {
+        if (a.table[i] && a.table[i][1] !== b.table[i][1]) {
+          return b.table[i][0] + " went from " + a.table[i][1] + " to " + b.table[i][1];
+        }
+      }
+    }
+
+    if (b.pile && a.pile) {
+      if (b.pile.length > a.pile.length) { return "\u201c" + b.pile[b.pile.length - 1] + "\u201d went on"; }
+      if (b.pile.length < a.pile.length) {
+        for (i = 0; i < a.pile.length; i++) {
+          if (b.pile.indexOf(a.pile[i]) < 0 || b.pile.length === i) { break; }
+        }
+        return "one came off \u2014 the pile is " + b.pile.length + " high now";
+      }
+    }
+
+    if (b.tree && a.tree) {
+      if (b.tree.length > a.tree.length) {
+        return "a new call: " + b.tree[b.tree.length - 1].label;
+      }
+      for (i = 0; i < b.tree.length; i++) {
+        if (a.tree[i] && a.tree[i].value === null && b.tree[i].value !== null) {
+          return b.tree[i].label + " came back with " + b.tree[i].value;
+        }
+      }
+    }
+    return null;
+  }
+
+  /* Why THIS line, as opposed to what the line means. The answer is already
+     in the recording: the decision that let us get here. If there isn't one
+     close enough behind, it says so instead of inventing a reason. */
+  function whyThisLine(i) {
+    var s = S[i], k, d = null, dist = 0;
+    for (k = i - 1; k >= 0 && i - k <= 3; k--) {
+      if (S[k].cond) { d = S[k]; dist = i - k; break; }
+    }
+
+    if (s.cond) {
+      return "This line <b>is</b> the decision. It does not change anything \u2014 it works out " +
+             "which line runs next, and everything after it depends on the answer.";
+    }
+    if (d && d.line !== s.line) {
+      return "It runs because <b>" + d.cond.q + "</b> came out <b>" +
+             (d.cond.result ? "true" : "false") + "</b> a moment ago \u2014 " +
+             d.cond.real + ". Had it gone the other way, this line would have been " +
+             "skipped and the program would be somewhere else now.";
+    }
+    if (s.loops && s.loops.length) {
+      var L = s.loops[s.loops.length - 1];
+      if (L.call) {
+        return "It runs inside <b>" + L.label + "</b>, which is waiting on it. " +
+               "Nothing above it can finish until this does.";
+      }
+      return "It runs because the loop has not stopped: the question at the top of the " +
+             "loop is still coming out true, so the same lines run again with " +
+             L.name + " one further on.";
+    }
+    return "It runs simply because it is the next line. Nothing decided it and nothing " +
+           "is repeating \u2014 the program is walking straight down the page.";
+  }
+
+  function drawChange(s) {
+    var prev = at > 0 ? S[at - 1] : null, html = "", k, same = [], bd, codeLine;
+
+    if (!prev) {
+      $("chg").innerHTML = '<div class="row same"><span class="none">' +
+        "Nothing has changed yet \u2014 this is the picture before the first step." +
+        "</span></div>";
+      return;
+    }
+
+    // the names that moved, with where they came from
+    s.changed.forEach(function (name) {
+      var was = prev.vars[name], now = s.vars[name];
+      html += '<div class="row moved"><span class="nm">' + name + "</span>" +
+              (was !== undefined && String(was) !== String(now)
+                ? '<span class="old">' + was + '</span><span class="arr">\u2192</span>' : "") +
+              '<span class="new">' + (now === undefined ? "gone" : now) + "</span></div>";
+    });
+
+    bd = boardDiff(prev, s);
+    if (bd) { html += '<div class="row moved board"><span class="nm">' +
+                      $("boardhd").textContent.toLowerCase() + "</span><span>" + bd + "</span></div>"; }
+
+    // and, just as important, what did NOT move
+    for (k in s.vars) {
+      if (!Object.prototype.hasOwnProperty.call(s.vars, k)) { continue; }
+      if (s.changed.indexOf(k) < 0) { same.push(k); }
+    }
+    if (!bd && (s.list || s.grid || s.table || s.pile || s.tree)) {
+      same.push($("boardhd").textContent.toLowerCase());
+    }
+    if (!html) {
+      html = '<div class="row same"><span class="none">Nothing changed on this step. ' +
+             "The machine looked, or asked a question, and moved on.</span></div>";
+    }
+    if (same.length) {
+      html += '<div class="row same"><span class="nm">untouched</span><span>' +
+              same.join(", ") + "</span></div>";
+    }
+
+    codeLine = prog.code[s.line];
+    if (codeLine !== undefined) {
+      html += '<div class="cause"><b>line ' + s.line + "</b> \u00b7 " +
+              codeLine.trim().replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</div>";
+    }
+    $("chg").innerHTML = html;
+  }
+
+  function drawOps(s) {
+    $("ops").innerHTML =
+      '<div class="op"><div class="n">' + s.ops.compares + '</div><div class="k">comparisons</div></div>' +
+      '<div class="op"><div class="n">' + s.ops.reads + '</div><div class="k">reads</div></div>' +
+      '<div class="op"><div class="n">' + s.ops.writes + '</div><div class="k">writes</div></div>' +
+      (s.ops.moves ? '<div class="op"><div class="n">' + s.ops.moves + '</div><div class="k">things moved</div></div>' : "");
+  }
+
+  function render() {
+    var s = S[at];
+    drawBoard(s); drawCode(s); drawVars(s); drawLoop(s); drawCond(s); drawOps(s); drawChange(s);
+
+    var el = $("say");
+    el.className = "txt" + (depth === "beginner" ? "" : " mono");
+    el.textContent = s.say[depth];
+
+    $("scrub").value = at;
+    // Two different counts, and calling both "step" is what confuses people.
+    $("at").textContent = "execution step " + (at + 1) + " / " + S.length;
+    $("at").hidden = depth === "beginner";
+
+    // Two different questions, and keeping them apart is the point: what this
+    // line means, and why the program is standing on it at all.
+    var wb = $("whybox"), parts = "";
+    if ($("whylinebtn").getAttribute("aria-pressed") === "true") {
+      parts += '<div class="wlab">Why this line, here</div>' + whyThisLine(at);
+    }
+    if ($("whybtn").getAttribute("aria-pressed") === "true") {
+      parts += (parts ? '<div class="wsplit"></div>' : "") +
+               '<div class="wlab">What it means</div>' + s.why +
+               (s.whatif ? '<div class="whatif">' + s.whatif + "</div>" : "");
+    }
+    wb.hidden = !parts;
+    if (parts) { wb.innerHTML = parts; }
+  }
+
+  function go(i) { at = Math.max(0, Math.min(S.length - 1, i)); render(); }
+
+  /* ------------------------------------------------------------- speech
+     The same promise the lessons are built on: tell me when you have finished
+     speaking, and I will move on then — never on a timer. A timer and a voice
+     always end up cutting each other off. */
+
+  var synth = window.speechSynthesis, voices = [], aloud = false;
+
+  // Machines carry a dozen voices and they are not equally good. The old
+  // Microsoft ones are flat; the Google and the "Natural"/"Online" ones have
+  // real phrasing. Rank them, so the default is the best one present rather
+  // than whichever happens to come first.
+  function voiceRank(v) {
+    var n = v.name;
+    if (/natural|online/i.test(n)) { return 0; }
+    if (/^google/i.test(n) && /en-GB/i.test(v.lang)) { return 1; }
+    if (/^google/i.test(n)) { return 2; }
+    if (/en-GB/i.test(v.lang)) { return 3; }
+    return 4;
+  }
+
+  function loadVoices() {
+    if (!synth) { return; }
+    var all = synth.getVoices();
+    voices = all.filter(function (v) { return /^en(-|_|$)/i.test(v.lang); });
+    if (!voices.length) { voices = all; }
+    if (!voices.length) { return; }
+    voices.sort(function (a, b) { return voiceRank(a) - voiceRank(b); });
+    $("voice").innerHTML = voices.map(function (v, i) {
+      return '<option value="' + i + '">' +
+             v.name.replace(/^Microsoft\s+/, "").replace(/\s*\(.*\)$/, "") +
+             " \u00b7 " + v.lang + "</option>";
+    }).join("");
+    $("voice").value = "0";
+  }
+
+  if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
+
+  function hush() { if (synth) { synth.cancel(); } }
+
+  /* What is on the screen is not what should be read out. "15 % 3 = 0" is a
+     line of code to look at and a mouthful of noise to listen to, and every
+     engine tried here says "zero" as "zou". So the spoken text is its own
+     thing: symbols become the words a teacher would actually say. */
+  function forSpeech(text) {
+    return String(text)
+      .replace(/\u2192/g, ", becomes ")
+      .replace(/\u2194/g, " and ")
+      .replace(/\u00b7/g, ", ")
+      .replace(/\u2014/g, ", ")
+      .replace(/\u201c|\u201d/g, "")
+      .replace(/\s%\s/g, " mod ")
+      .replace(/!==?/g, " is not ")
+      .replace(/==/g, " equals ")
+      .replace(/<=/g, " is at most ")
+      .replace(/>=/g, " is at least ")
+      .replace(/</g, " is less than ")
+      .replace(/\s=\s/g, " is ")
+      .replace(/>/g, " is more than ")
+      .replace(/\bi\+\+/g, "i goes up by one")
+      .replace(/(^|[\s(\[])0($|[\s,.;:)\]])/g, "$1nought$2")
+      .replace(/\s{2,}/g, " ");
+  }
+
+  // Returns true when it has taken charge of moving on.
+  // One long utterance comes out as one flat run of words, and the network
+  // voices cut it off. Split it where a person would breathe and queue the
+  // pieces: the gap between them IS the phrasing.
+  function speak(text, done) {
+    if (!aloud || !synth || !voices.length || mode === "run") { return false; }
+    hush();
+    var v = voices[parseInt($("voice").value, 10)];
+    // No lookbehind here on purpose: a regex an engine does not understand is
+    // a parse error, and a parse error is a blank page rather than a missing
+    // feature. Mark the breaks, then split on the mark.
+    var parts = forSpeech(text).replace(/([.,;:?])\s+/g, "$1\u0001").split("\u0001")
+                  .filter(function (p) { return p.trim(); });
+    if (!parts.length) { return false; }
+
+    parts.forEach(function (part, i) {
+      var u = new SpeechSynthesisUtterance(part.trim());
+      u.rate = 0.96;
+      u.pitch = 1;
+      if (v) { u.voice = v; u.lang = v.lang; }
+      if (i === parts.length - 1) { u.onend = done; u.onerror = done; }
+      synth.speak(u);
+    });
+    return true;
+  }
+
+  $("readaloud").addEventListener("click", function () {
+    aloud = this.getAttribute("aria-pressed") !== "true";
+    this.setAttribute("aria-pressed", aloud ? "true" : "false");
+    if (!aloud) { hush(); }
+  });
+
+  window.addEventListener("beforeunload", hush);
+
+  function stop() {
+    playing = false;
+    hush();
+    if (timer) { window.clearTimeout(timer); timer = null; }
+    $("play").textContent = at >= S.length - 1 ? "↺ Again" : "▶ Play";
+  }
+
+  // Guide me stops just before a value changes. It can ask honestly, because
+  // the answer is already recorded and simply hasn't been shown.
+  function askAhead() {
+    var next = S[at + 1];
+    if (!next || !next.predict) { return false; }
+    var p = next.predict;
+    var opts = [p.now, p.was, p.was + p.now].sort(function () { return Math.random() - 0.5; });
+
+    $("pnow").textContent = p.name + " is " + p.was + " right now, and " + p.now + " has just won the comparison.";
+    $("pq").textContent = "What do you think " + p.name + " becomes?";
+    $("popts").innerHTML = opts.map(function (o) {
+      return '<button type="button" class="chip" data-p="' + o + '">' + o + "</button>";
+    }).join("") + '<button type="button" class="chip" data-p="show">Show me</button>';
+    $("pv").hidden = true;
+    $("predict").hidden = false;
+    return true;
+  }
+
+  $("popts").addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (!b) { return; }
+    var p = S[at + 1].predict, v = $("pv");
+    if (b.dataset.p === "show") { $("predict").hidden = true; go(at + 1); return; }
+    var right = parseInt(b.dataset.p, 10) === p.now;
+    v.className = "verdict " + (right ? "right" : "wrong");
+    v.textContent = right
+      ? "Yes — the old value is simply overwritten. " + p.was + " is gone."
+      : "Not quite: it becomes " + p.now + ". The winner replaces the old value outright; it isn't added to it.";
+    v.hidden = false;
+    window.setTimeout(function () { $("predict").hidden = true; go(at + 1); }, right ? 900 : 2600);
+  });
+
+  function step() {
+    if (!playing) { return; }
+    if (at >= S.length - 1) { stop(); return; }
+    if (mode === "guide" && askAhead()) { stop(); return; }
+    go(at + 1);
+
+    // When it is reading, the sentence sets the pace. Otherwise, the clock.
+    if (speak(S[at].say[depth], function () { if (playing) { step(); } })) { return; }
+    timer = window.setTimeout(step, mode === "run" ? 420 : 1400);
+  }
+
+  $("play").addEventListener("click", function () {
+    if (playing) { stop(); return; }
+    if (at >= S.length - 1) { go(0); }
+    playing = true; $("play").textContent = "❚❚ Pause"; step();
+  });
+  $("fwd").addEventListener("click", function () { stop(); go(at + 1); speak(S[at].say[depth], function () {}); });
+  $("back").addEventListener("click", function () { stop(); go(at - 1); speak(S[at].say[depth], function () {}); });
+  $("restart").addEventListener("click", function () { stop(); $("predict").hidden = true; go(0); });
+  $("scrub").addEventListener("input", function () { stop(); go(parseInt(this.value, 10)); });
+  function toggleWhy() {
+    this.setAttribute("aria-pressed", this.getAttribute("aria-pressed") === "true" ? "false" : "true");
+    render();
+  }
+  $("whybtn").addEventListener("click", toggleWhy);
+  $("whylinebtn").addEventListener("click", toggleWhy);
+
+  document.addEventListener("keydown", function (e) {
+    if (/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(e.target.tagName)) { return; }
+    if (e.key === "ArrowRight") { stop(); go(at + 1); }
+    else if (e.key === "ArrowLeft") { stop(); go(at - 1); }
+    else if (e.key === " ") { e.preventDefault(); $("play").click(); }
+  });
+
+  function pressed(sel, b) {
+    Array.prototype.forEach.call(document.querySelectorAll(sel), function (o) {
+      o.setAttribute("aria-pressed", o === b ? "true" : "false");
+    });
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-mode]"), function (b) {
+    b.addEventListener("click", function () {
+      mode = b.dataset.mode; pressed("[data-mode]", b);
+      $("predict").hidden = true; stop();
+    });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-depth]"), function (b) {
+    b.addEventListener("click", function () {
+      depth = b.dataset.depth; pressed("[data-depth]", b);
+      if (depth === "beginner") { setPanels(["p-brief", "p-change", "p-loop", "p-vars"]); }
+      else if (depth === "code") { setPanels(["p-brief", "p-code", "p-change", "p-loop", "p-vars", "p-cond"]); }
+      else { setPanels(["p-brief", "p-code", "p-change", "p-loop", "p-vars", "p-cond", "p-ops"]); }
+      render();
+    });
+  });
+
+  function loadProg(id) {
+    stop();
+    if (!$("keep").hidden) {
+      $("keep").disabled = false;
+      $("keep").className = "";
+      $("keep").textContent = "☆ Keep this";
+    }
+    prog = byId(id);
+    S = build(prog);
+    drawBrief();
+    $("scrub").max = S.length - 1;
+    $("predict").hidden = true;
+    drawPickers();
+    go(0);
+  }
+
+  function drawPickers() {
+    var seen = {}, fh = "";
+    LIB.forEach(function (p) {
+      if (seen[p.family]) { return; }
+      seen[p.family] = true;
+      fh += '<option value="' + p.family + '"' +
+            (p.family === prog.family ? " selected" : "") + ">" + p.familyTitle + "</option>";
+    });
+    $("lessonpick").innerHTML = fh;
+    $("lessonpick").hidden = solo;
+    document.querySelector('label[for="lessonpick"]').hidden = solo;
+
+    var vh = '<span class="lbl">Version</span>';
+    LIB.filter(function (p) { return p.family === prog.family; }).forEach(function (p) {
+      vh += '<button type="button" class="chip" data-id="' + p.id + '" aria-pressed="' +
+            (p.id === prog.id ? "true" : "false") + '">' + p.versionTitle + "</button>";
+    });
+    $("versions").innerHTML = vh;
+    $("versions").hidden = false;
+  }
+
+  $("lessonpick").addEventListener("change", function () {
+    var self = this;
+    var first = LIB.filter(function (p) { return p.family === self.value; })[0];
+    if (first) { loadProg(first.id); }
+  });
+
+  $("versions").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-id]");
+    if (b) { loadProg(b.dataset.id); }
+  });
+
+  function setPanels(on) {
+    Array.prototype.forEach.call(document.querySelectorAll("#toggles button[data-panel]"), function (b) {
+      var want = on.indexOf(b.dataset.panel) >= 0;
+      b.setAttribute("aria-pressed", want ? "true" : "false");
+      $(b.dataset.panel).hidden = !want;
+    });
+  }
+
+  $("toggles").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-panel]");
+    if (!b) { return; }
+    var on = b.getAttribute("aria-pressed") === "true";
+    b.setAttribute("aria-pressed", on ? "false" : "true");
+    $(b.dataset.panel).hidden = on;
+  });
+
+
+  /* The vocabulary, as a way in rather than a label: what each word means, and
+     the one lesson where you can see it doing its job. Hand-picked, because
+     "the first program that happens to use it" is not the same as the one that
+     shows it best. */
+  var VERBS = [
+    ["call", "calls:factorial", "hands a function its numbers, and gives it a private set of names"],
+    ["create", "carry:sum", "sets a name aside with a starting value"],
+    ["read", "walk:each", "looks at what is in one slot \u2014 one step, however long the list"],
+    ["compare", "carry:max", "asks one yes-or-no question about two values"],
+    ["update", "carry:sum", "changes what a name is holding"],
+    ["move", "walk:each", "steps a counter or a pointer to a new position"],
+    ["write", "nested:triangle", "puts a value down where it can be seen later"],
+    ["enter loop", "nested:triangle", "starts a loop \u2014 and an inner one starts again every pass"],
+    ["leave loop", "find:binary", "the question finally came out false, which is the only way a loop ends"],
+    ["return", "carry:max", "ends the function and sends exactly one value back"],
+    ["swap", "two:reverse", "two values change places inside the list you already had"],
+    ["shift", "cost:front", "one item really moves, to make room or to close a gap"],
+    ["insert", "cost:end", "a value goes into a slot"],
+    ["remove", "cost:removefront", "a value is taken out, and that leaves a hole"],
+    ["settle", "cost:removefront", "the list closes up behind the hole"],
+    ["push", "pile:lifo", "onto the top of the pile, the only place you can reach"],
+    ["pop", "queue:fifo", "off the top \u2014 or off the front, if it is a queue"]
+  ];
+
+  function drawVerbs() {
+    $("verbs").innerHTML = VERBS.map(function (v) {
+      return '<button type="button" data-go="' + v[1] + '" data-mean="' + v[2] + '">' +
+             v[0] + "</button>";
+    }).join("") + '<p class="vmean" id="vmean"></p>';
+  }
+
+  $("verbs").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-go]");
+    if (!b) { return; }
+    loadProg(b.dataset.go);
+    try { window.scrollTo({ top: 0, behavior: "smooth" }); }
+    catch (err) { window.scrollTo(0, 0); }
+  });
+
+  // Saying what a word means on hover costs nothing and answers the question
+  // the chips were silently raising.
+  function verbMeaning(e) {
+    var b = e.target.closest("button[data-mean]");
+    if (!b || !$("vmean")) { return; }
+    $("vmean").innerHTML = "<b>" + b.textContent + "</b> \u2014 " + b.dataset.mean;
+  }
+  $("verbs").addEventListener("mouseover", verbMeaning);
+  $("verbs").addEventListener("focusin", verbMeaning);
+  $("verbs").addEventListener("mouseleave", function () {
+    if ($("vmean")) { $("vmean").textContent = ""; }
+  });
+
+
+  /* ---------------------------------------------------------- the drawer
+     What gets kept is the RECIPE - which lesson this is - never the frames.
+     Grouped by concept rather than by lesson, because "I need the dictionary
+     one" is how people actually come back to something. */
+  var CONCEPTS = {
+    walk: "Loops", carry: "Loops", two: "Two pointers",
+    cost: "Lists and what they cost", nested: "Nested loops", word: "Strings",
+    find: "Searching", pile: "Stacks and queues", table: "Dictionaries",
+    sort: "Sorting", calls: "Recursion", pair: "Interview classics",
+    fizz: "Conditions", queue: "Stacks and queues", set: "Sets"
+  };
+
+  function keepThis() {
+    var btn = $("keep");
+    btn.disabled = true;
+    btn.textContent = "keeping\u2026";
+    window.fetch("/api/drawer", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: "library",
+        prog: prog.id,
+        concept: CONCEPTS[prog.family] || "Unfiled",
+        title: prog.familyTitle.replace(/^\d+\s*\u00b7\s*/, "") + " \u00b7 " + prog.versionTitle
+      })
+    }).then(function (r) {
+      if (r.status === 401) { throw new Error("sign in"); }
+      if (!r.ok) { throw new Error("no"); }
+      return r.json();
+    }).then(function (data) {
+      btn.className = "done";
+      btn.textContent = data.already ? "\u2605 Already in your drawer" : "\u2605 In your drawer";
+    }).catch(function (err) {
+      btn.disabled = false;
+      btn.className = "";
+      btn.textContent = err.message === "sign in" ? "Sign in to keep it" : "\u2606 Keep this";
+    });
+  }
+
+  $("keep").addEventListener("click", keepThis);
+
+  var q = new URLSearchParams(window.location.search);
+  var theme = q.get("theme");
+  if (theme === "dark" || theme === "light") { document.documentElement.setAttribute("data-theme", theme); }
+
+  var p0 = q.get("only") || q.get("prog");
+  if (q.get("only")) { solo = true; }
+  if (p0) { prog = byId(p0); S = build(prog); }
+  drawPickers();
+  drawBrief();
+  drawVerbs();
+  if (q.get("save")) { $("keep").hidden = false; }
+  if (solo) {
+    // and close the gap the hidden header leaves behind
+    document.querySelector(".wrap").style.paddingTop = "14px";
+    Array.prototype.forEach.call(
+      // the footer's verb index is a door into every other lesson, which is
+      // exactly what a one-lesson demo must not have
+      document.querySelectorAll(".eyebrow, h1, .stand, .claim, .foot"),
+      function (el) { el.hidden = true; });
+  }
+  var d0 = q.get("depth");
+  if (d0 && document.querySelector('[data-depth="' + d0 + '"]')) {
+    document.querySelector('[data-depth="' + d0 + '"]').click();
+  } else {
+    setPanels(["p-brief", "p-change", "p-loop", "p-vars"]);
+  }
+
+  /* ?selftest=1 — every program built, in plain text, so a mistake in a new
+     algorithm shows up in one command instead of after twenty clicks. */
+  if (q.get("selftest")) {
+    var lines = LIB.map(function (p) {
+      try {
+        var st = build(p), maxline = 0, empty = 0, flags = [];
+        st.forEach(function (s) {
+          if (s.line > maxline) { maxline = s.line; }
+          if (!s.say || !s.say.beginner || !s.say.code || !s.say.machine) { empty++; }
+        });
+        if (maxline >= p.code.length) { flags.push("LINE-PAST-END(" + maxline + ")"); }
+        if (empty) { flags.push("NO-WORDS(" + empty + ")"); }
+        if (!st.length) { flags.push("NO-STATES"); }
+        if (!p.problem) { flags.push("NO-PROBLEM"); }
+        return (flags.length ? "FLAG " : "OK   ") + p.id +
+               "  states=" + st.length + "  board=" + p.board.kind +
+               "  code=" + p.code.length + "  lastLine=" + maxline +
+               "  ops=" + st[st.length - 1].ops.compares + "c/" +
+               st[st.length - 1].ops.reads + "r/" + st[st.length - 1].ops.writes + "w/" +
+               st[st.length - 1].ops.moves + "m" +
+               (flags.length ? "  " + flags.join(" ") : "");
+      } catch (err) {
+        return "FAIL " + p.id + "  " + (err && err.message ? err.message : err);
+      }
+    });
+    document.body.innerHTML = "<pre id=\"selftest\">" +
+      (lines.join("\n") + "\n" + lines.length + " programs").replace(/&/g, "&amp;").replace(/</g, "&lt;") +
+      "</pre>";
+    return;
+  }
+
+  $("scrub").max = S.length - 1;
+  var s0 = parseInt(q.get("s"), 10);
+  go(isNaN(s0) ? 0 : s0);
+})();
+</script>
+
+</body>
+</html>
