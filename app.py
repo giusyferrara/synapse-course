@@ -1112,6 +1112,19 @@ class HybridEducationalServer:
             # and the markers of the half that stayed, so the page does not
             # explain its own machinery to anyone reading the source
             html = _re.sub(r'\s*<!--/?(?:GUEST|MEMBER)-->', '', html)
+
+            # Signed in, the seventeen rows stop being a menu you cannot
+            # order from. They are one list in the template, carrying the
+            # program each one opens; here they become links to it. For a
+            # visitor they stay plain text on purpose - only the first
+            # lesson is theirs, and a row that looks clickable and is not
+            # is worse than a row that never claimed to be.
+            if drop == 'GUEST':
+                html = _re.sub(
+                    r'<div data-prog="([^"]+)" class="lesson([^"]*)">(.*?)</div>',
+                    lambda m: '<a class="lesson%s" href="/lessons?prog=%s">%s</a>'
+                             % (m.group(2), m.group(1), m.group(3)),
+                    html, flags=_re.S)
             return web.Response(text=html, content_type='text/html')
 
         async def serve_mcp(request):
