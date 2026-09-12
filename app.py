@@ -5,6 +5,56 @@ import socket
 import requests
 import json
 import re as _re
+
+LESSONS_CHROME = """
+<link rel="stylesheet" href="/static/synapse_a11y.css?v=19">
+<link rel="stylesheet" href="/static/synapse_a11y_toolbar.css?v=7">
+<script src="/static/focus_assistant.js"></script>
+<script src="/static/synapse_a11y_toolbar.js?v=7"></script>
+<script src="/static/synapse_a11y.js?v=12"></script>
+<script>
+/* One theme control, not two that disagree.
+
+   The toolbar's moon sets body.dark-mode. The player sets data-theme on the
+   root. They are different mechanisms, and the toolbar's own stylesheet says
+   so out loud: its dark rules are written html:not([data-theme]), which means
+   it stands down on any page that has a theme of its own. So on this page the
+   moon would have looked like a button and done nothing.
+
+   Rather than leave a dead control or add a second live one, the moon is
+   rewired to drive the player's theme. One button, and it means what it looks
+   like. The player's own row is hidden: the navbar already carries a way home,
+   and a second theme control is the thing this is here to avoid. */
+(function () {
+  var KEY = "synapse-theme";
+  var root = document.documentElement;
+  var bar = document.querySelector(".pagebar");
+  if (bar) { bar.hidden = true; }
+
+  function effective() {
+    var set = root.getAttribute("data-theme");
+    if (set === "dark" || set === "light") { return set; }
+    return (window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+  }
+
+  function mark() {
+    var b = document.getElementById("darkModeBtn");
+    if (b) { b.classList.toggle("active", effective() === "dark"); }
+  }
+
+  if (window.synapseToolbar) {
+    window.synapseToolbar.toggleDark = function () {
+      var next = effective() === "dark" ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { window.localStorage.setItem(KEY, next); } catch (e) { /* no memory, still works */ }
+      mark();
+    };
+  }
+  mark();
+})();
+</script>
+"""
 from datetime import datetime
 from pathlib import Path
 from aiohttp import web
@@ -1181,7 +1231,12 @@ class HybridEducationalServer:
             page = Path(__file__).parent / 'static' / 'lessons' / 'algorithm-player.html'
             try:
                 with open(page, 'r', encoding='utf-8') as f:
-                    return web.Response(text=f.read(), content_type='text/html')
+                    page_html = f.read()
+                # Added here and not in the file: the same file is what /try
+                # shows inside its frame, where this chrome would be a second
+                # navbar inside a public demo.
+                page_html = page_html.replace('</body>', LESSONS_CHROME + '</body>', 1)
+                return web.Response(text=page_html, content_type='text/html')
             except FileNotFoundError:
                 return web.Response(text="Lessons not found.", status=404)
 
