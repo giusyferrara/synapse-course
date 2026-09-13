@@ -564,5 +564,28 @@
   mark();
 })();
 </script>
+<script>
+/* The shared toolbar brings the signed-in app's navigation with it: the
+   logo pointing at /app, and buttons for Home, Java Security and Graphs.
+   On a public page that is wrong twice over. It shows a stranger a row of
+   doors that all end at a login, and it makes the page look like somewhere
+   they are already inside, which removes the reason to make an account.
+
+   The accessibility cluster is the part that belongs here, so that is the
+   part that stays. */
+(function () {
+  var nav = document.getElementById('synapseA11yNav');
+  if (!nav) { return; }
+  var brand = nav.querySelector('a[href="/app"]');
+  if (brand) { brand.setAttribute('href', '/'); }
+  Array.prototype.forEach.call(nav.querySelectorAll('button'), function (b) {
+    var go = b.getAttribute('onclick') || '';
+    if (go.indexOf("'/app'") >= 0 || go.indexOf('/course/') >= 0 ||
+        go.indexOf("'/tools'") >= 0) {
+      b.parentNode.removeChild(b);
+    }
+  });
+})();
+</script>
 </body>
 </html>
