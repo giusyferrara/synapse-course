@@ -1177,6 +1177,31 @@ class HybridEducationalServer:
                     html, flags=_re.S)
             return web.Response(text=html, content_type='text/html')
 
+        async def serve_accessibility(request):
+            """The accessibility controls, described in one place.
+
+            Public on purpose: somebody deciding whether this platform is
+            usable for them should not have to make an account to find out.
+            """
+            path = Path(__file__).parent / 'templates' / 'accessibility.html'
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    return web.Response(text=f.read(), content_type='text/html')
+            except FileNotFoundError:
+                return web.Response(text="Accessibility page not found.", status=404)
+
+        async def serve_schools(request):
+            """For educators who want to try SYNAPSE with a group: how to get
+            in touch, and what can be looked at without an account. Deliberately
+            short: a public page made of unfinished legal placeholders would
+            reassure nobody, least of all a school."""
+            path = Path(__file__).parent / 'templates' / 'schools.html'
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    return web.Response(text=f.read(), content_type='text/html')
+            except FileNotFoundError:
+                return web.Response(text="Schools page not found.", status=404)
+
         async def serve_mcp(request):
             mcp_path = Path(__file__).parent / 'templates' / 'mcp.html'
             try:
@@ -1266,6 +1291,8 @@ class HybridEducationalServer:
 
         app.router.add_get('/about', serve_about)
         app.router.add_get('/try', serve_try)
+        app.router.add_get('/accessibility', serve_accessibility)
+        app.router.add_get('/schools', serve_schools)
         app.router.add_get('/mcp', serve_mcp)
         app.router.add_get('/privacy', serve_privacy)
         app.router.add_get('/terms', serve_terms)
