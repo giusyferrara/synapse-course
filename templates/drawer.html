@@ -179,7 +179,6 @@
   <header class="bar">
     <a class="mark" href="/app">SYNAPSE</a>
     <nav>
-      <button class="theme" type="button" id="themeBtn"><span class="dot"></span><span>Theme: auto</span></button>
       <a class="lnk" href="/app">Home</a>
       <a class="lnk" href="/course">Course</a>
       <a class="lnk" href="/try">Lessons</a>
@@ -399,6 +398,40 @@
   });
 
   load();
+})();
+</script>
+<link rel="stylesheet" href="/static/synapse_a11y.css?v=19">
+<link rel="stylesheet" href="/static/synapse_a11y_toolbar.css?v=7">
+<script src="/static/focus_assistant.js"></script>
+<script src="/static/synapse_a11y_toolbar.js?v=7"></script>
+<script src="/static/synapse_a11y.js?v=12"></script>
+<script>
+/* This page sets data-theme on the root, and the toolbar's dark rules are
+   written html:not([data-theme]), so they stand down here on purpose. The
+   moon is rewired to this page's own theme instead of being left as a
+   button that looks live and does nothing. */
+(function () {
+  var KEY = 'synapse-theme';
+  var root = document.documentElement;
+  function effective() {
+    var set = root.getAttribute('data-theme');
+    if (set === 'dark' || set === 'light') { return set; }
+    return (window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+  function mark() {
+    var b = document.getElementById('darkModeBtn');
+    if (b) { b.classList.toggle('active', effective() === 'dark'); }
+  }
+  if (window.synapseToolbar) {
+    window.synapseToolbar.toggleDark = function () {
+      var next = effective() === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { window.localStorage.setItem(KEY, next); } catch (e) { /* no memory */ }
+      mark();
+    };
+  }
+  mark();
 })();
 </script>
 </body>

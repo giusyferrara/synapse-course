@@ -263,7 +263,6 @@
   <header class="bar">
     <a class="mark" href="/">SYNAPSE</a>
     <nav>
-      <button class="theme" type="button" id="themeBtn"><span class="dot"></span><span>Theme: auto</span></button>
       <a class="lnk" href="/about">About</a>
       <!--GUEST-->
       <a class="lnk" href="/login">Sign in</a>
@@ -521,6 +520,48 @@
   drive.addEventListener('click', function () { show('drive'); });
   watch.addEventListener('click', function () { show('watch'); });
   show('drive');
+})();
+</script>
+<link rel="stylesheet" href="/static/synapse_a11y.css?v=19">
+<link rel="stylesheet" href="/static/synapse_a11y_toolbar.css?v=7">
+<script src="/static/focus_assistant.js"></script>
+<script src="/static/synapse_a11y_toolbar.js?v=7"></script>
+<script src="/static/synapse_a11y.js?v=12"></script>
+<script>
+/* The same toolbar every other page carries. Its moon is rewired to this
+   page's theme, because the toolbar's own dark mode sets body.dark-mode and
+   this page sets data-theme on the root; the toolbar's stylesheet stands
+   down on any page that has a theme of its own, so the moon would have
+   looked like a button and done nothing.
+
+   It also has to reload the lesson in the frame, which takes its theme from
+   its own URL. That is what the page's old theme button did. */
+(function () {
+  var KEY = 'synapse-theme';
+  var root = document.documentElement;
+
+  function effective() {
+    var set = root.getAttribute('data-theme');
+    if (set === 'dark' || set === 'light') { return set; }
+    return (window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+
+  function mark() {
+    var b = document.getElementById('darkModeBtn');
+    if (b) { b.classList.toggle('active', effective() === 'dark'); }
+  }
+
+  if (window.synapseToolbar) {
+    window.synapseToolbar.toggleDark = function () {
+      var next = effective() === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { window.localStorage.setItem(KEY, next); } catch (e) { /* no memory */ }
+      mark();
+      if (window.SYNAPSE_THEME_CHANGED) { window.SYNAPSE_THEME_CHANGED(next); }
+    };
+  }
+  mark();
 })();
 </script>
 </body>
