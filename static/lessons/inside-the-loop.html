@@ -1,0 +1,1215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>Inside the Loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    color-scheme: light;
+    --ground: #F7F8FB;
+    --surface: #FFFFFF;
+    --sunk: #EEF0F6;
+    --ink: #000000;
+    --ink-2: #111418;
+    --ink-3: #1E242A;
+    --line: #DFE3EC;
+
+    --right: #0A565C;
+    --right-soft: #D8F0F1;
+    --down: #8B2E09;
+    --down-soft: #FCE7D6;
+
+    --star: #482BC1;
+    --star-soft: #E9E4FC;
+    --blank: #AEB5C4;
+    --range: #F5C518;
+    --range-soft: #FDF3D0;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #0E1015; --surface: #171A21; --sunk: #1E222B;
+      --ink: #EAECF2; --ink-2: #B2B9C8; --ink-3: #7F8798; --line: #2A2F3A;
+      --right: #4FD8DF; --right-soft: #10333A;
+      --down: #F79B63; --down-soft: #3A2113;
+      --star: #A995FF; --star-soft: #241D45; --blank: #566073;
+      --range: #E8C14A; --range-soft: #33290B;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #0E1015; --surface: #171A21; --sunk: #1E222B;
+    --ink: #EAECF2; --ink-2: #B2B9C8; --ink-3: #7F8798; --line: #2A2F3A;
+    --right: #4FD8DF; --right-soft: #10333A;
+    --down: #F79B63; --down-soft: #3A2113;
+    --star: #A995FF; --star-soft: #241D45; --blank: #566073;
+    --range: #E8C14A; --range-soft: #33290B;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 15.5px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 26px 20px 60px; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .15em;
+    text-transform: uppercase; color: var(--ink-3); font-weight: 600;
+  }
+  h1 { font-size: 1.6rem; margin: 6px 0 6px; letter-spacing: -.015em; }
+  .sub { color: var(--ink-2); margin: 0; max-width: 66ch; font-size: 14.6px; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 14px 0 0; font-size: 13.2px; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .dot { width: 13px; height: 13px; border-radius: 3px; flex: none; }
+  .dot.r { background: var(--right); }
+  .dot.d { background: var(--down); }
+  .dot.s { background: var(--star); }
+  .dot.g { background: var(--range); }
+
+  /* ---- variant picker ---- */
+  .variants {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(172px, 1fr));
+    gap: 8px; margin: 20px 0 0;
+  }
+  .vbtn {
+    text-align: left; font-family: inherit; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px 12px; color: var(--ink);
+    transition: border-color .12s, background .12s;
+  }
+  .vbtn:hover { border-color: var(--ink-3); }
+  .vbtn:focus-visible { outline: 2px solid var(--right); outline-offset: 2px; }
+  .vbtn.on { border-color: var(--right); background: var(--right-soft); border-width: 2px; padding: 9px 11px; }
+  .vbtn .vn {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-3); font-weight: 600;
+  }
+  .vbtn.on .vn { color: var(--right); }
+  .vbtn .vt { display: block; font-weight: 600; font-size: 14.5px; margin: 2px 0 1px; }
+  .vbtn .vd { display: block; font-size: 12.4px; color: var(--ink-3); line-height: 1.35; }
+  .vbtn .vs {
+    display: inline-block; margin-top: 6px; font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px; color: var(--down); font-weight: 600; font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- player ---- */
+  .player { margin-top: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .stage { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+  @media (max-width: 800px) { .stage { grid-template-columns: 1fr; } }
+  .pane { padding: 18px 20px; min-width: 0; }
+  .pane + .pane { border-left: 1px solid var(--line); }
+  @media (max-width: 800px) { .pane + .pane { border-left: none; border-top: 1px solid var(--line); } }
+  .pane-h {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-3); font-weight: 600; margin: 0 0 11px;
+  }
+
+  .code { font-family: "IBM Plex Mono", monospace; font-size: 12.6px; line-height: 1.7; }
+  .cline {
+    display: flex; gap: 9px; padding: 1px 8px 1px 6px; border-radius: 4px;
+    border-left: 3px solid transparent; white-space: pre; color: var(--ink-2);
+    transition: background .12s, color .12s;
+  }
+  .cline .no { color: var(--ink-3); opacity: .5; user-select: none; min-width: 13px; text-align: right; font-size: 11px; }
+  .cline.on-right { background: var(--right-soft); border-left-color: var(--right); color: var(--ink); font-weight: 600; }
+  .cline.on-down { background: var(--down-soft); border-left-color: var(--down); color: var(--ink); font-weight: 600; }
+
+  .vars { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 15px; min-height: 32px; }
+  .var {
+    font-family: "IBM Plex Mono", monospace; font-size: 12.6px;
+    border: 1px solid var(--line); border-radius: 6px; padding: 4px 9px;
+    background: var(--sunk); font-variant-numeric: tabular-nums;
+  }
+  .var b { font-weight: 700; }
+  .var.c-i { border-color: var(--down); color: var(--down); }
+  .var.c-j { border-color: var(--right); color: var(--right); }
+  .var.c-w { border-color: var(--range); color: var(--ink-2); background: var(--range-soft); }
+
+  /* ---- grid with numbers ---- */
+  .gridwrap { display: flex; justify-content: center; }
+  .colhdr { display: grid; grid-template-columns: repeat(6, 40px); gap: 4px; margin-bottom: 5px; }
+  .colhdr div {
+    text-align: center; font-family: "IBM Plex Mono", monospace; font-size: 11.5px;
+    color: var(--ink-3); border-radius: 4px; transition: background .12s, color .12s;
+  }
+  .colhdr div.inwin { background: var(--range-soft); color: var(--ink); font-weight: 700; }
+  .grid { display: grid; grid-template-columns: repeat(6, 40px); grid-auto-rows: 40px; gap: 4px; }
+  .cell {
+    position: relative; border-radius: 5px; border: 1.5px solid var(--line);
+    background: var(--surface); display: grid; place-items: center;
+    font-family: "IBM Plex Mono", monospace; font-size: 16px; font-weight: 700;
+    color: var(--ink-3);
+    transition: background .12s, border-color .12s, color .12s, transform .12s;
+  }
+  .cell .idx {
+    position: absolute; top: 2px; left: 4px; font-size: 9px; font-weight: 600;
+    color: var(--ink-3); opacity: .55;
+  }
+  .cell.inwin { background: var(--range-soft); border-color: var(--range); }
+  .cell.win::after {
+    content: ""; position: absolute; left: 5px; right: 5px; bottom: 3px;
+    height: 3px; border-radius: 2px; background: var(--range);
+  }
+  .cell.star { background: var(--star-soft); border-color: var(--star); color: var(--star); }
+  .cell.blank { background: var(--sunk); border-color: var(--line); color: var(--blank); }
+  .cell.cur { border-color: var(--right); border-width: 3px; transform: scale(1.09); box-shadow: 0 0 0 3px var(--right-soft); }
+  .cell.cur.wrapping { border-color: var(--down); box-shadow: 0 0 0 3px var(--down-soft); }
+  .rowmark { display: grid; grid-template-rows: repeat(6, 40px); gap: 4px; margin-right: 8px; }
+  .rowmark div {
+    display: grid; place-items: center; font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px; color: var(--ink-3); width: 18px; border-radius: 4px;
+    transition: background .12s, color .12s;
+  }
+  .rowmark div.on { background: var(--down-soft); color: var(--down); font-weight: 700; }
+  .rowspacer { height: 21px; }
+
+  .term {
+    margin-top: 15px; background: var(--sunk); border: 1px solid var(--line);
+    border-radius: 6px; padding: 12px 14px; font-family: "IBM Plex Mono", monospace;
+    font-size: 14px; line-height: 1.5; white-space: pre; min-height: 128px;
+    color: var(--star); overflow-x: auto;
+  }
+  .term .caret { background: var(--right); color: var(--surface); animation: blink 1s step-end infinite; }
+  @keyframes blink { 50% { opacity: .25; } }
+
+  .narr {
+    border-top: 1px solid var(--line); padding: 14px 20px; background: var(--sunk);
+    font-size: 14.6px; min-height: 56px; display: flex; align-items: center;
+  }
+  .narr b.r { color: var(--right); }
+  .narr b.d { color: var(--down); }
+  .narr b.w { color: var(--ink); background: var(--range-soft); padding: 0 4px; border-radius: 3px; }
+
+  .controls { border-top: 1px solid var(--line); padding: 12px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  button.ctl {
+    font-family: inherit; font-size: 14px; font-weight: 600; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 7px;
+    padding: 7px 13px; cursor: pointer; transition: background .12s, border-color .12s;
+  }
+  button.ctl:hover { border-color: var(--ink-3); }
+  button.ctl:focus-visible { outline: 2px solid var(--right); outline-offset: 2px; }
+  button.ctl.primary { background: var(--right); border-color: var(--right); color: #fff; }
+  button.ctl[disabled] { opacity: .4; cursor: default; }
+  .counter { font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; margin-left: auto; }
+  .scrub { width: 100%; accent-color: var(--right); }
+  .hint { font-size: 12.6px; color: var(--ink-3); padding: 0 20px 14px; }
+
+  .note {
+    margin-top: 22px; padding: 16px 18px; background: var(--surface);
+    border: 1px solid var(--line); border-left: 3px solid var(--range);
+    border-radius: 6px; font-size: 14.4px; color: var(--ink-2);
+  }
+  .note b { color: var(--ink); }
+  .note p { margin: 0 0 9px; }
+  .note p:last-child { margin: 0; }
+
+
+  /* ---- narration mode + speed ---- */
+  .modebar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+    padding: 11px 20px; border-top: 1px solid var(--line); background: var(--surface);
+  }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+  .seg button {
+    font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    background: var(--surface); color: var(--ink-2); border: none;
+    padding: 6px 12px; transition: background .12s, color .12s;
+  }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button.on { background: var(--right); color: #fff; }
+  .seg button:focus-visible { outline: 2px solid var(--right); outline-offset: -2px; }
+  .modelbl {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-3); font-weight: 600;
+  }
+  .voice {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
+    color: var(--ink-2); cursor: pointer; user-select: none;
+  }
+  .voice input { accent-color: var(--right); width: 15px; height: 15px; }
+
+  .narr.plain { font-size: 16px; line-height: 1.6; color: var(--ink); }
+
+  /* ---- the anatomy of a for loop ---- */
+  .anat {
+    margin-top: 14px; border: 1px dashed var(--range); background: var(--range-soft);
+    border-radius: 8px; padding: 13px 15px;
+  }
+  .anat-h {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--down); font-weight: 700; margin: 0 0 9px;
+  }
+  .anat-code {
+    font-family: "IBM Plex Mono", monospace; font-size: 13px;
+    display: flex; flex-wrap: wrap; gap: 3px; align-items: flex-end; margin-bottom: 8px;
+  }
+  .anat-part { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; }
+  .anat-part .pc { font-weight: 700; color: var(--ink); }
+  .anat-part .pl {
+    font-family: "IBM Plex Sans", sans-serif; font-size: 10.5px; font-weight: 600;
+    color: var(--down); border-top: 2px solid var(--down); padding-top: 2px; width: 100%; text-align: center;
+  }
+  .anat-part.flat .pc { color: var(--ink-3); font-weight: 400; }
+  .anat p { margin: 0; font-size: 13.6px; color: var(--ink-2); }
+
+
+  /* phase 1: the shape we are aiming at, before any code exists */
+  .cell.ghost { border-style: dashed; border-color: var(--star); opacity: .5; color: var(--star); background: transparent; }
+  .cell.ghost.head { border-style: solid; border-width: 2.5px; opacity: 1; background: var(--star-soft); }
+
+  /* phase 2: the code being written */
+  .cline.unwritten { display: none; }
+  .cline .tx { white-space: pre; }
+  .typing .tx::after {
+    content: "▌"; color: var(--right); margin-left: 1px;
+    animation: blink 1s step-end infinite;
+  }
+  .phasebar {
+    display: flex; gap: 0; border-top: 1px solid var(--line); background: var(--sunk);
+  }
+  .phasebar div {
+    flex: 1; text-align: center; padding: 8px 6px;
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .1em;
+    text-transform: uppercase; font-weight: 600; color: var(--ink-3);
+    border-bottom: 3px solid transparent; transition: color .15s, border-color .15s, background .15s;
+  }
+  .phasebar div.on { color: var(--right); border-bottom-color: var(--right); background: var(--surface); }
+  .emptycode { color: var(--ink-3); font-style: italic; font-size: 13.4px; padding: 6px 2px; }
+
+
+  /* the computer thinking out loud */
+  .ticker {
+    margin-top: 10px; text-align: center;
+    font-family: "IBM Plex Mono", monospace; font-size: 13px;
+    color: var(--ink-2); min-height: 22px; letter-spacing: .01em;
+  }
+  .ticker b { color: var(--down); font-weight: 700; }
+  .ticker i { color: var(--right); font-style: normal; font-weight: 700; }
+  .ticker u { color: var(--star); text-decoration: none; font-weight: 700; }
+
+  /* what each name is for */
+  .roles { margin-top: 15px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .roles-h {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-3); font-weight: 600; margin: 0 0 8px;
+  }
+  .role {
+    display: grid; grid-template-columns: 78px 1fr; gap: 10px; align-items: baseline;
+    padding: 3px 8px; border-radius: 5px; border-left: 3px solid transparent;
+    transition: background .14s, border-color .14s;
+  }
+  .role code {
+    font-family: "IBM Plex Mono", monospace; font-size: 12.4px; font-weight: 600;
+    color: var(--ink-3); background: none; border: none; padding: 0;
+  }
+  .role span { font-size: 13.4px; color: var(--ink-3); line-height: 1.4; }
+  .role.on { background: var(--right-soft); border-left-color: var(--right); }
+  .role.on code { color: var(--right); }
+  .role.on span { color: var(--ink); font-weight: 500; }
+
+  /* what the symbols mean */
+  .glossary { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .glossary span {
+    font-size: 12.4px; color: var(--ink-2); background: var(--sunk);
+    border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px;
+  }
+  .glossary b { font-family: "IBM Plex Mono", monospace; color: var(--ink); font-weight: 700; }
+
+  .tok {
+    background: var(--range); color: #15171D; border-radius: 3px;
+    padding: 0 2px; font-weight: 700; box-shadow: 0 0 0 2px var(--range);
+  }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+
+  <span class="eyebrow">Prototype &middot; lesson visualiser</span>
+  <h1>Inside the Loop</h1>
+  <p class="sub">The same hourglass, written four ways. Watch the loop move <b>right along a row</b>, then <b>down</b> to the next &mdash; and watch the <b>window of numbers</b> that decides which cells get a star.</p>
+  <div class="legend">
+    <span><i class="dot r"></i> inner loop &mdash; moves right</span>
+    <span><i class="dot d"></i> outer loop &mdash; moves down</span>
+    <span><i class="dot g"></i> the numbers in range</span>
+    <span><i class="dot s"></i> printed star</span>
+  </div>
+
+  <div class="variants" id="variants"></div>
+
+  <div class="player">
+    <div class="stage">
+      <div class="pane">
+        <p class="pane-h">The code</p>
+        <div class="code" id="code"></div>
+        <div class="vars" id="vars"></div>
+        <div class="anat" id="anat" hidden></div>
+        <div class="glossary" id="glossary" hidden></div>
+        <div class="roles" id="roles"></div>
+      </div>
+      <div class="pane">
+        <p class="pane-h">The grid &mdash; numbers are the column <code>j</code></p>
+        <div class="gridwrap">
+          <div>
+            <div class="rowspacer"></div>
+            <div class="rowmark" id="rowmark"></div>
+          </div>
+          <div>
+            <div class="colhdr" id="colhdr"></div>
+            <div class="grid" id="grid"></div>
+          </div>
+        </div>
+        <div class="ticker" id="ticker"></div>
+        <p class="pane-h" style="margin-top:15px">The terminal</p>
+        <div class="term" id="term"></div>
+      </div>
+    </div>
+
+    <div class="phasebar" id="phasebar">
+      <div data-ph="0">1 &middot; Work out the rule</div>
+      <div data-ph="1">2 &middot; Learn to read it</div>
+      <div data-ph="2">3 &middot; Write it out</div>
+      <div data-ph="3">4 &middot; Watch it run</div>
+    </div>
+
+    <div class="modebar">
+      <span class="modelbl">Explain it</span>
+      <span class="seg" id="modeSeg">
+        <button data-mode="plain" class="on">In plain words</button>
+        <button data-mode="tech">Technically</button>
+      </span>
+      <span class="modelbl" style="margin-left:6px">Speed</span>
+      <span class="seg" id="speedSeg">
+        <button data-ms="1900">Very slow</button>
+        <button data-ms="1100" class="on">Slow</button>
+        <button data-ms="520">Normal</button>
+        <button data-ms="240">Fast</button>
+      </span>
+      <label class="voice"><input type="checkbox" id="voice"> &#128266; Read it aloud</label>
+      <select id="voicePick" aria-label="Voice" hidden></select>
+    </div>
+
+    <div class="narr plain"><span id="narr"></span></div>
+
+    <div class="controls">
+      <button class="ctl" id="prev">&#9664;</button>
+      <button class="ctl primary" id="play">&#9654;&nbsp; Play</button>
+      <button class="ctl" id="next">&#9654;</button>
+      <button class="ctl" id="replay">&#8634;&nbsp; Replay</button>
+      <span class="counter"><span id="pos">0</span> / <span id="total">0</span></span>
+    </div>
+    <div style="padding:0 20px 4px"><input class="scrub" id="scrub" type="range" min="0" value="0" aria-label="Step through the animation"></div>
+    <p class="hint">Use <b>&larr;</b> <b>&rarr;</b> to step, <b>space</b> to play or pause. Nothing plays on its own. With <b>Read it aloud</b> on, each step waits for the sentence to finish.</p>
+  </div>
+
+  <div class="note" id="insight"></div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var N = 6;
+
+  function blank() { var a = [], k; for (k = 0; k < N * N; k++) a.push(null); return a; }
+  function edgeOf(i) { return Math.min(i, N - 1 - i); }
+
+  // Every frame carries TWO narrations:
+  //   text  - technical, restates the code
+  //   plain - what it means, in words a child could follow
+  // Narration rule: speak when something CHANGES, stay silent when it does not.
+  // A plain value of null means no words at all - the animation just moves.
+  // Each row gets its own remark, so nothing is ever said twice the same way.
+
+  var ROW_NOTE = [
+    "Row zero. There\u2019s nothing to skip here, so it fills straight across. Six stars.",
+    "Row one now. We skip one square at each end, so that leaves four in the middle.",
+    "Row two. Two skipped on each side this time, and we\u2019re down to a pair.",
+    "Row three. Same as the one above it, so this is the waist. From here it opens back out.",
+    "Row four. Back to skipping just one, so we\u2019re at four again, like row one.",
+    "And the last row is full, exactly like the first. There\u2019s your hourglass."
+  ];
+  var ROW_END = [
+    "Row\u2019s done, so the pen hops back to the left and drops down a line. Like pressing Enter.",
+    null, null, null, null,
+    null
+  ];
+
+  var VARIANTS = [
+    {
+      id: "A", title: "if / else", desc: "Decides every single cell, one at a time.",
+      roleByLine: { 2: "i", 3: "j", 4: "edge", 5: "if", 6: "if", 7: "if", 8: "if", 10: "println" },
+      notes: [
+        { upto: 1, plain: "First line\u2019s easy. It just says how big the sheet is. Six by six." },
+        { upto: 2, plain: "Now this one. It\u2019s how we walk down the rows, one after another, starting at row zero. Computers count from zero, not one. You get used to it." },
+        { upto: 3, plain: "And this does the same thing sideways. For each row, it walks across the squares, left to right." },
+        { upto: 4, plain: "Now, this line looks scary. It isn\u2019t. It\u2019s just working out that number we found a minute ago, how far in from the edge we are. That\u2019s all edge means." },
+        { upto: 8, plain: "And here\u2019s the decision. Read it out loud with me: put a star if we\u2019re past the left border and, at the same time, before the right one. Otherwise, leave a gap." },
+        { upto: 11, plain: "Last bit just says: row\u2019s finished, go to the next line." }
+      ],
+      src: [
+        "int n = 6;",
+        "for (int i = 0; i < n; i++) {",
+        "    for (int j = 0; j < n; j++) {",
+        "        int edge = Math.min(i, n - 1 - i);",
+        "        if (j >= edge && j <= n - 1 - edge)",
+        '            System.out.print("*");',
+        "        else",
+        '            System.out.print(" ");',
+        "    }",
+        "    System.out.println();",
+        "}"
+      ],
+      build: function () {
+        var f = [], cells = blank(), term = "", i, j, e, lo, hi, star, said;
+        f.push({ phase: 3, line: 1, vars: {}, cells: cells.slice(), term: term, dir: "down",
+          text: "Start.", plain: "Right, let\u2019s watch it go." });
+        for (i = 0; i < N; i++) {
+          e = edgeOf(i); lo = e; hi = N - 1 - e;
+          f.push({ phase: 3, line: 2, vars: { i: i }, cells: cells.slice(), term: term, dir: "down",
+            text: "<b class='d'>i = " + i + "</b>", plain: ROW_NOTE[i] });
+          f.push({ phase: 3, line: 3, vars: { i: i, edge: e }, cells: cells.slice(), term: term, dir: "right", range: [lo, hi],
+            text: "Window <b class='w'>" + lo + "</b>&ndash;<b class='w'>" + hi + "</b>",
+            plain: null });
+          for (j = 0; j < N; j++) {
+            star = (j >= lo && j <= hi);
+            cells[i * N + j] = star ? "*" : " ";
+            term += star ? "*" : " ";
+            said = null;
+            if (i === 1 && j === 0) said = "See? It skips this one, because edge is one now.";
+            else if (i === 1 && star && j === lo) said = "And from here it fills, all the way to the second from last.";
+            f.push({ phase: 3, line: star ? 6 : 8, vars: { i: i, j: j, edge: e },
+              cells: cells.slice(), term: term, dir: "right", cur: i * N + j, range: [lo, hi],
+              text: star ? "<b class='r'>" + j + "</b> &rarr; <b>*</b>" : "<b class='r'>" + j + "</b> &rarr; space",
+              plain: said });
+          }
+          term += "\n";
+          f.push({ phase: 3, line: 10, vars: { i: i, edge: e }, cells: cells.slice(), term: term, dir: "down", range: [lo, hi],
+            text: "println()", plain: ROW_END[i] });
+        }
+        f.push({ phase: 3, line: 11, vars: {}, cells: cells.slice(), term: term, dir: "down",
+          text: "Done.",
+          plain: "And there it is. Want to see how you\u2019d change it to make a diamond instead?" });
+        return f;
+      }
+    },
+
+    {
+      id: "B", title: "two inner loops", desc: "Prints the spaces, then the stars. No test per cell.",
+      roleByLine: { 2: "i", 3: "edge", 4: "j", 5: "j", 6: "j", 7: "j", 8: "println" },
+      notes: [
+        { upto: 1, plain: "Same size." },
+        { upto: 3, plain: "Same rows, and the same number as before." },
+        { upto: 5, plain: "But now, instead of asking, we just walk past that many squares." },
+        { upto: 7, plain: "And then lay down exactly the right number of stars." },
+        { upto: 9, plain: "New line. No questions were asked anywhere." }
+      ],
+      src: [
+        "int n = 6;",
+        "for (int i = 0; i < n; i++) {",
+        "    int edge = Math.min(i, n - 1 - i);",
+        "    for (int s = 0; s < edge; s++)",
+        '        System.out.print(" ");',
+        "    for (int k = 0; k < n - 2 * edge; k++)",
+        '        System.out.print("*");',
+        "    System.out.println();",
+        "}"
+      ],
+      build: function () {
+        var f = [], cells = blank(), term = "", i, e, s, k, col;
+        f.push({ phase: 3, line: 1, vars: {}, cells: cells.slice(), term: term, dir: "down",
+          text: "Start.", plain: "Watch how different this feels, even though you end up with the same picture." });
+        for (i = 0; i < N; i++) {
+          e = edgeOf(i);
+          f.push({ phase: 3, line: 2, vars: { i: i, edge: e }, cells: cells.slice(), term: term, dir: "down", range: [e, N - 1 - e],
+            text: "<b class='d'>i = " + i + "</b>: " + e + " + " + (N - 2 * e),
+            plain: ROW_NOTE[i] + (e === 0 ? " Nothing to skip." : " Skip " + e + ", then draw " + (N - 2 * e) + ".") });
+          for (s = 0; s < e; s++) {
+            col = s; cells[i * N + col] = " "; term += " ";
+            f.push({ phase: 3, line: 5, vars: { i: i, s: s, edge: e }, cells: cells.slice(), term: term, dir: "right", cur: i * N + col, range: [e, N - 1 - e],
+              text: "space " + (s + 1) + "/" + e,
+              plain: (s === 0 && i <= 1) ? "Walking past, counting. No decision to make." : null });
+          }
+          for (k = 0; k < N - 2 * e; k++) {
+            col = e + k; cells[i * N + col] = "*"; term += "*";
+            f.push({ phase: 3, line: 7, vars: { i: i, k: k, edge: e }, cells: cells.slice(), term: term, dir: "right", cur: i * N + col, range: [e, N - 1 - e],
+              text: "star " + (k + 1) + "/" + (N - 2 * e),
+              plain: (k === 0 && i <= 1) ? "And now the stars, exactly as many as we counted." : null });
+          }
+          term += "\n";
+          f.push({ phase: 3, line: 8, vars: { i: i, edge: e }, cells: cells.slice(), term: term, dir: "down", range: [e, N - 1 - e],
+            text: "println()",
+            plain: i === 0 ? "Notice the squares at the end. We never even went there." : ROW_END[i] });
+        }
+        f.push({ phase: 3, line: 9, vars: {}, cells: cells.slice(), term: term, dir: "down",
+          text: "Done.", plain: "Same hourglass, and we never asked a single question. We just counted." });
+        return f;
+      }
+    },
+
+    {
+      id: "C", title: "ternary", desc: "Identical logic to A, written in one expression.",
+      roleByLine: { 2: "i", 3: "edge", 4: "j", 5: "if", 6: "println" },
+      notes: [
+        { upto: 3, plain: "The rows, and the same number as always." },
+        { upto: 4, plain: "The sweep across the row." },
+        { upto: 5, plain: "And here the question and the answer are squeezed onto a single line." },
+        { upto: 7, plain: "New line. Shorter to read, but nothing has really changed." }
+      ],
+      src: [
+        "int n = 6;",
+        "for (int i = 0; i < n; i++) {",
+        "    int edge = Math.min(i, n - 1 - i);",
+        "    for (int j = 0; j < n; j++)",
+        '        System.out.print(j >= edge && j <= n - 1 - edge ? "*" : " ");',
+        "    System.out.println();",
+        "}"
+      ],
+      build: function () {
+        var f = [], cells = blank(), term = "", i, j, e, lo, hi, star, said;
+        f.push({ phase: 3, line: 1, vars: {}, cells: cells.slice(), term: term, dir: "down",
+          text: "Start.", plain: "Same decisions as before. It\u2019s only the writing that got shorter." });
+        for (i = 0; i < N; i++) {
+          e = edgeOf(i); lo = e; hi = N - 1 - e;
+          f.push({ phase: 3, line: 2, vars: { i: i }, cells: cells.slice(), term: term, dir: "down",
+            text: "<b class='d'>i = " + i + "</b>", plain: ROW_NOTE[i] });
+          f.push({ phase: 3, line: 4, vars: { i: i, edge: e }, cells: cells.slice(), term: term, dir: "right", range: [lo, hi],
+            text: "window <b class='w'>" + lo + "</b>&ndash;<b class='w'>" + hi + "</b>", plain: null });
+          for (j = 0; j < N; j++) {
+            star = (j >= lo && j <= hi);
+            cells[i * N + j] = star ? "*" : " "; term += star ? "*" : " ";
+            said = null;
+            if (i === 0 && j === 0) said = "The whole test lives inside the print. Ask and answer in one breath.";
+            else if (i === 1 && star && j === lo) said = "Inside the band.";
+            else if (i === 1 && !star && j === hi + 1) said = "And out again.";
+            f.push({ phase: 3, line: 5, vars: { i: i, j: j, edge: e }, cells: cells.slice(), term: term, dir: "right", cur: i * N + j, range: [lo, hi],
+              text: "<b class='r'>" + j + "</b> &rarr; " + (star ? "<b>*</b>" : "space"), plain: said });
+          }
+          term += "\n";
+          f.push({ phase: 3, line: 6, vars: { i: i, edge: e }, cells: cells.slice(), term: term, dir: "down", range: [lo, hi],
+            text: "println()", plain: ROW_END[i] });
+        }
+        f.push({ phase: 3, line: 7, vars: {}, cells: cells.slice(), term: term, dir: "down",
+          text: "Done.",
+          plain: "Fewer lines to read, sure. But the computer did exactly the same work. Short isn\u2019t the same as fast." });
+        return f;
+      }
+    },
+
+    {
+      id: "D", title: "repeat()", desc: "No inner loop at all. One whole row per step.",
+      roleByLine: { 2: "i", 3: "edge", 4: "println", 5: "println" },
+      notes: [
+        { upto: 3, plain: "The rows, and the same number." },
+        { upto: 5, plain: "And here we never sweep at all. We ask for the whole line, ready made." },
+        { upto: 6, plain: "That is the entire program." }
+      ],
+      src: [
+        "int n = 6;",
+        "for (int i = 0; i < n; i++) {",
+        "    int edge = Math.min(i, n - 1 - i);",
+        '    System.out.println(" ".repeat(edge)',
+        '                     + "*".repeat(n - 2 * edge));',
+        "}"
+      ],
+      build: function () {
+        var f = [], cells = blank(), term = "", i, e, j, row;
+        f.push({ phase: 3, line: 1, vars: {}, cells: cells.slice(), term: term, dir: "down",
+          text: "Start.", plain: "Keep an eye on the counter for this one. It barely moves." });
+        for (i = 0; i < N; i++) {
+          e = edgeOf(i);
+          f.push({ phase: 3, line: 2, vars: { i: i, edge: e }, cells: cells.slice(), term: term, dir: "down", range: [e, N - 1 - e],
+            text: "<b class='d'>i = " + i + "</b>, edge <b>" + e + "</b>", plain: ROW_NOTE[i] });
+          row = [];
+          for (j = 0; j < N - e; j++) {
+            cells[i * N + j] = (j < e) ? " " : "*";
+            row.push(i * N + j);
+            term += (j < e) ? " " : "*";
+          }
+          term += "\n";
+          f.push({ phase: 3, line: 4, vars: { i: i, edge: e }, cells: cells.slice(), term: term, dir: "right", cur: row, range: [e, N - 1 - e],
+            text: e + " + " + (N - 2 * e) + " in one step",
+            plain: i === 0 ? "And the whole line lands at once, like pressing a stamp."
+                 : (i === 5 ? "Last one. Six lines, six steps." : null) });
+        }
+        f.push({ phase: 3, line: 6, vars: {}, cells: cells.slice(), term: term, dir: "down",
+          text: "Done.",
+          plain: "Same picture, a handful of steps. The work didn\u2019t vanish, though. Somebody else wrote it once, so you don\u2019t have to." });
+        return f;
+      }
+    }
+  ];
+
+  // ---- phase 1: work out the rule, with no code on screen ---------------
+  function targetShape() {
+    var a = [], i, j, e;
+    for (i = 0; i < N; i++) {
+      e = edgeOf(i);
+      for (j = 0; j < N; j++) a.push((j >= e && j <= N - 1 - e) ? "*" : " ");
+    }
+    return a;
+  }
+  var SHAPE = targetShape();
+
+  function thinkFrames() {
+    var heads = [], i;
+    for (i = 0; i < N; i++) heads.push(i * N + edgeOf(i));
+    function fr(txt, plain, h) {
+      return { phase: 0, ghost: SHAPE, heads: h ? heads : null, term: "", vars: {}, text: txt, plain: plain };
+    }
+    return [
+      fr("The target shape.",
+         "Okay, so. Picture a sheet of squared paper and a pen, and you want to draw a shape out of little stars. The sheet\u2019s six squares across and six rows down."),
+      fr("6, 4, 2, 2, 4, 6.",
+         "Here\u2019s what we\u2019re after. Before we write anything, just count the stars on each row with me. Six. Four. Two. Two. Four. Six."),
+      fr("The rows come in pairs.",
+         "See how they mirror each other? Top row and bottom row match. Second one and second from last match. And the two in the middle are twins."),
+      fr("Skip: 0, 1, 2, 2, 1, 0.",
+         "So what\u2019s actually changing? Only one thing. How many squares we leave empty at each side. None at the top. One as you come in. Two in the middle.", true),
+      fr("One number decides it.",
+         "And that\u2019s it, honestly. That\u2019s the whole trick. Work out that one number for a row, and the row draws itself.", true),
+      fr("Now write it.",
+         "Right. Let\u2019s write it down.")
+    ];
+  }
+  var THINK = thinkFrames();
+
+  // ---- phase 2: learning to read the notation --------------------------
+  function notationFrames(v) {
+    var out = [], forLine = 0, k;
+    for (k = 0; k < v.src.length; k++) {
+      if (!forLine && /for\s*\(/.test(v.src[k])) forLine = k + 1;
+    }
+    var minLine = 0;
+    for (k = 0; k < v.src.length; k++) {
+      if (!minLine && v.src[k].indexOf("Math.min") !== -1) minLine = k + 1;
+    }
+    var printLine = 0;
+    for (k = 0; k < v.src.length; k++) {
+      if (!printLine && v.src[k].indexOf("print") !== -1) printLine = k + 1;
+    }
+
+    function f(line, needle, plain, tech) {
+      var src = v.src[line - 1] || "";
+      var a = needle ? src.indexOf(needle) : -1;
+      return {
+        phase: 1, reveal: v.src.length, ghost: SHAPE, term: "", vars: {},
+        line: line, focus: (a >= 0) ? [line, a, a + needle.length] : null,
+        text: tech || "", plain: plain
+      };
+    }
+
+    out.push(f(1, null, "Before we run anything, let\u2019s learn to read it. None of this is magic. It\u2019s all shorthand, and every bit of it means something plain.", "Reading the notation."));
+    out.push(f(1, "int", "This little word tells the computer what kind of thing we\u2019re about to keep. Int is short for integer, which just means a whole number. No halves, no decimals.", "int \u2192 whole number"));
+    out.push(f(1, "n", "And n is just a name we invented. We could have called it size, or sheet, or anything. We need a name so we can point at it again later.", "a name we chose"));
+    out.push(f(1, "=", "Now this one catches everybody out. That equals sign does not mean \u2018is equal to\u2019, the way it does in maths. It means: put this into that. Read the whole line as \u2018make a box called n, and put six in it\u2019.", "= means \u2018put into\u2019"));
+    out.push(f(1, ";", "And the semicolon is simply a full stop. It says: that instruction is finished, you can move on.", "; ends an instruction"));
+
+    if (forLine) {
+      out.push(f(forLine, null, "Right. This line looks like a lot at once. It really isn\u2019t. Let\u2019s take it apart piece by piece.", "Taking it apart."));
+      out.push(f(forLine, "for", "For just means: do this again and again. That\u2019s the whole word. It\u2019s the computer\u2019s way of saying \u2018keep repeating\u2019.", "for \u2192 repeat"));
+      out.push(f(forLine, "(", "The round brackets hold the settings for the repeating. Think of the dials on a machine that you set before you switch it on.", "( ) hold the settings"));
+      var m = v.src[forLine - 1].match(/\(\s*(int \w+ = \d+)/);
+      if (m) out.push(f(forLine, m[1], "First dial: where to start. This sets up a counter and puts zero in it. Zero, not one, because computers count from zero. You do get used to it.", "the starting value"));
+      var m2 = v.src[forLine - 1].match(/(\w+ < \w+)/);
+      if (m2) out.push(f(forLine, m2[1], "Second dial: when to stop. That little arrow pointing left means \u2018smaller than\u2019. So this says: keep going for as long as the counter hasn\u2019t reached six yet.", "< means smaller than"));
+      var m3 = v.src[forLine - 1].match(/(\w+\+\+)/);
+      if (m3) out.push(f(forLine, m3[1], "Third dial: what to do after each turn. Those two plus signs just mean \u2018add one\u2019. One more, every time round.", "++ means add one"));
+      out.push(f(forLine, "{", "And the curly bracket opens a box. Everything inside that box happens on every single turn of the loop.", "{ opens the loop\u2019s box"));
+      if (forLine + 1 <= v.src.length) {
+        out.push(f(forLine + 1, null, "Now look at where this next line starts. It sits further to the right than the one above it. That gap is not decoration. It means this line lives inside the loop above. The further right something sits, the deeper inside it is. It\u2019s written that way for you, not for the computer.", "indentation shows what is inside what"));
+      }
+    }
+
+    if (minLine) {
+      out.push(f(minLine, "Math.min", "Math dot min is a little helper that comes with the language. You hand it two numbers, and it hands you back the smaller of the two. That is genuinely all it does.", "min \u2192 the smaller of two"));
+      out.push(f(minLine, "n - 1 - i", "And this is just arithmetic, read out loud: six, take away one, take away whatever row we are on.", "plain arithmetic"));
+    }
+
+    if (printLine) {
+      out.push(f(printLine, "print", "Print puts something on the screen and stays where it is, on the same line. Its cousin println prints and then drops to a new line. That is the only difference between them.", "print stays, println drops down"));
+    }
+
+    out.push(f(1, null, "That\u2019s the whole alphabet. Now let\u2019s watch it being written.", "On to writing it."));
+    return out;
+  }
+
+  // ---- phase 3: the code being typed -----------------------------------
+  function writeFrames(v) {
+    return v.notes.map(function (n) {
+      return {
+        phase: 2, reveal: n.upto, term: "", vars: {}, ghost: SHAPE,
+        text: "Writing line " + n.upto + ".",
+        plain: n.plain
+      };
+    });
+  }
+
+  // ---- DOM -------------------------------------------------------------
+  var $ = function (id) { return document.getElementById(id); };
+  var elVariants = $("variants"), elCode = $("code"), elVars = $("vars"), elAnat = $("anat");
+  var elGrid = $("grid"), elRows = $("rowmark"), elCols = $("colhdr"), elTerm = $("term");
+  var elNarr = $("narr"), elPos = $("pos"), elTotal = $("total"), elScrub = $("scrub"), elInsight = $("insight");
+  var bPrev = $("prev"), bNext = $("next"), bPlay = $("play"), bReplay = $("replay");
+  var segMode = $("modeSeg"), segSpeed = $("speedSeg"), cbVoice = $("voice"), narrBox = elNarr.parentNode;
+
+  var phaseEls = [].slice.call(document.querySelectorAll("#phasebar div"));
+  var elEmpty = document.createElement("p");
+  elEmpty.className = "emptycode";
+  elEmpty.textContent = "No code yet \u2014 first we work out what has to happen.";
+  elCode.parentNode.insertBefore(elEmpty, elCode);
+  var typeTimer = null, typedUpto = -1;
+  function typeLastLine(n) {
+    if (n === typedUpto) return;
+    typedUpto = n;
+    if (typeTimer) { clearInterval(typeTimer); typeTimer = null; }
+    var el = lineEls[n - 1]; if (!el) return;
+    var full = VARIANTS[cur].src[n - 1], span = el.querySelector(".tx"), i = 0;
+    el.classList.add("typing"); span.textContent = "";
+    var per = Math.max(10, Math.min(45, stepMs / Math.max(full.length, 1)));
+    typeTimer = setInterval(function () {
+      i += 2; span.textContent = full.slice(0, i);
+      if (i >= full.length) { clearInterval(typeTimer); typeTimer = null; span.textContent = full; el.classList.remove("typing"); }
+    }, per);
+  }
+
+  var ROLES = [
+    ["i", "which row am I on?"],
+    ["j", "which box in that row?"],
+    ["edge", "how far in from the sides"],
+    ["if", "a star here, or a space?"],
+    ["println", "finished: go to the next line"]
+  ];
+  var elRoles = document.getElementById("roles");
+  var elGloss = document.getElementById("glossary");
+  var elTicker = document.getElementById("ticker");
+  var roleEls = {};
+  (function () {
+    var h = document.createElement("p");
+    h.className = "roles-h"; h.textContent = "What each name is for";
+    elRoles.appendChild(h);
+    ROLES.forEach(function (r) {
+      var d = document.createElement("div");
+      d.className = "role";
+      d.innerHTML = "<code>" + r[0] + "</code><span>" + r[1] + "</span>";
+      elRoles.appendChild(d);
+      roleEls[r[0]] = d;
+    });
+  })();
+  var GLOSS = [["&lt;", "less than"], ["&gt;=", "greater than or equal"], ["&lt;=", "less than or equal"], ["&amp;&amp;", "and at the same time"]];
+  elGloss.innerHTML = GLOSS.map(function (g) { return "<span><b>" + g[0] + "</b> " + g[1] + "</span>"; }).join("");
+
+  var cellEls = [], rowEls = [], colEls = [], lineEls = [];
+  var c, r;
+  for (c = 0; c < N * N; c++) {
+    var cd = document.createElement("div");
+    cd.className = "cell";
+    var ix = document.createElement("span"); ix.className = "idx"; ix.textContent = String(c % N);
+    var gl = document.createElement("span");
+    cd.appendChild(ix); cd.appendChild(gl);
+    elGrid.appendChild(cd);
+    cellEls.push({ box: cd, glyph: gl });
+  }
+  for (r = 0; r < N; r++) {
+    var rd = document.createElement("div"); rd.textContent = String(r);
+    elRows.appendChild(rd); rowEls.push(rd);
+    var chd = document.createElement("div"); chd.textContent = String(r);
+    elCols.appendChild(chd); colEls.push(chd);
+  }
+
+  var cur = 0, FRAMES = [], at = 0, timer = null, lastSaid = "";
+  var mode = "plain", stepMs = 1100;
+
+  VARIANTS.forEach(function (v, n) {
+    v.frames = THINK.concat(notationFrames(v), writeFrames(v), v.build());
+    var b = document.createElement("button");
+    b.className = "vbtn";
+    b.innerHTML = '<span class="vn">Variant ' + v.id + '</span><span class="vt">' + v.title +
+      '</span><span class="vd">' + v.desc + '</span><span class="vs">' + (v.frames.length - 1) + ' steps</span>';
+    b.addEventListener("click", function () { pick(n); });
+    elVariants.appendChild(b);
+    v.btn = b;
+  });
+
+  // ?dump=1 — list every distinct spoken (plain) line across all four variants,
+  // in first-seen order. Used offline to record the ElevenLabs narration: the
+  // set is finite and deterministic, so each distinct sentence is spoken once.
+  if (new URLSearchParams(location.search).get("dump") === "1") {
+    var seen = {}, out = [];
+    VARIANTS.forEach(function (v) {
+      v.frames.forEach(function (f) {
+        var t = f.plain ? String(f.plain).replace(/<[^>]+>/g, "").trim() : "";
+        if (t && !seen[t]) { seen[t] = 1; out.push(t); }
+      });
+    });
+    document.body.textContent = JSON.stringify(out);
+    document.title = "dump:" + out.length;
+  }
+
+  // ---- the anatomy of a for loop ---------------------------------------
+  var LABELS = ["where it starts", "when it stops", "how it moves"];
+  function anatomyFor(src) {
+    var m = src.match(/for\s*\(([^)]*)\)/);
+    if (!m) return null;
+    var parts = m[1].split(";");
+    if (parts.length !== 3) return null;
+    return parts.map(function (s) { return s.trim(); });
+  }
+  function showAnatomy(src) {
+    var parts = src === null ? null : anatomyFor(src);
+    if (!parts) { elAnat.hidden = true; return; }
+    var html = '<p class="anat-h">Why a for loop is written like this</p><div class="anat-code">' +
+      '<span class="anat-part flat"><span class="pc">for (</span></span>';
+    parts.forEach(function (p, k) {
+      html += '<span class="anat-part"><span class="pc">' + p.replace(/</g, "&lt;") + '</span><span class="pl">' + LABELS[k] + '</span></span>';
+      if (k < 2) html += '<span class="anat-part flat"><span class="pc">;</span></span>';
+    });
+    html += '<span class="anat-part flat"><span class="pc">)</span></span></div>' +
+      '<p>Three instructions on one line, separated by semicolons: <b>where to start</b>, <b>when to stop</b>, and <b>how to move</b> each time round. ' +
+      'Counting begins at <b>0</b>, not 1 &mdash; so the first row is row 0, and the last is row 5.</p>';
+    elAnat.innerHTML = html;
+    elAnat.hidden = false;
+  }
+
+  // ---- voice (the browser's own, no service, no cost) ------------------
+  var pickedVoice = null;
+  function chooseVoice() {
+    if (!("speechSynthesis" in window)) return;
+    var vs = window.speechSynthesis.getVoices() || [];
+    pickedVoice = vs.filter(function (v) { return /^en[-_]GB/i.test(v.lang); })[0]
+               || vs.filter(function (v) { return /^en/i.test(v.lang); })[0]
+               || null;
+  }
+  if ("speechSynthesis" in window) {
+    chooseVoice();
+    window.speechSynthesis.onvoiceschanged = chooseVoice;
+  }
+
+  // ---- real recorded narration (ElevenLabs) --------------------------
+  // The spoken lines are a finite, deterministic set (see ?dump=1). Each
+  // distinct sentence was recorded once per voice; here we map sentence -> mp3
+  // by content, so playback picks the right clip whatever order it plays in.
+  var REAL_VOICES = [
+    { id: "valory", label: "Valory" },
+    { id: "evan",   label: "Evan" },
+    { id: "maya",   label: "Maya" }
+  ];
+  var usingRealVoices = false, realVoiceId = "valory";
+  var voiceMaps = {}, realPlayer = null;
+  var elVoicePick = document.getElementById("voicePick");
+
+  function realRate() {
+    return stepMs >= 1900 ? 0.72 : stepMs >= 1100 ? 0.88 : stepMs >= 520 ? 1 : 1.15;
+  }
+
+  if (window.fetch) {
+    Promise.all(REAL_VOICES.map(function (rv) {
+      return fetch("audio/inside-the-loop/" + rv.id + "/manifest.json", { cache: "no-cache" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (m) {
+          if (!m || !m.lines) { return null; }
+          var map = {};
+          m.lines.forEach(function (ln) {
+            if (ln.text) { map[String(ln.text).trim()] = { file: ln.file, seconds: ln.seconds || 0 }; }
+          });
+          voiceMaps[rv.id] = map;
+          return rv;
+        })
+        .catch(function () { return null; });
+    })).then(function (results) {
+      var ready = results.filter(Boolean);
+      if (!ready.length) { return; }
+      usingRealVoices = true;
+      elVoicePick.innerHTML = "";
+      ready.forEach(function (rv) {
+        var o = document.createElement("option");
+        o.value = rv.id; o.textContent = rv.label;
+        elVoicePick.appendChild(o);
+      });
+      realVoiceId = ready[0].id;
+      elVoicePick.value = realVoiceId;
+      elVoicePick.hidden = false;
+      elVoicePick.addEventListener("change", function () {
+        realVoiceId = elVoicePick.value || ready[0].id;
+        hush();
+      });
+    });
+  }
+
+  // Speak one line and call done() when the mouth has finished.
+  // If there is nothing to say, or no voice available, done() fires at once.
+  function speak(txt, done) {
+    var fin = false;
+    function finish() { if (!fin) { fin = true; if (done) done(); } }
+
+    // Real recorded voice: play the clip whose text matches this line. If the
+    // line has no recording (e.g. the terse technical ticker), stay silent
+    // rather than fall back to the browser voice.
+    if (usingRealVoices) {
+      if (!cbVoice.checked || !txt) { finish(); return; }
+      var entry = voiceMaps[realVoiceId] && voiceMaps[realVoiceId][String(txt).trim()];
+      if (!entry) { finish(); return; }
+      try {
+        if (!realPlayer) { realPlayer = new Audio(); }
+        var rate = realRate();
+        realPlayer.onended = finish;
+        realPlayer.onerror = finish;
+        realPlayer.src = "audio/inside-the-loop/" + realVoiceId + "/" + entry.file;
+        realPlayer.playbackRate = rate;
+        // The real end is onended. This guard only frees a genuinely stuck clip,
+        // so it must be LONGER than the clip — based on its measured length, not
+        // a character estimate (which was cutting long sentences off mid-word).
+        var guardMs = ((entry.seconds || 12) / rate + 3) * 1000;
+        setTimeout(finish, guardMs);
+        var pr = realPlayer.play();
+        if (pr && pr.catch) { pr.catch(finish); }
+      } catch (e) { finish(); }
+      return;
+    }
+
+    if (!cbVoice.checked || !txt || !("speechSynthesis" in window)) { finish(); return; }
+    try {
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(txt);
+      u.rate = stepMs >= 1900 ? 0.72 : stepMs >= 1100 ? 0.88 : stepMs >= 520 ? 1 : 1.15;
+      u.pitch = 1;
+      u.lang = "en-GB";
+      if (pickedVoice) u.voice = pickedVoice;
+      u.onend = finish;
+      u.onerror = finish;
+      // a browser that silently drops the utterance must not freeze the player
+      setTimeout(finish, Math.max(4000, txt.length * 95));
+      window.speechSynthesis.speak(u);
+    } catch (e) { finish(); }
+  }
+  function hush() {
+    try { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); } catch (e) {}
+    if (realPlayer) { try { realPlayer.pause(); } catch (e) {} }
+  }
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function lineOf(f) { var l = mode === "plain" ? f.plain : f.text; return l ? l.replace(/<[^>]+>/g, "") : ""; }
+
+  function buildCode(v) {
+    elCode.innerHTML = "";
+    lineEls = v.src.map(function (s, n) {
+      var d = document.createElement("div");
+      d.className = "cline";
+      var no = document.createElement("span"); no.className = "no"; no.textContent = String(n + 1);
+      var tx = document.createElement("span"); tx.className = "tx"; tx.textContent = s;
+      d.appendChild(no); d.appendChild(tx);
+      elCode.appendChild(d);
+      return d;
+    });
+  }
+
+  function pick(n) {
+    stop();
+    cur = n;
+    VARIANTS.forEach(function (v, k) { v.btn.className = "vbtn" + (k === n ? " on" : ""); });
+    FRAMES = VARIANTS[n].frames;
+    buildCode(VARIANTS[n]); typedUpto = -1; lastSaid = "";
+    elTotal.textContent = String(FRAMES.length - 1);
+    elScrub.max = String(FRAMES.length - 1);
+    elInsight.innerHTML =
+      "<p><b>Same output, different amount of work.</b> Variant A takes <b>" + (VARIANTS[0].frames.length - 1) +
+      "</b> steps, D takes <b>" + (VARIANTS[3].frames.length - 1) +
+      "</b>. Switch between them and watch the counter &mdash; that gap is the lesson, and it is measured, not claimed.</p>" +
+      "<p>The yellow band is the <b>stretch of squares</b> that get a star on this row. It narrows to the waist and opens again: that stretch <i>is</i> the hourglass.</p>";
+    go(0);
+  }
+
+  function render() {
+    var f = FRAMES[at], k;
+
+    var reveal = (f.phase === 0) ? 0 : (f.phase === 2 ? f.reveal : lineEls.length);
+    for (k = 0; k < lineEls.length; k++) {
+      var cn = "cline";
+      if (k + 1 > reveal) cn += " unwritten";
+      else if (f.line && k + 1 === f.line) cn += (f.dir === "down" ? " on-down" : " on-right");
+      lineEls[k].className = cn;
+      if (k + 1 <= reveal) {
+        var raw = VARIANTS[cur].src[k], tx = lineEls[k].querySelector(".tx");
+        if (f.focus && f.focus[0] === k + 1) {
+          tx.innerHTML = esc(raw.slice(0, f.focus[1])) +
+            "<span class=\"tok\">" + esc(raw.slice(f.focus[1], f.focus[2])) + "</span>" +
+            esc(raw.slice(f.focus[2]));
+        } else { tx.textContent = raw; }
+      }
+    }
+    elEmpty.hidden = (f.phase !== 0);
+
+    var role = (f.phase === 3 && f.line) ? (VARIANTS[cur].roleByLine || {})[f.line] : null;
+    ROLES.forEach(function (r) { roleEls[r[0]].className = "role" + (r[0] === role ? " on" : ""); });
+    elGloss.hidden = (role !== "if");
+
+    if (f.phase === 3 && f.vars && f.vars.i !== undefined) {
+      var tk = "row <b>" + f.vars.i + "</b>";
+      if (f.vars.j !== undefined) {
+        tk += " &middot; column <i>" + f.vars.j + "</i> &rarr; " +
+          (f.cells[f.vars.i * N + f.vars.j] === "*" ? "<u>&#9733;</u>" : "space");
+      } else if (f.vars.s !== undefined) { tk += " &middot; skipping <i>" + (f.vars.s + 1) + "</i>"; }
+      else if (f.vars.k !== undefined) { tk += " &middot; star <i>" + (f.vars.k + 1) + "</i>"; }
+      elTicker.innerHTML = tk;
+    } else { elTicker.innerHTML = ""; }
+    // uscendo dalla fase di scrittura il timer va spento, altrimenti continua
+    // a riscrivere la riga mentre siamo gia altrove e la lascia a meta
+    if (f.phase === 2) { typeLastLine(reveal); }
+    else if (typeTimer) { clearInterval(typeTimer); typeTimer = null; typedUpto = -1; }
+    showAnatomy(f.line && f.phase === 3 ? VARIANTS[cur].src[f.line - 1] : null);
+    for (k = 0; k < phaseEls.length; k++) phaseEls[k].className = (k === (f.phase === undefined ? 3 : f.phase)) ? "on" : "";
+
+    elVars.innerHTML = "";
+    var order = ["i", "j", "s", "k", "edge"];
+    var cls = { i: "c-i", j: "c-j", s: "c-j", k: "c-j", edge: "c-w" };
+    order.forEach(function (name) {
+      if (f.vars && f.vars[name] !== undefined) {
+        var sp = document.createElement("span");
+        sp.className = "var " + cls[name];
+        if (name === "edge" && f.vars.i !== undefined) {
+          sp.innerHTML = "edge = min(" + f.vars.i + ", " + (N - 1 - f.vars.i) + ") = <b>" + f.vars.edge + "</b>";
+        } else {
+          sp.innerHTML = name + " = <b>" + f.vars[name] + "</b>";
+        }
+        elVars.appendChild(sp);
+      }
+    });
+
+    if (f.ghost) {
+      for (k = 0; k < N * N; k++) {
+        var gc = "cell" + (f.ghost[k] === "*" ? " ghost" : "");
+        if (f.heads && f.heads.indexOf(k) !== -1) gc += " head";
+        cellEls[k].box.className = gc;
+        cellEls[k].glyph.textContent = f.ghost[k] === "*" ? "★" : "";
+      }
+      for (k = 0; k < N; k++) { rowEls[k].className = ""; colEls[k].className = ""; }
+    } else {
+    var curList = (f.cur === undefined || f.cur === null) ? [] : (Array.isArray(f.cur) ? f.cur : [f.cur]);
+    for (k = 0; k < N * N; k++) {
+      var v = f.cells[k], cc = "cell", col = k % N, row = Math.floor(k / N);
+      var inWin = f.range && col >= f.range[0] && col <= f.range[1] && f.vars && f.vars.i === row;
+      if (inWin) cc += (v === null ? " inwin win" : " win");
+      if (v === "*") cc += " star"; else if (v === " ") cc += " blank";
+      if (curList.indexOf(k) !== -1) cc += " cur" + (f.dir === "down" ? " wrapping" : "");
+      cellEls[k].box.className = cc;
+      cellEls[k].glyph.textContent = v === "*" ? "★" : (v === " " ? "·" : "");
+    }
+    for (k = 0; k < N; k++) {
+      rowEls[k].className = (f.vars && f.vars.i === k) ? "on" : "";
+      colEls[k].className = (f.range && k >= f.range[0] && k <= f.range[1]) ? "inwin" : "";
+    }
+    }
+
+    elTerm.innerHTML = "";
+    elTerm.appendChild(document.createTextNode(f.term));
+    if (at < FRAMES.length - 1) {
+      var ca = document.createElement("span"); ca.className = "caret"; ca.textContent = "█";
+      elTerm.appendChild(ca);
+    }
+
+    // a silent step keeps the last remark on screen: the ticker carries the beat,
+    // the teacher's line only changes when there is something new to say
+    var line = mode === "plain" ? f.plain : f.text;
+    if (line) { lastSaid = line; elNarr.innerHTML = line; }
+    else { elNarr.innerHTML = lastSaid || ""; }
+    narrBox.className = "narr" + (mode === "plain" ? " plain" : "");
+
+
+    elPos.textContent = String(at);
+    elScrub.value = String(at);
+    bPrev.disabled = at === 0;
+    bNext.disabled = at === FRAMES.length - 1;
+  }
+
+  function go(n, voice) {
+    var nn = Math.max(0, Math.min(FRAMES.length - 1, n));
+    if (nn < at) typedUpto = -1;
+    at = nn; render();
+    if (voice !== false) speak(lineOf(FRAMES[at]));
+  }
+  var playing = false;
+  function stop() {
+    playing = false;
+    if (timer) { clearTimeout(timer); timer = null; }
+    bPlay.innerHTML = "▶&nbsp; Play";
+    hush();
+  }
+  // One beat: show the frame, then wait. If there are words, wait for the words
+  // to finish; if not, wait the chosen step time. The picture follows the voice.
+  function beat() {
+    if (!playing) return;
+    render();
+    var words = lineOf(FRAMES[at]);
+    if (cbVoice.checked && words) {
+      speak(words, function () {
+        if (!playing) return;
+        timer = setTimeout(next, 380);
+      });
+    } else {
+      timer = setTimeout(next, stepMs);
+    }
+  }
+  function next() {
+    if (!playing) return;
+    if (at >= FRAMES.length - 1) { stop(); return; }
+    if (at + 1 < at) typedUpto = -1;
+    at = at + 1;
+    beat();
+  }
+  function play() {
+    if (playing) { stop(); return; }
+    if (at === FRAMES.length - 1) { at = 0; typedUpto = -1; }
+    playing = true;
+    bPlay.innerHTML = "⏸&nbsp; Pause";
+    beat();
+  }
+  function restartTimer() { /* the beat picks up the new speed on its own */ }
+
+  bPrev.addEventListener("click", function () { stop(); go(at - 1); });
+  bNext.addEventListener("click", function () { stop(); go(at + 1); });
+  bPlay.addEventListener("click", play);
+  bReplay.addEventListener("click", function () { stop(); go(0, false); play(); });
+  elScrub.addEventListener("input", function () { stop(); go(Number(elScrub.value), false); });
+
+  segMode.addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    mode = b.getAttribute("data-mode");
+    [].forEach.call(segMode.children, function (x) { x.className = x === b ? "on" : ""; });
+    render();
+  });
+  segSpeed.addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    stepMs = Number(b.getAttribute("data-ms"));
+    [].forEach.call(segSpeed.children, function (x) { x.className = x === b ? "on" : ""; });
+  });
+  cbVoice.addEventListener("change", function () {
+    if (!cbVoice.checked) { hush(); }
+    else if (!playing) { speak(lineOf(FRAMES[at])); }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowLeft") { stop(); go(at - 1); e.preventDefault(); }
+    else if (e.key === "ArrowRight") { stop(); go(at + 1); e.preventDefault(); }
+    else if (e.key === " " || e.code === "Space") {
+      if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON")) return;
+      play(); e.preventDefault();
+    }
+  });
+  window.addEventListener("pagehide", hush);
+
+  pick(0);
+})();
+</script>
+
+</body>
+</html>

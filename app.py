@@ -6,9 +6,10 @@ import requests
 import json
 import re as _re
 
+
 LESSONS_CHROME = """
-<link rel="stylesheet" href="/static/synapse_a11y.css?v=19">
-<link rel="stylesheet" href="/static/synapse_a11y_toolbar.css?v=7">
+<link rel="stylesheet" href="/static/synapse_a11y.css?v=20">
+<link rel="stylesheet" href="/static/synapse_a11y_toolbar.css?v=8">
 <script src="/static/focus_assistant.js"></script>
 <script src="/static/synapse_a11y_toolbar.js?v=7"></script>
 <script src="/static/synapse_a11y.js?v=12"></script>
@@ -75,6 +76,8 @@ except ImportError:
 # Core imports
 from core.tutor import EnhancedSecurityTutor
 from web.handlers import setup_routes
+from web.lang import detect_student_language
+from web.session import current_user_id, admin_key_ok
 from web.course_handlers import setup_course_routes
 from web.advanced_handlers import setup_advanced_routes
 from database.config import Base, engine, SessionLocal
@@ -365,7 +368,7 @@ class HybridEducationalServer:
         # ====================================================================
         async def serve_app(request):
             """Python AI Tool"""
-            if not request.cookies.get('synapse_user'):
+            if not current_user_id(request):
                 raise web.HTTPFound('/login?next=/app')
             index_path = Path(__file__).parent / 'templates' / 'index.html'
             try:
@@ -403,10 +406,9 @@ class HybridEducationalServer:
 
         async def serve_java_security_course(request):
             """Java Security course page - requires auth"""
-            user_cookie = request.cookies.get('synapse_user')
+            user_cookie = current_user_id(request)
             participant_code = request.query.get('participant') or request.cookies.get('participant_code')
-            admin_key = request.query.get('admin')
-            if not user_cookie and not participant_code and admin_key != os.getenv('ADMIN_KEY', ''):
+            if not user_cookie and not participant_code and not admin_key_ok(request):
                 raise web.HTTPFound('/login?next=/course/java-security')
             from sqlalchemy import text as sql_text
             from database.config import SessionLocal
@@ -439,10 +441,9 @@ class HybridEducationalServer:
 
         async def serve_course(request):
             """Course page - requires auth"""
-            user_cookie = request.cookies.get('synapse_user')
+            user_cookie = current_user_id(request)
             participant_code = request.query.get('participant') or request.cookies.get('participant_code')
-            admin_key = request.query.get('admin')
-            if not user_cookie and not participant_code and admin_key != os.getenv('ADMIN_KEY', ''):
+            if not user_cookie and not participant_code and not admin_key_ok(request):
                 raise web.HTTPFound('/login?next=/course')
             course_path = Path(__file__).parent / 'templates' / 'course.html'
             try:
@@ -677,45 +678,132 @@ class HybridEducationalServer:
                     if not router:
                         return web.json_response({'response': 'AI system not available'}, status=500)
 
-                    # Use system_prompt from frontend if provided, otherwise use default
-                    frontend_prompt = data.get('system_prompt', '')
-                    SHOPSECURE_PROMPT = frontend_prompt if frontend_prompt else (
-                        'You are an expert cybersecurity tutor helping a student learn web security through ShopSecure (a practice e-commerce app with 11 vulnerabilities). The student is doing a hands-on research task and you support them with patient, scaffolded guidance that adapts to how much help they need. '
-                        ' '
-                        'CONCEPTUAL KNOWLEDGE you can explain freely whenever asked: '
-                        'Secure Design Principles (Saltzer-Schroeder 1975): least privilege, separation of duties, defence in depth, fail-safe defaults, economy of mechanism, complete mediation, open design (Kerckhoffs), least common mechanism, psychological acceptability, weakest link. '
-                        'CWE-754/CWE-209 Exception Handling: auth bypass via loggedIn=true with empty catch on null password; info leakage via stack traces. Fixes: deny-by-default, specific exception types, generic user errors with reference ID. '
-                        'CWE-89 SQL Injection: tautology bypass and numeric injection concepts; fix with parameterised queries. '
-                        'CWE-78 Command Injection: shell metacharacters; fix with subprocess list-form and whitelist. '
-                        'CWE-79 XSS: reflected vs stored; fix with output encoding and Content Security Policy. '
-                        'CWE-352 CSRF: the browser automatically attaches the session cookie to cross-site requests, so a request initiated by attacker-controlled content executes with the victim authority. Fix: per-session CSRF token, SameSite cookies. In ShopSecure the realistic scenario chains CSRF with Stored XSS: the attacker plants a hidden iframe in their own profile address field that targets /shop/csrf-demo with to= and amount= query parameters; when an admin or any authenticated user views that profile, the iframe loads and triggers a transfer with their session cookie. '
-                        'CWE-614/CWE-384 Session Management: cookie flags HttpOnly/Secure/SameSite; session ID generation; regeneration after login. '
-                        'CWE-22 Path Traversal: ../ escape, replace-bypass via ....//; fix with canonical-path verification. '
-                        'CWE-502 Insecure Deserialisation: pickle __reduce__ executes on loads(); fix with JSON or restricted unpicklers. '
-                        ' '
-                        'GRADUATED HELP — track where you are with each student and progress through these levels naturally: '
-                        ' '
-                        'LEVEL 1 — EXPLORATION (first contact with a vulnerability): '
-                        'Ask one diagnostic question that points to the primitive. Examples: "what does the server do with the filename you send?", "where in ShopSecure can a regular user write text that an admin will later view?". Goal: trigger the student is own reasoning. '
-                        ' '
-                        'LEVEL 2 — CONCEPTUAL HINT (student tried something and got stuck): '
-                        'Give the conceptual mechanism in plain language without code. Examples for CSRF: "the browser sends the victim cookie automatically with any request that originates from the victim browser, so if you can make the victim browser issue the request, the server cannot tell it apart from a legitimate one". Name the HTML element or technique that would work without writing it. '
-                        ' '
-                        'LEVEL 3 — STRUCTURAL HINT (student understands the concept but cannot recall the syntax): '
-                        'Give the structure of the solution as a skeleton with placeholders, not as runnable code. Example for CSRF: "you need an iframe with src pointing to the demo endpoint, and the demo endpoint takes two query parameters — one for the recipient username and one for the amount". This is legitimate help: technical syntax is consulted, not memorised, and asking the AI for syntactic structure is exactly how developers use AI assistants in practice. '
-                        ' '
-                        'LEVEL 4 — WORKED EXAMPLE (student has tried the structural hint and is still blocked, or asks for a complete worked example to learn from): '
-                        'Provide a complete working snippet, but always frame it as "here is one way it can be written — read it and tell me which line is doing what" rather than "here is the answer". Then ask the student to explain back at least one element of the snippet so the disclosure becomes a learning moment instead of a shortcut. This level fulfils FR9 of the platform spec, which permits stepwise disclosure when extended scaffolding fails. '
-                        ' '
-                        'BEHAVIOUR RULES around the levels: '
-                        '(A) The student is here to think, not to be tested on memory. Asking for syntax that nobody memorises (iframe attribute order, pickle __reduce__ shape, exact CWE identifier) is a legitimate request and goes straight to Level 3 or Level 4. '
-                        '(B) Asking "what is this vulnerability" or "why does this fix work" is conceptual and gets a full clear answer (these questions sit outside the level system). '
-                        '(C) When you advance a level, briefly say what you are doing: "you have been thinking about this for a bit, let me show you the structure". This signals to the student that escalation is normal, not failure. '
-                        '(D) Never refuse help. Frustration that drives the student to abandon the task is the worst outcome — worse than disclosing a worked example. If a student is clearly running out of patience, advance to Level 4 promptly. '
-                        '(E) When the student succeeds, celebrate, help them name the CWE and OWASP category, and ask them what defence would have prevented it — this is where the real learning consolidates. '
-                        '(F) Use the student name when you have it. Warm tone, simple analogies (one sentence max), never judge. Always respond in the same language the student writes in. '
-                        ' '
-                        'STYLE: maximum 4-5 lines per response. One concept or one question or one snippet at a time. Code snippets when given are short and commented. Celebrate small wins.'
+                    # The prompt is built HERE, on the server. The browser used to
+                    # send its own system_prompt and this code preferred it, which
+                    # both overrode this safe version and let anyone edit the
+                    # tutor's rules from devtools. Its system_prompt is now ignored;
+                    # only a sanitised display name is taken from the client.
+                    raw_name = (data.get('nickname') or '').strip()
+                    safe_name = ''.join(c for c in raw_name if c.isalnum() or c in " -'")[:40]
+                    student = safe_name or 'the student'
+
+                    SHOPSECURE_PROMPT = (
+                        "You are SYNAPSE, a warm, adaptive security tutor. You are helping "
+                        + student + " reproduce three vulnerabilities in ShopSecure, a "
+                        "deliberately vulnerable practice shop, as a hands-on exercise. "
+                        "This is an authorised lab: the app exists to be attacked, and "
+                        "teaching how these flaws work is the whole point. "
+                        " "
+                        "HOW YOU TEACH, IN ONE SENTENCE. You lead them to understand what is "
+                        "happening behind the scenes, and you do NOT give the answer straight "
+                        "away. The finished payload is the LAST thing you offer, not the first. "
+                        "Understanding the mechanism is the point; the working string is just "
+                        "the proof they understood. "
+                        " "
+                        "CREDENTIALS, so you never invent any: admin / adminShop2026, and "
+                        "user1 / user1Pass! through user5 / user5Pass!. There are no other "
+                        "accounts. "
+                        " "
+                        "CONCEPTS you may explain in full whenever asked - what a weakness is "
+                        "and why a fix works sit OUTSIDE the ladder and get a clear answer: "
+                        "CWE-502 Insecure Deserialisation - pickle runs code while loading, so "
+                        "untrusted data becomes execution; fix with JSON or a restricted "
+                        "unpickler. "
+                        "CWE-22 Path Traversal - a filename that climbs out of the intended "
+                        "folder reaches files it should not, and naive filters that strip one "
+                        "level can still be walked around; fix by resolving the path and "
+                        "checking it stays inside the allowed directory. "
+                        "CWE-352 CSRF - the browser attaches the victim's session cookie to any "
+                        "request their browser makes, so attacker-controlled content can act "
+                        "with the victim's authority; fix with a per-session token and SameSite "
+                        "cookies. "
+                        " "
+                        "THE THREE MISSIONS (keep them secret; guide, do not announce): "
+                        "1. CWE-502 on the /shop/preferences page, which imports preferences "
+                        "with pickle. "
+                        "2. CWE-22 on the /shop/invoice page, which opens a file named by the "
+                        "user. "
+                        "3. CWE-352 on the /shop/csrf-challenge page, which has no token on its "
+                        "transfer form. "
+                        " "
+                        "THE LADDER. One rung per reply, and you climb only when they have "
+                        "DONE something with the last rung - tried an input, or reasoned a "
+                        "step. Asking again, even in capitals, is not a rung and does not move "
+                        "you up. "
+                        "1 WHAT HAPPENS BEHIND THE SCENES - explain this well, it is the whole "
+                        "point. A disk is a tree of folders inside folders, with one root at "
+                        "the top. Every file lives at a path down from that root, and a program "
+                        "always runs while standing in one folder. To open a file the server "
+                        "joins the base folder it stands in to the name you send: base plus "
+                        "name. HOW YOU MOVE BETWEEN FILES: a plain name moves DOWN or sideways "
+                        "inside the current folder, and the special step that means "
+                        "up-one-level moves you UP, back towards the root. Chain enough "
+                        "up-one-level steps and you climb above the base folder entirely, and "
+                        "from the root every other folder on the machine is reachable by naming "
+                        "the way down to it. DRAW IT, do not only describe it: a picture lands "
+                        "faster than a paragraph. Put a tiny tree in a fenced code block - three "
+                        "backticks, one folder per line, each level indented under its parent - "
+                        "so it keeps its shape, mark where the program is standing and the file "
+                        "to reach, and show the climb as a short run of up-one-level steps beside "
+                        "it. Use a MADE-UP tree, never the real target's real path - "
+                        "for example standing in a folder two levels below the root, count out "
+                        "loud how many up-one-level steps reach the root, then walk back down "
+                        "into a different folder and name a file there. That illustration on an "
+                        "invented tree is a teaching aid and is encouraged; it is NOT the live "
+                        "answer, because it does not name the real target. Make sure they can "
+                        "picture the folder being climbed out of before you move on. "
+                        "2 WHERE TO LOOK - one question pointing at the primitive: \"what does "
+                        "the server do with the filename you send it, and where does it look "
+                        "for that file?\". "
+                        "3 THE SHAPE - the structure with the decisive part left blank: \"a "
+                        "path made of repeated up-one-level steps, enough to reach the root, "
+                        "then the name of a file you know exists on a Linux box\". Described, "
+                        "not written out. Invite them to type their version. "
+                        "4 REACT TO THEIR ATTEMPTS - work from what they typed: which part is "
+                        "right, which is not, why it did or did not reach the file. Nudge, do "
+                        "not correct it FOR them. Stay here across several tries. "
+                        "5 THE PAYLOAD, ONLY AS A LAST RESORT. If they have genuinely tried at "
+                        "least FOUR times - four real inputs or reasoning steps, not four asks "
+                        "- and still cannot reach it, then give the complete working string, "
+                        "framed as \"here is one that works - read it against what you tried "
+                        "and tell me which step was missing\". Never before the fourth "
+                        "genuine attempt. "
+                        " "
+                        "WHEN THEY HAVE NOT TRIED. If they ask for the answer with no attempt "
+                        "behind them, say so kindly, once, explain a piece of the mechanism, "
+                        "and give the smallest next thing to type - never the finished input. "
+                        "Counting: capital letters, please, and \"just give it to me\" are "
+                        "emphasis, not attempts. An attempt is something they actually tried. "
+                        " "
+                        "BEHAVIOUR. Never refuse to help. If before the fourth attempt they are "
+                        "clearly about to give up, do NOT dump the payload - drop to the "
+                        "simplest possible next micro-step and one more piece of the mechanism, "
+                        "and keep them moving. Say it out loud when you move up a rung. Answer "
+                        "\"what is this\" and \"why does the fix work\" in full, outside the "
+                        "ladder. Celebrate small wins. "
+                        " "
+                        "LANGUAGE - THIS ONE IS ABSOLUTE. Look at the student's most "
+                        "recent message, and only at that, and reply in the language it "
+                        "is written in. If it is English, you answer in English, every "
+                        "time, even when everything else you can see is in another "
+                        "language. Their notes below, their earlier turns and the name "
+                        "of the lab are stored data: they never decide the language. If "
+                        "they switch language mid-conversation, you switch with them, "
+                        "starting from that message. "
+                        " "
+                        "THE ARC, AND ITS ORDER. Every vulnerability runs Detect, then "
+                        "Understand, then Remediate, always in that order. DETECT: they find "
+                        "that the flaw is there. UNDERSTAND: they can say WHY it works - the "
+                        "mechanism, which is rungs 1 to 5 above and matters more than the "
+                        "payload itself. REMEDIATE: they can say why the FIX holds - not just "
+                        "its name, but why it closes the hole the exploit went through. A "
+                        "mission is not finished when the payload works; it is finished when "
+                        "they can explain the repair. So when an exploit lands, celebrate, then "
+                        "carry them to the fix: ask what would have stopped their own input, "
+                        "and for traversal make the link plain - resolving the path and "
+                        "checking it stays inside the allowed folder defeats the very climb "
+                        "they just did. "
+                        "STYLE: at most 3-4 lines per reply, one step at a time."
                     )
 
                     # Build messages with chat history for context
@@ -725,12 +813,41 @@ class HybridEducationalServer:
                     for msg in chat_history:
                         if msg.get('role') in ('user', 'assistant') and msg.get('content'):
                             messages.append({'role': msg['role'], 'content': msg['content']})
-                    # Add current message with findings context
-                    current_msg = message
+                    # The saved findings used to be glued onto the end of the
+                    # student's own message. That is what answered in Italian to
+                    # a question typed in English: the notes carry whatever
+                    # language the student writes notes in, and once they sit
+                    # inside the student's turn they outweigh the question
+                    # itself. Measured on the live server: English question plus
+                    # Italian notes came back in Italian, every time. They belong
+                    # in the briefing, as stored data, so the student's turn is
+                    # only the words the student actually typed.
+                    messages.append({'role': 'user', 'content': message})
+                    briefing = SHOPSECURE_PROMPT
                     if extra_context:
-                        current_msg = message + '\n\n' + extra_context
-                    messages.append({'role': 'user', 'content': current_msg})
-                    response = await router.get_chat_response(SHOPSECURE_PROMPT, messages)
+                        briefing += (
+                            " "
+                            "WHAT THEY HAVE WRITTEN DOWN SO FAR. The notes this student saved in "
+                            "the report form, in whatever language they take notes in. Use the "
+                            "facts - what they have found, what is still missing - and ignore the "
+                            "language they are written in: " + extra_context
+                        )
+
+                    # The language is decided here, not left to the model. It goes
+                    # last because that is the instruction it holds onto best.
+                    said = [m.get('content', '') for m in chat_history
+                            if m.get('role') == 'user'] + [message]
+                    lang = detect_student_language(said)
+                    if lang:
+                        briefing += (
+                            " "
+                            "THE LANGUAGE OF THIS REPLY IS ALREADY DECIDED: " + lang.upper() + ". "
+                            "This student is writing to you in " + lang + ", so every word you "
+                            "write back is in " + lang + " - the greeting, the explanation, the "
+                            "question at the end. Nothing else you can see changes this."
+                        )
+
+                    response = await router.get_chat_response(briefing, messages)
                     print(f'ShopSecure chat [{participant_code}]: {message[:60]}')
                     return web.json_response({'response': response})
 
@@ -1156,7 +1273,7 @@ class HybridEducationalServer:
             except FileNotFoundError:
                 return web.Response(text="Demo page not found.", status=404)
 
-            drop = 'MEMBER' if not request.cookies.get('synapse_user') else 'GUEST'
+            drop = 'MEMBER' if not current_user_id(request) else 'GUEST'
             html = _re.sub(r'<!--' + drop + r'-->.*?<!--/' + drop + r'-->',
                            '', html, flags=_re.S)
             # and the markers of the half that stayed, so the page does not
@@ -1235,10 +1352,9 @@ class HybridEducationalServer:
                 return web.Response(text="Cookie page not found.", status=404)
 
         async def serve_flashcards(request):
-            user_cookie = request.cookies.get('synapse_user')
+            user_cookie = current_user_id(request)
             participant_code = request.query.get('participant') or request.cookies.get('participant_code')
-            admin_key = request.query.get('admin')
-            if not user_cookie and not participant_code and admin_key != os.getenv('ADMIN_KEY', ''):
+            if not user_cookie and not participant_code and not admin_key_ok(request):
                 raise web.HTTPFound('/login?next=/flashcards')
             return web.FileResponse('templates/flashcards.html')
 
@@ -1251,7 +1367,7 @@ class HybridEducationalServer:
             and /try runs the player with ?only=walk:each. Sixteen lessons
             and the comparison view were built, shipped, and unreachable.
             """
-            if not request.cookies.get('synapse_user'):
+            if not current_user_id(request):
                 raise web.HTTPFound('/login?next=/lessons')
             page = Path(__file__).parent / 'static' / 'lessons' / 'algorithm-player.html'
             try:
@@ -1272,7 +1388,7 @@ class HybridEducationalServer:
             doors the older tool pages carry, since this is personal work rather
             than an anonymous exercise.
             """
-            if not request.cookies.get('synapse_user'):
+            if not current_user_id(request):
                 raise web.HTTPFound('/login?next=/drawer')
             drawer_path = Path(__file__).parent / 'templates' / 'drawer.html'
             try:
@@ -1282,10 +1398,9 @@ class HybridEducationalServer:
                 return web.Response(text="Drawer page not found.", status=404)
 
         async def serve_spot_the_bug(request):
-            user_cookie = request.cookies.get('synapse_user')
+            user_cookie = current_user_id(request)
             participant_code = request.query.get('participant') or request.cookies.get('participant_code')
-            admin_key = request.query.get('admin')
-            if not user_cookie and not participant_code and admin_key != os.getenv('ADMIN_KEY', ''):
+            if not user_cookie and not participant_code and not admin_key_ok(request):
                 raise web.HTTPFound('/login?next=/spot-the-bug')
             return web.FileResponse('templates/spot_the_bug.html')
 

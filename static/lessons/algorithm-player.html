@@ -17,12 +17,12 @@
   :root {
     color-scheme: light dark;
     --paper: #F4F6F5; --panel: #FFFFFF; --panel-2: #EEF1F3;
-    --ink: #16202B; --ink-soft: #3D4A56; --ink-faint: #64727E; --rule: #C9D1D6;
+    --ink: #000000; --ink-soft: #111418; --ink-faint: #1E242A; --rule: #C9D1D6;
 
     --blue: #2563EB;  --blue-ink: #FFFFFF; --blue-edge: #1D4ED8;
     --purple: #7C3AED; --purple-ink: #FFFFFF; --purple-edge: #6D28D9;
     --amber: #F59E0B; --amber-ink: #3B2200; --amber-edge: #B45309; --amber-deep: #B45309;
-    --green: #16A34A; --green-ink: #FFFFFF; --green-edge: #15803D;
+    --green: #0D632D; --green-ink: #FFFFFF; --green-edge: #094A22;
     --red: #B91C1C;
 
     --ff-display: "Zilla Slab", Georgia, serif;
@@ -869,6 +869,137 @@
 
   function listBoard(values, label) {
     return { kind: "list", values: values.slice(), label: label || "the list" };
+  }
+
+
+  /* Lesson 31 runs the same recursion at two sizes. Sharing one function
+     between the two versions is not tidiness: it is the argument. Nothing
+     about the program differs between them, so anything the cost panel
+     shows is caused by n and by nothing else. */
+  function fibTally(r, top) {
+    var id = 0, times = {}, calls = 0;
+
+    function tally() {
+      var out = [], k;
+      for (k = top; k >= 0; k--) {
+        if (times[k]) {
+          out.push("fib(" + k + ") " + times[k] + (times[k] === 1 ? " time" : " times"));
+        }
+      }
+      return out.join(" · ");
+    }
+
+    function closing(answer) {
+      var head = "<b>" + calls + " calls</b> to work out fib(" + top + "), which is " +
+                 answer + ".<br><br>Here is the count, question by question: " +
+                 tally() + ".<br><br>";
+      if (top === 5) {
+        return head + "Read that list twice. Nothing in it was hard. fib(1) is not a " +
+          "difficult sum — it was simply worked out from scratch, five separate times, " +
+          "because nothing anywhere kept the answer. The waste is not in the arithmetic. " +
+          "It is in the <b>forgetting</b>.<br><br>Now open the next version, which adds " +
+          "exactly one to n.";
+      }
+      return head + "Fifteen calls became <b>" + calls + "</b>, and the only thing that " +
+        "changed was one character in the question. Not fifteen plus a bit: half as many " +
+        "again. Add another one and it goes the same way, every time, which is how " +
+        "fib(50) written like this outlives the person waiting for it.<br><br>" +
+        "That is the picture worth keeping. The fix is not a cleverer sum — the sums were " +
+        "always easy. It is to stop throwing the answers away, and the next two lessons " +
+        "are the two ways of doing that.";
+    }
+
+    function fib(n, depth, parent) {
+      var me = id++, a, b, again;
+      calls++;
+      times[n] = (times[n] || 0) + 1;
+      again = times[n];
+      r.e("CALL", { line: 0, fn: "fib", args: "n = " + n, frame: "fib(" + n + ")",
+                    node: me, parent: parent, depth: depth,
+                    human: again > 1
+                      ? "fib(" + n + ") again — that makes " + again + " times this exact question has been asked."
+                      : undefined,
+                    why: depth === 0
+                      ? "The same three lines as lesson 13. This time do not watch the shape of the tree. Watch how often the <b>same</b> question comes back, and each time it does, ask what happened to the answer it was given a moment ago."
+                      : (again === 2
+                          ? "The first repeat. Nothing has gone wrong here: fib(" + n + ") genuinely is needed in two different places. What has gone wrong is that the answer worked out moments ago was thrown away the instant that call returned, so this one starts again from nothing."
+                          : undefined) });
+      if (n <= 1) {
+        r.e("COMPARE", { line: 1, text: "n <= 1", real: n + " <= 1", result: true,
+                         then: "so it answers outright" });
+        r.e("RETURN", { line: 1, value: n, fn: "fib", frame: true, node: me,
+                        human: "fib(" + n + ") is " + n + "." });
+        return n;
+      }
+      r.e("COMPARE", { line: 1, text: "n <= 1", real: n + " <= 1", result: false,
+                       then: "so it has to ask twice" });
+      a = fib(n - 1, depth + 1, me);
+      b = fib(n - 2, depth + 1, me);
+      r.e("RETURN", { line: 2, value: a + b, fn: "fib", frame: true, node: me,
+                      human: a + " + " + b + " = " + (a + b) + ".",
+                      why: depth === 0 ? closing(a + b) : undefined });
+      return a + b;
+    }
+
+    fib(top, 0, undefined);
+  }
+
+  /* Lesson 35 runs one search over two texts. Same function, same pattern
+     length arithmetic, nothing swapped out - so when the cost panel reads
+     very differently between the two versions, the text is the only thing
+     it can be blaming. */
+  function slideSearch(r, text, pat, worst) {
+    var n = text.length, m = pat.length, i, j, same, found = -1, starts = 0;
+
+    function M(i, j) {
+      var marks = [["i", i, 0]];
+      if (j !== null) { marks.push(["j", i + j, 3]); }
+      return marks;
+    }
+
+    r.e("ENTER", { line: 0, loop: { name: "i", from: 0, of: n - m + 1,
+                                    label: "loop", word: "start" } });
+    for (i = 0; i + m <= n; i++) {
+      starts++;
+      r.e("MOVE", { line: 0, name: "i", to: i, win: [i, i + m - 1], marks: M(i, null),
+                    human: "Line the pattern up starting at " + i + ".",
+                    why: i === 0
+                      ? (worst
+                          ? "Same code as the last version, and a pattern that is nearly all one letter in a text that is nearly all the same letter. Watch how far each attempt gets before it gives up."
+                          : "There is no cleverness here at all. Hold the pattern against the text at position 0, compare letter by letter, and if it fails, shuffle along one and start the comparison again from scratch.")
+                      : undefined });
+      r.e("CREATE", { line: 1, name: "j", value: 0, win: [i, i + m - 1], marks: M(i, 0) });
+      j = 0;
+      while (j < m) {
+        r.e("READ", { line: 2, from: "text", at: i + j, value: text[i + j],
+                      win: [i, i + m - 1], marks: M(i, j) });
+        same = text[i + j] === pat[j];
+        r.e("COMPARE", { line: 2, text: "text[i + j] == pat[j]",
+                         real: "“" + text[i + j] + "” against “" + pat[j] + "”",
+                         result: same,
+                         then: same ? "so keep going along this one"
+                                    : "so this position is dead, and it all starts again",
+                         win: [i, i + m - 1], marks: M(i, j),
+                         why: (!same && i === 0)
+                           ? "And that is the expensive part, hiding in plain sight. Everything matched up to here is about to be <b>thrown away</b>. The next attempt begins from nothing, as though this comparison had never happened, even though it told us something true about the text."
+                           : undefined });
+        if (!same) { break; }
+        j++;
+        r.e("UPDATE", { line: 3, name: "j", from: j - 1, to: j,
+                        win: [i, i + m - 1], marks: M(i, Math.min(j, m - 1)) });
+      }
+      r.e("COMPARE", { line: 4, text: "j == m", real: j + " == " + m, result: j === m,
+                       then: j === m ? "so the whole pattern matched, and this is the answer"
+                                     : "so it did not fit here",
+                       win: [i, i + m - 1], marks: M(i, null) });
+      if (j === m) { found = i; break; }
+    }
+    r.e("EXIT", { line: 0, loop: "i" });
+    r.e("RETURN", { line: 4, value: found, fn: "indexOf",
+                    win: [found, found + m - 1], fixed: [found, found + m - 1],
+                    why: worst
+                      ? "Found at " + found + ", after <b>" + starts + " attempts</b> on a text of " + n + " letters. Look at the comparison count, then go back and look at the other version's.<br><br>Same code. Same length of pattern. The text is the only thing that changed, and it multiplied the work — because every attempt got almost all the way to the end before failing on the last letter, and then threw the whole thing away.<br><br>That is the honest shape of this algorithm: it is not slow on average, it is slow on texts that keep <b>almost</b> matching. The faster algorithms you will meet later all start from one observation — that a failed comparison told you something, and there is no reason to forget it."
+                      : "Found at " + found + ", after " + starts + " attempts.<br><br>It is worth knowing that this is what <i>indexOf</i> and <i>contains</i> are doing underneath, more or less, in most everyday cases. Nothing exotic: line it up, compare, shuffle along.<br><br>It is also worth knowing when that gets expensive, so open the next version. Same code, a text chosen to be unkind to it." });
   }
 
   var LIB = [
@@ -2037,6 +2168,464 @@
         r.e("RETURN", { line: 8, value: best, fn: "longestRun",
                         win: [0, 2], fixed: [0, 2] });
       } },
+
+    /* ---- 20. what a call actually hands over ----------------------
+       Catalogue number 20. The engine already did all of this: CALL with
+       a frame puts a private set of names on top of the caller's, and
+       RETURN throws them away and brings the caller's back. Nothing new
+       was built for this lesson - it is machinery that was already here,
+       finally pointed at the thing it had been demonstrating all along. */
+    { family: "fn", familyTitle: "20 · What goes into a function, and what comes back",
+      version: "one", versionTitle: "One number in, one number out",
+      board: { kind: "tree", label: "the call, and the one value it hands back" },
+      code: ["int price = 20;",
+             "int paid = withTax(price);",
+             "",
+             "int withTax(int amount) {",
+             "    int tax = amount / 5;",
+             "    int total = amount + tax;",
+             "    return total;",
+             "}"],
+      run: function (r) {
+        r.e("CREATE", { line: 0, name: "price", value: 20,
+                        why: "This one lives out here, in the program. Keep an eye on it. It is about to be handed to a function, and almost everybody expects that to mean the function now has <b>it</b>. It does not." });
+        r.e("CALL", { line: 3, fn: "withTax", args: "amount = 20", frame: "withTax(20)",
+                      node: 0, depth: 0,
+                      human: "withTax starts. The 20 was copied in, and in here it answers to a different name: amount.",
+                      why: "<b>price</b> out there and <b>amount</b> in here are two names holding the same number, and that is all they have in common. The value was copied at the moment of the call. From inside there is no way to reach price at all — you could not change it if you tried." });
+        r.e("CREATE", { line: 4, name: "tax", value: 4,
+                        why: "A <b>local</b>. It did not come in and it is not going out. It exists because line 4 ran, and it will stop existing when this call does." });
+        r.e("CREATE", { line: 5, name: "total", value: 24,
+                        why: "A second local. Three names are alive in here now: one that came in, two that were made in here." });
+        r.e("RETURN", { line: 6, value: 24, fn: "withTax", frame: true, node: 0,
+                        human: "24 leaves the function. Everything else in here stops existing.",
+                        why: "Three names were alive a moment ago. <b>One</b> value came out. That is the whole bargain: however much a function does inside itself, it says exactly one thing back and the rest is thrown away. Look at which names are left on the board now." });
+        r.e("CREATE", { line: 1, name: "paid", value: 24,
+                        why: "And there it lands. Now look at <b>price</b>: still 20, exactly as it was. It was read, copied, and never touched." });
+      } },
+
+    { family: "fn", version: "twice", versionTitle: "The same function, called twice",
+      board: { kind: "tree", label: "two calls to one function" },
+      code: ["int small = withTax(20);",
+             "int large = withTax(50);",
+             "",
+             "int withTax(int amount) {",
+             "    int tax = amount / 5;",
+             "    int total = amount + tax;",
+             "    return total;",
+             "}"],
+      run: function (r) {
+        var runs = [[20, 4, 24, "small", 0], [50, 10, 60, "large", 1]], k, a, tax, tot, hold, node;
+        for (k = 0; k < runs.length; k++) {
+          a = runs[k][0]; tax = runs[k][1]; tot = runs[k][2];
+          hold = runs[k][3]; node = runs[k][4];
+          r.e("CALL", { line: 3, fn: "withTax", args: "amount = " + a,
+                        frame: "withTax(" + a + ")", node: node, depth: 0,
+                        why: k === 0
+                          ? "One function on the page. It is about to run twice, and the second run will not know the first one happened."
+                          : "Second call, and <b>amount</b> is 50. Not 20 changed into 50 — a brand new amount, made at this moment, in a set of names that did not exist a step ago." });
+          r.e("CREATE", { line: 4, name: "tax", value: tax,
+                          why: k === 1
+                            ? "A new tax, starting from nothing. The tax from the first call was thrown away when that call ended, so there was nothing here to overwrite."
+                            : undefined });
+          r.e("CREATE", { line: 5, name: "total", value: tot });
+          r.e("RETURN", { line: 6, value: tot, fn: "withTax", frame: true, node: node,
+                          human: tot + " goes back, and this call is over." });
+          r.e("CREATE", { line: k, name: hold, value: tot,
+                          why: k === 1
+                            ? "Two calls, two answers, and not one thing carried from the first into the second. That is what makes a function worth having: you can read it once and know what it does, because nothing that happened earlier can quietly change it.<br><br>It has no <b>memory</b> between calls. The next lesson is about what happens when somebody expects it to."
+                            : undefined });
+        }
+      } },
+
+    /* ---- 21. what stops existing, and when ------------------------
+       Catalogue number 21. RETURN already writes gone = the names in the
+       frame it is discarding, so the board dims them without being asked. */
+    { family: "scope", familyTitle: "21 · What disappears when a function ends",
+      version: "locals", versionTitle: "The same name, two different boxes",
+      board: { kind: "tree", label: "one call, and what it could not reach" },
+      code: ["int total = 0;",
+             "int got = addUp(7);",
+             "print(total);",
+             "",
+             "int addUp(int extra) {",
+             "    int total = 100;",
+             "    total = total + extra;",
+             "    return total;",
+             "}"],
+      run: function (r) {
+        r.e("CREATE", { line: 0, name: "total", value: 0,
+                        why: "Remember this number. The question this lesson settles is what line 2 prints, and most people guess wrong the first time." });
+        r.e("CALL", { line: 4, fn: "addUp", args: "extra = 7", frame: "addUp(7)",
+                      node: 0, depth: 0 });
+        r.e("CREATE", { line: 5, name: "total", value: 100,
+                        why: "Read that line again. It says <b>total</b>, and there is already a total. This does not find the old one and change it. It makes a <b>second</b> box that happens to share the name, in here, where the old one cannot be seen at all. Two boxes, one name, and only the nearest one is visible." });
+        r.e("UPDATE", { line: 6, name: "total", from: 100, to: 107,
+                        why: "107 is the inner one. The outer total has not moved, and nothing on line 6 could have moved it." });
+        r.e("RETURN", { line: 7, value: 107, fn: "addUp", frame: true, node: 0,
+                        human: "107 goes back, and both of the names in here stop existing.",
+                        why: "The inner total is gone. Not set back to zero — <b>gone</b>, and extra with it. The only trace either of them leaves anywhere is the single value that was returned." });
+        r.e("CREATE", { line: 1, name: "got", value: 107 });
+        r.e("COMPARE", { line: 2, text: "total", real: "0", result: true,
+                         then: "so line 2 prints 0, not 107",
+                         why: "There it is. <b>got</b> is 107 because 107 was handed out and caught. <b>total</b> is 0 because the outer one was never reachable from inside that function, whatever it happened to be called.<br><br>If you want a function to change something out here, handing a value back and catching it is how. Sharing a name is not how, and it never was." });
+      } },
+
+    { family: "scope", version: "lifetime", versionTitle: "It starts again every time",
+      board: { kind: "tree", label: "three calls, three answers" },
+      code: ["int a = counter();",
+             "int b = counter();",
+             "int c = counter();",
+             "",
+             "int counter() {",
+             "    int count = 0;",
+             "    count = count + 1;",
+             "    return count;",
+             "}"],
+      run: function (r) {
+        var names = ["a", "b", "c"], k;
+        for (k = 0; k < 3; k++) {
+          r.e("CALL", { line: 4, fn: "counter", frame: "counter()", node: k, depth: 0,
+                        why: k === 0
+                          ? "This one takes nothing in. Read lines 5 to 7 and commit to a guess before stepping on: do the three calls hand back 1, 2, 3 — or something else?"
+                          : undefined });
+          r.e("CREATE", { line: 5, name: "count", value: 0,
+                          why: k === 1
+                            ? "And there is the answer. Line 5 runs <b>again</b>, and it says count starts at 0. It is not remembering last time and carrying on. There is nothing left of last time to carry on from."
+                            : undefined });
+          r.e("UPDATE", { line: 6, name: "count", from: 0, to: 1 });
+          r.e("RETURN", { line: 7, value: 1, fn: "counter", frame: true, node: k,
+                          human: "It hands back 1, and count disappears." });
+          r.e("CREATE", { line: k, name: names[k], value: 1,
+                          why: k === 2
+                            ? "<b>1, 1, 1.</b> Three calls, the same answer every time, from code that looks for all the world as though it counts.<br><br>A local's life is exactly one call long. If a number has to survive past the return it must live somewhere that outlives the call: handed back and kept by the caller, or held outside the function altogether. There is no third option, and hoping is not one of them."
+                            : undefined });
+        }
+      } },
+
+    /* ---- 31. the same question, asked again and again -------------
+       Catalogue number 31. The tree board and the call machinery belong
+       to lesson 13; what is new is the tally, which is the whole point.
+       Both versions run fibTally, so the only difference between them is
+       n - which is what makes the cost panel worth reading. */
+    { family: "repeat", familyTitle: "31 · Why recursion repeats work",
+      version: "five", versionTitle: "Count the calls, not the shape",
+      board: { kind: "tree", label: "every call, and how many are the same question" },
+      code: ["int fib(int n) {",
+             "    if (n <= 1) return n;",
+             "    return fib(n - 1) + fib(n - 2);",
+             "}"],
+      run: function (r) { fibTally(r, 5); } },
+
+    { family: "repeat", version: "six", versionTitle: "Now add one to n",
+      board: { kind: "tree", label: "the same code, asked for one more" },
+      code: ["int fib(int n) {",
+             "    if (n <= 1) return n;",
+             "    return fib(n - 1) + fib(n - 2);",
+             "}"],
+      run: function (r) { fibTally(r, 6); } },
+
+    /* ---- 33. keep the answer instead of asking again --------------
+       Catalogue number 33, and the direct reply to 31. The table board
+       is lesson 10's, unchanged: a table that grows to fit what turns
+       up is exactly what a table of answers is. */
+    { family: "build", familyTitle: "33 · Build the answer from smaller answers",
+      version: "fib", versionTitle: "The same numbers, worked out once each",
+      board: { kind: "table", input: ["0", "1", "2", "3", "4", "5", "6"],
+               label: "which one you are asking for",
+               tableLabel: "the answers, written down as they are worked out",
+               emptyLabel: "nothing worked out yet" },
+      code: ["int[] answer = new int[n + 1];",
+             "answer[0] = 0;",
+             "answer[1] = 1;",
+             "for (int i = 2; i <= n; i++)",
+             "    answer[i] = answer[i - 1] + answer[i - 2];",
+             "return answer[n];"],
+      run: function (r) {
+        var a = [0, 1], i, top = 6;
+        r.e("WRITE", { line: 1, key: "fib(0)", value: 0, marks: [["i", 0, 0]],
+                       code: "answer[0] = 0",
+                       human: "fib(0) is 0. Written down, once.",
+                       why: "Exactly the same two facts the recursion started from. The difference is what happens to them: there they were re-derived every time they were wanted, and here they are <b>kept</b>." });
+        r.e("WRITE", { line: 2, key: "fib(1)", value: 1, marks: [["i", 1, 0]],
+                       code: "answer[1] = 1",
+                       human: "fib(1) is 1. Also written down." });
+        r.e("ENTER", { line: 3, loop: { name: "i", from: 2, of: top + 1,
+                                        label: "loop", word: "answer" } });
+        for (i = 2; i <= top; i++) {
+          r.e("MOVE", { line: 3, name: "i", to: i, marks: [["i", i, 0]],
+                        human: "Now work out fib(" + i + ")." });
+          r.e("READ", { line: 4, key: "fib(" + (i - 1) + ")", value: a[i - 1],
+                        marks: [["i", i, 0]] });
+          r.e("READ", { line: 4, key: "fib(" + (i - 2) + ")", value: a[i - 2],
+                        marks: [["i", i, 0]],
+                        why: i === 2
+                          ? "Both of these were already on the board, so both were one step to fetch. Nothing was worked out twice, and nothing was worked out that was not needed. Going <b>upwards</b> means every answer is ready before anything asks for it."
+                          : undefined });
+          a[i] = a[i - 1] + a[i - 2];
+          r.e("WRITE", { line: 4, key: "fib(" + i + ")", value: a[i],
+                         marks: [["i", i, 0]],
+                         code: "answer[" + i + "] = " + a[i - 1] + " + " + a[i - 2],
+                         human: a[i - 1] + " + " + a[i - 2] + " = " + a[i] + ", and down it goes." });
+        }
+        r.e("EXIT", { line: 3, loop: "i" });
+        r.e("RETURN", { line: 5, value: a[top], fn: "fib",
+                        why: "fib(6) is " + a[top] + ", and the recursion agreed — it just took <b>25 calls</b> to say so. Look at the cost panel: seven things written and ten looked up, and every single lookup found something already there.<br><br>The code is not cleverer. It is shorter and duller than the recursion, and a beginner would write it sooner. All it does differently is write the answers down, and refuse to ask a question twice.<br><br>This way round has a name — <b>building up from the bottom</b> — and the other way round, where you keep the recursion but have it check a notebook first, is lesson 32." });
+      } },
+
+    { family: "build", version: "stairs", versionTitle: "A different question, the same shape",
+      board: { kind: "table", input: ["0", "1", "2", "3", "4", "5", "6"],
+               label: "how many stairs are left to climb",
+               tableLabel: "ways of climbing that many",
+               emptyLabel: "nothing worked out yet" },
+      code: ["int[] ways = new int[n + 1];",
+             "ways[0] = 1;",
+             "ways[1] = 1;",
+             "for (int i = 2; i <= n; i++)",
+             "    ways[i] = ways[i - 1] + ways[i - 2];",
+             "return ways[n];"],
+      run: function (r) {
+        var w = [1, 1], i, top = 6;
+        r.e("WRITE", { line: 1, key: "0 stairs", value: 1, marks: [["i", 0, 0]],
+                       code: "ways[0] = 1",
+                       human: "No stairs at all: one way to do it, which is to do nothing.",
+                       why: "A staircase, and you may take one step or two at a time. How many different ways up? Before stepping on, look at line 4 and see whether anything about it feels familiar." });
+        r.e("WRITE", { line: 2, key: "1 stair", value: 1, marks: [["i", 1, 0]],
+                       code: "ways[1] = 1",
+                       human: "One stair: one way. You take the single step." });
+        r.e("ENTER", { line: 3, loop: { name: "i", from: 2, of: top + 1,
+                                        label: "loop", word: "step" } });
+        for (i = 2; i <= top; i++) {
+          r.e("MOVE", { line: 3, name: "i", to: i, marks: [["i", i, 0]],
+                        human: "How many ways up " + i + " stairs?" });
+          r.e("READ", { line: 4, key: (i - 1) + " stair" + (i - 1 === 1 ? "" : "s"),
+                        value: w[i - 1], marks: [["i", i, 0]],
+                        why: i === 2
+                          ? "Here is where it comes from, and it is worth saying in words. To be standing on stair " + i + ", your last move was either a single step from " + (i - 1) + ", or a double from " + (i - 2) + ". There is no third way to arrive. So the ways of getting here are the ways of getting to those two, added together — and both were worked out already."
+                          : undefined });
+          r.e("READ", { line: 4, key: (i - 2) + " stair" + (i - 2 === 1 ? "" : "s"),
+                        value: w[i - 2], marks: [["i", i, 0]] });
+          w[i] = w[i - 1] + w[i - 2];
+          r.e("WRITE", { line: 4, key: i + " stairs", value: w[i], marks: [["i", i, 0]],
+                         code: "ways[" + i + "] = " + w[i - 1] + " + " + w[i - 2],
+                         human: w[i - 1] + " + " + w[i - 2] + " = " + w[i] + " ways." });
+        }
+        r.e("EXIT", { line: 3, loop: "i" });
+        r.e("RETURN", { line: 5, value: w[top], fn: "climb",
+                        why: "Now put this code beside the other version. <b>They are the same program.</b> Different names, one different starting value, and otherwise line for line identical.<br><br>Nobody told you a staircase was Fibonacci. It is not that stairs are secretly about rabbits: it is that both questions have the same shape, <i>this answer is the two before it added together</i>, and a shape does not care what story it arrived in.<br><br>That recognition is most of the skill. Not learning forty algorithms — learning to notice when the thing in front of you is one you have already solved wearing a different hat." });
+      } },
+
+    /* ---- 34. take the best thing in front of you ------------------
+       Catalogue number 34. Two versions, and the second one is the
+       lesson: greedy is the topic where the honest counterexample
+       teaches more than the success does. */
+    { family: "greedy", familyTitle: "34 · Pick the best local choice",
+      version: "coins", versionTitle: "Take the biggest coin that fits",
+      board: listBoard([50, 20, 10, 5, 2, 1], "the coins, biggest first"),
+      code: ["int left = amount;",
+             "int coins = 0;",
+             "for (int i = 0; i < value.length; i++) {",
+             "    while (value[i] <= left) {",
+             "        left = left - value[i];",
+             "        coins = coins + 1;",
+             "    }",
+             "}",
+             "return coins;"],
+      run: function (r) {
+        var v = this.board.values, left = 87, coins = 0, i, was;
+        r.e("CREATE", { line: 0, name: "left", value: left,
+                        why: "87p to make up, and a rule so simple it barely feels like an algorithm: always reach for the biggest coin that still fits. No looking ahead, no trying combinations, no going back." });
+        r.e("CREATE", { line: 1, name: "coins", value: 0 });
+        r.e("ENTER", { line: 2, loop: { name: "i", from: 0, of: v.length,
+                                        label: "loop", word: "coin" } });
+        for (i = 0; i < v.length; i++) {
+          r.e("MOVE", { line: 2, name: "i", to: i, marks: [["i", i, 0]],
+                        human: "Try the " + v[i] + "p." });
+          while (v[i] <= left) {
+            r.e("COMPARE", { line: 3, text: "value[i] <= left",
+                             real: v[i] + " <= " + left, result: true,
+                             then: "so take it", marks: [["i", i, 0]] });
+            was = left;
+            left -= v[i];
+            r.e("UPDATE", { line: 4, name: "left", from: was, to: left,
+                            marks: [["i", i, 0]] });
+            coins++;
+            r.e("UPDATE", { line: 5, name: "coins", from: coins - 1, to: coins,
+                            marks: [["i", i, 0]] });
+          }
+          r.e("COMPARE", { line: 3, text: "value[i] <= left",
+                           real: v[i] + " <= " + left, result: false,
+                           then: "so move down to the next coin", marks: [["i", i, 0]] });
+        }
+        r.e("EXIT", { line: 2, loop: "i" });
+        r.e("RETURN", { line: 8, value: coins, fn: "change",
+                        why: "<b>Five coins</b>: 50, 20, 10, 5, 2. That is the fewest possible, and it took one pass down the list with nothing tried and abandoned.<br><br>That is the appeal of a greedy rule. It is quick to write, quick to run, and quick to explain. What it never does is check — it takes the best thing in front of it and never asks whether that choice cost it something later.<br><br>With British coins it happens to get away with it, every time, for every amount. The next version is the same rule, the same code, in a country with different coins." });
+      } },
+
+    { family: "greedy", version: "fails", versionTitle: "The same rule, and it gets it wrong",
+      board: listBoard([4, 3, 1], "the coins here: 4, 3 and 1"),
+      code: ["int left = amount;",
+             "int coins = 0;",
+             "for (int i = 0; i < value.length; i++) {",
+             "    while (value[i] <= left) {",
+             "        left = left - value[i];",
+             "        coins = coins + 1;",
+             "    }",
+             "}",
+             "return coins;"],
+      run: function (r) {
+        var v = this.board.values, left = 6, coins = 0, i, was;
+        r.e("CREATE", { line: 0, name: "left", value: left,
+                        why: "Not one character of the code has changed. The coins have: 4, 3 and 1, and you want 6. Work out the best answer in your head before stepping on — it takes a couple of seconds." });
+        r.e("CREATE", { line: 1, name: "coins", value: 0 });
+        r.e("ENTER", { line: 2, loop: { name: "i", from: 0, of: v.length,
+                                        label: "loop", word: "coin" } });
+        for (i = 0; i < v.length; i++) {
+          r.e("MOVE", { line: 2, name: "i", to: i, marks: [["i", i, 0]],
+                        human: "Try the " + v[i] + "." });
+          while (v[i] <= left) {
+            r.e("COMPARE", { line: 3, text: "value[i] <= left",
+                             real: v[i] + " <= " + left, result: true,
+                             then: "so take it", marks: [["i", i, 0]],
+                             why: (i === 0 && coins === 0)
+                               ? "And there is the mistake, already made, in the very first move. Taking the 4 is obviously right — it is the biggest thing that fits. It also leaves 2, which these coins cannot make in one go, and the rule has no way of knowing that and no way of changing its mind."
+                               : undefined });
+            was = left;
+            left -= v[i];
+            r.e("UPDATE", { line: 4, name: "left", from: was, to: left,
+                            marks: [["i", i, 0]] });
+            coins++;
+            r.e("UPDATE", { line: 5, name: "coins", from: coins - 1, to: coins,
+                            marks: [["i", i, 0]] });
+          }
+          r.e("COMPARE", { line: 3, text: "value[i] <= left",
+                           real: v[i] + " <= " + left, result: false,
+                           then: i === 1 ? "so the 3 is out of reach now" : "so move on",
+                           marks: [["i", i, 0]],
+                           why: i === 1
+                             ? "Look at this one closely. The 3 does not fit, because only 2 is left. Two 3s would have made 6 exactly, in two coins — and that possibility was thrown away several steps ago by a choice that looked unarguable at the time."
+                             : undefined });
+        }
+        r.e("EXIT", { line: 2, loop: "i" });
+        r.e("RETURN", { line: 8, value: coins, fn: "change",
+                        why: "<b>Three coins: 4, 1, 1. The right answer is two: 3 and 3.</b><br><br>The code is not buggy. It did exactly what it says, correctly, and produced a worse answer than a child with the coins on a table. Greedy rules are not wrong — they are <b>unchecked</b>, and whether one works is a property of the problem, never of the code.<br><br>Which is the uncomfortable part: you cannot tell by reading it. Nothing in these nine lines looks different from the version that was perfect a moment ago. You find out by proving it, or by being shown a case like this one.<br><br>When a greedy rule will not do, what replaces it is trying the possibilities and keeping the answers so none is worked out twice — which is lesson 33, doing a harder job than Fibonacci." });
+      } },
+
+    /* ---- 35. looking for a word inside a word ---------------------
+       Catalogue number 35. The window that binary search brought in is
+       doing the work here: win marks the stretch the pattern is being
+       held against, so the sliding is visible rather than described. */
+    { family: "search", familyTitle: "35 · Search for a word inside a word",
+      version: "naive", versionTitle: "Slide it along and compare",
+      board: listBoard(["b", "a", "n", "a", "n", "a"], "the text · looking for “ana”"),
+      code: ["for (int i = 0; i + m <= n; i++) {",
+             "    int j = 0;",
+             "    while (j < m && text[i + j] == pat[j])",
+             "        j = j + 1;",
+             "    if (j == m) return i;",
+             "}",
+             "return -1;"],
+      run: function (r) { slideSearch(r, this.board.values, ["a", "n", "a"], false); } },
+
+    { family: "search", version: "worst", versionTitle: "The text that makes it crawl",
+      board: listBoard(["a", "a", "a", "a", "a", "a", "b"], "the text · looking for “aaab”"),
+      code: ["for (int i = 0; i + m <= n; i++) {",
+             "    int j = 0;",
+             "    while (j < m && text[i + j] == pat[j])",
+             "        j = j + 1;",
+             "    if (j == m) return i;",
+             "}",
+             "return -1;"],
+      run: function (r) { slideSearch(r, this.board.values, ["a", "a", "a", "b"], true); } },
+
+    /* ---- 36. a number is a row of switches ------------------------
+       Catalogue number 36. Nothing but READ, COMPARE and UPDATE on a
+       list board: the whole lesson is that the row was always there. */
+    { family: "bits", familyTitle: "36 · Bits are switches",
+      version: "value", versionTitle: "What a number is underneath",
+      board: listBoard([0, 0, 0, 0, 1, 1, 0, 1],
+                       "eight switches, biggest on the left"),
+      code: ["int total = 0;",
+             "int place = 1;",
+             "for (int i = 7; i >= 0; i--) {",
+             "    if (bits[i] == 1)",
+             "        total = total + place;",
+             "    place = place * 2;",
+             "}",
+             "return total;"],
+      run: function (r) {
+        var b = this.board.values, i, total = 0, place = 1, was;
+        r.e("CREATE", { line: 0, name: "total", value: 0,
+                        why: "Eight switches, each either on or off. That row is not a picture of a number and it is not a way of storing one: down at the metal it <b>is</b> the number, and this loop works out which one." });
+        r.e("CREATE", { line: 1, name: "place", value: 1,
+                        why: "Start at the right-hand end, where a switch is worth 1. Every step left, it doubles. Nobody has to tell you the answer — you are about to count it." });
+        r.e("ENTER", { line: 2, loop: { name: "i", from: 0, of: b.length,
+                                        label: "loop", word: "switch" } });
+        for (i = b.length - 1; i >= 0; i--) {
+          r.e("MOVE", { line: 2, name: "i", to: i, marks: [["i", i, 0]],
+                        human: "Switch " + i + ", worth " + place + "." });
+          r.e("READ", { line: 3, from: "bits", at: i, value: b[i], marks: [["i", i, 0]] });
+          r.e("COMPARE", { line: 3, text: "bits[i] == 1", real: b[i] + " == 1",
+                           result: b[i] === 1,
+                           then: b[i] === 1 ? "so this one counts, and it is worth " + place
+                                            : "so it adds nothing",
+                           marks: [["i", i, 0]] });
+          if (b[i] === 1) {
+            was = total;
+            total += place;
+            r.e("UPDATE", { line: 4, name: "total", from: was, to: total,
+                            marks: [["i", i, 0]],
+                            why: was === 0
+                              ? "One switch on, and the number so far is 1. Keep watching <b>place</b> rather than the total: it is the doubling that does all the work here."
+                              : undefined });
+          }
+          was = place;
+          place *= 2;
+          r.e("UPDATE", { line: 5, name: "place", from: was, to: place,
+                          marks: [["i", i, 0]] });
+        }
+        r.e("EXIT", { line: 2, loop: "i" });
+        r.e("RETURN", { line: 7, value: total, fn: "value",
+                        why: "<b>8 + 4 + 1 = " + total + ".</b> You counted every one of those yourself, and no step of it was arithmetic you did not already know.<br><br>This is what a whole number is. Not a thing that a computer converts into switches when it has to — a row of switches, all the way down, and the decimal you are used to reading is the translation, not the original.<br><br>Eight of them reach 255 and no further. That is not a rule somebody chose to be awkward: it is simply how far eight switches go, and it is why a number can overflow." });
+      } },
+
+    { family: "bits", version: "check", versionTitle: "Eight yes-or-no answers in one number",
+      board: listBoard([0, 0, 0, 0, 1, 1, 0, 1],
+                       "the same switches, now permissions"),
+      code: ["boolean can(int perms, int flag) {",
+             "    return (perms & flag) != 0;",
+             "}",
+             "",
+             "can(perms, READ);     // flag = 1",
+             "can(perms, WRITE);    // flag = 2",
+             "can(perms, DELETE);   // flag = 4",
+             "can(perms, SHARE);    // flag = 8"],
+      run: function (r) {
+        var b = this.board.values,
+            asks = [["read", 1, 7, 4], ["write", 2, 6, 5],
+                    ["delete", 4, 5, 6], ["share", 8, 4, 7]],
+            k, name, flag, at, line, on;
+        r.e("CREATE", { line: 0, name: "perms", value: 13,
+                        why: "One number, 13, and it is the whole permission list for an account. The previous version worked out that 13 is these switches. Now each switch is given a job: the rightmost means <b>read</b>, the next <b>write</b>, then <b>delete</b>, then <b>share</b>." });
+        for (k = 0; k < asks.length; k++) {
+          name = asks[k][0]; flag = asks[k][1]; at = asks[k][2]; line = asks[k][3];
+          on = b[at] === 1;
+          r.e("READ", { line: line, from: "bits", at: at, value: b[at],
+                        marks: [[name, at, on ? 0 : 3]] });
+          r.e("COMPARE", { line: 1, text: "(perms & " + flag + ") != 0",
+                           real: "switch " + at + " is " + (on ? "on" : "off"),
+                           result: on,
+                           then: on ? "so it can " + name : "so it cannot " + name,
+                           marks: [[name, at, on ? 0 : 3]],
+                           why: k === 0
+                             ? "This is the move worth having. It did not go through the switches looking for the right one — the flag <b>is</b> the position, so the machine goes straight there. One step, and it would still be one step if there were sixty-four of them."
+                             : (k === 1
+                                 ? "Off, so the answer is no. Notice what did not happen: the other seven switches were not read, not copied, and not disturbed. Asking about one of them is not a question about the number as a whole."
+                                 : undefined) });
+        }
+        r.e("RETURN", { line: 2, value: "read ✓ · write ✗ · delete ✓ · share ✓", fn: "can",
+                        why: "Four questions answered, four steps taken, and one number carried all of it.<br><br>Compare that with keeping a list of the words somebody is allowed: <i>[\"read\", \"delete\", \"share\"]</i>. To answer <i>can they write?</i> you would have to walk that list and compare strings, every time, and the cost would depend on how long it was.<br><br>Here the cost never depends on anything. That is why permissions, file modes and hardware registers are packed into a single number, and it is why you keep meeting these numbers in code that otherwise has nothing to do with bits." });
+      } },
   ];
 
 
@@ -2274,6 +2863,121 @@
       sig: "int longestRun(String text)",
       watch: "Seeing a letter for the second time is not by itself a reason to shorten the run. It only matters if the <b>earlier copy is still inside</b> the stretch being measured — and it very often is not."
     },
+
+    "fn": {
+      ask: "You have a price, and you need the price with tax on it. Write it once as a function so the rest of the program can ask for the answer without knowing how it is worked out — and be clear about what actually crosses the boundary, in each direction.",
+      ex: { "in": "price = 20", out: "24", why: "20, plus a fifth of 20" },
+      input: "One whole number: the price before tax.",
+      returns: "One whole number: the price with the tax added on.",
+      sig: "int withTax(int amount)",
+      watch: "The function is handed a <b>copy</b>. Changing amount inside would not change price outside, and the fact that they have different names is a hint about that, not the reason for it."
+    },
+
+    "scope:locals": {
+      ask: "Somebody writes a function that declares a variable with the same name as one that already exists outside it, changes that variable, and returns. Say what the outer one holds afterwards, and why.",
+      ex: { "in": "total = 0 outside, then addUp(7)", out: "got = 107, total = 0",
+            why: "two boxes, one name" },
+      input: "One whole number to add on.",
+      returns: "One whole number: the inner total once the addition is done.",
+      sig: "int addUp(int extra)",
+      watch: "The inner declaration does not find the outer one and change it. It makes a <b>second</b> box that hides the first for as long as the function runs, and the outer one is untouched from beginning to end."
+    },
+
+    "scope:lifetime": {
+      ask: "A function sets a counter to zero, adds one to it, and returns it. It gets called three times in a row. Commit to the three answers before you run it.",
+      ex: { "in": "counter() three times", out: "1, 1, 1",
+            why: "count is made again from scratch on every call" },
+      input: "Nothing at all.",
+      returns: "One whole number, and it is the same one every time.",
+      sig: "int counter()",
+      watch: "A local lives exactly as long as one call. For a number to survive the return it has to be kept by the caller or live outside the function altogether. Expecting it to persist is not a mechanism."
+    },
+
+    "repeat": {
+      ask: "Work out the nth Fibonacci number by writing the definition straight out as a function, the way it reads in words. Then count how many calls that actually took. Then ask for one more and count again.",
+      ex: { "in": "n = 5", out: "5, in 15 calls",
+            why: "fib(1) alone gets worked out five separate times" },
+      input: "One small whole number.",
+      returns: "The nth Fibonacci number.",
+      sig: "int fib(int n)",
+      watch: "Nothing in this code is wrong, and no single step in it is slow. The whole cost is <b>answers being thrown away and asked for again</b>, which stays invisible until somebody counts them."
+    },
+
+    "build:fib": {
+      ask: "The same Fibonacci number, without asking any question twice. Start from the two you already know, work upwards, and write each answer down as you get it.",
+      ex: { "in": "n = 6", out: "8", why: "0, 1, 1, 2, 3, 5, 8" },
+      input: "One whole number, zero or more.",
+      returns: "The nth Fibonacci number.",
+      sig: "int fib(int n)",
+      watch: "Both answers that line 4 needs are always already there, and that is only true because it works <b>upwards</b>. Start from the top instead and you are back in the recursion, forgetting everything as you go."
+    },
+
+    "build:stairs": {
+      ask: "A staircase with n steps. You can go up one step at a time or two at a time, in any mixture. How many different ways are there to reach the top?",
+      ex: { "in": "n = 4", out: "5", why: "1111, 112, 121, 211, 22" },
+      input: "One whole number: how many stairs there are.",
+      returns: "One whole number: how many different ways up.",
+      sig: "int climb(int n)",
+      watch: "A staircase of <b>zero</b> stairs has one way up, not none — you are already at the top, and doing nothing counts as a way. Set that to 0 and every single answer after it comes out wrong."
+    },
+
+    "greedy:coins": {
+      ask: "Make 87p out of as few coins as you can, from 50, 20, 10, 5, 2 and 1. The obvious rule is to keep taking the biggest coin that still fits, and here it is also the right one.",
+      ex: { "in": "87", out: "5", why: "50, 20, 10, 5, 2" },
+      input: "An amount in pence, and the coins available, biggest first.",
+      returns: "One whole number: how many coins it used.",
+      sig: "int change(int amount, int[] value)",
+      watch: "It never reconsiders. Every coin it takes is taken for good, and that is what makes it quick — it is also the thing that can cost it the right answer somewhere else."
+    },
+
+    "greedy:fails": {
+      ask: "The same rule, and the very same code, in a place where the coins are 4, 3 and 1. Make 6. Work out the fewest coins by hand first, then watch what the rule does.",
+      ex: { "in": "6, from coins 4, 3 and 1", out: "3, when the best is 2",
+            why: "it takes the 4 and strands itself on 2" },
+      input: "An amount, and the coins available, biggest first.",
+      returns: "One whole number: how many coins the rule used.",
+      sig: "int change(int amount, int[] value)",
+      watch: "The code is not broken and there is no bug in it to find. Whether a greedy rule gives the right answer is a property of the <b>coins</b>, not of the function, and you cannot tell by reading the function."
+    },
+
+    "search:naive": {
+      ask: "Find where one word first appears inside another. Hold the short one against the long one, compare letter by letter, and shuffle along by one when it does not fit.",
+      ex: { "in": "“banana”, looking for “ana”", out: "1",
+            why: "the match starts at position 1" },
+      input: "Two strings: the text, and the pattern to look for in it.",
+      returns: "The position where it starts, or -1 if it is not in there at all.",
+      sig: "int indexOf(String text, String pat)",
+      watch: "The last position worth trying is <b>the text's length minus the pattern's</b>. Go past that and you are comparing against letters the text never had."
+    },
+
+    "search:worst": {
+      ask: "The same function, now on a text that is almost all one letter, looking for a pattern that is almost all the same letter. Count the comparisons, then go back and count the last run's.",
+      ex: { "in": "“aaaaaab”, looking for “aaab”", out: "3, after 20 comparisons",
+            why: "nearly every attempt fails on its very last letter" },
+      input: "Two strings.",
+      returns: "The position where it starts, or -1.",
+      sig: "int indexOf(String text, String pat)",
+      watch: "Not one character of the code changed. What something costs is never a property of the code by itself — it is the code <b>and</b> what you hand it, which is why a fair test has to include the unkind case."
+    },
+
+    "bits:value": {
+      ask: "Here is one byte: eight switches, each of them on or off. Work out which whole number it is without being told, by giving every switch its worth and adding up the ones that are on.",
+      ex: { "in": "00001101", out: "13", why: "8 + 4 + 1" },
+      input: "Eight switches, the biggest on the left.",
+      returns: "One whole number.",
+      sig: "int value(int[] bits)",
+      watch: "The switch on the right is worth 1, and every step to the left <b>doubles</b> it. Get that the wrong way round and every number you work out comes back mirrored."
+    },
+
+    "bits:check": {
+      ask: "One number holds everything an account is allowed to do, one switch per permission. Answer four separate yes-or-no questions about it without unpacking the number and without reading the switches you were not asked about.",
+      ex: { "in": "perms = 13, can it delete?", out: "yes",
+            why: "the delete switch is on" },
+      input: "The permissions number, and which flag is being asked about.",
+      returns: "Yes or no.",
+      sig: "boolean can(int perms, int flag)",
+      watch: "Ask with <b>!= 0</b>, never with <b>== 1</b>. <i>perms & 4</i> comes back as 4 when that switch is on, not as 1, so a test against 1 quietly works for the first flag and fails for every other one."
+    },
   };
 
   // family title carries down to every version in that family, and so does the
@@ -2366,7 +3070,16 @@
       switch (ev.op) {
 
       case "CALL":
-        var an = ev.args.split(" = ")[0], av = ev.args.split(" = ")[1];
+        // args is "name = value", or missing entirely. A function that takes
+        // nothing is ordinary, and until this it could not be expressed at
+        // all: splitting an empty string put a parameter called "" on the
+        // board. Lesson 21 needs one, because "it starts again every time"
+        // only lands when nothing is handed in.
+        var an = null, av = null;
+        if (ev.args) {
+          an = ev.args.split(" = ")[0];
+          av = ev.args.split(" = ")[1];
+        }
         if (ev.frame) {
           // A call does not add to the names already there. It puts a fresh,
           // private set on top of them, and that is the thing nobody is told.
@@ -2379,18 +3092,22 @@
             treeAt = ev.node;
           }
         }
-        vars[an] = av;
+        if (an) { vars[an] = av; }
         snap(ev, {
           beginner: ev.human || (ev.frame
-            ? ev.frame + " starts, with its own private " + an + " of " + av + "."
+            ? (an
+                ? ev.frame + " starts, with its own private " + an + " of " + av + "."
+                : ev.frame + " starts. It was handed nothing at all.")
             : "The function is handed its numbers."),
-          code: ev.fn + "(" + av + ")",
+          code: ev.fn + "(" + (an ? av : "") + ")",
           machine: "call " + ev.fn + " \u00b7 depth " + loops.length
         },
         ev.frame
-          ? "Nothing was overwritten. The <b>" + an + "</b> belonging to the call that made this one is still sitting underneath, untouched, and will be exactly as it was when this finishes. Every call gets its own."
+          ? (an
+              ? "Nothing was overwritten. The <b>" + an + "</b> belonging to the call that made this one is still sitting underneath, untouched, and will be exactly as it was when this finishes. Every call gets its own."
+              : "It takes nothing in, so there is nothing to copy. It still gets its own fresh set of names, and they start from scratch \u2014 which is the whole point of the next few steps.")
           : "A <b>parameter</b> is the name the function gives to whatever it was handed.",
-        null, [an]);
+        null, an ? [an] : []);
         break;
 
       case "CREATE":
@@ -3137,7 +3854,12 @@
       .replace(/\s=\s/g, " is ")
       .replace(/>/g, " is more than ")
       .replace(/\bi\+\+/g, "i goes up by one")
-      .replace(/(^|[\s(\[])0($|[\s,.;:)\]])/g, "$1nought$2")
+      // A bare 0 gets read as "zou" by some browser voices, so it is spelled
+      // out. The word is "zero", not "nought": indexing is zero-based, binary
+      // is zeros and ones, and that is the word every book they read next
+      // uses. Spelling it out fixes the pronunciation without teaching them a
+      // word they cannot reuse.
+      .replace(/(^|[\s(\[])0($|[\s,.;:)\]])/g, "$1zero$2")
       .replace(/\s{2,}/g, " ");
   }
 
@@ -3398,7 +4120,9 @@
     cost: "Lists and what they cost", nested: "Nested loops", word: "Strings",
     find: "Searching", pile: "Stacks and queues", table: "Dictionaries",
     sort: "Sorting", calls: "Recursion", pair: "Interview classics",
-    fizz: "Conditions", queue: "Stacks and queues", set: "Sets", window: "Sliding window", longest: "Sliding window"
+    fizz: "Conditions", queue: "Stacks and queues", set: "Sets", window: "Sliding window",
+    longest: "Sliding window", fn: "Functions", scope: "Functions", repeat: "Recursion",
+    build: "Dynamic programming", greedy: "Greedy", search: "Strings", bits: "Bits"
   };
 
   function keepThis() {

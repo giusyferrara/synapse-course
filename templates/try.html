@@ -249,7 +249,48 @@
   footer .legal .links { font-weight: 600; }
   footer .legal .small { font-size: 12.5px; line-height: 1.65; }
 
-  a:focus-visible, .btn:focus-visible, .way:focus-visible, .theme:focus-visible, iframe:focus-visible {
+  /* The tutor, open to anyone. Until November 2026 it sat behind the sign-up,
+     and the logs showed what that cost: visitors came, nobody met the tutor. */
+  .ask {
+    margin-top: 22px; background: var(--sheet); border: 1px solid var(--rule);
+    border-radius: 14px; padding: 22px 22px 18px;
+  }
+  .ask h2 { margin: 0 0 4px; font-size: clamp(20px, 2.4vw, 24px); letter-spacing: -.015em; }
+  .ask .sub { margin: 0 0 14px; color: var(--ink-soft); font-size: 15.5px; max-width: 70ch; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .chip {
+    font: inherit; font-size: 14.5px; cursor: pointer; text-align: left;
+    background: var(--sunk); color: var(--ink); border: 1px solid var(--rule);
+    border-radius: 999px; padding: 7px 13px;
+  }
+  .chip:hover { border-color: var(--brand-deep); }
+  .log { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .log:empty { display: none; }
+  .msg { border-radius: 10px; padding: 10px 14px; font-size: 15.5px; max-width: 100%; overflow-wrap: anywhere; }
+  .msg.me { align-self: flex-end; background: var(--go-soft); border: 1px solid var(--go); max-width: 85%; white-space: pre-wrap; }
+  .msg.ai { align-self: stretch; background: var(--sunk); border: 1px solid var(--rule); }
+  .msg.ai p { margin: 0 0 8px; } .msg.ai p:last-child { margin-bottom: 0; }
+  .msg.ai pre {
+    margin: 8px 0; padding: 10px 12px; border-radius: 8px; overflow-x: auto;
+    background: var(--sheet); border: 1px solid var(--rule); font-size: 14px;
+  }
+  .msg.ai code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .92em; }
+  .msg.ai .h { font-weight: 700; margin: 10px 0 4px; }
+  .msg.wait { color: var(--ink-faint); font-style: italic; }
+  .msg.limit { background: var(--go-soft); border: 1px solid var(--go); }
+  .askform { display: flex; gap: 10px; align-items: flex-end; }
+  .askform textarea {
+    flex: 1; font: inherit; font-size: 16px; color: var(--ink); background: var(--ground);
+    border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px;
+    min-height: 48px; max-height: 200px; resize: vertical;
+  }
+  .askform textarea:focus-visible { outline: 3px solid var(--brand-deep); outline-offset: 2px; }
+  .askform .btn:disabled { opacity: .6; cursor: default; }
+  .fine { margin: 10px 0 0; font-size: 13.5px; color: var(--ink-faint); }
+  .fine a { color: var(--ink-soft); }
+  @media (max-width: 560px) { .askform { flex-direction: column; align-items: stretch; } }
+
+  a:focus-visible, .btn:focus-visible, .way:focus-visible, .theme:focus-visible, iframe:focus-visible, .chip:focus-visible {
     outline: 3px solid var(--brand-deep); outline-offset: 3px;
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
@@ -283,11 +324,11 @@
   <p class="open">Try a full lesson &mdash; no account required</p>
   <!--/GUEST-->
   <!--MEMBER-->
-  <p class="open">Lesson 1 of seventeen &mdash; the rest are a click away</p>
+  <p class="open">Lesson 1 of twenty-four &mdash; the rest are a click away</p>
   <!--/MEMBER-->
 
   <div class="stage">
-    <div class="ways" role="tablist" aria-label="Two ways through this lesson">
+    <div class="ways" role="tablist" aria-label="Lessons you can open here">
       <button class="way" type="button" role="tab" id="way-drive"
               aria-selected="true" aria-controls="lesson">
         Take the controls
@@ -295,8 +336,23 @@
       </button>
       <button class="way" type="button" role="tab" id="way-watch"
               aria-selected="false" aria-controls="lesson">
-        Watch it explained
+        Drawing a diamond
         <small>Narrated, with subtitles</small>
+      </button>
+      <button class="way" type="button" role="tab" id="way-average"
+              aria-selected="false" aria-controls="lesson">
+        The running average
+        <small>A real problem, worked through</small>
+      </button>
+      <button class="way" type="button" role="tab" id="way-loop"
+              aria-selected="false" aria-controls="lesson">
+        Inside the loop
+        <small>The same shape, four ways</small>
+      </button>
+      <button class="way" type="button" role="tab" id="way-board"
+              aria-selected="false" aria-controls="lesson">
+        At the blackboard
+        <small>Worked by hand, read aloud</small>
       </button>
     </div>
     <div class="lip" id="lip">
@@ -306,6 +362,36 @@
     </div>
     <iframe id="lesson" title="Lesson" src="about:blank"></iframe>
   </div>
+
+  <section class="ask" id="ask" aria-labelledby="askTitle">
+    <h2 id="askTitle">Stuck? Ask the tutor.</h2>
+    <p class="sub">Ask anything about this lesson, or about code in general. The tutor
+      explains things in simple words. If you are doing an exercise, it gives you a clue
+      first, so you can work it out yourself.</p>
+    <div class="chips" aria-label="Questions to start with">
+      <button class="chip" type="button">Why does the loop stop?</button>
+      <button class="chip" type="button">What is a variable?</button>
+      <button class="chip" type="button">How do hackers trick a website?</button>
+    </div>
+    <div class="log" id="askLog" aria-live="polite"></div>
+    <form class="askform" id="askForm">
+      <label for="askInput" class="skip">Your question</label>
+      <textarea id="askInput" rows="2" maxlength="4000"
+                placeholder="Write your question here, or paste your code…"></textarea>
+      <button class="btn" type="submit" id="askSend">Ask</button>
+    </form>
+    <!--GUEST-->
+    <p class="fine">No account needed: you get 10 free questions a day.
+      <a href="/register">Make a free account</a> to get more and keep your chats.
+      Your questions go to AI services so they can answer, and we keep them to make the
+      tutor better. Please don't write your name, address or other personal things.
+      <a href="/privacy">Privacy</a></p>
+    <!--/GUEST-->
+    <!--MEMBER-->
+    <p class="fine">Your questions go to AI services so they can answer.
+      <a href="/privacy">Privacy</a></p>
+    <!--/MEMBER-->
+  </section>
 
   <section class="benefits" aria-label="What you are looking at">
     <div class="benefit">
@@ -346,7 +432,7 @@
     </div>
       <!--/GUEST-->
       <!--MEMBER-->
-      <h2>That was one of seventeen.</h2>
+      <h2>That was one of twenty-four.</h2>
       <p>The rest work exactly the same way, and the comparison view puts two of them
         side by side so you can watch one finish while the other is still going.</p>
     </div>
@@ -358,10 +444,11 @@
   </section>
 
   <details class="all" id="all">
-    <summary>The seventeen lessons <span>&mdash; one is open above</span></summary>
+    <summary>The twenty-four lessons <span>&mdash; one is open above</span></summary>
     <div class="inner">
-    <p class="note">The rest come with a free account, and more are being built &mdash;
-      references, linked lists, trees and graphs are next.</p>
+    <p class="note">The rest come with a free account. The numbers are the catalogue's,
+      so the gaps are the lessons still being built &mdash; references, linked lists, trees
+      and graphs are next.</p>
     <div class="lessons">
       <div data-prog="walk:each" class="lesson here"><span class="n">1</span> What a loop really does <span class="tag">open above</span></div>
       <div data-prog="carry:sum" class="lesson"><span class="n">2</span> Carrying a value through a loop</div>
@@ -380,6 +467,13 @@
       <div data-prog="fizz:wrong" class="lesson"><span class="n">15</span> Fizz, Buzz, and the order of your checks</div>
       <div data-prog="window:rescan" class="lesson"><span class="n">16</span> Move the window, don't start again</div>
       <div data-prog="longest:run" class="lesson"><span class="n">17</span> The longest run without repeating</div>
+      <div data-prog="fn:one" class="lesson"><span class="n">20</span> What goes into a function, and what comes back</div>
+      <div data-prog="scope:locals" class="lesson"><span class="n">21</span> What disappears when a function ends</div>
+      <div data-prog="repeat:five" class="lesson"><span class="n">31</span> Why recursion repeats work</div>
+      <div data-prog="build:fib" class="lesson"><span class="n">33</span> Build the answer from smaller answers</div>
+      <div data-prog="greedy:coins" class="lesson"><span class="n">34</span> Pick the best local choice</div>
+      <div data-prog="search:naive" class="lesson"><span class="n">35</span> Search for a word inside a word</div>
+      <div data-prog="bits:value" class="lesson"><span class="n">36</span> Bits are switches</div>
     </div>
     </div>
   </details>
@@ -391,7 +485,7 @@
     <div class="legal">
       <p class="links"><a href="/about">About</a> &middot; <a href="/privacy">Privacy</a>
         &middot; <a href="/terms">Terms</a> &middot; <a href="/cookies">Cookies</a></p>
-      <p>&copy; 2026 Synapse &mdash; <strong>GyEffe Technologies Ltd</strong>, a company
+      <p>&copy; 2026 Synapse &mdash; <strong><a href="https://gyeffe.co.uk" target="_blank" rel="noopener">GyEffe Technologies Ltd</a></strong>, a company
         registered in Scotland, company number SC899700.</p>
       <p class="small">Registered office: 5 South Charlotte Street, Edinburgh EH2 4AN,
         United Kingdom<br>Company: <a href="mailto:hello@gyeffe.co.uk">hello@gyeffe.co.uk</a>
@@ -453,8 +547,6 @@
 (function () {
   var frame = document.getElementById('lesson');
   var lip = document.getElementById('lipText');
-  var watch = document.getElementById('way-watch');
-  var drive = document.getElementById('way-drive');
 
   // The lesson takes its theme from its URL, so the page's theme has to be read
   // at the moment a lesson is opened - not once at load - or the control would
@@ -476,20 +568,49 @@
       lip: '<b>Drawing a diamond</b> &mdash; press Play. Every number is counted in front of ' +
            'you before it gets used.',
       note: 'Narrated, with subtitles. Nothing starts on its own'
+    },
+    average: {
+      src: '/static/lessons/average-lesson.html?',
+      title: 'Narrated lesson: the running average',
+      lip: '<b>The running average</b> &mdash; five days of reading, and the question of which ' +
+           'days beat your average so far.',
+      note: 'Narrated, with subtitles. Nothing starts on its own'
+    },
+    loop: {
+      src: '/static/lessons/inside-the-loop.html?',
+      title: 'Interactive lesson: inside the loop',
+      lip: '<b>Inside the loop</b> &mdash; work out the rule, learn to read the notation, then ' +
+           'watch four versions of it run.',
+      note: 'The step counter shows what each version costs'
+    },
+    board: {
+      src: '/static/lessons/at-the-blackboard.html?',
+      title: 'Narrated lesson: at the blackboard',
+      lip: '<b>At the blackboard</b> &mdash; five problems done by hand first, with the sentence ' +
+           'you are on highlighted as it is read.',
+      note: 'Read aloud, one line at a time. Nothing starts on its own'
     }
   };
 
   var showing = 'drive';
 
+  // Every button carries its key in its id, so adding a lesson is one entry in
+  // WAYS and one button. Naming each button in here, as this used to, meant a
+  // sixth lesson would silently leave the other five looking unselected.
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.way'));
+
   function show(which) {
     var w = WAYS[which];
+    if (!w) { return; }
     showing = which;
     frame.src = w.src + 'theme=' + themeNow();
     frame.title = w.title;
     lip.innerHTML = w.lip;
     lip.parentNode.lastElementChild.textContent = w.note;
-    drive.setAttribute('aria-selected', which === 'drive' ? 'true' : 'false');
-    watch.setAttribute('aria-selected', which === 'watch' ? 'true' : 'false');
+    tabs.forEach(function (b) {
+      b.setAttribute('aria-selected',
+                     b.id === 'way-' + which ? 'true' : 'false');
+    });
   }
 
   // Changing the theme reloads the lesson in the new one, which does restart it.
@@ -517,13 +638,114 @@
   });
   if (window.location.hash === '#all' && all) { all.open = true; }
 
-  drive.addEventListener('click', function () { show('drive'); });
-  watch.addEventListener('click', function () { show('watch'); });
+  tabs.forEach(function (b) {
+    b.addEventListener('click', function () { show(b.id.replace('way-', '')); });
+  });
   show('drive');
 })();
 </script>
-<link rel="stylesheet" href="/static/synapse_a11y.css?v=19">
-<link rel="stylesheet" href="/static/synapse_a11y_toolbar.css?v=7">
+
+<script>
+/* The tutor box. It talks to the same endpoint as the course pages, with the
+   loops-and-conditions course as its context because that is what the open
+   lesson is about. The limits live on the server (web/ai_budget.py); this
+   only shows what the server says.
+
+   Replies are rendered from a small, safe subset of markdown: everything is
+   escaped first and only then are code blocks, inline code, bold and headings
+   put back, so nothing the model writes can become HTML on this page. */
+(function () {
+  var form = document.getElementById('askForm');
+  if (!form) { return; }
+  var input = document.getElementById('askInput');
+  var send = document.getElementById('askSend');
+  var log = document.getElementById('askLog');
+  var history = [];
+  var busy = false;
+
+  function esc(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+  }
+
+  function inline(s) {
+    return s.replace(/`([^`\n]+)`/g, '<code>$1</code>')
+            .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  }
+
+  function render(text) {
+    var parts = esc(text).split(/```[a-zA-Z0-9_+-]*\n?/);
+    var out = '';
+    parts.forEach(function (part, i) {
+      if (i % 2 === 1) { out += '<pre><code>' + part.replace(/\n$/, '') + '</code></pre>'; return; }
+      part.split(/\n{2,}/).forEach(function (block) {
+        block = block.replace(/^\n+|\n+$/g, '');
+        if (!block) { return; }
+        var m = block.match(/^#{1,4}\s+(.*)$/);
+        if (m && block.indexOf('\n') < 0) { out += '<div class="h">' + inline(m[1]) + '</div>'; return; }
+        out += '<p>' + inline(block).replace(/\n/g, '<br>') + '</p>';
+      });
+    });
+    return out;
+  }
+
+  function add(cls, html) {
+    var d = document.createElement('div');
+    d.className = 'msg ' + cls;
+    d.innerHTML = html;
+    log.appendChild(d);
+    return d;
+  }
+
+  function ask(text) {
+    text = (text || '').trim();
+    if (!text || busy) { return; }
+    busy = true; send.disabled = true;
+    add('me', esc(text));
+    var wait = add('ai wait', 'Thinking…');
+    var sent = history.slice(-12);
+    fetch('/api/course/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, course_id: 'control_flow_active_ai', history: sent })
+    })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (data) {
+        var reply = (data && data.response) || 'Sorry, the tutor could not answer this time. Please try again.';
+        wait.classList.remove('wait');
+        if (data && data.rate_limited) {
+          wait.classList.add('limit');
+          wait.innerHTML = '<p>' + esc(reply) + '</p>' + (/account/i.test(reply) ?
+            '<p><a class="btn" href="/register">Create a free account</a></p>' : '');
+          return;
+        }
+        wait.innerHTML = render(reply);
+        history.push({ role: 'user', content: text });
+        history.push({ role: 'assistant', content: reply });
+      })
+      .catch(function () {
+        wait.classList.remove('wait');
+        wait.textContent = 'The internet connection dropped. Please try again.';
+      })
+      .then(function () { busy = false; send.disabled = false; });
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var t = input.value;
+    input.value = '';
+    ask(t);
+  });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit')); }
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.chip'), function (c) {
+    c.addEventListener('click', function () { ask(c.textContent); });
+  });
+})();
+</script>
+<link rel="stylesheet" href="/static/synapse_a11y.css?v=20">
+<link rel="stylesheet" href="/static/synapse_a11y_toolbar.css?v=8">
 <script src="/static/focus_assistant.js"></script>
 <script src="/static/synapse_a11y_toolbar.js?v=7"></script>
 <script src="/static/synapse_a11y.js?v=12"></script>

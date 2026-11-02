@@ -20,6 +20,7 @@ import logging
 import asyncio
 from datetime import datetime, timedelta
 from aiohttp import web
+from web.session import current_user_id
 
 from labs import container_manager as cm
 from labs import session_manager as sm
@@ -44,12 +45,9 @@ async def _get_requester(request: web.Request):
         (None, None) if neither is present
     """
     # Try logged-in user via synapse_user cookie
-    try:
-        cv = request.cookies.get("synapse_user")
-        if cv and cv.isdigit():
-            return ("user", int(cv))
-    except Exception:
-        pass
+    uid = current_user_id(request)
+    if uid:
+        return ("user", uid)
     
     # Try participant_code from query string first
     participant_code = request.query.get("participant_code")
@@ -343,10 +341,39 @@ async def extend_lab(request: web.Request) -> web.Response:
 # ROUTE REGISTRATION
 # =============================================================================
 
+async def keep_alive(request: web.Request) -> web.Response:
+    """Mark the requester's lab session as still in use.
+
+    The proxy only records activity for requests that pass THROUGH it, i.e.
+    clicks inside the lab tab. A student who is reading the mission or talking
+    to the tutor in the other tab makes no such requests, so the lab used to
+    idle out while they were plainly still working. The mission page calls this
+    on a timer, but ONLY while the student has actually done something recently,
+    so a lab whose student has walked away is still left to be reaped.
+    """
+    owner_type, owner_value = await _get_requester(request)
+    if not owner_type:
+        return web.json_response({"error": "authentication required"}, status=401)
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    lab_type = data.get("lab_type", "shopsecure")
+    if owner_type == "user":
+        session = sm.get_active_session_for_user(owner_value, lab_type)
+    else:
+        session = sm.get_active_session_for_participant(owner_value, lab_type)
+    if not session or session["status"] != "ready":
+        return web.json_response({"ok": False})
+    sm.touch_session(session["session_token"])
+    return web.json_response({"ok": True})
+
+
 def register_lab_routes(app: web.Application):
     """Call this from app.py to register /api/labs/* routes."""
     app.router.add_post("/api/labs/start", start_lab)
     app.router.add_get("/api/labs/status", lab_status)
     app.router.add_post("/api/labs/end", end_lab)
     app.router.add_post("/api/labs/extend", extend_lab)
-    logger.info("Lab routes registered: /api/labs/{start,status,end,extend}")
+    app.router.add_post("/api/labs/keepalive", keep_alive)
+    logger.info("Lab routes registered: /api/labs/{start,status,end,extend,keepalive}")

@@ -36,7 +36,11 @@ logger = logging.getLogger(__name__)
 DEFAULT_SESSION_DURATION_MINUTES = 60
 EXTENSION_DURATION_MINUTES = 30
 MAX_EXTENSIONS_PER_SESSION = 3
-IDLE_TIMEOUT_MINUTES = 15  # kill if no activity for this long
+IDLE_TIMEOUT_MINUTES = 20  # kill if no activity for this long. The mission
+                          # page sends a keep-alive while the student is active,
+                          # so this only bites once they have genuinely stopped -
+                          # walked away, not merely reading. Total session life is
+                          # DEFAULT_SESSION_DURATION_MINUTES (60) below.
 
 
 # =============================================================================

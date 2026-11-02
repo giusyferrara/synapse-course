@@ -168,6 +168,91 @@ def _rewrite_set_cookie_for_downstream(set_cookie_value: str, lab_type: str, ses
 # PROXY HANDLER
 # =============================================================================
 
+def _gone_page(lab_type: str, why: str) -> web.Response:
+    """The page a learner sees when their lab has closed.
+
+    It has to do three things the plain text did not: say what happened in
+    words that do not sound like a fault, say that the address was single use
+    so they stop trying to reload it, and offer a way to carry on without
+    having to work out where the button was.
+
+    The fetch below is same origin, so the synapse_user cookie goes with it and
+    /api/labs/start knows who is asking. The proxy strips that cookie on the
+    way to the container, never on the way to this page.
+    """
+    html = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>This lab has closed</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+         font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+         background: #0f1226; color: #e8ebff; padding: 24px; }
+  .card { max-width: 560px; background: #171b3a; border: 1px solid #2c3366;
+          border-radius: 16px; padding: 32px; }
+  h1 { margin: 0 0 4px; font-size: 24px; }
+  p { color: #b9c0ee; }
+  b { color: #e8ebff; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+  button, a.btn { font: inherit; font-weight: 600; padding: 12px 20px;
+                  border-radius: 10px; border: 0; cursor: pointer;
+                  text-decoration: none; display: inline-block; }
+  button { background: #6472f0; color: #fff; }
+  button:hover { background: #7c88f5; }
+  button[disabled] { opacity: .6; cursor: progress; }
+  a.btn { background: transparent; color: #b9c0ee; border: 1px solid #2c3366; }
+  a.btn:hover { color: #e8ebff; }
+  .why { margin-top: 20px; font-size: 14px; color: #8f98d0; }
+  #err { color: #ffb4b4; margin-top: 14px; }
+</style></head><body>
+<div class="card">
+  <h1>This lab has closed</h1>
+  <p>Your ShopSecure lab shut down after <b>15 minutes without activity</b>, and the
+     container it was running in was destroyed with it. That is deliberate: every
+     learner gets their own copy, and they are cleaned up so they cannot be reached
+     later.</p>
+  <p>The address you are on was <b>single use</b>. Reloading it will not bring the lab
+     back, and bookmarking it will not work either. Starting again gives you a new
+     address.</p>
+  <div class="row">
+    <button id="go" type="button">Start a new lab</button>
+    <a class="btn" href="/mission">Back to the mission</a>
+  </div>
+  <p id="err" hidden></p>
+  <p class="why">Anything you documented in the mission was saved there, not in the lab.</p>
+</div>
+<script>
+document.getElementById('go').addEventListener('click', function () {
+  var b = this, err = document.getElementById('err');
+  b.disabled = true; b.textContent = 'Starting\u2026'; err.hidden = true;
+  fetch('/api/labs/start', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ lab_type: LAB_TYPE })
+  }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+    .then(function (res) {
+      if (res.ok && res.d.lab_url) { window.location.href = res.d.lab_url; return; }
+      // 401 means the login has gone too, which is its own fix
+      err.textContent = res.d && res.d.error === 'authentication required'
+        ? 'You are signed out. Sign in again and the lab will start.'
+        : 'Could not start a lab: ' + ((res.d && res.d.error) || 'unknown error');
+      err.hidden = false;
+      b.disabled = false; b.textContent = 'Try again';
+    })
+    .catch(function (e) {
+      err.textContent = 'Network problem: ' + e.message;
+      err.hidden = false;
+      b.disabled = false; b.textContent = 'Try again';
+    });
+});
+</script>
+</body></html>"""
+    html = html.replace("LAB_TYPE", '"%s"' % lab_type.replace('"', ""))
+    return web.Response(text=html, status=410, content_type="text/html")
+
+
 async def proxy_to_lab(request: web.Request) -> web.StreamResponse:
     """
     Main proxy handler.
@@ -185,18 +270,10 @@ async def proxy_to_lab(request: web.Request) -> web.StreamResponse:
     # 1. Validate token + lookup session
     session = sm.get_session_by_token(token)
     if not session:
-        return web.Response(
-            text="Lab session not found. It may have expired or been terminated.",
-            status=404,
-            content_type="text/plain",
-        )
+        return _gone_page(lab_type, "not found")
     
     if session["status"] != "ready":
-        return web.Response(
-            text=f"Lab session not available (status: {session['status']}).",
-            status=410,
-            content_type="text/plain",
-        )
+        return _gone_page(lab_type, session["status"])
     
     if session["lab_type"] != lab_type:
         return web.Response(

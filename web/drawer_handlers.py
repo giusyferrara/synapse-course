@@ -30,6 +30,7 @@ import datetime
 import json
 
 from aiohttp import web
+from web.session import current_user_id
 
 from database.config import SessionLocal
 from database.models import SavedView
@@ -46,13 +47,7 @@ LANGUAGES = ("python", "java", "")
 
 def _user_id(request):
     """The logged-in user, or None. Deliberately no participant-code fallback."""
-    raw = request.cookies.get("synapse_user")
-    if not raw:
-        return None
-    try:
-        return int(raw)
-    except (TypeError, ValueError):
-        return None
+    return current_user_id(request)
 
 
 def _needs_login():

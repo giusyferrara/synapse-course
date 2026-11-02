@@ -31,8 +31,8 @@
       --info: #3b82f6;
       --bg-dark: #0f172a;
       --bg-light: #f8fafc;
-      --text-dark: #1e293b;
-      --text-light: #64748b;
+      --text-dark: #111111;   /* was #1e293b: a slate blue, not black */
+      --text-light: #475569;  /* was #64748b: 4.7:1 on this page's background */
       --border: #e2e8f0;
       --panel: #ffffff;
     }
@@ -752,30 +752,20 @@
       }
     }
 
-    /* On medium screens, constrain the menu */
+    /* On medium screens the controls stay in the bar and scroll.
+       They used to become an absolutely positioned panel pinned at
+       top:70px — directly below the bar, on top of the page, covering
+       the first heading. The bar is fixed and 70px tall and the page
+       starts at 70px, so anything that leaves the bar lands on the
+       reader's content. */
     @media (max-width: 1200px) {
       .access-menu-inline.open {
-        max-width: 400px;
-        flex-wrap: wrap;
-        position: absolute;
-        right: 10px;
-        top: 70px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 10px;
-        border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        z-index: 100000;
-        max-width: 360px;
+        position: static;
+        flex-wrap: nowrap;
+        background: transparent;
+        box-shadow: none;
+        padding: 3px 0;
         gap: 6px;
-      }
-
-      body.dark-mode .access-menu-inline.open {
-        background: linear-gradient(135deg, #4338ca 0%, #581c87 100%);
-      }
-
-      body.high-contrast .access-menu-inline.open {
-        background: #000000;
-        border: 2px solid #ffffff;
       }
     }
     /* Focus Assistant Animation */
@@ -1263,7 +1253,7 @@
       padding: 12px 24px;
       border: none;
       background: transparent;
-      color: #64748b;
+      color: #475569;
       font-size: 13px;
       font-weight: 500;
       cursor: pointer;
@@ -1280,7 +1270,7 @@
     }
 
     .tab-btn.active {
-      color: #6366f1;
+      color: #4338ca;   /* was #6366f1: 4.4:1 on white, under AA for 15px */
       border-bottom-color: #6366f1;
       font-weight: 600;
       background: rgba(99, 102, 241, 0.05);
@@ -1973,7 +1963,7 @@
 .chat-bubble ul, .chat-bubble ol { margin: 4px 0; padding-left: 20px; }
 .chat-bubble li { margin: 2px 0; }
 </style>
-    <link rel="stylesheet" href="/static/synapse_a11y.css?v=19">
+    <link rel="stylesheet" href="/static/synapse_a11y.css?v=20">
 <style>#chatPanel { z-index: 999999 !important; } #chatPanel .chat-header { z-index: 999999 !important; } #chatPanel .chat-header-btn { z-index: 999999 !important; } .nav-links { z-index: 99998 !important; }</style>
 
 <style>
@@ -2038,26 +2028,26 @@
       
       <!-- EXPANDABLE MENU - 12 accessibility features -->
       <div class="access-menu-inline" id="accessMenuInline">
-        <button class="nav-btn nav-btn-small" onclick="toggleDarkMode()" data-tooltip="Dark Mode">🌙</button>
-        <button class="nav-btn nav-btn-small" onclick="toggleDyslexiaMode()" data-tooltip="Dyslexia Font">📖</button>
-        <button class="nav-btn nav-btn-small" onclick="increaseTextSize()" data-tooltip="Larger Text">A+</button>
-        <button class="nav-btn nav-btn-small" onclick="decreaseTextSize()" data-tooltip="Smaller Text">A-</button>
-        <button class="nav-btn nav-btn-small" onclick="toggleReadingGuidePanel()" data-tooltip="Reading Guide">📍</button>
-        <button class="nav-btn nav-btn-small" onclick="toggleTextToSpeech()" data-tooltip="Read Aloud">🔊</button>
-        <button class="nav-btn nav-btn-small" onclick="toggleHighContrast()" data-tooltip="High Contrast">⚫⚪</button>
-        <button class="nav-btn nav-btn-small" onclick="toggleFocusMode()" data-tooltip="Focus Mode">🎯</button>
-        <button class="nav-btn nav-btn-small" onclick="toggleFocusAssistant()" data-tooltip="Focus Assistant">💡</button>
-        <button class="nav-btn nav-btn-small" onclick="toggleCalmingAudio()" data-tooltip="Calming Audio">🎵</button>
-        <button class="nav-btn nav-btn-small" onclick="toggleVoiceInput()" data-tooltip="Voice Input">🎤</button>
-        <button class="nav-btn nav-btn-small" onclick="toggleReduceMotion()" data-tooltip="Reduce Motion">⚡</button>
-                <button class="nav-btn nav-btn-small" onclick="synapseToggleLineSpacing()" data-tooltip="Line Spacing">&#x2195;</button>
-                <button class="nav-btn nav-btn-small" onclick="synapseToggleReadingMask()" data-tooltip="Reading Mask">&#x1F532;</button>
-                <button class="nav-btn nav-btn-small" onclick="synapseToggleColorOverlay()" data-tooltip="Color Overlay">&#x1F3A8;</button>
+        <button class="nav-btn nav-btn-small" onclick="toggleDarkMode()" title="Dark Mode" data-tooltip="Dark Mode">🌙</button>
+        <button class="nav-btn nav-btn-small" onclick="toggleDyslexiaMode()" title="Dyslexia Font" data-tooltip="Dyslexia Font">📖</button>
+        <button class="nav-btn nav-btn-small" onclick="increaseTextSize()" title="Larger Text" data-tooltip="Larger Text">A+</button>
+        <button class="nav-btn nav-btn-small" onclick="decreaseTextSize()" title="Smaller Text" data-tooltip="Smaller Text">A-</button>
+        <button class="nav-btn nav-btn-small" onclick="toggleReadingGuidePanel()" title="Reading Guide" data-tooltip="Reading Guide">📍</button>
+        <button class="nav-btn nav-btn-small" onclick="toggleTextToSpeech()" title="Read Aloud" data-tooltip="Read Aloud">🔊</button>
+        <button class="nav-btn nav-btn-small" onclick="toggleHighContrast()" title="High Contrast" data-tooltip="High Contrast">⚫⚪</button>
+        <button class="nav-btn nav-btn-small" onclick="toggleFocusMode()" title="Focus Mode" data-tooltip="Focus Mode">🎯</button>
+        <button class="nav-btn nav-btn-small" onclick="toggleFocusAssistant()" title="Focus Assistant" data-tooltip="Focus Assistant">💡</button>
+        <button class="nav-btn nav-btn-small" onclick="toggleCalmingAudio()" title="Calming Audio" data-tooltip="Calming Audio">🎵</button>
+        <button class="nav-btn nav-btn-small" onclick="toggleVoiceInput()" title="Voice Input" data-tooltip="Voice Input">🎤</button>
+        <button class="nav-btn nav-btn-small" onclick="toggleReduceMotion()" title="Reduce Motion" data-tooltip="Reduce Motion">⚡</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleLineSpacing()" title="Line Spacing" data-tooltip="Line Spacing">&#x2195;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleReadingMask()" title="Reading Mask" data-tooltip="Reading Mask">&#x1F532;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleColorOverlay()" title="Color Overlay" data-tooltip="Color Overlay">&#x1F3A8;</button>
 
-                <button class="nav-btn nav-btn-small" onclick="synapseToggleDictionary()" data-tooltip="Dictionary">&#x1F4DA;</button>
-                <button class="nav-btn nav-btn-small" onclick="synapseToggleCalmMode()" data-tooltip="Calm Mode">&#x1F9D8;</button>
-                <button class="nav-btn nav-btn-small" onclick="synapseToggleProgressBar()" data-tooltip="Progress Bar">&#x1F4CA;</button>
-        <button class="nav-btn nav-btn-small nav-btn-reset" onclick="resetAccessibility()" data-tooltip="Reset All">🔄</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleDictionary()" title="Dictionary" data-tooltip="Dictionary">&#x1F4DA;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleCalmMode()" title="Calm Mode" data-tooltip="Calm Mode">&#x1F9D8;</button>
+                <button class="nav-btn nav-btn-small" onclick="synapseToggleProgressBar()" title="Progress Bar" data-tooltip="Progress Bar">&#x1F4C8;</button>
+        <button class="nav-btn nav-btn-small nav-btn-reset" onclick="resetAccessibility()" title="Reset All" data-tooltip="Reset All">🔄</button>
       </div>
       
       <!-- 4. HOW ARE YOU - Separate -->
@@ -2526,6 +2516,60 @@
     .chat-panel.minimized .chat-input-container {
       display: none !important;
     }
+
+    /* The navbar is position:fixed with z-index 99999, and the accessibility
+       menu inside it is laid out static at zero width but full parent height,
+       which stretches .nav-links to around 700px. That stretched strip is
+       invisible, sits above everything with the navbar's z-index, and eats
+       every click underneath it - including the chat's minimise, maximise and
+       close buttons, which is why an opened chat could not be shut.
+       Measured with chat_panel_check.py: elementFromPoint over each button
+       returned DIV.nav-links, not the button.
+       Lifting the open panel over the navbar fixes the clicks and changes
+       nothing visually, because the two never overlap on screen: the navbar
+       occupies the top 70px and the panel starts far below it.
+       The navbar layout is still wrong and still blocks that strip for
+       anything else that lands under it. That is a separate repair. */
+    /* The closed accessibility menu has max-width 0 and, until this rule,
+       flex-wrap: wrap. Zero width plus wrap puts each of its twenty buttons on
+       a line of its own, so the closed menu measured 716px tall, stretched
+       .nav-links to match, and that invisible column inherited the navbar's
+       z-index of 99999 and swallowed every click down to y=393 - the chat's
+       close and restore buttons among them.
+       Only the CLOSED state is pinned to one line. The open menu still wraps,
+       which is what the tablet rule at ~2524 wants and needs.
+       max-height is the belt to that brace: if wrap ever comes back, the
+       closed menu still cannot grow into a click-eating column. */
+
+    /* A window you can move and resize. */
+    .chat-panel .chat-header { cursor: move; user-select: none; }
+    .chat-panel.maximized .chat-header,
+    .chat-panel.minimized .chat-header { cursor: default; }
+    .chat-grip {
+      position: absolute; top: 0; left: 0; width: 18px; height: 18px;
+      cursor: nwse-resize; z-index: 3; touch-action: none;
+      background:
+        linear-gradient(135deg, currentColor 0 2px, transparent 2px 100%) 4px 4px / 10px 10px no-repeat,
+        linear-gradient(135deg, currentColor 0 2px, transparent 2px 100%) 4px 8px / 10px 10px no-repeat;
+      color: rgba(255,255,255,0.75);
+      opacity: 0; transition: opacity .15s ease;
+    }
+    .chat-panel.open:hover .chat-grip { opacity: 1; }
+    .chat-grip:focus-visible { opacity: 1; outline: 2px solid #fff; outline-offset: 1px; }
+    .chat-panel.maximized .chat-grip,
+    .chat-panel.minimized .chat-grip { display: none; }
+    @media (max-width: 768px) { .chat-grip { display: none; } }
+
+    .access-menu-inline:not(.open) {
+      flex-wrap: nowrap !important;
+      max-height: 44px !important;
+    }
+
+    .chat-panel.open,
+    .chat-panel.expanded,
+    .chat-panel.maximized {
+      z-index: 100000 !important;
+    }
     .chat-panel.maximized {
       width: calc(100vw - 40px) !important;
       height: calc(100vh - 110px) !important;
@@ -2662,8 +2706,8 @@
         min-width: 28px !important;
       }
       .access-menu-inline {
-        max-width: 90vw !important;
-        flex-wrap: wrap !important;
+        max-width: 100% !important;
+        flex-wrap: nowrap !important;
       }
       .nav-btn-small {
         width: 32px !important;
@@ -2812,11 +2856,13 @@
         height: 26px !important;
         min-width: 26px !important;
       }
+      /* One line here too: a 5-column grid is four extra rows of
+         buttons hanging out of a bar that cannot grow. */
       .access-menu-inline {
-        display: grid !important;
-        grid-template-columns: repeat(5, 1fr) !important;
-        gap: 3px !important;
-        max-width: 95vw !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+        max-width: 100% !important;
       }
       .nav-btn-small {
         width: 26px !important;
@@ -2932,9 +2978,27 @@
       <span class="chat-trigger-badge" id="chatBadge"></span>
     </button>
     <script>
-function toggleChatPopup(){var p=document.getElementById('chatPanel');if(!p)return;p.classList.toggle('open');var b=document.getElementById('chatBadge');if(b){b.style.display='none'}var t=document.getElementById('chatTriggerBtn');if(t)t.classList.remove('has-unread');if(p.classList.contains('open')){setTimeout(function(){var i=document.getElementById('chatInput');if(i)i.focus()},300)}}
+function toggleChatPopup(){var p=document.getElementById('chatPanel');if(!p)return;p.classList.toggle('open');/* This minified copy, not the readable one lower down, is the one the browser actually calls - checked with window.toggleChatPopup.toString(). Closing while minimised used to leave the class on, so it reopened tiny. */if(!p.classList.contains('open')){p.classList.remove('minimized','maximized');var mb=document.getElementById('maxRestoreBtn');if(mb)mb.textContent='☐';}var b=document.getElementById('chatBadge');if(b){b.style.display='none'}var t=document.getElementById('chatTriggerBtn');if(t)t.classList.remove('has-unread');if(p.classList.contains('open')){setTimeout(function(){var i=document.getElementById('chatInput');if(i)i.focus()},300)}}
 function saveChatToFile(){var m=document.getElementById('chatMessages');if(!m)return;var l=['SYNAPSE AI Tutor - Chat Export','Date: '+new Date().toLocaleString(),'==================================================',''];m.querySelectorAll('.message').forEach(function(x){var r=x.classList.contains('ai')?'AI Tutor':'You';l.push('['+r+'] '+x.textContent.trim());l.push('')});var b=new Blob([l.join('\n')],{type:'text/plain'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='synapse_chat_'+new Date().toISOString().slice(0,10)+'.txt';a.click()}
-function clearChatMessages(){var m=document.getElementById('chatMessages');if(!m||m.children.length===0)return;if(!confirm('Clear visible chat? (AI still remembers)'))return;m.innerHTML='';if(typeof addChatMessage==='function')addChatMessage('ai','Chat cleared! Ready for a fresh start.')}
+function clearChatMessages() {
+var msgs = document.getElementById('chatMessages');
+if (!msgs || msgs.children.length === 0) return;
+if (!confirm('Clear this conversation? The tutor starts fresh and will not refer back to it.')) return;
+msgs.innerHTML = '';
+// The point of the button. Emptying the page while still sending the
+// history is what made the old "I still remember" message honest, and
+// what made it read as a threat instead of a feature.
+if (typeof chatHistory !== 'undefined') { chatHistory = []; }
+try {
+  fetch('/api/course/chat/clear', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ course_id: (typeof currentCourse !== 'undefined' && currentCourse) ? currentCourse : 'general' })
+  });
+} catch (e) { /* the page is clear either way */ }
+addChatMessage('ai', "Cleared. That conversation is closed and I will not refer back to it. What would you like to look at?");
+}
 
     function minimizeChat() {
       var p = document.getElementById('chatPanel');
@@ -2947,10 +3011,19 @@ function clearChatMessages(){var m=document.getElementById('chatMessages');if(!m
     function maximizeChat() {
       var p = document.getElementById('chatPanel');
       if (!p) return;
-      p.classList.remove('minimized');
-      p.classList.toggle('maximized');
+      // Three states, like a real window button: from minimised this restores
+      // to normal rather than jumping straight to full screen.
+      if (p.classList.contains('minimized')) {
+        p.classList.remove('minimized');
+      } else {
+        p.classList.toggle('maximized');
+      }
       var btn = document.getElementById('maxRestoreBtn');
-      if (btn) btn.textContent = p.classList.contains('maximized') ? '❐' : '☐';
+      if (btn) {
+        var big = p.classList.contains('maximized');
+        btn.textContent = big ? '❐' : '☐';
+        btn.title = big ? 'Restore' : 'Maximize';
+      }
     }
 </script>
 
@@ -3314,7 +3387,7 @@ function clearChatMessages(){var m=document.getElementById('chatMessages');if(!m
 
      
    const courseGrid = document.getElementById('courseGrid');
-      courseGrid.innerHTML = '<p style="padding:20px;text-align:center;color:#64748b;">📚 Loading courses...</p>';
+      courseGrid.innerHTML = '<p style="padding:20px;text-align:center;color:#475569;">📚 Loading courses...</p>';
 
       let loadedCount = 0;
 
@@ -3452,7 +3525,7 @@ function clearChatMessages(){var m=document.getElementById('chatMessages');if(!m
               <h2 class="slide-title">${escapeHTML(example.title)}</h2>
               
               ${example.description ? `
-                <p style="color: #64748b; margin: 12px 0 16px 0; font-size: 13px;">${escapeHTML(example.description)}</p>
+                <p style="color: #475569; margin: 12px 0 16px 0; font-size: 13px;">${escapeHTML(example.description)}</p>
               ` : ''}
               
               ${example.difficulty ? `
@@ -3539,7 +3612,7 @@ function clearChatMessages(){var m=document.getElementById('chatMessages');if(!m
                 <h4 style="margin: 0; flex: 1;">${escapeHTML(ex.title) || `Exercise ${index + 1}`}</h4>
               </div>
               
-              <p style="color: #64748b; margin-bottom: 16px;">${escapeHTML(ex.description)}</p>
+              <p style="color: #475569; margin-bottom: 16px;">${escapeHTML(ex.description)}</p>
               
               ${ex.ai_intro ? `
                 <div style="background: #f0f9ff; padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #3b82f6;">
@@ -3554,7 +3627,7 @@ function clearChatMessages(){var m=document.getElementById('chatMessages');if(!m
           `;
         });
       } else {
-        exercisesHTML += '<p style="color: #64748b; padding: 20px;">No exercises available yet.</p>';
+        exercisesHTML += '<p style="color: #475569; padding: 20px;">No exercises available yet.</p>';
       }
       
       document.getElementById('exercisesContent').innerHTML = exercisesHTML;
@@ -3609,6 +3682,20 @@ function clearChatMessages(){var m=document.getElementById('chatMessages');if(!m
       setTimeout(function(){ var ed = document.getElementById('codeEditor'); if(ed) ed.scrollIntoView({behavior:'smooth', block:'center'}); }, 200);
       
       switchTab('practice');
+
+      // Bring the editor to the eye instead of making them find it. Clicking
+      // exercise 60 used to load the starter code into an editor that was
+      // several screens above where they were standing, so the click looked
+      // like it had done nothing at all.
+      var _ed = document.getElementById('codeEditor');
+      if (_ed && _ed.scrollIntoView) {
+        var _still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        try {
+          _ed.scrollIntoView({ behavior: _still ? 'auto' : 'smooth', block: 'center' });
+        } catch (e) {
+          _ed.scrollIntoView();
+        }
+      }
       
       userActivity.currentExerciseStart = Date.now();
       userActivity.lastClick = Date.now();
@@ -3649,6 +3736,20 @@ function clearChatMessages(){var m=document.getElementById('chatMessages');if(!m
       document.getElementById('outputConsole').textContent = '✓ Example loaded! Modify the code and click "Run Code" to test it.';
       
       switchTab('practice');
+
+      // Bring the editor to the eye instead of making them find it. Clicking
+      // exercise 60 used to load the starter code into an editor that was
+      // several screens above where they were standing, so the click looked
+      // like it had done nothing at all.
+      var _ed = document.getElementById('codeEditor');
+      if (_ed && _ed.scrollIntoView) {
+        var _still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        try {
+          _ed.scrollIntoView({ behavior: _still ? 'auto' : 'smooth', block: 'center' });
+        } catch (e) {
+          _ed.scrollIntoView();
+        }
+      }
       
       userActivity.lastClick = Date.now();
       userActivity.currentExerciseStart = Date.now();
@@ -4289,6 +4390,10 @@ function clearChatMessages(){var m=document.getElementById('chatMessages');if(!m
               attention: calculateAttention(),
               cognitive_load: calculateCognitiveLoad(),
               stress: calculateStressLevel(),
+              // How many times the code has actually been RUN. Without it,
+              // success_rate of 0 is ambiguous: it means both 'never tried'
+              // and 'tried and always wrong', which need opposite replies.
+              attempts: userActivity.codeAttempts,
               recent_errors: userActivity.codeErrors,
               success_rate: userActivity.codeSuccess / Math.max(userActivity.codeAttempts, 1)
             }
@@ -4768,7 +4873,7 @@ function highlightFocusElement(element) {
       panel.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
           <h3 style="margin: 0; font-size: 16px; color: #667eea; font-weight: 700;">🎵 Calming Audio</h3>
-          <button onclick="closeAudioControls()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">✕</button>
+          <button onclick="closeAudioControls()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #475569;">✕</button>
         </div>
         
         <div style="display: flex; gap: 10px; margin-bottom: 15px;">
@@ -5602,7 +5707,7 @@ function highlightFocusElement(element) {
   console.log('[Synapse] Idle timer ACTIVE: 40s / 90s / 180s');
 })();
 </script>
-    <script src="/static/synapse_a11y.js?v=12"></script>
+    <script src="/static/synapse_a11y.js?v=13"></script>
 <script>
     // ========== SAVE CHAT TO FILE ==========
     function saveChatToFile() {
@@ -5634,11 +5739,22 @@ function highlightFocusElement(element) {
     // ========== CLEAR VISIBLE CHAT ==========
     function clearChatMessages() {
       var msgs = document.getElementById('chatMessages');
-      if (!msgs) return;
-      if (msgs.children.length === 0) return;
-      if (!confirm('Clear visible chat? (AI still remembers the conversation)')) return;
+      if (!msgs || msgs.children.length === 0) return;
+      if (!confirm('Clear this conversation? The tutor starts fresh and will not refer back to it.')) return;
       msgs.innerHTML = '';
-      addChatMessage('ai', 'Chat cleared. I still remember our conversation — just ask me anything!');
+      // The point of the button. Emptying the page while still sending the
+      // history is what made the old "I still remember" message honest, and
+      // what made it read as a threat instead of a feature.
+      if (typeof chatHistory !== 'undefined') { chatHistory = []; }
+      try {
+        fetch('/api/course/chat/clear', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ course_id: (typeof currentCourse !== 'undefined' && currentCourse) ? currentCourse : 'general' })
+        });
+      } catch (e) { /* the page is clear either way */ }
+      addChatMessage('ai', "Cleared. That conversation is closed and I will not refer back to it. What would you like to look at?");
     }
 
 
@@ -5647,6 +5763,13 @@ function highlightFocusElement(element) {
       var panel = document.getElementById('chatPanel');
       if (!panel) return;
       panel.classList.toggle('open');
+      // Closed while minimised, it used to come back minimised, which looks
+      // like the button is broken rather than like it remembered something.
+      if (!panel.classList.contains('open')) {
+        panel.classList.remove('minimized', 'maximized');
+        var mb = document.getElementById('maxRestoreBtn');
+        if (mb) mb.textContent = '\u2610';
+      }
       var badge = document.getElementById('chatBadge');
       if (badge) { badge.style.display = 'none'; badge.textContent = ''; }
       var btn = document.getElementById('chatTriggerBtn');
@@ -5678,9 +5801,21 @@ function highlightFocusElement(element) {
     function clearChatMessages() {
       var msgs = document.getElementById('chatMessages');
       if (!msgs || msgs.children.length === 0) return;
-      if (!confirm('Clear visible chat? (AI still remembers)')) return;
+      if (!confirm('Clear this conversation? The tutor starts fresh and will not refer back to it.')) return;
       msgs.innerHTML = '';
-      addChatMessage('ai', 'Chat cleared! Ready for a fresh start.');
+      // The point of the button. Emptying the page while still sending the
+      // history is what made the old "I still remember" message honest, and
+      // what made it read as a threat instead of a feature.
+      if (typeof chatHistory !== 'undefined') { chatHistory = []; }
+      try {
+        fetch('/api/course/chat/clear', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ course_id: (typeof currentCourse !== 'undefined' && currentCourse) ? currentCourse : 'general' })
+        });
+      } catch (e) { /* the page is clear either way */ }
+      addChatMessage('ai', "Cleared. That conversation is closed and I will not refer back to it. What would you like to look at?");
     }
 
 </script>
@@ -5728,5 +5863,149 @@ function goToPostSurvey() {
 })();
 </script>
     <script src="/static/idle_encouragement.js"></script>
+
+<script>
+/* The chat as a window: move it, resize it, and remember the size.
+   Written as its own block so it touches nothing that was already here. It
+   only ever sets inline styles on the panel, and clearing them puts the panel
+   straight back under the stylesheet's control. */
+(function () {
+  var panel = document.getElementById('chatPanel');
+  if (!panel) { return; }
+  var header = panel.querySelector('.chat-header');
+  if (!header) { return; }
+
+  var KEY = 'synapse_chat_box';
+  var MIN_W = 320, MIN_H = 260, EDGE = 8;
+
+  function busy() {
+    return panel.classList.contains('maximized') ||
+           panel.classList.contains('minimized');
+  }
+
+  function apply(box) {
+    var s = panel.style;
+    s.setProperty('left', box.l + 'px', 'important');
+    s.setProperty('top', box.t + 'px', 'important');
+    s.setProperty('width', box.w + 'px', 'important');
+    s.setProperty('height', box.h + 'px', 'important');
+    s.setProperty('right', 'auto', 'important');
+    s.setProperty('bottom', 'auto', 'important');
+  }
+
+  function clear() {
+    ['left', 'top', 'width', 'height', 'right', 'bottom']
+      .forEach(function (p) { panel.style.removeProperty(p); });
+  }
+
+  function fit(box) {
+    // Never let it be dragged somewhere it cannot be dragged back from: the
+    // header has to stay reachable, so the top edge stays below the navbar.
+    box.w = Math.max(MIN_W, Math.min(box.w, window.innerWidth - 2 * EDGE));
+    box.h = Math.max(MIN_H, Math.min(box.h, window.innerHeight - 80));
+    box.l = Math.max(EDGE, Math.min(box.l, window.innerWidth - box.w - EDGE));
+    box.t = Math.max(74, Math.min(box.t, window.innerHeight - 60));
+    return box;
+  }
+
+  function current() {
+    var r = panel.getBoundingClientRect();
+    return { l: Math.round(r.left), t: Math.round(r.top),
+             w: Math.round(r.width), h: Math.round(r.height) };
+  }
+
+  function remember(box) {
+    try { localStorage.setItem(KEY, JSON.stringify(box)); } catch (e) { /* private window */ }
+  }
+
+  function recall() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v && v.w && v.h) { return v; }
+    } catch (e) { /* nothing saved, or no storage */ }
+    return null;
+  }
+
+  // one pointer routine for both jobs; what differs is the arithmetic
+  function grab(el, mode) {
+    el.addEventListener('pointerdown', function (ev) {
+      if (busy() || ev.button !== 0) { return; }
+      if (mode === 'move' && ev.target.closest('button')) { return; }
+      ev.preventDefault();
+      var start = current();
+      var x0 = ev.clientX, y0 = ev.clientY;
+      el.setPointerCapture(ev.pointerId);
+      panel.style.transition = 'none';
+
+      function onMove(e) {
+        var dx = e.clientX - x0, dy = e.clientY - y0, box;
+        if (mode === 'move') {
+          box = { l: start.l + dx, t: start.t + dy, w: start.w, h: start.h };
+        } else {
+          // dragging the top-left grip: the bottom-right corner stays put
+          box = { l: start.l + dx, t: start.t + dy,
+                  w: start.w - dx, h: start.h - dy };
+          if (box.w < MIN_W) { box.l = start.l + (start.w - MIN_W); box.w = MIN_W; }
+          if (box.h < MIN_H) { box.t = start.t + (start.h - MIN_H); box.h = MIN_H; }
+        }
+        apply(fit(box));
+      }
+
+      function done(e) {
+        el.releasePointerCapture(ev.pointerId);
+        el.removeEventListener('pointermove', onMove);
+        el.removeEventListener('pointerup', done);
+        el.removeEventListener('pointercancel', done);
+        panel.style.transition = '';
+        userBox = current();
+        remember(userBox);
+      }
+
+      el.addEventListener('pointermove', onMove);
+      el.addEventListener('pointerup', done);
+      el.addEventListener('pointercancel', done);
+    });
+  }
+
+  var grip = document.createElement('div');
+  grip.className = 'chat-grip';
+  grip.title = 'Drag to resize';
+  grip.setAttribute('aria-label', 'Resize the chat');
+  panel.appendChild(grip);
+
+  grab(header, 'move');
+  grab(grip, 'resize');
+
+  // Back to where it started, for anyone who has dragged it somewhere silly.
+  header.addEventListener('dblclick', function (ev) {
+    if (ev.target.closest('button')) { return; }
+    clear();
+    userBox = null;
+    try { localStorage.removeItem(KEY); } catch (e) { /* nothing to remove */ }
+  });
+
+  // Maximise and minimise need the stylesheet back, so the inline box is
+  // dropped on the way in and restored on the way out.
+  // The box the user chose, and nothing else. Reading the panel's own size
+  // when it is being minimised photographs the collapsed height, which is how
+  // restoring used to hand back a 52px box that fit() then clamped up to the
+  // minimum. If they never dragged it, there is nothing to restore: clearing
+  // the inline styles gives the stylesheet back.
+  var userBox = recall();
+  if (userBox) { apply(fit(userBox)); }
+
+  new MutationObserver(function () {
+    if (busy()) {
+      clear();
+    } else if (userBox) {
+      apply(fit(userBox));
+    }
+  }).observe(panel, { attributes: true, attributeFilter: ['class'] });
+
+  window.addEventListener('resize', function () {
+    if (!busy() && panel.style.left) { apply(fit(current())); }
+  });
+})();
+</script>
 </body>
 </html>

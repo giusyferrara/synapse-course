@@ -446,17 +446,14 @@
             <div class="form-group">
                 <label for="password">Password</label>
                 <div class="pw-wrap">
-                    <input type="password" id="password" placeholder="At least 8 characters" required autocomplete="new-password" oninput="updatePwUI()">
+                    <input type="password" id="password" placeholder="At least 10 characters" required autocomplete="new-password" oninput="updatePwUI()">
                     <button type="button" class="toggle-eye" data-target="password" aria-label="Show password">👁</button>
                 </div>
                 <button type="button" class="gen-btn" id="genPwBtn">🎲 Generate secure password</button>
                 <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
                 <div class="pw-requirements" id="pwReqs">
-                    <div class="pw-req" data-check="length"><span class="pw-req-icon">○</span> At least 8 characters</div>
-                    <div class="pw-req" data-check="upper"><span class="pw-req-icon">○</span> One uppercase (A-Z)</div>
-                    <div class="pw-req" data-check="lower"><span class="pw-req-icon">○</span> One lowercase (a-z)</div>
-                    <div class="pw-req" data-check="digit"><span class="pw-req-icon">○</span> One digit (0-9)</div>
-                    <div class="pw-req" data-check="special"><span class="pw-req-icon">○</span> One special character (!@#$%...)</div>
+                    <div class="pw-req" data-check="length"><span class="pw-req-icon">○</span> At least 10 characters</div>
+                    <div class="pw-req pw-tip">Tip: a few random words, like <em>river lamp violin cloud</em>, are easy to remember and hard to guess. No symbols needed.</div>
                 </div>
                 <span class="error-msg" id="passwordError"></span>
             </div>
@@ -518,11 +515,7 @@ function updatePwUI() {
     const pw2 = document.getElementById("password2").value;
 
     const reqs = {
-        length: pw.length >= 8,
-        upper: /[A-Z]/.test(pw),
-        lower: /[a-z]/.test(pw),
-        digit: /\d/.test(pw),
-        special: /[!@#$%^&*()_+\-=\[\]{}|;:'",.<>\/?`~]/.test(pw)
+        length: pw.length >= 10
     };
     Object.keys(reqs).forEach(k => {
         const el = document.querySelector(`.pw-req[data-check="${k}"]`);
@@ -535,12 +528,8 @@ function updatePwUI() {
     const fill = document.getElementById("strengthFill");
     if (fill) {
         let s = 0;
-        s += Math.min(pw.length * 4, 40);
-        if (reqs.upper) s += 10;
-        if (reqs.lower) s += 10;
-        if (reqs.digit) s += 10;
-        if (reqs.special) s += 15;
-        if (pw.length >= 12) s += 10;
+        // Length is what makes a password hard to guess.
+        s += Math.min(pw.length * 5, 100);
         if (/(.)\1{2,}/.test(pw)) s -= 15;
         s = Math.max(0, Math.min(100, s));
         fill.style.width = s + "%";
@@ -596,8 +585,8 @@ async function handleRegister(e) {
         return;
     }
 
-    if (password.length < 8) {
-        document.getElementById('passwordError').textContent = 'Password must be at least 8 characters';
+    if (password.length < 10) {
+        document.getElementById('passwordError').textContent = 'Password must be at least 10 characters';
         document.getElementById('passwordError').classList.add('visible');
         return;
     }

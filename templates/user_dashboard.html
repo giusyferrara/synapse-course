@@ -533,7 +533,9 @@ async function loadProgress(userId) {
     }).join('');
 }
 
-function logout() {
+async function logout() {
+    // The session cookie is httponly: only the server can end it.
+    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); } catch (e) {}
     localStorage.removeItem('synapse_user');
     window.location.href = '/';
 }

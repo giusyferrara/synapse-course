@@ -22,6 +22,7 @@ import asyncio
 import os
 
 from aiohttp import web
+from web.session import current_user_id
 
 from database.config import SessionLocal
 from quiz import quiz_engine
@@ -33,7 +34,7 @@ from quiz.quiz_ai import RateLimitError
 # --------------------------------------------------------------------------
 def _student_id(request):
     """Return a stable student id for the logged-in user, or None."""
-    uid = request.cookies.get("synapse_user")
+    uid = current_user_id(request)
     if uid:
         return f"user:{uid}"
     pc = request.query.get("participant") or request.cookies.get("participant_code")

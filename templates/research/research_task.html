@@ -1159,6 +1159,37 @@
       overflow: hidden;
     }
     .side-panel.visible { display: flex !important; max-height: 65vh; }
+
+    /* A window you can move and resize, like the course chat. */
+    .side-panel .side-panel-header { cursor: move; user-select: none; }
+    .side-panel.maximized .side-panel-header,
+    .side-panel.minimized .side-panel-header { cursor: default; }
+    .mission-grip {
+      position: absolute; top: 0; left: 0; width: 18px; height: 18px;
+      cursor: nwse-resize; z-index: 3; touch-action: none;
+      background:
+        linear-gradient(135deg, currentColor 0 2px, transparent 2px 100%) 4px 4px / 10px 10px no-repeat,
+        linear-gradient(135deg, currentColor 0 2px, transparent 2px 100%) 4px 8px / 10px 10px no-repeat;
+      color: rgba(255,255,255,0.75);
+      opacity: 0; transition: opacity .15s ease;
+    }
+    .side-panel:hover .mission-grip { opacity: 1; }
+    .mission-grip:focus-visible { opacity: 1; outline: 2px solid #fff; outline-offset: 1px; }
+    .side-panel.maximized .mission-grip,
+    .side-panel.minimized .mission-grip { display: none; }
+    @media (max-width: 768px) { .mission-grip { display: none; } }
+
+    /* Minimise now collapses to the header instead of closing. */
+    .side-panel.minimized {
+      height: 52px !important;
+      min-height: 52px !important;
+      max-height: 52px !important;
+      overflow: hidden !important;
+    }
+    .side-panel.minimized .chat-messages,
+    .side-panel.minimized .chat-input-box,
+    .side-panel.minimized #owaspPanel { display: none !important; }
+
     .side-panel.maximized {
       width: 55vw !important;
       max-height: calc(100vh - 96px) !important;
@@ -1230,7 +1261,7 @@
     </style>
     <link rel="stylesheet" href="/static/research_accessibility.css?v=2">
     <link rel="stylesheet" href="/static/focus_assistant.css">
-    <link rel="stylesheet" href="/static/synapse_a11y.css?v=9">
+    <link rel="stylesheet" href="/static/synapse_a11y.css?v=20">
     <link rel="stylesheet" href="/static/butterfly_logo.css">
     <style>
     /* Animated butterfly logo */
@@ -1500,11 +1531,11 @@ body.dark-mode .tab-btn {
                     <table class="cred-table">
                         <tr><th>Role</th><th>Username</th><th>Password</th></tr>
                         <tr><td>Admin</td><td>admin</td><td>adminShop2026</td></tr>
-                        <tr><td>User 1</td><td>user1</td><td>password123</td></tr>
-                        <tr><td>User 2</td><td>user2</td><td>mypassword</td></tr>
-                        <tr><td>User 3</td><td>user3</td><td>welcome2026</td></tr>
-                        <tr><td>User 4</td><td>user4</td><td>letmein</td></tr>
-                        <tr><td>User 5</td><td>user5</td><td>qwerty123</td></tr>
+                        <tr><td>User 1</td><td>user1</td><td>user1Pass!</td></tr>
+                        <tr><td>User 2</td><td>user2</td><td>user2Pass!</td></tr>
+                        <tr><td>User 3</td><td>user3</td><td>user3Pass!</td></tr>
+                        <tr><td>User 4</td><td>user4</td><td>user4Pass!</td></tr>
+                        <tr><td>User 5</td><td>user5</td><td>user5Pass!</td></tr>
                     </table>
                 </div>
 
@@ -2077,8 +2108,12 @@ async function submitTask() {
         } else {
             perFindingHtml += '<p style="color:#f59e0b;margin-bottom:8px">\u26a0 <strong>CIA impact not selected</strong></p>';
         }
-        const attacks = f.attacks || [];
-        if (Array.isArray(attacks) && attacks.length > 0) {
+        // The ticked attack boxes are stored in f.exploitation (a comma-joined
+        // string, set by updateAttacks). This check used to read f.attacks,
+        // which is never set \u2014 so it always said "not documented" no matter what
+        // the student ticked. Read the field that actually holds the answer.
+        const attacks = (f.exploitation || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+        if (attacks.length > 0) {
             totalPoints++;
             perFindingHtml += '<p style="color:#16a34a">\u2713 <strong>Attack documented</strong> \u2014 ' + attacks.length + ' technique' + (attacks.length>1?'s':'') + ' identified.</p>';
         } else {
@@ -2156,35 +2191,11 @@ async function sendChat() {
                     return msgs.slice(-10);
                 })(),
                 extra_context: '[Current findings: ' + JSON.stringify(findings.map(function(f){return {cwe:f.cwe_code,attack:f.exploitation,cia:f.impact_cia,mitigation:f.mitigation}}).filter(function(f){return f.cwe})) + ']',
-                system_prompt: 'You are SYNAPSE, a warm and adaptive security tutor. You help ' + (participantNickname || 'the student') + ' find 3 vulnerabilities in ShopSecure.\n\n' +
-                'ABSOLUTE RULES:\n' +
-                '1. NEVER say "Hi ' + (participantNickname || 'friend') + '" more than once. If chat history exists, skip greetings entirely.\n' +
-                '2. If the student asks a SPECIFIC question, ANSWER IT DIRECTLY in 2-3 lines. No redirecting, no "before we start", no asking about experience.\n' +
-                '3. NEVER invent credentials. The real ShopSecure login is: admin / adminShop2026 (or user1 / user1Pass!, user2 / user2Pass!).\n' +
-                '4. If the student wants to try SQL injection on the login page, HELP THEM. Example: username = admin and password = x\' OR \'1\'=\'1 — this bypasses authentication.\n' +
-                '5. The 3 MAIN missions are CWE-502, CWE-22, CWE-352 but if the student wants to explore OTHER vulnerabilities first (like SQL injection), LET THEM and help.\n' +
-                '6. ONE short answer per message. No walls of text. No repeated questions.\n\n' +
-                'ADAPTIVE BEHAVIOUR:\n' +
-                '- If the student is a BEGINNER or says they have no experience: use everyday language, zero jargon, explain like talking to a friend. Guide with tiny steps: "Click on X", "Now look at Y", "What do you see?". Never dump theory — one action, one observation at a time.\n' +
-                '- If the student is EXPERIENCED: be more technical, give hints not answers, challenge them.\n' +
-                '- OBSERVE: if the student mentions a page or describes what they see, acknowledge it and guide from THERE — don\'t restart from scratch.\n' +
-                '- If the student seems frustrated or confused, slow down: "No worries! Let\'s take a step back. Tell me what you see on the screen right now."\n' +
-                '- Celebrate every small win: "Great observation!", "You\'re on the right track!"\n\n' +
-                'THE 3 MISSIONS (keep these secret — guide the student to discover them):\n' +
-                '1. CWE-502 Insecure Deserialisation — /shop/preferences page. The app uses pickle to store preferences. Student explores demo buttons and fill-in-the-blank exercise to see how an attacker could run commands.\n' +
-                '2. CWE-22 Path Traversal — /shop/invoice page. The app reads files based on user input. Student types paths like ../../etc/passwd to read files they shouldn\'t.\n' +
-                '3. CWE-352 CSRF — /shop/csrf-challenge page. The app has no CSRF protection. Student builds a fake page that tricks a victim into performing actions.\n\n' +
-                'RULES:\n' +
-                '1. MAXIMUM 3-4 LINES per response. Short, clear, one step at a time.\n' +
-                '2. If asked a QUESTION, ANSWER it directly. Never say "look it up".\n' +
-                '3. If the student is lost, ask: "Which mission are you working on?" or "What do you see on your screen right now?"\n' +
-                '4. ONE action per message. Wait for the student to respond before giving the next step.\n' +
-                '5. Respond in the SAME LANGUAGE as the student (English, Italian, etc.).\n' +
-                '6. Use the student name (' + (participantNickname || 'friend') + '). Be warm and encouraging.\n' +
-                '7. If the student asks about CIA impact: CWE-502=Confidentiality+Integrity (attacker can read data AND change roles via RCE). CWE-22=Confidentiality (reads sensitive files). CWE-352=Integrity (unauthorized actions like transfers).\n' +
-                '8. If student asks about mitigation or theory, explain in 2-3 simple lines then say "Want to try it now?"\n' +
-                '9. NEVER reveal the full solution. Guide step by step. Let the student discover.\n' +
-                '10. If the student has been working on one mission for a while, encourage them: "You\'ve made great progress! Want to try a different mission for a change?"'
+                // The system prompt is built and enforced on the SERVER now.
+                // It used to be sent from here, which let it be edited in
+                // devtools and, worse, printed ready-to-paste exploit strings.
+                // Only a display name goes across; the server sanitises it.
+                nickname: participantNickname
             })
         });
         const data = await resp.json();
@@ -2214,11 +2225,29 @@ function addChatMessage(role, text, silent) {
 
         const bubble = document.createElement('div');
         bubble.className = 'chat-bubble';
-        // Support markdown-like formatting
-        let html = text
-            .replace(/\n/g, '<br>')
-            .replace(/`([^`]+)`/g, '<code>$1</code>')
-            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        // Render a small, SAFE markdown. HTML is escaped first so nothing the
+        // model returns can inject markup, then our own tags are added back.
+        // Fenced ``` blocks become <pre>, which keeps every space and newline -
+        // that is what lets the tutor draw a directory tree that stays aligned
+        // instead of collapsing into a single run of words.
+        function esc(t) {
+            return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        function inline(t) {
+            return esc(t)
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+        }
+        let html = text.split('```').map(function (seg, i) {
+            if (i % 2 === 1) {
+                // inside a fence: drop an optional language label on its own
+                // first line, keep everything else exactly as sent
+                var body = /\n/.test(seg) ? seg.replace(/^[^\n]*\n/, '') : seg;
+                return '<pre>' + esc(body.replace(/\s+$/, '')) + '</pre>';
+            }
+            return inline(seg);
+        }).join('');
         bubble.innerHTML = html;
 
         wrapper.appendChild(avatar);
@@ -2377,6 +2406,25 @@ function toggleReadingPointer(btn) {
 // Track activity
 document.addEventListener('click', () => { lastActivityTime = Date.now(); });
 document.addEventListener('keypress', () => { lastActivityTime = Date.now(); });
+document.addEventListener('mousemove', () => { lastActivityTime = Date.now(); });
+
+// Keep the lab warm while the student is genuinely here. The lab counts a
+// request THROUGH the proxy as activity, i.e. a click inside the lab tab -
+// so reading the mission or chatting with the tutor here, in this tab, used
+// to let the lab idle out from under them. This pings the lab, but ONLY when
+// there has been real input in the last 10 minutes, so a lab whose student
+// has walked away is still left to be reaped - close it when they leave, not
+// while they work.
+setInterval(function () {
+    if (!labSessionCache) return;                       // no lab opened this visit
+    if (Date.now() - lastActivityTime > 10 * 60 * 1000) return;  // truly idle: let it go
+    fetch('/api/labs/keepalive', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lab_type: 'shopsecure', participant_code: participantCode })
+    }).catch(function () { /* a missed ping is harmless; the next one covers it */ });
+}, 3 * 60 * 1000);  // every 3 minutes, well inside the 20-minute idle backstop
 
 // ============================================================
 // INIT
@@ -2635,15 +2683,40 @@ function toggleSideChat() {
 }
 function closeSideChat() {
   var panel = document.getElementById('sidePanel');
-  if (panel) panel.classList.remove('visible');
+  if (!panel) return;
+  panel.classList.remove('visible');
+  // or it comes back collapsed, which reads as a broken button
+  panel.classList.remove('minimized', 'maximized');
+  var btn = document.getElementById('maxRestoreSide');
+  if (btn) btn.textContent = '\u2610';
 }
 function minimizeSideChat() {
-  closeSideChat();
+  // It used to call closeSideChat, so the dash and the cross did the same
+  // thing and there was no way to park the chat without losing it.
+  var panel = document.getElementById('sidePanel');
+  if (!panel) return;
+  panel.classList.remove('maximized');
+  panel.classList.toggle('minimized');
+  var btn = document.getElementById('maxRestoreSide');
+  if (btn) btn.textContent = '\u2610';
 }
 function maximizeSideChat() {
   var panel = document.getElementById('sidePanel');
   if (!panel) return;
-  panel.classList.toggle('maximized');
+  // Three states, like a real window button. Coming back from minimised it
+  // restores to normal first: it used to add 'maximized' while 'minimized'
+  // was still on, so the bar went wide and stayed shut.
+  if (panel.classList.contains('minimized')) {
+    panel.classList.remove('minimized');
+  } else {
+    panel.classList.toggle('maximized');
+  }
+  var btn = document.getElementById('maxRestoreSide');
+  if (btn) {
+    var big = panel.classList.contains('maximized');
+    btn.textContent = big ? '\u2750' : '\u2610';
+    btn.title = big ? 'Restore' : 'Maximize';
+  }
 }
 // Show chat on load
 document.addEventListener('DOMContentLoaded', function() {
@@ -2702,5 +2775,153 @@ function toggleBtnActive(funcName) {
 })();
 </script>
     <script src="/static/idle_encouragement.js"></script>
+
+<script>
+/* The Mission chat as a window: move it, resize it, remember the size.
+   Its own block, touching nothing that was already here. It only sets inline
+   styles on the panel; clearing them hands it straight back to the stylesheet. */
+(function () {
+  var panel = document.getElementById('sidePanel');
+  if (!panel) { return; }
+  var header = panel.querySelector('.side-panel-header');
+  if (!header) { return; }
+
+  var KEY = 'synapse_mission_chat_box';
+  var MIN_W = 320, MIN_H = 240, EDGE = 8;
+
+  function busy() {
+    return panel.classList.contains('maximized') ||
+           panel.classList.contains('minimized');
+  }
+
+  function apply(box) {
+    var s = panel.style;
+    s.setProperty('left', box.l + 'px', 'important');
+    s.setProperty('top', box.t + 'px', 'important');
+    s.setProperty('width', box.w + 'px', 'important');
+    s.setProperty('height', box.h + 'px', 'important');
+    // the stylesheet caps this at 65vh, which would stop it growing
+    s.setProperty('max-height', 'none', 'important');
+    s.setProperty('right', 'auto', 'important');
+    s.setProperty('bottom', 'auto', 'important');
+  }
+
+  function clear() {
+    ['left', 'top', 'width', 'height', 'max-height', 'right', 'bottom']
+      .forEach(function (p) { panel.style.removeProperty(p); });
+  }
+
+  // This page has a sticky header, 80px tall, at z-index 10006 - one above the
+  // panel's 10005 - so anything dragged under it loses its buttons to it. Read
+  // its real height rather than writing 80 down here, in case it changes.
+  function topLimit() {
+    var h = document.querySelector('.synapse-header, header');
+    var r = h ? h.getBoundingClientRect() : null;
+    return (r && r.height && r.top <= 1) ? Math.round(r.height) + EDGE : EDGE;
+  }
+
+  function fit(box) {
+    var top = topLimit();
+    box.w = Math.max(MIN_W, Math.min(box.w, window.innerWidth - 2 * EDGE));
+    box.h = Math.max(MIN_H, Math.min(box.h, window.innerHeight - top - EDGE));
+    box.l = Math.max(EDGE, Math.min(box.l, window.innerWidth - box.w - EDGE));
+    // its own header has to stay reachable, or it can never be dragged back
+    box.t = Math.max(top, Math.min(box.t, window.innerHeight - 60));
+    return box;
+  }
+
+  function current() {
+    var r = panel.getBoundingClientRect();
+    return { l: Math.round(r.left), t: Math.round(r.top),
+             w: Math.round(r.width), h: Math.round(r.height) };
+  }
+
+  function remember(box) {
+    try { localStorage.setItem(KEY, JSON.stringify(box)); } catch (e) { /* private window */ }
+  }
+
+  function recall() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v && v.w && v.h) { return v; }
+    } catch (e) { /* nothing saved */ }
+    return null;
+  }
+
+  function grab(el, mode) {
+    el.addEventListener('pointerdown', function (ev) {
+      if (busy() || ev.button !== 0) { return; }
+      if (mode === 'move' && ev.target.closest('button')) { return; }
+      ev.preventDefault();
+      var start = current(), x0 = ev.clientX, y0 = ev.clientY;
+      el.setPointerCapture(ev.pointerId);
+      panel.style.transition = 'none';
+
+      function onMove(e) {
+        var dx = e.clientX - x0, dy = e.clientY - y0, box;
+        if (mode === 'move') {
+          box = { l: start.l + dx, t: start.t + dy, w: start.w, h: start.h };
+        } else {
+          box = { l: start.l + dx, t: start.t + dy,
+                  w: start.w - dx, h: start.h - dy };
+          if (box.w < MIN_W) { box.l = start.l + (start.w - MIN_W); box.w = MIN_W; }
+          if (box.h < MIN_H) { box.t = start.t + (start.h - MIN_H); box.h = MIN_H; }
+        }
+        apply(fit(box));
+      }
+
+      function done() {
+        el.releasePointerCapture(ev.pointerId);
+        el.removeEventListener('pointermove', onMove);
+        el.removeEventListener('pointerup', done);
+        el.removeEventListener('pointercancel', done);
+        panel.style.transition = '';
+        userBox = current();
+        remember(userBox);
+      }
+
+      el.addEventListener('pointermove', onMove);
+      el.addEventListener('pointerup', done);
+      el.addEventListener('pointercancel', done);
+    });
+  }
+
+  var grip = document.createElement('div');
+  grip.className = 'mission-grip';
+  grip.title = 'Drag to resize';
+  grip.setAttribute('aria-label', 'Resize the chat');
+  panel.appendChild(grip);
+
+  grab(header, 'move');
+  grab(grip, 'resize');
+
+  header.addEventListener('dblclick', function (ev) {
+    if (ev.target.closest('button')) { return; }
+    clear();
+    userBox = null;
+    try { localStorage.removeItem(KEY); } catch (e) { /* nothing to remove */ }
+  });
+
+  // The box the user chose, and nothing else. Reading the panel's own size
+  // when it is being minimised photographs the collapsed height, which is how
+  // restoring used to hand back a 52px box that fit() then clamped up to the
+  // minimum. If they never dragged it, there is nothing to restore: clearing
+  // the inline styles gives the stylesheet back.
+  var userBox = recall();
+  if (userBox) { apply(fit(userBox)); }
+
+  new MutationObserver(function () {
+    if (busy()) {
+      clear();
+    } else if (userBox) {
+      apply(fit(userBox));
+    }
+  }).observe(panel, { attributes: true, attributeFilter: ['class'] });
+
+  window.addEventListener('resize', function () {
+    if (!busy() && panel.style.left) { apply(fit(current())); }
+  });
+})();
+</script>
 </body>
 </html>

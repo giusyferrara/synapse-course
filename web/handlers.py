@@ -3,6 +3,7 @@
 from .email_utils import send_email
 import os
 from aiohttp import web
+from web.session import current_user_id
 import json
 from database.config import SessionLocal
 from database.models import Feedback, Student
@@ -58,7 +59,7 @@ async def handle_feedback_form(request):
 
 async def handle_advanced_tools(request):
     """NEW: Serve advanced learning tools page"""
-    if not request.cookies.get('synapse_user'):
+    if not current_user_id(request):
         raise web.HTTPFound('/login?next=/tools')
     try:
         with open("templates/advanced_tools.html", "r", encoding="utf-8") as f:
@@ -68,7 +69,7 @@ async def handle_advanced_tools(request):
 
 async def handle_mobile_home(request):
     """Mobile PWA home hub (/m) — login-gated, reuses the same account."""
-    if not request.cookies.get('synapse_user'):
+    if not current_user_id(request):
         raise web.HTTPFound('/login?next=/m')
     try:
         with open("templates/mobile/home.html", "r", encoding="utf-8") as f:
@@ -78,7 +79,7 @@ async def handle_mobile_home(request):
 
 async def handle_mobile_tutor(request):
     """Mobile Socratic tutor chat (/m/tutor) — login-gated; reuses /api/course/chat."""
-    if not request.cookies.get('synapse_user'):
+    if not current_user_id(request):
         raise web.HTTPFound('/login?next=/m/tutor')
     try:
         with open("templates/mobile/tutor.html", "r", encoding="utf-8") as f:
@@ -109,10 +110,7 @@ async def handle_submit_feedback(request):
         data = await request.json()
 
         # Link to the logged-in auth user (cookie synapse_user = users.id), if present
-        user_id = None
-        cookie_uid = request.cookies.get('synapse_user')
-        if cookie_uid and cookie_uid.isdigit():
-            user_id = int(cookie_uid)
+        user_id = current_user_id(request)
 
         # Legacy: resolve a Student record if a real student_id was sent
         student_id_str = data.get("student_id", "anonymous_feedback_user")

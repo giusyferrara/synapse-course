@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>At the Blackboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+  :root {
+    color-scheme: light dark;
+
+    --paper:      #F1F4F2;
+    --paper-2:    #E7ECE9;
+    --ink:        #000000;
+    --ink-soft:   #111716;
+    --ink-faint: #1E2523;
+    --rule:       #C6D0CC;
+
+    --slate:      #24332F;
+    --slate-2:    #1B2724;
+    --chalk:      #E9EFEB;
+    --chalk-soft: #A9B8B2;
+
+    --amber:      #6F4908;
+    --amber-on-slate: #E8B23A;
+
+    --ff-display: "Zilla Slab", Georgia, serif;
+    --ff-body:    "Newsreader", Georgia, "Times New Roman", serif;
+    --ff-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+    --measure: 63ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #121A18;
+      --paper-2:    #18211F;
+      --ink:        #DEE7E3;
+      --ink-soft:   #A2B0AB;
+      --ink-faint:  #71807B;
+      --rule:       #2B3835;
+
+      --slate:      #0C1312;
+      --slate-2:    #070C0B;
+      --chalk:      #E4EBE7;
+      --chalk-soft: #93A29D;
+
+      --amber:      #E8B23A;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #121A18;
+    --paper-2:    #18211F;
+    --ink:        #DEE7E3;
+    --ink-soft:   #A2B0AB;
+    --ink-faint:  #71807B;
+    --rule:       #2B3835;
+
+    --slate:      #0C1312;
+    --slate-2:    #070C0B;
+    --chalk:      #E4EBE7;
+    --chalk-soft: #93A29D;
+
+    --amber:      #E8B23A;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 0 20px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--ff-body);
+    font-size: 18px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding-block: 56px 96px;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .eyebrow {
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  h1 {
+    font-family: var(--ff-display);
+    font-weight: 700;
+    font-size: clamp(38px, 7vw, 60px);
+    line-height: 1.04;
+    letter-spacing: -.015em;
+    margin: 10px 0 0;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    font-size: 21px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: var(--measure);
+    margin: 18px 0 0;
+    font-weight: 300;
+  }
+
+  /* ---------- the rules strip ---------- */
+
+  .rules {
+    margin-top: 40px;
+    border-top: 2px solid var(--ink);
+    border-bottom: 1px solid var(--rule);
+    padding-block: 18px 20px;
+  }
+
+  .rules h2 {
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 400;
+    margin: 0 0 12px;
+  }
+
+  .rules ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px 28px;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+
+  .rules li {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    padding-left: 18px;
+    position: relative;
+  }
+
+  .rules li::before {
+    content: "—";
+    position: absolute;
+    left: 0;
+    color: var(--amber);
+  }
+
+  .rules b { color: var(--ink); font-weight: 500; }
+
+  /* ---------- controls ---------- */
+
+  .bar {
+    margin-top: 26px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 18px;
+  }
+
+  .bar label {
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  select {
+    font-family: var(--ff-mono);
+    font-size: 12px;
+    padding: 5px 8px;
+    color: var(--ink);
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+  }
+
+  .novoice {
+    font-size: 15px;
+    color: var(--amber);
+    margin-top: 14px;
+  }
+
+  /* ---------- a script ---------- */
+
+  .script {
+    margin-top: 64px;
+    scroll-margin-top: 20px;
+  }
+
+  .script-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 10px;
+  }
+
+  .script h2 {
+    font-family: var(--ff-display);
+    font-weight: 700;
+    font-size: clamp(26px, 4.4vw, 34px);
+    letter-spacing: -.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .meta {
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    letter-spacing: .08em;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .builds {
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin: 14px 0 0;
+  }
+
+  .board-note {
+    font-size: 16px;
+    color: var(--ink-soft);
+    font-style: italic;
+    margin: 6px 0 0;
+    max-width: var(--measure);
+  }
+
+  .speakrow {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  button.speak {
+    font-family: var(--ff-mono);
+    font-size: 12px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 9px 16px;
+    color: var(--chalk);
+    background: var(--slate);
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+
+  button.speak:hover { background: var(--slate-2); }
+  button.speak[aria-pressed="true"] { background: var(--amber); color: #1A1204; }
+
+  :focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 2px;
+  }
+
+  .lines {
+    margin-top: 22px;
+    max-width: var(--measure);
+  }
+
+  .lines p { margin: 0 0 1.05em; }
+
+  .s {
+    transition: background-color .18s ease, color .18s ease;
+    border-radius: 2px;
+    padding: 1px 0;
+  }
+
+  .s.on {
+    background: var(--amber);
+    color: #1A1204;
+    box-shadow: 0 0 0 3px var(--amber);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .s { transition: none; }
+  }
+
+  /* ---------- the board ---------- */
+
+  .board {
+    margin-top: 26px;
+    background: var(--slate);
+    border-radius: 4px;
+    padding: 22px 24px;
+    overflow-x: auto;
+  }
+
+  .board .cap {
+    font-family: var(--ff-mono);
+    font-size: 10px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--chalk-soft);
+    margin: 0 0 14px;
+  }
+
+  .board pre {
+    margin: 0;
+    font-family: var(--ff-mono);
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--chalk);
+    white-space: pre;
+  }
+
+  .board pre em {
+    font-style: normal;
+    color: var(--amber-on-slate);
+    font-weight: 700;
+  }
+
+  /* ---------- the one that already exists ---------- */
+
+  .existing {
+    margin-top: 64px;
+    border-left: 3px solid var(--amber);
+    padding: 4px 0 4px 20px;
+    max-width: var(--measure);
+  }
+
+  .existing h2 {
+    font-family: var(--ff-display);
+    font-size: 24px;
+    margin: 0 0 8px;
+  }
+
+  .existing p { margin: 0 0 10px; color: var(--ink-soft); font-size: 17px; }
+
+  a { color: var(--amber); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+  /* ---------- close ---------- */
+
+  .close {
+    margin-top: 80px;
+    border-top: 2px solid var(--ink);
+    padding-top: 22px;
+    max-width: var(--measure);
+  }
+
+  .close h2 {
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 400;
+    margin: 0 0 12px;
+  }
+
+  .close p { margin: 0 0 12px; color: var(--ink-soft); font-size: 17px; }
+  .close b { color: var(--ink); font-weight: 500; }
+
+  code {
+    font-family: var(--ff-mono);
+    font-size: .88em;
+    background: var(--paper-2);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  @media (max-width: 480px) {
+    body { font-size: 17px; }
+    .wrap { padding-block: 36px 64px; }
+    .board { padding: 18px 16px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">Synapse · narration scripts · spoken, not written</p>
+  <h1>At the Blackboard</h1>
+  <p class="standfirst">Five things explained out loud to someone who has never met an <span style="font-family:var(--ff-mono);font-size:.86em">if</span>, the way you'd explain them standing at a board with chalk in your hand. Press play on any of them. The sentence being spoken lights up — which is also where the subtitle comes from, for free.</p>
+
+  <div class="rules">
+    <h2>What makes it sound like a person</h2>
+    <ul>
+      <li><b>Contractions, always.</b> "It's", "let's", "isn't". The single strongest tell of speech.</li>
+      <li><b>Everyday thing first, code second.</b> Never the other way round.</li>
+      <li><b>Say each thing once.</b> Explain the mechanism on the first row, then never again.</li>
+      <li><b>Say the hard part is hard.</b> "This line looks scary. It isn't."</li>
+      <li><b>Never read the code back.</b> Say what the line <i>means</i>, not how it's typed.</li>
+      <li><b>Do it with real numbers.</b> Five minus two lots of two is one.</li>
+    </ul>
+  </div>
+
+  <div class="bar">
+    <label for="rate">Pace
+      <select id="rate">
+        <option value="0.8">Slow</option>
+        <option value="0.92" selected>Teaching</option>
+        <option value="1.05">Brisk</option>
+      </select>
+    </label>
+    <label for="voice">Voice
+      <select id="voice"><option>loading…</option></select>
+    </label>
+  </div>
+  <p class="novoice" id="novoice" hidden>This browser has no speech voices installed, so the play buttons are off. The scripts still read fine — and in production the audio comes from ElevenLabs anyway, not the browser.</p>
+
+  <div id="scripts"></div>
+
+  <div class="existing">
+    <h2>And the hourglass, which already talks</h2>
+    <p>The sixth one is built. It's the 6×6 hourglass in Java, four phases and four different programs that make the same picture — and its narration is where every rule above came from.</p>
+    <p>It lives in <code>synapse-lavori/inside-the-loop.html</code>, so its script isn't repeated here. Same voice, same two tracks: a short ticker on every step, and the teacher who only speaks when something actually changes.</p>
+  </div>
+
+  <div class="close">
+    <h2>What these are for</h2>
+    <p>These are <b>scripts</b>, not videos. The dissertation feedback asked for video; recording video means re-recording it every time a lesson changes, and an on-screen avatar buys nothing a voice doesn't.</p>
+    <p>A script costs nothing to change, generates its own subtitle track (it's already text), translates, and — read once by <b>ElevenLabs</b> — sounds the same for thirty students or three thousand, at no cost per listen. The player is already built around <i>"tell me when you've finished speaking"</i>, so swapping the browser voice for real audio is a one-line change.</p>
+    <p>Next: pin each sentence to the frame it belongs to, the way the hourglass already does, so the drawing moves while the voice talks.</p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* Each script is stored as sentences, because the sentence is the unit that
+     gets spoken, highlighted, and — later — turned into one audio file and one
+     subtitle cue. Paragraph breaks are marked with a bare "" entry. */
+
+  var SCRIPTS = [
+    {
+      id: "ifelse",
+      title: "if / else",
+      builds: "starts here — nothing before it",
+      board: "The two arrows coming off one line.",
+      lines: [
+        "You already make this kind of decision all day. You just don't call it anything.",
+        "",
+        "You get to the front door. If it's raining, you take the umbrella. If it isn't, you leave it on the hook.",
+        "That's an if/else. One question that can only be answered yes or no, and two different things that happen depending on which answer you get.",
+        "",
+        "The computer needs it written down more carefully than a person does. Here's that same decision.",
+        "",
+        "The bit in the brackets is the question. It has to be the kind of question with only two possible answers — is it raining works, what's the weather like doesn't.",
+        "The line underneath is what happens when the answer's yes. The line after else is what happens when it's no.",
+        "One of them runs. Never both. Never neither.",
+        "",
+        "And here's the part that catches people out. The computer doesn't remember having decided. It asks, it does one of the two things, and it moves on.",
+        "Next time it comes past, it asks again from scratch.",
+        "",
+        "Which is exactly why an if/else is so useful sitting inside a loop. The question gets asked over and over, and the answer's allowed to come out different every time."
+      ],
+      code: "if (<em>raining</em>)\n    takeTheUmbrella();\nelse\n    leaveItOnTheHook();"
+    },
+
+    {
+      id: "loop",
+      title: "The loop",
+      builds: "builds on — nothing. It's the other foundation",
+      board: "One instruction, with an arrow curling back to itself.",
+      lines: [
+        "A loop is how you tell the computer to do something over and over, without writing it out over and over.",
+        "",
+        "You do this already. Think about washing up.",
+        "You haven't got a plan that says wash the first plate, then wash the second plate, then wash the third one. You've got one instruction — wash a plate — and you keep going until the sink's empty.",
+        "The instruction never changes. What changes is which plate is in your hand.",
+        "",
+        "In code, that's this.",
+        "",
+        "The pile is the sink. Each time round, plate is the one you're holding right now. When there's nothing left in the pile, the loop stops by itself.",
+        "You never count, and you never have to tell it when to stop.",
+        "",
+        "Sometimes though, you do want to count. Do this five times. Go along a row of six squares. Then you say it like this instead.",
+        "",
+        "Three things in those brackets, and they come in the order you'd say them out loud.",
+        "Start at zero. Keep going while i is under six. Add one each time round.",
+        "So i is zero, then one, two, three, four, five — and then it stops, because six isn't under six.",
+        "",
+        "And yes, it starts at zero. Computers count from zero, not one. It feels wrong for about a week, and then you stop noticing."
+      ],
+      code: "for (String plate : sink)\n    wash(plate);\n\nfor (int <em>i</em> = 0; <em>i</em> &lt; 6; <em>i</em>++)\n    drawOneSquare();"
+    },
+
+    {
+      id: "diamond",
+      title: "The diamond",
+      builds: "builds on — the loop, and if / else",
+      board: "Five rows, and the gap column written down the side: 2, 1, 0, 1, 2.",
+      lines: [
+        "A diamond is the hourglass turned inside out. That isn't a joke — it's the whole trick.",
+        "",
+        "With the hourglass you asked: how far am I from the nearest edge?",
+        "With a diamond you ask the opposite question: how far am I from the middle?",
+        "",
+        "Let's do it by hand first, before any code. Five rows, so the middle one is row two. Watch two numbers as we go down.",
+        "",
+        "Row zero. You're two steps from the middle — so, two spaces, then one star.",
+        "Row one. One step away. One space, three stars.",
+        "Row two. You're on it. No spaces at all, five stars.",
+        "Row three. One step again, the other way. One space, three stars.",
+        "Row four. Two steps. Two spaces, one star.",
+        "",
+        "Now read the spaces column straight down the page. Two, one, zero, one, two. It goes in, and it comes back out.",
+        "That's the diamond. You've just drawn it with numbers, and you haven't written a line of code.",
+        "",
+        "So there's your rule. The spaces are how far you are from the middle. And the stars are whatever's left of the row once you've taken those spaces off both sides — five, minus two lots of the gap.",
+        "",
+        "Here it is written down.",
+        "",
+        "The line doing the real work is the one with the distance in it. That abs just means how far, ignoring which side you're on — two steps above the middle and two steps below are both simply two.",
+        "",
+        "And now the nice bit. Change that one question back to how far from the edge, and you've got the hourglass again. Same loops. Same printing. One different question.",
+        "That's usually what separates two shapes. Not the code. The question."
+      ],
+      code: "int n = 5;\nfor (int i = 0; i &lt; n; i++) {\n    int <em>gap</em> = Math.abs(i - n / 2);\n    for (int s = 0; s &lt; <em>gap</em>; s++)      System.out.print(\" \");\n    for (int k = 0; k &lt; n - 2 * <em>gap</em>; k++) System.out.print(\"*\");\n    System.out.println();\n}"
+    },
+
+    {
+      id: "hexagon",
+      title: "The hexagon",
+      builds: "builds on — the loop. No if / else at all",
+      board: "A finger walking six strokes round, back to where it started.",
+      lines: [
+        "Nobody draws a hexagon by working out where the six corners go. You'd need trigonometry for that, and you'd hate it. So don't.",
+        "Walk it instead.",
+        "",
+        "Put your finger on the paper. Draw a line — any length, say ten centimetres. Stop. Turn a little to the right. Draw another ten. Stop. Turn the same amount again.",
+        "Keep going. Same line, same turn. After six of them you'll find you're back where you started, pointing the way you started.",
+        "",
+        "So there's only one real question left. How much do you turn each time?",
+        "",
+        "And the answer is lovely. By the time you're home, you've turned all the way round exactly once. A full circle. Three hundred and sixty degrees — and that's true whatever shape you walked.",
+        "So you've got a full circle to share out between six equal turns. Three hundred and sixty, divided by six. Sixty degrees each.",
+        "",
+        "That's the whole thing.",
+        "",
+        "Now look at what you've actually built. Change the six to eight and turn forty-five instead — that's an octagon. Change it to three and a hundred and twenty, and it's a triangle. Change it to thirty-six and ten degrees, and from a step back it's a circle.",
+        "",
+        "You didn't learn to draw a hexagon. You learned to draw every regular shape there is."
+      ],
+      code: "sides = <em>6</em>\n\nfor side in range(sides):\n    forward(100)\n    right(360 / <em>sides</em>)"
+    },
+
+    {
+      id: "fibonacci",
+      title: "Fibonacci",
+      builds: "builds on — the loop, and holding on to two things at once",
+      board: "The numbers going up one at a time, with a bracket joining each pair.",
+      lines: [
+        "Fibonacci isn't a formula to memorise. It's an instruction you can follow with a pencil.",
+        "Every number is the two before it, added together. That's it.",
+        "",
+        "So let's just do it. Start with zero and one.",
+        "",
+        "Zero, one. Add them — that's one.",
+        "Now the last two, one and one — two.",
+        "Last two again, one and two — three.",
+        "Two and three — five.",
+        "Three and five — eight.",
+        "Five and eight — thirteen.",
+        "",
+        "Zero, one, one, two, three, five, eight, thirteen. You've just done Fibonacci, and you never needed a formula.",
+        "",
+        "Now notice what your hand was actually doing, because this is the part the code has to copy.",
+        "You weren't holding the whole list in your head. You only ever had two numbers at a time — the last one, and the one before it.",
+        "",
+        "Here it is.",
+        "",
+        "That middle line is the one that looks hard, so let's take it slowly. It's a shuffle.",
+        "The one that was second becomes first. And the sum becomes the new second.",
+        "Both at the same instant — and that bit matters. If you moved one of them first, you'd have written over the number you still needed to do the adding with.",
+        "",
+        "So the pair goes: zero and one. Then one and one. Then one and two. Then two and three.",
+        "Say that out loud, and it's the same pencil you were using a minute ago."
+      ],
+      code: "<em>a</em>, <em>b</em> = 0, 1\n\nfor _ in range(10):\n    print(<em>a</em>)\n    <em>a</em>, <em>b</em> = <em>b</em>, <em>a</em> + <em>b</em>"
+    }
+  ];
+
+  var WPM = 150;   // an unhurried teaching pace
+
+  /* ---------------------------------------------------------------- render */
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function spoken(script) {
+    return script.lines.filter(function (l) { return l !== ""; });
+  }
+
+  function render() {
+    var host = document.getElementById("scripts");
+    var html = "";
+
+    SCRIPTS.forEach(function (sc) {
+      var said = spoken(sc);
+      var words = said.join(" ").split(/\s+/).length;
+      var secs = Math.round(words / WPM * 60);
+      var mins = Math.floor(secs / 60);
+      var rem = secs % 60;
+      var dur = mins > 0 ? mins + " min " + (rem < 10 ? "0" : "") + rem + " s"
+                         : secs + " s";
+
+      html += '<section class="script" id="sc-' + sc.id + '">';
+      html += '<div class="script-head"><h2>' + esc(sc.title) + '</h2>';
+      html += '<span class="meta">' + words + ' words · ' + dur + ' spoken</span></div>';
+      html += '<p class="builds">' + esc(sc.builds) + '</p>';
+      html += '<p class="board-note">On the board: ' + esc(sc.board) + '</p>';
+
+      html += '<div class="speakrow"><button class="speak" type="button" ' +
+              'data-id="' + sc.id + '" aria-pressed="false">▶ Read it aloud</button></div>';
+
+      html += '<div class="lines">';
+      var idx = 0;
+      var open = false;
+      sc.lines.forEach(function (l) {
+        if (l === "") {
+          if (open) { html += "</p>"; open = false; }
+          return;
+        }
+        if (!open) { html += "<p>"; open = true; }
+        html += '<span class="s" data-sc="' + sc.id + '" data-i="' + idx + '">' +
+                esc(l) + "</span> ";
+        idx++;
+      });
+      if (open) { html += "</p>"; }
+      html += "</div>";
+
+      html += '<div class="board"><p class="cap">On the board</p><pre>' +
+              sc.code + "</pre></div>";
+      html += "</section>";
+    });
+
+    host.innerHTML = html;
+  }
+
+  render();
+
+  /* ---------------------------------------------------------------- speech */
+
+  var synth = window.speechSynthesis;
+  var rateSel = document.getElementById("rate");
+  var voiceSel = document.getElementById("voice");
+  var voices = [];
+  var current = null;          // id of the script being read
+  var stopping = false;
+
+  // Real recorded narration (ElevenLabs), one folder per voice, one subfolder
+  // per script, files numbered by spoken line. When it is present the voice
+  // menu offers these instead of the browser's, and playback plays the mp3s.
+  var REAL_VOICES = [
+    { id: "valory", label: "Valory" },
+    { id: "evan",   label: "Evan" },
+    { id: "maya",   label: "Maya" }
+  ];
+  var usingRealVoices = false, realVoiceId = "valory", realPlayer = null;
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+
+  if (!synth) {
+    document.getElementById("novoice").hidden = false;
+    document.querySelector(".bar").hidden = true;
+    Array.prototype.forEach.call(document.querySelectorAll("button.speak"),
+      function (b) { b.disabled = true; });
+    return;
+  }
+
+  function loadVoices() {
+    if (usingRealVoices) { return; }   // real recorded voices are in charge
+    voices = synth.getVoices().filter(function (v) {
+      return /^en(-|_|$)/i.test(v.lang);
+    });
+    if (!voices.length) { voices = synth.getVoices(); }
+    if (!voices.length) { return; }
+
+    voiceSel.innerHTML = "";
+    voices.forEach(function (v, i) {
+      var o = document.createElement("option");
+      o.value = String(i);
+      o.textContent = v.name.replace(/\s*\(.*\)$/, "") + " · " + v.lang;
+      voiceSel.appendChild(o);
+    });
+
+    // prefer a British English voice, since that's the platform's register
+    var uk = voices.findIndex(function (v) { return /en-GB/i.test(v.lang); });
+    voiceSel.value = String(uk >= 0 ? uk : 0);
+  }
+
+  loadVoices();
+  synth.onvoiceschanged = loadVoices;
+
+  // If the recorded narration is present, take over the voice menu with the
+  // real voices and retire the browser ones. One probe (Valory + the first
+  // script) is enough to know the audio shipped.
+  if (window.fetch) {
+    fetch("audio/at-the-blackboard/valory/" + SCRIPTS[0].id + "/manifest.json", { cache: "no-cache" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (m) {
+        if (!m || !m.lines || !m.lines.length) { return; }
+        usingRealVoices = true;
+        synth.onvoiceschanged = null;
+        voiceSel.innerHTML = "";
+        REAL_VOICES.forEach(function (rv, i) {
+          var o = document.createElement("option");
+          o.value = rv.id; o.textContent = rv.label;
+          voiceSel.appendChild(o);
+        });
+        voiceSel.value = realVoiceId;
+        voiceSel.addEventListener("change", function () {
+          realVoiceId = voiceSel.value || "valory";
+          stop();
+        });
+      })
+      .catch(function () { /* no recorded audio — browser voice it is */ });
+  }
+
+  window.setTimeout(function () {
+    if (!voices.length) {
+      document.getElementById("novoice").hidden = false;
+    }
+  }, 1200);
+
+  function clearHighlight() {
+    Array.prototype.forEach.call(document.querySelectorAll(".s.on"),
+      function (el) { el.classList.remove("on"); });
+  }
+
+  function setButtons(activeId) {
+    Array.prototype.forEach.call(document.querySelectorAll("button.speak"),
+      function (b) {
+        var on = b.dataset.id === activeId;
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+        b.textContent = on ? "■ Stop" : "▶ Read it aloud";
+      });
+  }
+
+  function stop() {
+    stopping = true;
+    synth.cancel();
+    if (realPlayer) { try { realPlayer.pause(); } catch (e) {} }
+    current = null;
+    clearHighlight();
+    setButtons(null);
+    window.setTimeout(function () { stopping = false; }, 60);
+  }
+
+  function play(id) {
+    var sc = SCRIPTS.filter(function (s) { return s.id === id; })[0];
+    if (!sc) { return; }
+    var said = spoken(sc);
+
+    current = id;
+    setButtons(id);
+
+    var i = 0;
+
+    function next() {
+      if (current !== id || stopping) { return; }
+      if (i >= said.length) { stop(); return; }
+
+      clearHighlight();
+      var span = document.querySelector('.s[data-sc="' + id + '"][data-i="' + i + '"]');
+      if (span) {
+        span.classList.add("on");
+        var box = span.getBoundingClientRect();
+        if (box.top < 80 || box.bottom > window.innerHeight - 80) {
+          span.scrollIntoView({ block: "center", behavior: "smooth" });
+        }
+      }
+
+      // Real recorded voice: play the mp3 for this spoken line. The files are
+      // numbered by spoken position, so said[i] is line_<i>.mp3.
+      if (usingRealVoices) {
+        if (!realPlayer) { realPlayer = new Audio(); }
+        realPlayer.onended = function () { i++; next(); };
+        realPlayer.onerror = function () { i++; next(); };
+        realPlayer.playbackRate = parseFloat(rateSel.value);
+        realPlayer.src = "audio/at-the-blackboard/" + realVoiceId + "/" + id + "/line_" + pad2(i) + ".mp3";
+        var pr = realPlayer.play();
+        if (pr && pr.catch) { pr.catch(function () { i++; next(); }); }
+        return;
+      }
+
+      var u = new SpeechSynthesisUtterance(said[i]);
+      u.rate = parseFloat(rateSel.value);
+      u.pitch = 1;
+      var v = voices[parseInt(voiceSel.value, 10)];
+      if (v) { u.voice = v; u.lang = v.lang; }
+
+      // The player waits for the sentence to finish rather than running on a
+      // timer. A fixed timer and a voice always end up cutting each other off.
+      u.onend = function () { i++; next(); };
+      u.onerror = function () { i++; next(); };
+
+      synth.speak(u);
+    }
+
+    next();
+  }
+
+  document.getElementById("scripts").addEventListener("click", function (e) {
+    var btn = e.target.closest("button.speak");
+    if (!btn) { return; }
+    var id = btn.dataset.id;
+    if (current === id) { stop(); } else { stop(); window.setTimeout(function () { play(id); }, 80); }
+  });
+
+  rateSel.addEventListener("change", function () { if (current) { stop(); } });
+  voiceSel.addEventListener("change", function () { if (current) { stop(); } });
+
+  window.addEventListener("beforeunload", function () { synth.cancel(); });
+})();
+</script>
+
+</body>
+</html>

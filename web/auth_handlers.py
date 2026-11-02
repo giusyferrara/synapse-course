@@ -21,6 +21,8 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, InvalidHash
 
 from .email_utils import send_email, build_reset_email, APP_BASE_URL
+from .session import start_session, end_session
+from .ai_budget import client_ip
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +40,12 @@ _reset_attempts: dict = defaultdict(lambda: deque(maxlen=10))
 RESET_RATE_LIMIT = 3
 RESET_RATE_WINDOW = 15 * 60
 RESET_TOKEN_TTL = 60 * 60
-MIN_PASSWORD_LENGTH = 8
+MIN_PASSWORD_LENGTH = 10
+
+# Failed logins allowed per email and per address before a pause.
+LOGIN_FAIL_LIMIT = 10
+LOGIN_FAIL_WINDOW = 15 * 60
+_login_failures: dict = defaultdict(deque)
 
 
 # ─── PASSWORD HASHING ────────────────────────────────────────────────────────
@@ -83,22 +90,36 @@ def _validate_password_strength(password: str):
         return f'Password must be at least {MIN_PASSWORD_LENGTH} characters.'
     if len(password) > 128:
         return 'Password must be at most 128 characters.'
-    if not any(c.isupper() for c in password):
-        return 'Password must contain at least one uppercase letter.'
-    if not any(c.islower() for c in password):
-        return 'Password must contain at least one lowercase letter.'
-    if not any(c.isdigit() for c in password):
-        return 'Password must contain at least one digit.'
-    special = set('!@#$%^&*()_+-=[]{}|;:\'",.<>/?`~')
-    if not any(c in special for c in password):
-        return 'Password must contain at least one special character (!@#$%^&*...).'
+    # Length, not a mix of symbols, is what makes a password hard to guess
+    # (NIST SP 800-63B); composition rules mostly add friction.
+    if len(set(password)) < 4:
+        return 'This password is too easy to guess. Please choose another.'
     if password.lower() in _COMMON_PASSWORDS:
         return 'This password is too common. Please choose another.' 
     return None
 
 
 def _client_ip(request) -> str:
-    return request.headers.get('X-Forwarded-For', request.remote or '').split(',')[0].strip()
+    # One definition of "who is calling" for the whole app; see the reasons in
+    # web/ai_budget.py. In short: X-Real-IP is the header nginx owns.
+    return client_ip(request)
+
+
+def _login_blocked(*keys) -> bool:
+    now = time.time()
+    for key in keys:
+        dq = _login_failures[key]
+        while dq and dq[0] < now - LOGIN_FAIL_WINDOW:
+            dq.popleft()
+        if len(dq) >= LOGIN_FAIL_LIMIT:
+            return True
+    return False
+
+
+def _login_failed(*keys):
+    now = time.time()
+    for key in keys:
+        _login_failures[key].append(now)
 
 
 def _rate_limit_check(key: str) -> bool:
@@ -208,8 +229,8 @@ async def api_register(request):
                     'created_at': datetime.now()
                 }
             )
-            session.commit()
             row = result.fetchone()
+            session.commit()
 
             user = {
                 'id': row.id,
@@ -221,7 +242,9 @@ async def api_register(request):
             }
 
             log.info(f"✅ New user registered: {email}")
-            return web.json_response({'success': True, 'user': user})
+            # Signed in straight away: "Account created! Taking you in..."
+            # used to take them to pages that then sent them back to /login.
+            return start_session(web.json_response({'success': True, 'user': user}), row.id)
 
     except Exception as e:
         log.error(f"❌ Registration error: {e}")
@@ -237,6 +260,11 @@ async def api_login(request):
         if not email or not password:
             return web.json_response({'success': False, 'message': 'Email and password are required.'})
 
+        keys = (f"email:{email}", f"ip:{_client_ip(request)}")
+        if _login_blocked(*keys):
+            log.warning(f"Login paused after repeated failures: {keys}")
+            return web.json_response({'success': False, 'message': 'Too many attempts. Please wait 15 minutes and try again.'}, status=429)
+
         with Session() as session:
             row = session.execute(
                 text("""
@@ -248,6 +276,7 @@ async def api_login(request):
             ).fetchone()
 
             if not row:
+                _login_failed(*keys)
                 return web.json_response({'success': False, 'message': 'Invalid email or password.'})
 
             if not row.is_active:
@@ -255,6 +284,7 @@ async def api_login(request):
 
             is_valid, needs_rehash = verify_password(password, row.password_hash)
             if not is_valid:
+                _login_failed(*keys)
                 return web.json_response({'success': False, 'message': 'Invalid email or password.'})
 
             if needs_rehash:
@@ -281,9 +311,8 @@ async def api_login(request):
             }
 
             log.info(f"✅ User logged in: {email}")
-            response = web.json_response({'success': True, 'user': user})
-            response.set_cookie('synapse_user', str(row.id), max_age=90*24*60*60, httponly=True, samesite='Lax')
-            return response
+            _login_failures.pop(keys[0], None)
+            return start_session(web.json_response({'success': True, 'user': user}), row.id)
 
     except Exception as e:
         log.error(f"❌ Login error: {e}")
@@ -291,7 +320,8 @@ async def api_login(request):
 
 
 async def api_logout(request):
-    return web.json_response({'success': True, 'message': 'Logged out.'})
+    # The cookie is httponly, so only the server can remove it.
+    return end_session(web.json_response({'success': True, 'message': 'Logged out.'}))
 
 
 async def api_forgot_password(request):

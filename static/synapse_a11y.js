@@ -441,46 +441,49 @@
     document.body.appendChild(tooltip);
   }
 
+  // Words the tutor has defined this session, so the same word is never looked
+  // up twice from one browser.
+  var _aiDefCache = {};
+  var _dictHideTimer = null;
+
+  function _showDict(pos, term, def, loading) {
+    var tooltip = document.getElementById('synapse-dict-tooltip');
+    if (!tooltip) return;
+    tooltip.querySelector('.dict-term').textContent = term;
+    tooltip.querySelector('.dict-def').textContent = def;
+    var x = Math.min(pos.clientX + 10, window.innerWidth - 340);
+    var y = Math.min(pos.clientY + 10, window.innerHeight - 200);
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+    tooltip.classList.add('visible');
+    if (_dictHideTimer) { clearTimeout(_dictHideTimer); _dictHideTimer = null; }
+    if (!loading) { _dictHideTimer = setTimeout(function () { tooltip.classList.remove('visible'); }, 10000); }
+  }
+
   document.addEventListener('dblclick', function(e) {
     if (!dictActive) return;
     var sel = window.getSelection();
     var word = (sel.toString() || '').trim().toLowerCase().replace(/[^a-z]/g, '');
     if (!word || word.length < 2) return;
-    // If word not in dictionary, send to AI chat
-    if (!DICTIONARY[word]) {
-      var chatInput = document.getElementById('chatInput');
-      if (chatInput && typeof sendChat === 'function') {
-        chatInput.value = 'What does "' + word + '" mean? Explain simply.';
-        sendChat();
-        synapseToast('\u{1F4DA} Asked AI about: ' + word);
-      } else if (typeof sendMessage === 'function') {
-        var ci = document.getElementById('chatInput');
-        if (ci) { ci.value = 'What does "' + word + '" mean? Explain simply.'; sendMessage(); }
-        synapseToast('\u{1F4DA} Asked AI about: ' + word);
-      } else {
-        synapseToast('\u{1F4DA} "' + word + '" — not in dictionary. Try asking the AI tutor!');
-      }
-      return;
-    }
+    var term = word.charAt(0).toUpperCase() + word.slice(1);
+    var pos = { clientX: e.clientX, clientY: e.clientY };
 
-    var def = DICTIONARY[word];
-    if (!def) return;
+    if (DICTIONARY[word]) { _showDict(pos, term, DICTIONARY[word], false); return; }
+    if (_aiDefCache[word]) { _showDict(pos, term, _aiDefCache[word], false); return; }
 
-    var tooltip = document.getElementById('synapse-dict-tooltip');
-    if (!tooltip) return;
-
-    tooltip.querySelector('.dict-term').textContent = word.charAt(0).toUpperCase() + word.slice(1);
-    tooltip.querySelector('.dict-def').textContent = def;
-
-    // Position near mouse
-    var x = Math.min(e.clientX + 10, window.innerWidth - 340);
-    var y = Math.min(e.clientY + 10, window.innerHeight - 200);
-    tooltip.style.left = x + 'px';
-    tooltip.style.top = y + 'px';
-    tooltip.classList.add('visible');
-
-    // Auto-hide after 8 seconds
-    setTimeout(function() { tooltip.classList.remove('visible'); }, 8000);
+    _showDict(pos, term, 'Looking it up...', true);
+    fetch('/api/define', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word: word })
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      var def = (d && d.definition) ? d.definition : 'No definition found. Ask the tutor in the chat.';
+      if (d && d.definition && !d.limited) { _aiDefCache[word] = def; }
+      _showDict(pos, term, def, false);
+    }).catch(function () {
+      _showDict(pos, term, 'Could not look that up right now.', false);
+    });
   });
 
   // Close tooltip on click elsewhere
@@ -538,7 +541,7 @@
 
   window.synapseToggleProgressBar = function() {
     progressActive = !progressActive;
-    synapseToast(progressActive ? '\u{1F4CA} Progress Bar: ON — scroll to see it!' : '\u{1F4CA} Progress Bar: OFF');
+    synapseToast(progressActive ? '\u{1F4C8} Progress Bar: ON — scroll to see it!' : '\u{1F4C8} Progress Bar: OFF');
     var pb = document.getElementById('synapse-progress-bar');
     if (pb) pb.classList.toggle('active', progressActive);
     if (progressActive) updateProgressBar();

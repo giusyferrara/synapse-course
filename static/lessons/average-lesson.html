@@ -1,0 +1,956 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>The Running Average</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Newsreader:opsz,wght@6..72,300;6..72,400&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+  :root {
+    color-scheme: light dark;
+
+    --paper: #F4F6F5; --paper-2: #E8ECEA;
+    --ink: #000000; --ink-soft: #111418; --ink-faint: #1E242A; --rule: #C8D0D4;
+
+    /* One colour, one meaning, all the way through:
+         blue   = the day's number (its index)
+         purple = the days behind you, the ones being averaged
+         orange = what we work out — the total, the average, the tally
+         green  = a day that counts                                        */
+    --board: #FFFFFF; --board-2: #EEF1F3;
+    --line: #7F8C94; --bink: #16202B; --bsoft: #2B3743; --bdim: #3D4A56;
+
+    --row:   #2563EB;  --row-ink:   #FFFFFF;  --row-edge:   #1D4ED8;
+    --col:   #7C3AED;  --col-ink:   #FFFFFF;  --col-edge:   #6D28D9;
+    --count: #F59E0B;  --count-ink: #3B2200;  --count-edge: #B45309;
+    --star:  #16A34A;  --star-ink:  #052E16;  --star-edge:  #15803D;
+    --count-deep: #B45309;
+    --no: #B91C1C;
+
+    --ff-display: "Zilla Slab", Georgia, serif;
+    --ff-body: "Newsreader", Georgia, serif;
+    --ff-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #121A18; --paper-2: #1A2320;
+      --ink: #E6EDEA; --ink-soft: #B4C1BC; --ink-faint: #85958F; --rule: #2E3A36;
+      --board: #1B2622; --board-2: #141D1A;
+      --line: #6F807A; --bink: #EDF2EF; --bsoft: #D2DCD8; --bdim: #AFBDB7;
+      --row: #60A5FA; --row-ink: #04102E; --row-edge: #93C5FD;
+      --col: #C084FC; --col-ink: #1A0536; --col-edge: #DDB4FE;
+      --count: #FBBF24; --count-ink: #3B2200; --count-edge: #FCD34D;
+      --star: #4ADE80; --star-ink: #052E16; --star-edge: #86EFAC;
+      --count-deep: #FBBF24; --no: #FCA5A5;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #121A18; --paper-2: #1A2320;
+    --ink: #E6EDEA; --ink-soft: #B4C1BC; --ink-faint: #85958F; --rule: #2E3A36;
+    --board: #1B2622; --board-2: #141D1A;
+    --line: #6F807A; --bink: #EDF2EF; --bsoft: #D2DCD8; --bdim: #AFBDB7;
+    --row: #60A5FA; --row-ink: #04102E; --row-edge: #93C5FD;
+    --col: #C084FC; --col-ink: #1A0536; --col-edge: #DDB4FE;
+    --count: #FBBF24; --count-ink: #3B2200; --count-edge: #FCD34D;
+    --star: #4ADE80; --star-ink: #052E16; --star-edge: #86EFAC;
+    --count-deep: #FBBF24; --no: #FCA5A5;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0; padding: 0 20px; background: var(--paper); color: var(--ink);
+    font-family: var(--ff-body); font-size: 17px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding-block: 40px 80px; }
+
+  .eyebrow {
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-faint); margin: 0;
+  }
+  h1 {
+    font-family: var(--ff-display); font-weight: 700;
+    font-size: clamp(30px, 5vw, 44px); line-height: 1.05;
+    letter-spacing: -.015em; margin: 8px 0 0;
+  }
+  .sub { color: var(--ink-soft); max-width: 62ch; margin: 12px 0 0; font-size: 18px; }
+
+  .key { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 0;
+         font-family: var(--ff-mono); font-size: 11px; letter-spacing: .08em;
+         text-transform: uppercase; }
+  .key span { padding: 5px 11px; border-radius: 4px; color: #FFF; font-weight: 700; }
+
+  /* ------------------------------------------------------------- player */
+
+  .player { margin-top: 24px; }
+  .screen {
+    position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden;
+    border-radius: 5px; background: var(--board); border: 1px solid var(--rule);
+  }
+  .stage {
+    position: absolute; top: 0; left: 0; width: 1280px; height: 720px;
+    transform-origin: top left; background: var(--board); color: var(--bink);
+    padding: 44px 56px 36px; display: flex; flex-direction: column;
+    font-family: var(--ff-mono);
+  }
+  .scenelbl {
+    font-size: 15px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--bdim); margin-bottom: 22px; min-height: 20px; font-weight: 700;
+  }
+  .cols { flex: 1; display: flex; gap: 44px; align-items: flex-start; }
+  .main { transition: opacity .25s ease; }
+  .main.back { opacity: .5; }
+
+  /* ------------------------------------------------------------ the days */
+
+  .days { display: flex; flex-direction: column; gap: 9px; }
+  .dayrow { display: flex; gap: 10px; align-items: center; }
+  .daylbl {
+    width: 72px; text-align: right; font-size: 13px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--bdim); font-weight: 700;
+  }
+
+  .slotwrap { width: 96px; display: flex; flex-direction: column;
+              align-items: center; gap: 5px; }
+
+  .idx {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 28px; height: 28px; padding: 0 8px; border-radius: 5px;
+    font-size: 15px; font-weight: 700;
+    background: var(--row); color: var(--row-ink);
+    box-shadow: inset 0 0 0 1px var(--row-edge);
+  }
+  .idx.off { background: transparent; box-shadow: none; color: transparent; }
+
+  .val {
+    width: 96px; height: 62px; border-radius: 6px;
+    border: 1px solid var(--line); background: transparent; color: var(--bink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 25px; font-weight: 700;
+    transition: background-color .2s ease, color .2s ease,
+                border-color .2s ease, opacity .2s ease;
+  }
+  .val.hidden { opacity: .12; }
+  .val.behind { background: var(--col); border-color: var(--col-edge); color: var(--col-ink); }
+  .val.today  { box-shadow: 0 0 0 4px var(--bink); }
+  .val.hit    { background: var(--star); border-color: var(--star-edge); color: var(--star-ink); }
+  .val.miss   { border-color: var(--no); color: var(--no); }
+
+  .under { height: 34px; display: flex; flex-direction: column;
+           align-items: center; justify-content: flex-start; gap: 1px; }
+  .under .tri { color: var(--bink); font-size: 16px; line-height: 1; }
+  .under .lbl {
+    font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--bdim); font-weight: 700;
+  }
+
+  /* ------------------------------------------------------ what we carry */
+
+  .carry { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+  .slab {
+    border: 1px solid var(--line); border-radius: 7px; padding: 11px 16px;
+    min-width: 132px;
+  }
+  .slab .cap {
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--bdim); font-weight: 700; margin-bottom: 5px;
+  }
+  .slab .num { font-size: 27px; font-weight: 700; color: var(--bink); }
+  .slab.on { background: var(--count); border-color: var(--count-edge); }
+  .slab.on .cap, .slab.on .num { color: var(--count-ink); }
+  .slab.tally.on { background: var(--star); border-color: var(--star-edge); }
+  .slab.tally.on .cap, .slab.tally.on .num { color: var(--star-ink); }
+
+  /* ------------------------------------------------------------- right */
+
+  .side { flex: 1; min-width: 0; }
+  .brief {
+    font-family: var(--ff-body); font-size: 23px; line-height: 1.45;
+    color: var(--bsoft); max-width: 26ch;
+  }
+  .brief b { color: var(--bink); font-weight: 700; }
+
+  pre.code {
+    margin: 0; font-family: var(--ff-mono); font-size: 15px; line-height: 1.9;
+    color: var(--bsoft); white-space: pre; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 10px; border-radius: 4px; }
+  pre.code .ln.hi {
+    background: var(--count); color: var(--count-ink); font-weight: 700;
+    box-shadow: inset 0 0 0 1px var(--count-edge);
+  }
+
+  .vars { display: flex; gap: 9px; margin: 0 0 16px; flex-wrap: wrap; }
+  .var {
+    font-family: var(--ff-mono); font-size: 16px; font-weight: 700;
+    padding: 6px 11px; border-radius: 5px;
+    border: 1px solid var(--line); color: var(--bdim);
+  }
+  .var.i { background: var(--row); color: var(--row-ink); border-color: var(--row-edge); }
+  .var.t { background: var(--count); color: var(--count-ink); border-color: var(--count-edge); }
+  .var.k { background: var(--star); color: var(--star-ink); border-color: var(--star-edge); }
+
+  /* --------------------------------------------------------- foot line */
+
+  .ruleline {
+    min-height: 62px; margin-top: 14px; border-top: 1px solid var(--line);
+    padding-top: 15px; font-family: var(--ff-body); font-size: 24px;
+    color: var(--bsoft); line-height: 1.4;
+  }
+  .ruleline b, .ruleline u, .ruleline s, .ruleline em {
+    font-family: var(--ff-mono); font-size: 20px; font-weight: 700;
+    text-decoration: none; font-style: normal; padding: 2px 7px; border-radius: 4px;
+  }
+  .ruleline b { background: var(--count); color: var(--count-ink);
+                box-shadow: inset 0 0 0 1px var(--count-edge); }
+  .ruleline u { background: var(--row); color: var(--row-ink);
+                box-shadow: inset 0 0 0 1px var(--row-edge); }
+  .ruleline s { background: var(--col); color: var(--col-ink);
+                box-shadow: inset 0 0 0 1px var(--col-edge); }
+  .ruleline em { background: var(--star); color: var(--star-ink);
+                 box-shadow: inset 0 0 0 1px var(--star-edge); }
+  .ruleline .tick {
+    font-family: var(--ff-mono); font-size: 26px; font-weight: 700; color: var(--bink);
+  }
+  .ruleline .no { color: var(--no); font-weight: 700; }
+
+  .title-card {
+    flex: 1; display: flex; flex-direction: column; justify-content: center;
+    font-family: var(--ff-display); font-weight: 700; font-size: 54px;
+    line-height: 1.12; letter-spacing: -.02em; color: var(--bink); max-width: 21ch;
+  }
+  .title-card em { font-style: normal; color: var(--count-deep); }
+
+  /* ------------------------------------------------------------ chrome */
+
+  .caption {
+    background: var(--board-2); color: var(--bink);
+    border: 1px solid var(--rule); border-top: none; border-radius: 0 0 5px 5px;
+    padding: 17px 22px 19px; font-family: var(--ff-body); font-size: 20px;
+    line-height: 1.5; min-height: 84px; display: flex; align-items: center;
+  }
+  .caption[hidden] { display: none !important; }
+
+  .bar { margin-top: 16px; display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; }
+  button {
+    font-family: var(--ff-mono); font-size: 12px; letter-spacing: .07em;
+    text-transform: uppercase; padding: 10px 16px; font-weight: 700;
+    color: #FFF; background: var(--ink); border: none; border-radius: 4px; cursor: pointer;
+  }
+  button.primary { background: var(--count); color: var(--count-ink); }
+  button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
+  button.ghost[aria-pressed="true"] { color: var(--row); border-color: var(--row); }
+  :focus-visible { outline: 3px solid var(--count-deep); outline-offset: 2px; }
+
+  .track { flex: 1; min-width: 150px; height: 5px; border-radius: 3px;
+           background: var(--rule); overflow: hidden; }
+  .track i { display: block; height: 100%; width: 0; background: var(--count); }
+  .count-lbl {
+    font-family: var(--ff-mono); font-size: 12px; font-weight: 700;
+    color: var(--ink-soft); font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  select {
+    font-family: var(--ff-mono); font-size: 12px; padding: 7px 8px;
+    color: var(--ink); background: var(--paper-2);
+    border: 1px solid var(--rule); border-radius: 4px;
+  }
+  .warn { color: var(--count-deep); font-size: 15px; margin: 14px 0 0; font-weight: 700; }
+
+  /* ------------------------------------------------------ the question */
+
+  .brief-card {
+    margin-top: 46px; border-top: 2px solid var(--ink); padding-top: 20px;
+    max-width: 70ch;
+  }
+  .brief-card h2 {
+    font-family: var(--ff-mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 700; margin: 0 0 14px;
+  }
+  .brief-card h3 { font-family: var(--ff-display); font-size: 25px; margin: 0 0 10px; }
+  .brief-card p { margin: 0 0 12px; color: var(--ink-soft); }
+  .brief-card pre {
+    background: var(--paper-2); border: 1px solid var(--rule); border-radius: 5px;
+    padding: 13px 15px; overflow-x: auto; font-family: var(--ff-mono);
+    font-size: 14px; line-height: 1.7; margin: 0 0 12px; color: var(--ink);
+  }
+  .brief-card b { color: var(--ink); font-weight: 700; }
+
+  @media (prefers-reduced-motion: reduce) { .val, .slab, .main { transition: none; } }
+  @media (max-width: 560px) {
+    .caption { font-size: 17px; min-height: 72px; padding: 14px 16px 16px; }
+    .wrap { padding-block: 28px 56px; }
+  }
+
+  body.raw { padding: 0; background: var(--board); }
+  body.raw .wrap { max-width: none; margin: 0; padding: 0; }
+  body.raw .eyebrow, body.raw h1, body.raw .sub, body.raw .key,
+  body.raw .caption, body.raw .bar, body.raw .warn, body.raw .brief-card { display: none; }
+  body.raw .screen { width: 1280px; height: 720px; aspect-ratio: auto;
+                     border: none; border-radius: 0; }
+  body.raw .stage { transform: none !important; }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">Synapse · how does it work · a problem, worked</p>
+  <h1>The Running Average</h1>
+  <p class="sub">A real interview question, done by hand first. The hard part was never the code — it's turning the sentence into a set of moves.</p>
+  <p class="key">
+    <span style="background:#2563EB">the day's number</span>
+    <span style="background:#7C3AED">the days behind it</span>
+    <span style="background:#B45309">what we work out</span>
+    <span style="background:#15803D">a day that counts</span>
+  </p>
+
+  <div class="player">
+    <div class="screen" id="screen">
+      <div class="stage" id="stage">
+        <div class="scenelbl" id="scenelbl"></div>
+        <div class="cols" id="cols"></div>
+        <div class="ruleline" id="ruleline"></div>
+      </div>
+    </div>
+
+    <div class="caption" id="caption">Press play to begin.</div>
+
+    <div class="bar">
+      <button class="primary" id="play" type="button">▶ Play the lesson</button>
+      <button id="prev" type="button" aria-label="Previous line">◀</button>
+      <button id="next" type="button" aria-label="Next line">▶</button>
+      <div class="track"><i id="fill"></i></div>
+      <span class="count-lbl" id="count">0 / 0</span>
+      <button class="ghost" id="cc" type="button" aria-pressed="true">CC</button>
+      <select id="rate" aria-label="Pace">
+        <option value="0.82">Slow</option>
+        <option value="0.93" selected>Teaching</option>
+        <option value="1.05">Brisk</option>
+      </select>
+      <select id="voice" aria-label="Voice"><option>loading…</option></select>
+    </div>
+
+    <p class="warn" id="warn" hidden>No speech voices here, so it steps silently — use ▶ to move a line at a time. The captions carry the whole lesson.</p>
+  </div>
+
+  <div class="brief-card">
+    <h2>The question</h2>
+    <h3>Beating your own average</h3>
+    <p>You keep a note of how many pages you read each day. On how many days did you read <b>more than your average up to that point</b> — counting only the days before, not the day itself?</p>
+    <p>The first day never counts: there's nothing behind it to beat.</p>
+    <pre>pages = [12, 20, 16, 30, 18]
+answer = 2</pre>
+    <p><b>The rules.</b> Between 0 and 1000 days. Each day is a whole number of pages, at least one. No days at all means the answer is 0. And <b>more than</b> means strictly more — matching your average is not beating it.</p>
+  </div>
+
+</div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var PAGES = [12, 20, 16, 30, 18];
+
+  var CODE = [
+    "int total = 0;",
+    "int count = 0;",
+    "for (int i = 0; i < pages.length; i++) {",
+    "    if (i > 0) {",
+    "        double average = (double) total / i;",
+    "        if (pages[i] > average)",
+    "            count++;",
+    "    }",
+    "    total = total + pages[i];",
+    "}"
+  ];
+
+  /* Every entry is one spoken sentence, one caption cue, one audio file — or,
+     where `say` is null, one wordless frame while the machine works. */
+
+  function scene(o) {
+    var s = {
+      mode: "days", label: "", title: null,
+      upto: 0,            // how many values are on the board
+      nums: 0,            // how many day numbers are showing
+      today: null,        // the day being judged
+      behind: 0,          // how many days are highlighted as "before today"
+      total: null, avg: null, tally: null,
+      lit: "",            // which slab is lit: total | avg | tally
+      verdict: null,      // "hit" | "miss"
+      brief: null,
+      code: null, codeHi: [], codeUpto: 99,
+      vars: null, ticker: "", rule: ""
+    };
+    for (var k in o) { if (Object.prototype.hasOwnProperty.call(o, k)) { s[k] = o[k]; } }
+    return s;
+  }
+
+  // Running it for real, so the frames can't disagree with the code.
+  function runFrames() {
+    var out = [], total = 0, count = 0, i;
+
+    function snap(vars, hi, ticker, extra) {
+      var sc = {
+        label: "watch it run", upto: 4, nums: 4, code: CODE, codeHi: hi,
+        vars: vars, ticker: ticker
+      };
+      for (var k in extra) { if (Object.prototype.hasOwnProperty.call(extra, k)) { sc[k] = extra[k]; } }
+      return { say: null, scene: scene(sc) };
+    }
+
+    out.push(snap({ i: 0, total: 0, count: 0 }, [0, 1], "total = 0 · count = 0"));
+
+    for (i = 0; i < PAGES.length; i++) {
+      out.push(snap({ i: i, total: total, count: count }, [2],
+                    "day " + i, { today: i, behind: i }));
+
+      if (i > 0) {
+        var avg = total / i;
+        out.push(snap({ i: i, total: total, count: count }, [4],
+                      total + " ÷ " + i + " = " + avg,
+                      { today: i, behind: i, total: total, avg: avg, lit: "avg" }));
+
+        var hit = PAGES[i] > avg;
+        out.push(snap({ i: i, total: total, count: count }, [5],
+                      PAGES[i] + (hit ? " > " : " not > ") + avg,
+                      { today: i, behind: i, total: total, avg: avg,
+                        verdict: hit ? "hit" : "miss" }));
+
+        if (hit) {
+          count++;
+          out.push(snap({ i: i, total: total, count: count }, [6],
+                        "count = " + count,
+                        { today: i, behind: i, total: total, avg: avg,
+                          verdict: "hit", tally: count, lit: "tally" }));
+        }
+      } else {
+        out.push(snap({ i: 0, total: 0, count: 0 }, [3],
+                      "i is 0 · nothing before it · skip",
+                      { today: 0, behind: 0 }));
+      }
+
+      total += PAGES[i];
+      out.push(snap({ i: i, total: total, count: count }, [8],
+                    "total = " + total,
+                    { today: i, behind: i, total: total, lit: "total" }));
+    }
+
+    out.push(snap({ i: 4, total: total, count: count }, [9],
+                  "no days left · answer " + count,
+                  { upto: 4, nums: 4, tally: count, lit: "tally" }));
+    return out;
+  }
+
+  var FILM = [
+
+    { say: "Here's a problem of the kind you'd actually be handed in an interview. And the code turns out to be the easy half.",
+      scene: scene({ mode: "title", title: ["The hard part was never", "the <em>code</em>."] }) },
+
+    { say: "You've been keeping a note of how many pages you read each day. The question is: on how many days did you beat your own average?",
+      scene: scene({ label: "the question", upto: 5,
+                     brief: ["How many days", "did you beat your own average?"] }) },
+
+    { say: "And your average up to that point means the days before it — not counting the day itself. You can't be part of the score you're trying to beat.",
+      scene: scene({ label: "the question", upto: 5, nums: 5,
+                     rule: "the days <s>before</s> today, never today" }) },
+
+    { say: "Which also settles the first day. Nothing came before it, so there's nothing for it to beat. It's skipped, always.",
+      scene: scene({ label: "the question", upto: 5, nums: 5, today: 0,
+                     rule: "<u>day 0</u> has nothing behind it — skip" }) },
+
+    { say: "Let's do it by hand before we write anything. Five days: twelve pages, twenty, sixteen, thirty, eighteen.",
+      scene: scene({ label: "by hand", upto: 5, nums: 5, tally: 0, lit: "tally" }) },
+
+    { say: "Day zero. Skipped, as we said. The count stays at nothing.",
+      scene: scene({ label: "day 0", upto: 5, nums: 5, today: 0, tally: 0,
+                     rule: "skipped — the count is still <em>0</em>" }) },
+
+    { say: "Day one. What's behind it? Only day zero, twelve pages. And the average of a single number is just that number.",
+      scene: scene({ label: "day 1", upto: 5, nums: 5, today: 1, behind: 1,
+                     total: 12, avg: 12, lit: "avg", tally: 0,
+                     rule: "behind: <s>12</s> · average <b>12</b>" }) },
+
+    { say: "Twenty pages against an average of twelve. Beaten. That's one.",
+      scene: scene({ label: "day 1", upto: 5, nums: 5, today: 1, behind: 1,
+                     total: 12, avg: 12, verdict: "hit", tally: 1, lit: "tally",
+                     rule: "<b>20 &gt; 12</b> — that's <em>1</em>" }) },
+
+    { say: "Day two. Two days behind us now: twelve and twenty.",
+      scene: scene({ label: "day 2", upto: 5, nums: 5, today: 2, behind: 2, tally: 1,
+                     rule: "behind: <s>12</s> <s>20</s>" }) },
+
+    { say: "Add them, thirty-two. Share that between two days, and the average is sixteen.",
+      scene: scene({ label: "day 2", upto: 5, nums: 5, today: 2, behind: 2,
+                     total: 32, avg: 16, lit: "avg", tally: 1,
+                     rule: "<b>32</b> ÷ 2 = <b>16</b>" }) },
+
+    { say: "And that day you read sixteen. Exactly the average. Not a page more.",
+      scene: scene({ label: "day 2", upto: 5, nums: 5, today: 2, behind: 2,
+                     total: 32, avg: 16, tally: 1,
+                     rule: "today <b>16</b> · average <b>16</b>" }) },
+
+    { say: "So did you beat it? No. Matching is not beating. That's the line most people get wrong, and the question does say more than, not as much as.",
+      scene: scene({ label: "the trap", upto: 5, nums: 5, today: 2, behind: 2,
+                     total: 32, avg: 16, verdict: "miss", tally: 1,
+                     rule: "<span class='no'>16 does not beat 16</span> — still <em>1</em>" }) },
+
+    { say: "Day three. Three days behind: twelve, twenty and sixteen.",
+      scene: scene({ label: "day 3", upto: 5, nums: 5, today: 3, behind: 3, tally: 1,
+                     rule: "behind: <s>12</s> <s>20</s> <s>16</s>" }) },
+
+    { say: "Forty-eight altogether, shared between three. Sixteen again.",
+      scene: scene({ label: "day 3", upto: 5, nums: 5, today: 3, behind: 3,
+                     total: 48, avg: 16, lit: "avg", tally: 1,
+                     rule: "<b>48</b> ÷ 3 = <b>16</b>" }) },
+
+    { say: "Thirty pages against sixteen. Comfortably beaten. That's two.",
+      scene: scene({ label: "day 3", upto: 5, nums: 5, today: 3, behind: 3,
+                     total: 48, avg: 16, verdict: "hit", tally: 2, lit: "tally",
+                     rule: "<b>30 &gt; 16</b> — that's <em>2</em>" }) },
+
+    { say: "Day four. Four days behind now, and they add up to seventy-eight.",
+      scene: scene({ label: "day 4", upto: 5, nums: 5, today: 4, behind: 4,
+                     total: 78, lit: "total", tally: 2,
+                     rule: "behind: <s>12</s> <s>20</s> <s>16</s> <s>30</s>" }) },
+
+    { say: "Seventy-eight shared between four. Nineteen and a half — and notice the average has stopped being a whole number. That'll matter in a minute.",
+      scene: scene({ label: "day 4", upto: 5, nums: 5, today: 4, behind: 4,
+                     total: 78, avg: 19.5, lit: "avg", tally: 2,
+                     rule: "<b>78</b> ÷ 4 = <b>19.5</b>" }) },
+
+    { say: "And eighteen pages doesn't reach it. So that's a no as well — but for a different reason from day two. That one tied. This one simply fell short.",
+      scene: scene({ label: "day 4", upto: 5, nums: 5, today: 4, behind: 4,
+                     total: 78, avg: 19.5, verdict: "miss", tally: 2,
+                     rule: "<span class='no'>18 is short of 19.5</span> — still <em>2</em>" }) },
+
+    { say: "So the answer is two. You solved it, and you haven't written a line of code.",
+      scene: scene({ label: "the answer", upto: 5, nums: 5, tally: 2, lit: "tally",
+                     rule: "the answer is <em>2</em>" }) },
+
+    /* ---- the insight ------------------------------------------------- */
+
+    { say: "Now look back at what your hand was actually doing, because that's the bit that turns into code.",
+      scene: scene({ label: "what your hand did", upto: 5, nums: 5, tally: 2 }) },
+
+    { say: "You never once needed the whole list. At every step you only held two things: the total of the days behind you, and how many of them there were.",
+      scene: scene({ label: "what your hand did", upto: 5, nums: 5,
+                     total: 78, tally: 2, lit: "total",
+                     brief: ["Two things only:", "the total so far, and how many."] }) },
+
+    { say: "And the average isn't a third thing to carry. It falls out of those two whenever you want it — total, divided by how many.",
+      scene: scene({ label: "what your hand did", upto: 5, nums: 5,
+                     total: 78, avg: 19.5, tally: 2, lit: "avg",
+                     rule: "average = <b>total</b> ÷ <u>how many</u>" }) },
+
+    { say: "That's the whole problem. Carry a total, carry a count, and the rest is arithmetic.",
+      scene: scene({ mode: "title", title: ["Carry a total.", "Carry a <em>count</em>."] }) },
+
+    /* ---- the code ---------------------------------------------------- */
+
+    { say: "So here it is in code, a line at a time. Every one of them is something you already did with your hand.",
+      scene: scene({ label: "writing it out", upto: 5, nums: 5, code: CODE, codeUpto: 0 }) },
+
+    { say: "The total of everything behind us. It starts at nothing, because at the start there is nothing behind us.",
+      scene: scene({ label: "writing it out", upto: 5, nums: 5, total: 0, lit: "total",
+                     code: CODE, codeUpto: 1, codeHi: [0] }) },
+
+    { say: "And the tally. Also nothing, for the same reason.",
+      scene: scene({ label: "writing it out", upto: 5, nums: 5, total: 0, tally: 0, lit: "tally",
+                     code: CODE, codeUpto: 2, codeHi: [1] }) },
+
+    { say: "Then we walk the days from zero to the end. That i is the day we're standing on.",
+      scene: scene({ label: "writing it out", upto: 5, nums: 5, today: 0,
+                     code: CODE, codeUpto: 3, codeHi: [2],
+                     rule: "<u>i</u> is the day we're on" }) },
+
+    { say: "And this is the skip rule, written down. If i is zero we're on the first day, there's nothing behind us, and there's nothing to do.",
+      scene: scene({ label: "writing it out", upto: 5, nums: 5, today: 0,
+                     code: CODE, codeUpto: 4, codeHi: [3],
+                     rule: "<u>day 0</u> — nothing behind it, skip" }) },
+
+    { say: "Here's the average. And look what we divide by — i itself. How many days are behind you? Exactly your own day number. Day four has four behind it.",
+      scene: scene({ label: "writing it out", upto: 5, nums: 5, today: 4, behind: 4,
+                     total: 78, avg: 19.5, lit: "avg",
+                     code: CODE, codeUpto: 5, codeHi: [4],
+                     rule: "<u>day 4</u> → <s>4 days behind</s> → divide by <u>4</u>" }) },
+
+    { say: "That word double is there because seventy-eight over four is nineteen and a half, and whole numbers can't hold a half. Divide one whole number by another and the fraction is simply thrown away — you'd get nineteen.",
+      scene: scene({ label: "why the decimal", upto: 5, nums: 5,
+                     total: 78, avg: 19.5, lit: "avg",
+                     code: CODE, codeUpto: 5, codeHi: [4],
+                     rule: "<b>19.5</b> kept, or <span class='no'>19</span> if you don't ask" }) },
+
+    { say: "Here it happens not to change the answer, and it's worth knowing why: a whole number that beats the chopped average beats the real one too. But leaning on that is how you get bitten the day the question asks for the average itself.",
+      scene: scene({ label: "why the decimal", upto: 5, nums: 5,
+                     code: CODE, codeUpto: 5, codeHi: [4],
+                     rule: "true here · not a rule to lean on" }) },
+
+    { say: "Then the comparison. More than, strictly — the greater-than sign on its own, with no equals beside it. That single character is day two.",
+      scene: scene({ label: "writing it out", upto: 5, nums: 5, today: 2, behind: 2,
+                     total: 32, avg: 16, verdict: "miss",
+                     code: CODE, codeUpto: 7, codeHi: [5, 6],
+                     rule: "<b>&gt;</b> and not <b>&gt;=</b> — that's the whole trap" }) },
+
+    { say: "And only now, with the comparing done, do we add today's pages to the total.",
+      scene: scene({ label: "the order matters", upto: 5, nums: 5, today: 2, behind: 2,
+                     total: 48, lit: "total",
+                     code: CODE, codeUpto: 9, codeHi: [8] }) },
+
+    { say: "Move that line one place up and the whole thing breaks quietly: you'd be measuring today against an average that already had today inside it.",
+      scene: scene({ label: "the order matters", upto: 5, nums: 5,
+                     code: CODE, codeUpto: 9, codeHi: [8],
+                     rule: "<span class='no'>compare first, then add</span>" }) },
+
+    { say: "And the closing bracket. Ten lines, and not one of them does anything you didn't do by hand.",
+      scene: scene({ label: "the whole thing", upto: 5, nums: 5, code: CODE }) },
+
+    { say: "So watch it go. I'll stop talking for this bit.",
+      scene: scene({ label: "watch it run", upto: 5, nums: 5, code: CODE,
+                     rule: "no more words — just the machine" }) },
+
+    "RUN",
+
+    { say: "Two. The same answer your hand got, by exactly the same moves.",
+      scene: scene({ label: "done", upto: 5, nums: 5, tally: 2, lit: "tally", code: CODE }) },
+
+    /* ---- the payoff -------------------------------------------------- */
+
+    { say: "One last thing, and it's the sort of thing that separates an answer that works from a good one.",
+      scene: scene({ mode: "title", title: ["Same answer.", "Very different <em>cost</em>."] }) },
+
+    { say: "You could solve this without carrying a total at all. On every day, go back and add up all the days behind you from scratch.",
+      scene: scene({ label: "the other way", upto: 5, nums: 5, today: 4, behind: 4,
+                     brief: ["Add them all up again", "every single day."] }) },
+
+    { say: "Same answer, every time. But over a thousand days you'd be adding up half a million numbers instead of a thousand — and the question does allow a thousand days.",
+      scene: scene({ label: "the other way", upto: 5, nums: 5,
+                     rule: "1000 days · <b>1000</b> additions, or <span class='no'>499,500</span>" }) },
+
+    { say: "Carrying the total costs you one number of memory and saves you all of that. Which is usually what people mean when they say one solution is better than another.",
+      scene: scene({ mode: "title", title: ["One number carried.", "Half a million <em>saved</em>."] }) }
+    ];
+
+  (function () {
+    var at = FILM.indexOf("RUN");
+    if (at >= 0) { FILM.splice.apply(FILM, [at, 1].concat(runFrames())); }
+  })();
+
+  /* --------------------------------------------------------------- draw */
+
+  var stage = document.getElementById("stage");
+  var elLabel = document.getElementById("scenelbl");
+  var elCols = document.getElementById("cols");
+  var elRule = document.getElementById("ruleline");
+  var elCap = document.getElementById("caption");
+  var elCount = document.getElementById("count");
+  var elFill = document.getElementById("fill");
+
+  function daysView(sc) {
+    var idxs = "", vals = "", unders = "", i;
+
+    for (i = 0; i < PAGES.length; i++) {
+      var shown = i < sc.upto;
+      var behind = sc.today !== null && i < sc.behind && i < sc.today;
+      var isToday = sc.today === i;
+
+      idxs += '<div class="slotwrap"><span class="idx' +
+              (i < sc.nums ? "" : " off") + '">day ' + i + "</span></div>";
+
+      var cls = "val";
+      if (!shown) { cls += " hidden"; }
+      if (behind) { cls += " behind"; }
+      if (isToday) {
+        cls += " today";
+        if (sc.verdict === "hit") { cls += " hit"; }
+        if (sc.verdict === "miss") { cls += " miss"; }
+      }
+      vals += '<div class="slotwrap"><div class="' + cls + '">' + PAGES[i] + "</div></div>";
+
+      unders += '<div class="slotwrap"><div class="under">' +
+                (isToday ? '<span class="tri">&#9650;</span><span class="lbl">today</span>' : "") +
+                "</div></div>";
+    }
+
+    var slabs = "";
+    if (sc.total !== null) {
+      slabs += '<div class="slab' + (sc.lit === "total" ? " on" : "") +
+               '"><div class="cap">total behind</div><div class="num">' + sc.total + "</div></div>";
+    }
+    if (sc.avg !== null) {
+      slabs += '<div class="slab' + (sc.lit === "avg" ? " on" : "") +
+               '"><div class="cap">their average</div><div class="num">' + sc.avg + "</div></div>";
+    }
+    if (sc.tally !== null) {
+      slabs += '<div class="slab tally' + (sc.lit === "tally" ? " on" : "") +
+               '"><div class="cap">days counted</div><div class="num">' + sc.tally + "</div></div>";
+    }
+
+    return '<div class="days">' +
+             '<div class="dayrow"><span class="daylbl"></span>' + idxs + "</div>" +
+             '<div class="dayrow"><span class="daylbl">pages</span>' + vals + "</div>" +
+             '<div class="dayrow"><span class="daylbl"></span>' + unders + "</div>" +
+             (slabs ? '<div class="carry">' + slabs + "</div>" : "") +
+           "</div>";
+  }
+
+  function sideView(sc) {
+    var out = "";
+    if (sc.vars) {
+      out += '<div class="vars">' +
+             '<span class="var i">i = ' + sc.vars.i + "</span>" +
+             '<span class="var t">total = ' + sc.vars.total + "</span>" +
+             '<span class="var k">count = ' + sc.vars.count + "</span></div>";
+    }
+    if (sc.code) {
+      out += '<pre class="code">' + sc.code.slice(0, sc.codeUpto).map(function (l, n) {
+        return '<span class="ln' + (sc.codeHi.indexOf(n) >= 0 ? " hi" : "") + '">' +
+               l.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+      }).join("") + "</pre>";
+    } else if (sc.brief) {
+      out += '<div class="brief"><b>' + sc.brief[0] + "</b><br>" + sc.brief[1] + "</div>";
+    }
+    return out;
+  }
+
+  function draw(i) {
+    var sc = FILM[i].scene;
+    elLabel.textContent = sc.label || "";
+
+    if (sc.mode === "title") {
+      elCols.innerHTML = '<div class="title-card">' + sc.title.join("<br>") + "</div>";
+      elRule.innerHTML = "";
+      return;
+    }
+
+    // One subject per frame — unless the machine is running, when the board is
+    // the subject and must not be dimmed.
+    var quiet = sc.code && sc.codeHi.length && sc.today === null && !sc.vars;
+
+    elCols.innerHTML = '<div class="main' + (quiet ? " back" : "") + '">' + daysView(sc) + "</div>" +
+                       '<div class="side">' + sideView(sc) + "</div>";
+
+    elRule.innerHTML = sc.ticker
+      ? '<span class="tick">' + sc.ticker + "</span>"
+      : (sc.rule || "");
+  }
+
+  function fit() {
+    var screen = document.getElementById("screen");
+    stage.style.transform = "scale(" + (screen.clientWidth / 1280) + ")";
+  }
+  window.addEventListener("resize", fit);
+
+  /* ------------------------------------------------------------- player */
+
+  var idx = 0, playing = false;
+  var synth = window.speechSynthesis, voices = [];
+  var elPlay = document.getElementById("play");
+  var elCC = document.getElementById("cc");
+  var elRate = document.getElementById("rate");
+  var elVoice = document.getElementById("voice");
+
+  // The narration folder. It moves when the listener picks a different voice:
+  // each real voice has its own subfolder of mp3s, numbered the same way.
+  var AUDIO_BASE = "audio/average-lesson/valory/";
+  var RUN_MS = 620;
+  var track = null, player = null;
+
+  // The voices we have recorded, in menu order. Each is a subfolder under
+  // audio/average-lesson/ with its own manifest. Only the ones whose audio is
+  // present appear; add a folder (speak_eleven.py --out .../<id>) to add a voice.
+  var REAL_VOICES = [
+    { id: "valory", label: "Valory" },
+    { id: "evan",   label: "Evan" },
+    { id: "maya",   label: "Maya" }
+  ];
+  var usingRealVoices = false;
+
+  var SPOKEN = (function () {
+    var map = [], n = 0, i;
+    for (i = 0; i < FILM.length; i++) { map.push(FILM[i].say ? n++ : -1); }
+    return map;
+  })();
+
+  function show(i) {
+    idx = Math.max(0, Math.min(FILM.length - 1, i));
+    draw(idx);
+    elCap.textContent = FILM[idx].say || FILM[idx].scene.ticker || "";
+    elCount.textContent = (idx + 1) + " / " + FILM.length;
+    elFill.style.width = ((idx + 1) / FILM.length * 100) + "%";
+  }
+
+  function stop() {
+    playing = false;
+    if (synth) { synth.cancel(); }
+    if (player) { player.pause(); player.onended = null; }
+    elPlay.textContent = idx >= FILM.length - 1 ? "↻ Play again" : "▶ Play the lesson";
+  }
+
+  // The player waits for the sentence to end rather than running on a timer,
+  // which is what lets real narration drop straight in.
+  function speakFrom(i) {
+    if (!playing) { return; }
+    if (i >= FILM.length) { show(FILM.length - 1); stop(); return; }
+
+    show(i);
+    var onDone = function () { speakFrom(i + 1); };
+
+    if (!FILM[i].say) { window.setTimeout(onDone, RUN_MS); return; }
+
+    if (track && track.lines[SPOKEN[i]]) {
+      if (!player) { player = new Audio(); }
+      player.onended = onDone;
+      player.onerror = onDone;
+      player.playbackRate = parseFloat(elRate.value);
+      player.src = AUDIO_BASE + track.lines[SPOKEN[i]].file;
+      var p = player.play();
+      if (p && p.catch) { p.catch(onDone); }
+      return;
+    }
+
+    if (!voices.length || !synth) { window.setTimeout(onDone, 2600); return; }
+
+    var u = new SpeechSynthesisUtterance(FILM[i].say);
+    u.rate = parseFloat(elRate.value);
+    var v = voices[parseInt(elVoice.value, 10)];
+    if (v) { u.voice = v; u.lang = v.lang; }
+    u.onend = onDone;
+    u.onerror = onDone;
+    synth.speak(u);
+  }
+
+  elPlay.addEventListener("click", function () {
+    if (playing) { stop(); return; }
+    playing = true;
+    elPlay.textContent = "❚❚ Pause";
+    speakFrom(idx >= FILM.length - 1 ? 0 : idx);
+  });
+  document.getElementById("prev").addEventListener("click", function () { stop(); show(idx - 1); });
+  document.getElementById("next").addEventListener("click", function () { stop(); show(idx + 1); });
+  elCC.addEventListener("click", function () {
+    var on = elCC.getAttribute("aria-pressed") === "true";
+    elCC.setAttribute("aria-pressed", on ? "false" : "true");
+    elCap.hidden = on;
+  });
+  elRate.addEventListener("change", stop);
+  elVoice.addEventListener("change", stop);
+
+  document.addEventListener("keydown", function (e) {
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) { return; }
+    if (e.key === " ") { e.preventDefault(); elPlay.click(); }
+    else if (e.key === "ArrowRight") { stop(); show(idx + 1); }
+    else if (e.key === "ArrowLeft") { stop(); show(idx - 1); }
+  });
+
+  function loadVoices() {
+    if (usingRealVoices) { return; }   // real recorded voices are in charge
+    if (!synth) { return; }
+    var all = synth.getVoices();
+    voices = all.filter(function (v) { return /^en(-|_|$)/i.test(v.lang); });
+    if (!voices.length) { voices = all; }
+    if (!voices.length) { return; }
+    elVoice.innerHTML = "";
+    voices.forEach(function (v, i) {
+      var o = document.createElement("option");
+      o.value = String(i);
+      o.textContent = v.name.replace(/\s*\(.*\)$/, "") + " · " + v.lang;
+      elVoice.appendChild(o);
+    });
+    var uk = voices.findIndex(function (v) { return /en-GB/i.test(v.lang); });
+    elVoice.value = String(uk >= 0 ? uk : 0);
+  }
+  if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
+  window.setTimeout(function () {
+    if (!voices.length && !track) { document.getElementById("warn").hidden = false; }
+  }, 1400);
+
+  // Real recorded narration. Each voice has its own subfolder; we ask every
+  // one for its manifest, keep the ones that answer with a full set of lines,
+  // and turn the voice menu into a choice between those real voices instead of
+  // the browser's robotic ones. If none answer, the browser-voice picker above
+  // stays exactly as it was.
+  function loadTrackFor(id) {
+    var base = "audio/average-lesson/" + id + "/";
+    return fetch(base + "manifest.json", { cache: "no-cache" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (m) {
+        var spokenCount = FILM.filter(function (f) { return !!f.say; }).length;
+        if (!m || !m.lines || m.lines.length < spokenCount) { return null; }
+        return { base: base, manifest: m };
+      })
+      .catch(function () { return null; });
+  }
+
+  function useVoice(entry) {
+    AUDIO_BASE = entry.base;
+    track = entry.manifest;
+  }
+
+  if (window.fetch) {
+    Promise.all(REAL_VOICES.map(function (v) {
+      return loadTrackFor(v.id).then(function (res) {
+        return res ? { id: v.id, label: v.label, base: res.base, manifest: res.manifest } : null;
+      });
+    })).then(function (results) {
+      var ready = results.filter(Boolean);
+      if (!ready.length) { return; }        // no recorded audio — browser voice it is
+
+      usingRealVoices = true;
+      if (synth) { synth.onvoiceschanged = null; }
+      document.getElementById("warn").hidden = true;
+
+      elVoice.innerHTML = "";
+      ready.forEach(function (entry, i) {
+        var o = document.createElement("option");
+        o.value = String(i);
+        o.textContent = entry.label;
+        elVoice.appendChild(o);
+      });
+      elVoice.hidden = false;
+      elVoice.value = "0";
+      useVoice(ready[0]);
+
+      elVoice.addEventListener("change", function () {
+        var wasPlaying = playing;
+        stop();
+        useVoice(ready[parseInt(elVoice.value, 10)] || ready[0]);
+        if (wasPlaying) { elPlay.click(); }   // keep going, in the new voice
+      });
+    });
+  }
+
+  window.addEventListener("beforeunload", function () { if (synth) { synth.cancel(); } });
+
+  window.LESSON = {
+    total: FILM.length,
+    lines: FILM.map(function (f) { return f.say; }),
+    setFrame: function (i) { stop(); show(i); }
+  };
+
+  var q = new URLSearchParams(window.location.search);
+
+  // ?dump=1 — the run frames only exist once the algorithm has been executed,
+  // so the page is the only thing that can list them honestly.
+  if (q.get("dump") === "1") {
+    document.body.textContent = JSON.stringify(
+      FILM.map(function (f) { return f.say || null; }));
+    return;
+  }
+
+  var theme = q.get("theme");
+  if (theme === "dark" || theme === "light") {
+    document.documentElement.setAttribute("data-theme", theme);
+  }
+  if (q.get("raw") === "1") { document.body.classList.add("raw"); } else { fit(); }
+
+  var f0 = parseInt(q.get("f"), 10);
+  show(isNaN(f0) ? 0 : f0);
+})();
+</script>
+
+</body>
+</html>

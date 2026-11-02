@@ -15,6 +15,7 @@ References:
 import os
 from sqlalchemy.orm.attributes import flag_modified
 from aiohttp import web
+from web.session import current_user_id
 import random
 import string
 import json
@@ -870,7 +871,7 @@ async def research_experiment_page(request):
 
 async def mission_page(request):
     """GET /mission — Show vulnerability mission (logged-in users only, no research enrollment)"""
-    user_id = request.cookies.get('synapse_user')
+    user_id = current_user_id(request)
     if not user_id:
         raise web.HTTPFound('/login?next=/mission')
     if not request.query.get('participant'):

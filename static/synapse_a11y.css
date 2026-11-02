@@ -263,8 +263,11 @@ body.synapse-bookmark-mode *:not(nav):not(nav *) {
    ============================================ */
 
 /* --- ACCESS MENU: consistent everywhere --- */
+/* It stays on ONE line. It used to wrap, and the row it wrapped to fell
+   outside a bar whose height is fixed, onto the page. See the toolbar
+   layout section at the foot of this file. */
 #accessBtns, #accessMenuInline, .access-menu-inline {
-  flex-wrap: wrap !important;
+  flex-wrap: nowrap !important;
 }
 
 /* --- TABLET & MOBILE (<=768px) --- */
@@ -345,12 +348,12 @@ body.synapse-bookmark-mode *:not(nav):not(nav *) {
     border-radius: 50% !important;
   }
 
-  /* ACCESS MENU LAYOUT */
+  /* ACCESS MENU LAYOUT — one line, scrolled, never wider than the bar */
   #accessBtns, #accessMenuInline, .access-menu-inline {
-    flex-wrap: wrap !important;
-    max-width: 90vw !important;
-    gap: 4px !important;
-    justify-content: center !important;
+    flex-wrap: nowrap !important;
+    max-width: 100% !important;
+    gap: 6px !important;
+    justify-content: flex-start !important;
   }
 
   /* NAV GROUPS */
@@ -415,12 +418,15 @@ body.synapse-bookmark-mode *:not(nav):not(nav *) {
   }
 
   #accessBtns, #accessMenuInline, .access-menu-inline {
-    gap: 3px !important;
-    max-width: 95vw !important;
+    gap: 6px !important;
+    max-width: 100% !important;
   }
 }
 
-/* --- ACCESS MENU: flow naturally on mobile --- */
+/* --- ACCESS MENU on mobile: the same single line, scrolled --- */
+/* This block used to give the open menu width:100% and margin-top, which
+   made it a second row under the bar. The bar's height is fixed, so that
+   row landed on the page instead. It stays in the bar now. */
 @media (max-width: 768px) {
   .access-menu-inline.open,
   .access-menu-inline[style*="max-width"],
@@ -429,15 +435,13 @@ body.synapse-bookmark-mode *:not(nav):not(nav *) {
     position: static !important;
     transform: none !important;
     max-width: 100% !important;
-    width: 100% !important;
-    overflow: visible !important;
-    flex-wrap: wrap !important;
-    justify-content: center !important;
-    background: rgba(255,255,255,0.1) !important;
-    border-radius: 10px !important;
-    padding: 6px !important;
-    gap: 5px !important;
-    margin-top: 4px !important;
+    width: auto !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    background: transparent !important;
+    padding: 3px 0 !important;
+    gap: 6px !important;
+    margin-top: 0 !important;
   }
   .access-menu-inline .nav-btn-small,
   #accessBtns button, #accessMenuInline button {
@@ -675,9 +679,13 @@ body.high-contrast .finding-card strong {
 
 .access-menu-inline .nav-btn-small {
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.95) !important;
-  color: #4c1d95 !important;
-  border: 2px solid transparent !important;
+  /* Un tondo solo per tutto il sito: il velo che la barra condivisa usa gia'
+     su quiz, lezioni, /try, /app e il cassetto. Qui era bianco pieno, ed era
+     l'unico posto del sito dove lo era. Il testo passa al bianco, perche' il
+     viola di prima serviva a leggersi sul bianco. Il reset resta rosso. */
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  border: none !important;
 }
 
 .access-menu-inline .nav-btn-small:hover {
@@ -705,20 +713,25 @@ body.high-contrast .finding-card strong {
   }
 }
 
-/* Bottoni navbar /tools: sfondo bianco pieno */
-nav .nav-btn,
-nav .nav-btn-small,
-.nav-buttons .nav-btn,
-.nav-buttons .nav-btn-small {
-  background: #ffffff !important;
-  color: #4c1d95 !important;
+/* Il tondo dei pulsanti della barra, uguale su tutto il sito (14 set).
+   Questa regola era scritta per la barra di /tools e diceva bianco pieno, ma
+   "nav .nav-btn-small" prende ogni pagina che abbia quella classe: era lei a
+   dipingere di bianco anche il corso e gli strumenti, mentre quiz, lezioni,
+   /try, /app e il cassetto avevano il velo. Adesso il velo ce l'hanno tutte.
+   Il reset resta fuori: e' rosso apposta. */
+nav .nav-btn:not(.nav-btn-reset),
+nav .nav-btn-small:not(.nav-btn-reset),
+.nav-buttons .nav-btn:not(.nav-btn-reset),
+.nav-buttons .nav-btn-small:not(.nav-btn-reset) {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
 }
 
-nav .nav-btn:hover,
-.nav-buttons .nav-btn:hover,
-nav .nav-btn-small:hover,
-.nav-buttons .nav-btn-small:hover {
-  background: #f3f0ff !important;
+nav .nav-btn:not(.nav-btn-reset):hover,
+.nav-buttons .nav-btn:not(.nav-btn-reset):hover,
+nav .nav-btn-small:not(.nav-btn-reset):hover,
+.nav-buttons .nav-btn-small:not(.nav-btn-reset):hover {
+  background: rgba(255, 255, 255, 0.35) !important;
 }
 
 
@@ -737,4 +750,253 @@ body.high-contrast input[type="color"] {
   border: 1px solid #FFFF00 !important;
   background: #000000 !important;
   padding: 2px !important;
+}
+
+/* ============================================================
+   ACCESSIBILITY TOOLBAR — LAYOUT (14 Sep 2026)
+   One row, at every width, on every page that carries it.
+
+   What this fixes. Both bars are fixed to the top of the window with a
+   height they cannot exceed: 70px on the course pages (.navbar, which
+   .main-container's margin-top matches) and 56px on the shared toolbar
+   (synapse_a11y_toolbar.js, whose script reserves that much room under
+   it). The open menu was told to wrap. So the moment the controls no
+   longer fit on one line — anywhere between roughly 700px and 1230px
+   wide — the row they wrapped to fell outside the bar and sat on top of
+   the page. On a phone the bar itself grew to 130-184px while the page
+   went on starting at 70px, and the buttons shrank to 26px.
+
+   The rule now: the bar keeps its height and never becomes a column,
+   the controls stay on one line at one size, and when they no longer
+   fit, that line scrolls sideways. Nothing here changes what a button
+   does, and every title/data-tooltip and tab stop is left alone.
+   ============================================================ */
+
+/* --- 1. The bar keeps its own height, and stays a row --- */
+nav.navbar,
+nav#synapseA11yNav {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  column-gap: 10px;
+}
+nav.navbar        { height: 70px !important; min-height: 70px !important; }
+nav#synapseA11yNav { height: 56px !important; min-height: 56px !important; }
+
+/* --- 2. The brand gives way before the controls do, but not entirely ---
+   min-width stays at auto on purpose: a flex item will not shrink past its
+   own content then, so the logo and the word Synapse survive on a phone.
+   What gives way first is the strapline, which is hidden below and while
+   the controls are open. */
+nav.navbar .nav-brand,
+nav#synapseA11yNav > a {
+  flex: 0 1 auto !important;
+  min-width: auto !important;
+  overflow: visible !important;     /* hidden here would let it shrink to nothing */
+}
+nav.navbar .nav-brand img,
+nav#synapseA11yNav > a img { flex: 0 0 auto !important; }
+nav.navbar .nav-brand-text,
+nav#synapseA11yNav > a > div { min-width: 0 !important; }
+/* The name holds its width. The strapline is the part that gives way: it
+   can be trimmed to an ellipsis and, below 1024px or while the controls
+   are open, it is not shown at all. */
+nav.navbar .nav-brand-text .title,
+nav#synapseA11yNav > a span:first-child {
+  white-space: nowrap;
+  display: block;
+}
+nav.navbar .nav-brand-text .subtitle,
+nav#synapseA11yNav > a span:last-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  min-width: 0;
+}
+/* The strapline under the logo is gone. It said the same thing on every
+   page, it was the widest thing in the bar, and the room it took is what
+   the controls needed. The name and the butterfly stay. */
+nav.navbar .nav-brand-text .subtitle,
+nav#synapseA11yNav > a span:last-child {
+  display: none !important;
+}
+
+/* --- 3. The right-hand group holds one line and yields its width --- */
+nav.navbar .nav-links,
+nav#synapseA11yNav > div {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  flex-wrap: nowrap !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+}
+
+/* --- 4. The strip of controls: one line, scrolled when it cannot fit --- */
+#accessBtns, #accessMenuInline, .access-menu-inline {
+  display: flex;
+  align-items: center !important;
+  gap: 6px !important;
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+  padding-top: 3px !important;      /* room for the .active ring, not clipped */
+  padding-bottom: 3px !important;
+}
+#accessBtns { display: none; }      /* the module opens it by setting display:flex */
+.access-menu-inline.open { max-width: 100% !important; }
+
+/* When the line is longer than the room for it, it scrolls sideways.
+   The course pages' strip already hid its overflow, so buttons past the
+   edge were simply unreachable; now they can be scrolled to. Tabbing
+   also reaches them, and the browser scrolls each one into view.
+
+   The shared toolbar only scrolls below 1200px, because its tooltip is
+   a CSS bubble drawn below the button, and a scrolling box clips what
+   leaves it. Above 1200px the line fits, so nothing is clipped and the
+   bubbles show. Below it, the native title= tooltip takes over — every
+   button in both bars carries one. */
+#accessMenuInline, .access-menu-inline.open {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+@media (max-width: 1200px) {
+  #accessBtns {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+}
+/* La fila scorre, ma senza disegnare la sua barra: era quella la riga
+   orizzontale sotto le icone. Si scorre lo stesso — rotella, dito, e il
+   Tab porta ogni pulsante dentro la vista da solo. */
+#accessBtns, #accessMenuInline, .access-menu-inline {
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-padding: 0 6px;
+}
+#accessBtns::-webkit-scrollbar,
+#accessMenuInline::-webkit-scrollbar,
+.access-menu-inline::-webkit-scrollbar { height: 0; width: 0; display: none; }
+
+/* --- 4b. The three round doors (casa, lucchetto, grafico) and the butterfly ---
+   A button centres its text on the baseline, not in its box, so every one of
+   these emoji sat 1.5px low and 0.7px right of the middle of its circle —
+   visible, on a coloured disc. Flex centring puts the glyph in the middle of
+   the circle, and a larger size fills it properly. */
+nav#synapseA11yNav > div > button,
+nav.navbar .nav-links > button.nav-icon-btn,
+nav.navbar .nav-links > button.nav-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  flex: 0 0 auto !important;
+  font-size: 22px !important;        /* misurato: lo scarto piu' basso, 0,95px */
+  overflow: hidden;
+}
+nav#synapseA11yNav > div > button[title="Accessibility"],
+nav.navbar #butterflyAccessBtn { font-size: 0 !important; }
+nav#synapseA11yNav > div > button img,
+nav.navbar .nav-links > button img { display: block; }
+
+/* --- 5. One button size, everywhere, with the icon centred --- */
+/* Six different sizes used to be handed out across five breakpoints
+   (32/30/28/26px, in two files), which is why the circles changed size
+   and went oval. One size, and they never shrink. */
+/* The [style] variants are not decoration: the shared toolbar writes its
+   buttons with inline style attributes, and the mobile rules above single
+   them out with button[style], which outranks a plain button selector. */
+#accessBtns button,
+#accessBtns button[style],
+#accessMenuInline button,
+#accessMenuInline button[style],
+.access-menu-inline button,
+.access-menu-inline button[style],
+.access-menu-inline .nav-btn-small,
+.access-menu-inline .nav-btn-small[style] {
+  flex: 0 0 auto !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  border-radius: 50% !important;
+  font-size: 20px !important;        /* 55% di un tondo da 36px */
+}
+/* --- 5b. Lo stesso peso ottico dentro ogni cerchio ---
+   Una misura sola non basta a farli sembrare uguali. La maggior parte di
+   questi sono emoji a colori, disegnate per riempire il loro quadrato; tre
+   controlli invece sono caratteri di testo (la freccia doppia, le due lune
+   del contrasto, A+/A-), che di inchiostro ne hanno molto meno a parita' di
+   corpo. Misurato: l'inchiostro riempiva dal 5,4% al 44% del cerchio.
+   Qui il corpo e' alzato solo dove il carattere e' magro, per arrivare tutti
+   allo stesso peso. Nessuno viene spostato: la posizione resta il centro. */
+
+/* la freccia doppia: un carattere sottile, quasi senza corpo */
+#accessBtns button[data-tooltip="Line Spacing"],
+#accessMenuInline button[data-tooltip="Line Spacing"],
+.access-menu-inline .nav-btn-small[data-tooltip="Line Spacing"] { font-size: 24px !important; }
+
+/* A+ e A-: testo, largo ma basso */
+#accessBtns button[title="A+"], #accessBtns button[title="A-"],
+#accessBtns button[data-tooltip="Larger Text"], #accessBtns button[data-tooltip="Smaller Text"],
+#accessMenuInline button[data-tooltip="Larger Text"],
+#accessMenuInline button[data-tooltip="Smaller Text"],
+.access-menu-inline .nav-btn-small[data-tooltip="Larger Text"],
+.access-menu-inline .nav-btn-small[data-tooltip="Smaller Text"] { font-size: 19px !important; }
+
+/* il contrasto e' l'unico disegnato con due glifi affiancati: prende la
+   misura che tiene la coppia dentro il cerchio */
+#accessBtns #highContrastBtn,
+#accessBtns button[data-tooltip="High Contrast"],
+#accessMenuInline button[data-tooltip="High Contrast"],
+.access-menu-inline .nav-btn-small[data-tooltip="High Contrast"] { font-size: 13px !important; }
+.access-menu-inline .nav-btn-small,
+.access-menu-inline .nav-btn-small[style] { font-size: 20px !important; }
+#accessBtns button img,
+#accessMenuInline button img,
+.access-menu-inline button img { display: block; }
+
+
+/* --- 6. Lo stesso tondo sulle pagine del corso (14 set) ---
+   La barra del corso dipingeva dischi bianchi pieni, l'unica del sito. Adesso
+   porta lo stesso velo della barra condivisa. Il rosso del reset non si tocca:
+   e' diverso apposta. */
+/* Un velo solo, 20%, per ogni tondo della barra: i tre della navigazione lo
+   avevano al 15% e quelli del menu al 20%, una differenza che si vedeva
+   affiancata. La farfalla non ha tondo da nessuna parte. */
+nav.navbar .nav-links > button.nav-btn,
+nav.navbar .nav-links > button.nav-icon-btn,
+nav#synapseA11yNav > div > button {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+nav.navbar .nav-links > button.nav-btn:hover,
+nav.navbar .nav-links > button.nav-icon-btn:hover,
+nav#synapseA11yNav > div > button:hover {
+  background: rgba(255, 255, 255, 0.35) !important;
+}
+#butterflyAccessBtn,
+#butterflyAccessBtn:hover,
+nav#synapseA11yNav > div > button[title="Accessibility"] {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+nav.navbar .access-menu-inline .nav-btn-small:hover {
+  background: rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+}
+/* il guscio bianco dietro la fila: sulla barra condivisa non c'e' */
+nav.navbar .access-menu-inline,
+nav.navbar .access-menu-inline.open {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
 }

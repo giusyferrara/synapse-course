@@ -89,11 +89,13 @@ Persistent storage uses PostgreSQL.
 
 ## Citation
 
-If you use SYNAPSE in your work, please cite the archived software:
+If you use SYNAPSE in your work, please cite the paper:
+
+> Ferrara, G., & Sami, A. (2026). *SYNAPSE: A Multi-LLM Orchestrated AI Tutor for Secure Software Development Education with Neurodivergent-First Design.* IEEE International Conference on Software Maintenance and Evolution (ICSME), Tool Demonstration and Data Showcase track. arXiv:2607.14601. https://arxiv.org/abs/2607.14601 ([ICSME 2026 programme](https://conf.researchr.org/details/icsme-2026/icsme-2026-tool-demonstration/29/SYNAPSE-A-Multi-LLM-Orchestrated-AI-Tutor-for-Secure-Software-Development-Education-))
+
+and the archived software:
 
 > Ferrara, G. (2026). *SYNAPSE: A Multi-LLM Orchestrated AI Tutor for Secure Software Development Education.* Zenodo. https://doi.org/10.5281/zenodo.20480483
-
-A tool-demonstration paper describing SYNAPSE has been submitted to ICSME 2026.
 
 ## License
 
