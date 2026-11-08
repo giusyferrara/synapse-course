@@ -331,7 +331,9 @@ class HybridEducationalServer:
         # Initialize advanced tools ONCE
         await self._init_advanced_tools_once()
 
-        app = web.Application()
+        # web/guard.py: one gate in front of every request (8 Nov 2026 audit).
+        from web.guard import guard
+        app = web.Application(middlewares=[guard])
         app["tutor"] = self.tutor
         print("✅ SUCCESS: Tutor instance ready")
 
@@ -341,11 +343,13 @@ class HybridEducationalServer:
         async def serve_icon(request):
             """Serve icon files from /icons/ directory"""
             filename = request.match_info['filename']
-            icon_path = Path(__file__).parent / 'icons' / filename
-
-            if not icon_path.exists():
-                print(f"❌ ERROR: Icon not found: {filename}")
-                return web.Response(status=404, text=f'Icon not found: {filename}')
+            # A plain file name only. '..%2Fapp.py' used to reach here as
+            # '../app.py' and serve any file next to this one.
+            icons_dir = (Path(__file__).parent / 'icons').resolve()
+            icon_path = (icons_dir / filename).resolve()
+            if ('/' in filename or '\\' in filename or '..' in filename
+                    or icon_path.parent != icons_dir or not icon_path.is_file()):
+                return web.Response(status=404, text='Icon not found')
 
             content_type = 'image/png'
             if filename.endswith('.svg'):
@@ -572,10 +576,10 @@ class HybridEducationalServer:
                     ).first()
 
                     if existing:
-                        print(f"⚠️  Email TAKEN: '{email}' → {existing.participant_code}")
+                        # Never the code: it is the participant's key, and
+                        # this answer goes to whoever typed the email.
                         return web.json_response({
                             'available': False,
-                            'participant_code': existing.participant_code,
                             'message': 'This email is already registered'
                         })
                     else:
@@ -1160,16 +1164,30 @@ class HybridEducationalServer:
         async def log_research_data(request):
             """Collect research behavioral data"""
             try:
+                # Capped: one event is small, and this endpoint needs no login.
+                if (request.content_length or 0) > 20000:
+                    return web.json_response({'status': 'error', 'message': 'too large'}, status=413)
                 data = await request.json()
+                if not isinstance(data, dict):
+                    return web.json_response({'status': 'error', 'message': 'bad request'}, status=400)
                 data['server_timestamp'] = datetime.now().isoformat()
-                session_id = data.get('session_id', 'unknown')
+                # The id becomes a file name, so letters, digits, - and _ only.
+                # '../' in it used to append to any .jsonl file on the server.
+                session_id = str(data.get('session_id') or 'unknown')
+                if not _re.fullmatch(r'[A-Za-z0-9_-]{1,64}', session_id):
+                    return web.json_response({'status': 'error', 'message': 'bad session id'}, status=400)
                 filepath = RESEARCH_DATA_DIR / f"{session_id}.jsonl"
+                if filepath.exists() and filepath.stat().st_size > 5_000_000:
+                    return web.json_response({'status': 'error', 'message': 'session log full'}, status=413)
+                line = json.dumps(data)
+                if len(line) > 20000:
+                    return web.json_response({'status': 'error', 'message': 'too large'}, status=413)
                 with open(filepath, 'a', encoding='utf-8') as f:
-                    f.write(json.dumps(data) + '\n')
+                    f.write(line + '\n')
                 return web.json_response({'status': 'success'})
             except Exception as e:
                 print(f"Research logging error: {e}")
-                return web.json_response({'status': 'error', 'message': str(e)}, status=500)
+                return web.json_response({'status': 'error', 'message': 'server error'}, status=500)
 
         async def research_stats(request):
             """Get research statistics"""
@@ -1479,8 +1497,11 @@ class HybridEducationalServer:
             traceback.print_exc()
 
         # CORS setup
+        # Only our own site may read answers with the visitor's cookies.
+        # This used to be "*", which aiohttp_cors answers by echoing back any
+        # Origin with Allow-Credentials, so any website could read them.
         cors = cors_setup(app, defaults={
-            "*": ResourceOptions(
+            "https://synapse-course.com": ResourceOptions(
                 allow_credentials=True,
                 expose_headers="*",
                 allow_headers="*",

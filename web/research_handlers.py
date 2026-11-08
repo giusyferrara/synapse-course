@@ -15,7 +15,7 @@ References:
 import os
 from sqlalchemy.orm.attributes import flag_modified
 from aiohttp import web
-from web.session import current_user_id
+from web.session import current_user_id, admin_key_ok
 import random
 import string
 import json
@@ -57,8 +57,7 @@ async def research_welcome_page(request):
 async def research_task_page(request):
     """GET /research/task?participant=XXX — Show vulnerability assessment task"""
     participant_code = request.query.get('participant', '')
-    admin_key = request.query.get('admin', '')
-    if admin_key == os.getenv('ADMIN_KEY', ''):
+    if admin_key_ok(request):
         participant_code = participant_code or 'ADMIN_VIEW'
     if not participant_code:
         return web.Response(text="No participant code provided.", status=400)
@@ -68,7 +67,7 @@ async def research_task_page(request):
         participant = db.query(ResearchParticipant).filter_by(
             participant_code=participant_code
         ).first()
-        if not participant and admin_key != os.getenv('ADMIN_KEY', ''):
+        if not participant and not admin_key_ok(request):
             return web.Response(text="Invalid participant code.", status=404)
     finally:
         db.close()
@@ -147,7 +146,6 @@ async def research_signup_api(request):
                 return web.json_response({
                     'success': False,
                     'error': f'Username "{nickname}" is already taken',
-                    'participant_code': existing.participant_code
                 }, status=400)
         finally:
             db_check.close()
@@ -164,7 +162,6 @@ async def research_signup_api(request):
                     return web.json_response({
                         'success': False,
                         'error': 'This email is already registered',
-                        'participant_code': existing_email.participant_code
                     }, status=400)
             finally:
                 db_check.close()

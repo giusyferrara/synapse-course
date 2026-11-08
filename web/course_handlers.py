@@ -441,7 +441,17 @@ async def handle_run_code(request):
             is_java = any(p in code for p in java_patterns)
 
         if is_java:
-            return await _run_java_sandboxed(code, topic_id)
+            # Off since 8 November 2026. javac/java ran on the server itself,
+            # held back only by a list of forbidden words, and Java's \uXXXX
+            # escapes walk straight past any word list. It comes back when it
+            # runs inside a Docker sandbox like Python does.
+            return web.json_response({
+                'success': False,
+                'error': True,
+                'output': ('Running Java is switched off for a little while, '
+                           'while we move it somewhere safer. You can still '
+                           'read the lesson and ask the tutor about your code.'),
+            })
         else:
             # Python — use existing tutor (Pyodide-based)
             tutor = request.app.get('tutor')
@@ -454,7 +464,10 @@ async def handle_run_code(request):
             # Run in Docker sandbox
             import tempfile as _tf
             try:
-                proc = subprocess.run(
+                # In a thread, so a 12-second program does not freeze every
+                # other visitor's request while it runs.
+                proc = await asyncio.to_thread(
+                    subprocess.run,
                     ["docker", "run", "--rm", "-i",
                      "--network", "none", "--memory", "64m",
                      "--cpus", "0.5", "--pids-limit", "50",
@@ -887,10 +900,15 @@ async def get_chat_history(request):
     try:
         course_id = request.rel_url.query.get('course_id', 'general')
         user_id = current_user_id(request)
+        # Without a session there is nobody to load a history for. This used
+        # to drop the user filter instead, and return the newest conversation
+        # of anybody at all on that course.
+        if not user_id:
+            return web.json_response({'messages': []})
         db = SessionLocal()
         try:
             conv = db.query(ChatConversation).filter_by(
-                topic=course_id, is_active=True, **(dict(user_id=user_id) if user_id else {})
+                topic=course_id, is_active=True, user_id=user_id
             ).order_by(ChatConversation.id.desc()).first()
             if not conv:
                 return web.json_response({'messages': []})

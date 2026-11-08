@@ -22,7 +22,7 @@ import asyncio
 import os
 
 from aiohttp import web
-from web.session import current_user_id
+from web.session import current_user_id, admin_key_ok
 
 from database.config import SessionLocal
 from quiz import quiz_engine
@@ -95,8 +95,7 @@ def setup_quiz_routes(app):
     app["quiz_bank"] = quiz_engine.load_bank()
 
     async def serve_quiz_page(request):
-        admin_key = request.query.get("admin", "")
-        if _student_id(request) is None and admin_key != os.getenv("ADMIN_KEY", ""):
+        if _student_id(request) is None and not admin_key_ok(request):
             raise web.HTTPFound("/login?next=/quiz")
         return web.FileResponse("templates/quiz.html")
 
@@ -234,7 +233,7 @@ def setup_quiz_routes(app):
 
     async def quiz_gain_summary(request):
         """Aggregate learning gain across all learners (research). Admin-gated."""
-        if request.query.get("admin", "") != os.getenv("ADMIN_KEY", ""):
+        if not admin_key_ok(request):
             raise web.HTTPUnauthorized(text='{"error":"admin only"}',
                                        content_type="application/json")
         db = SessionLocal()
