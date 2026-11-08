@@ -21,7 +21,7 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, InvalidHash
 
 from .email_utils import send_email, build_reset_email, APP_BASE_URL
-from .session import start_session, end_session
+from .session import start_session, end_session, current_user_id
 from .ai_budget import client_ip
 
 log = logging.getLogger(__name__)
@@ -417,9 +417,12 @@ async def api_reset_password(request):
 
 async def api_get_progress(request):
     try:
-        user_id = request.rel_url.query.get('user_id')
+        # Whose progress comes from the signed session cookie, never from the
+        # request. The ?user_id= the pages still send is ignored: trusting it
+        # let anybody read anybody's progress by changing a number.
+        user_id = current_user_id(request)
         if not user_id:
-            return web.json_response({'success': False, 'message': 'user_id required'})
+            return web.json_response({'success': False, 'message': 'not signed in'}, status=401)
 
         with Session() as session:
             rows = session.execute(
@@ -455,15 +458,18 @@ async def api_get_progress(request):
 async def api_save_progress(request):
     try:
         data = await request.json()
-        user_id = data.get('user_id')
-        course_id = data.get('course_id', '')
-        topic_id = data.get('topic_id', '')
-        exercise_id = data.get('exercise_id', '')
-        completed = data.get('completed', False)
-        score = data.get('score', 0)
-
+        # As above: the signed-in user, not the user_id in the body.
+        user_id = current_user_id(request)
         if not user_id:
-            return web.json_response({'success': False, 'message': 'user_id required'})
+            return web.json_response({'success': False, 'message': 'not signed in'}, status=401)
+        course_id = str(data.get('course_id', '') or '')[:100]
+        topic_id = str(data.get('topic_id', '') or '')[:100]
+        exercise_id = str(data.get('exercise_id', '') or '')[:100]
+        completed = bool(data.get('completed', False))
+        try:
+            score = int(data.get('score', 0) or 0)
+        except (TypeError, ValueError):
+            score = 0
 
         with Session() as session:
             session.execute(
