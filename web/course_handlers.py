@@ -98,6 +98,69 @@ def _record_progress(request, topic_id, exercise, passed):
 _define_cache = {}
 
 
+
+async def handle_generate_exercise(request):
+    """A new practice exercise in the spirit of a lesson's worked example.
+
+    The "Generate a custom exercise" button in course.html called this route
+    for months while it did not exist, so the button always failed. One model
+    call, small output, counted against the same AI budget as the chat.
+    Returns {description, starter_code, hint}.
+    """
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    title = str(data.get('example_title') or '')[:120]
+    code = str(data.get('example_code') or '')[:2000]
+    difficulty = str(data.get('difficulty') or 'easy')[:20]
+    challenge = str(data.get('ai_challenge') or '')[:400]
+    if not code and not title:
+        return web.json_response({'error': 'nothing to base the exercise on'}, status=400)
+
+    refusal = _over_budget(request)
+    if refusal:
+        return web.json_response({'description': refusal.message, 'limited': True}, status=429)
+
+    tutor = request.app.get("tutor")
+    if not tutor or not getattr(tutor, "ai_router", None) or not tutor.ai_router._anthropic:
+        return web.json_response({'error': 'tutor not available'}, status=503)
+
+    prompt = (
+        "Write ONE small Python practice exercise for a beginner, about 12 years old, "
+        "in the spirit of this worked example. Everyday words, short sentences, real "
+        "values. Do not include the solution.\n\n"
+        f"Example title: {title}\nDifficulty: {difficulty}\n"
+        f"Extra idea: {challenge}\n\nExample code:\n{code}\n\n"
+        "Reply with JSON only, no markdown fence, exactly these keys: "
+        '{"description": "what to do, 2-4 short sentences", '
+        '"starter_code": "a few lines of Python with # TODO comments where the student writes", '
+        '"hint": "one short clue, not the answer"}'
+    )
+    try:
+        resp = await asyncio.to_thread(tutor.ai_router._anthropic.messages.create,
+            model="claude-sonnet-5",
+            max_tokens=600,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw = (response_text(resp) or "").strip()
+        m = _re.search(r"\{.*\}", raw, _re.S)
+        out = json.loads(m.group(0)) if m else {}
+        result = {
+            'description': str(out.get('description') or '')[:800],
+            'starter_code': str(out.get('starter_code') or '')[:2000],
+            'hint': str(out.get('hint') or '')[:300],
+        }
+        if not result['description']:
+            raise ValueError('empty exercise')
+        return web.json_response(result)
+    except Exception as e:
+        print(f"generate_exercise failed: {e}", flush=True)
+        return web.json_response({'error': 'could not make an exercise right now'}, status=502)
+
+
 async def handle_define(request):
     """One short definition for a word the built-in dictionary does not have.
 
@@ -127,7 +190,7 @@ async def handle_define(request):
     if not tutor or not getattr(tutor, "ai_router", None) or not tutor.ai_router._anthropic:
         return web.json_response({"definition": ""})
     try:
-        resp = tutor.ai_router._anthropic.messages.create(
+        resp = await asyncio.to_thread(tutor.ai_router._anthropic.messages.create,
             model="claude-sonnet-5",
             max_tokens=120,
             system=("You define a single programming, computing or cybersecurity "
@@ -949,6 +1012,7 @@ def setup_course_routes(app):
     app.router.add_post("/api/course/chat/clear", clear_chat)
     app.router.add_post("/api/course/generate_lesson", handle_generate_lesson)
     app.router.add_post("/api/course/evaluate_code", handle_evaluate_code)
+    app.router.add_post("/api/course/generate_exercise", handle_generate_exercise)
     app.router.add_get("/api/user/profile", handle_user_profile)
     app.router.add_post("/api/define", handle_define)
 
@@ -1322,7 +1386,7 @@ or find long abstract text hard.
             # more; anybody who asks a second question within five minutes pays
             # far less. The cache key is a prefix match, so nothing volatile
             # (no clock, no id) may ever be put into this string.
-            claude_response = tutor.ai_router._anthropic.messages.create(
+            claude_response = await asyncio.to_thread(tutor.ai_router._anthropic.messages.create,
                 model="claude-sonnet-5",
                 max_tokens=2048,
                 system=[{
@@ -1352,9 +1416,8 @@ or find long abstract text hard.
             is_educational = any(w in message.lower() for w in ['how','what','why','explain','show','help','learn','code','function','loop','variable','error','fix','example'])
             if is_educational and tutor.ai_router._openai and len(ai_response) > 50:
                 try:
-                    import asyncio
                     gpt_prompt = f"Based on this tutoring exchange, suggest ONE short practice exercise (2-3 lines max) the student should try next. Student asked: {message[:200]}. Tutor explained: {ai_response[:300]}. Write it for a 12-year-old beginner: everyday words, short sentences, something small they can actually type or do, with real values in it, never an abstract task like 'identify a scenario' or 'describe the condition'. Give ONLY the exercise, starting with a verb. No explanation needed."
-                    gpt_response = tutor.ai_router._openai.chat.completions.create(
+                    gpt_response = await asyncio.to_thread(tutor.ai_router._openai.chat.completions.create,
                         model="gpt-4o-mini",
                         max_tokens=150,
                         messages=[{"role": "user", "content": gpt_prompt}]
@@ -1376,7 +1439,7 @@ or find long abstract text hard.
                     # glued onto. That is how a line about not handing over finished
                     # puzzles ended up under a finished puzzle.
                     gemini_prompt = f"You are helping a neurodivergent learner (ADHD/dyslexia). Below is a tutor's reply to a student. Add ONE short analogy or visual metaphor (max 2 sentences) that makes THE IDEA IN THAT REPLY easier to remember. Student asked: {message[:150]}. The tutor replied: {ai_response[:700]}. Do not comment on whether the student should have been given the answer, and do not repeat what the reply already says. Use everyday things a 12-year-old knows, in simple words. Use an emoji at the start. Give ONLY the analogy, nothing else."
-                    gemini_response = tutor.ai_router._gemini.generate_content(gemini_prompt)
+                    gemini_response = await asyncio.to_thread(tutor.ai_router._gemini.generate_content, gemini_prompt)
                     tip = gemini_response.text.strip() if gemini_response.text else ''
                     if tip and len(tip) > 10 and len(tip) < 300:
                         ai_response += "\n\n" + tip

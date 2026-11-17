@@ -77,7 +77,7 @@ except ImportError:
 from core.tutor import EnhancedSecurityTutor
 from web.handlers import setup_routes
 from web.lang import detect_student_language
-from web.session import current_user_id, admin_key_ok
+from web.session import current_user_id, admin_key_ok, participant_code as participant_code_of
 from web.course_handlers import setup_course_routes
 from web.advanced_handlers import setup_advanced_routes
 from database.config import Base, engine, SessionLocal
@@ -411,7 +411,7 @@ class HybridEducationalServer:
         async def serve_java_security_course(request):
             """Java Security course page - requires auth"""
             user_cookie = current_user_id(request)
-            participant_code = request.query.get('participant') or request.cookies.get('participant_code')
+            participant_code = participant_code_of(request)
             if not user_cookie and not participant_code and not admin_key_ok(request):
                 raise web.HTTPFound('/login?next=/course/java-security')
             from sqlalchemy import text as sql_text
@@ -446,7 +446,7 @@ class HybridEducationalServer:
         async def serve_course(request):
             """Course page - requires auth"""
             user_cookie = current_user_id(request)
-            participant_code = request.query.get('participant') or request.cookies.get('participant_code')
+            participant_code = participant_code_of(request)
             if not user_cookie and not participant_code and not admin_key_ok(request):
                 raise web.HTTPFound('/login?next=/course')
             course_path = Path(__file__).parent / 'templates' / 'course.html'
@@ -1371,7 +1371,7 @@ class HybridEducationalServer:
 
         async def serve_flashcards(request):
             user_cookie = current_user_id(request)
-            participant_code = request.query.get('participant') or request.cookies.get('participant_code')
+            participant_code = participant_code_of(request)
             if not user_cookie and not participant_code and not admin_key_ok(request):
                 raise web.HTTPFound('/login?next=/flashcards')
             return web.FileResponse('templates/flashcards.html')
@@ -1417,7 +1417,7 @@ class HybridEducationalServer:
 
         async def serve_spot_the_bug(request):
             user_cookie = current_user_id(request)
-            participant_code = request.query.get('participant') or request.cookies.get('participant_code')
+            participant_code = participant_code_of(request)
             if not user_cookie and not participant_code and not admin_key_ok(request):
                 raise web.HTTPFound('/login?next=/spot-the-bug')
             return web.FileResponse('templates/spot_the_bug.html')

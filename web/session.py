@@ -112,3 +112,77 @@ def admin_key_ok(request) -> bool:
     expected = os.getenv("ADMIN_KEY", "")
     given = request.query.get("admin") or ""
     return bool(expected) and hmac.compare_digest(given, expected)
+
+
+# ---------------------------------------------------------------- research
+# A research participant code used to open /course, /quiz and /spot-the-bug
+# with no login at all, whatever the code was: ?participant=x worked. Now a
+# code counts only if it exists in research_participants. Answers are cached
+# for a few minutes so a page load is not a database round trip.
+_PC_CACHE = {}
+_PC_TTL = 300
+_PC_RE = None
+
+
+def participant_code(request):
+    """The research participant code on this request, if it is a real one."""
+    code = request.query.get("participant") or request.cookies.get("participant_code")
+    return code if is_real_participant(code) else None
+
+
+def is_real_participant(code):
+    """True only for a code that exists in research_participants."""
+    global _PC_RE
+    import re
+    if _PC_RE is None:
+        _PC_RE = re.compile(r"[A-Za-z0-9_-]{3,64}")
+    if not code or not isinstance(code, str) or not _PC_RE.fullmatch(code):
+        return False
+    now = time.time()
+    hit = _PC_CACHE.get(code)
+    if hit and now - hit[1] < _PC_TTL:
+        return hit[0]
+    ok = False
+    try:
+        from sqlalchemy import text
+        from database.config import SessionLocal
+        with SessionLocal() as db:
+            ok = db.execute(
+                text("SELECT 1 FROM research_participants WHERE participant_code = :c LIMIT 1"),
+                {"c": code},
+            ).fetchone() is not None
+    except Exception as e:
+        # No database, no participant: failing closed is the safe direction.
+        print(f"participant check failed ({e})", flush=True)
+    if len(_PC_CACHE) > 5000:
+        _PC_CACHE.clear()
+    _PC_CACHE[code] = (ok, now)
+    return ok
+
+
+# -------------------------------------------------------------------- labs
+# A lab URL (/labs/<type>/<token>/) used to open for anybody holding it. The
+# labs are deliberately vulnerable and are served from this site's own
+# address, so an attacker could send someone a link into the ATTACKER's lab
+# with a script in it, and that script would run with the victim's Synapse
+# cookies. Now the browser that started the lab gets a key cookie for that
+# lab's path only, and the proxy refuses any browser without it.
+LAB_KEY_COOKIE = "labkey"
+
+
+def lab_key(session_token: str) -> str:
+    return hmac.new(_secret(), ("lab:" + session_token).encode(),
+                    hashlib.sha256).hexdigest()
+
+
+def lab_key_ok(request, session_token: str) -> bool:
+    given = request.cookies.get(LAB_KEY_COOKIE) or ""
+    return bool(session_token) and hmac.compare_digest(given, lab_key(session_token))
+
+
+def set_lab_key(response, lab_type: str, session_token: str):
+    response.set_cookie(LAB_KEY_COOKIE, lab_key(session_token),
+                        path=f"/labs/{lab_type}/{session_token}/",
+                        httponly=True, secure=True, samesite="Strict",
+                        max_age=6 * 60 * 60)
+    return response

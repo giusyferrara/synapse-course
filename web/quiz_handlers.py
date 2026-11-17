@@ -22,7 +22,7 @@ import asyncio
 import os
 
 from aiohttp import web
-from web.session import current_user_id, admin_key_ok
+from web.session import current_user_id, admin_key_ok, participant_code
 
 from database.config import SessionLocal
 from quiz import quiz_engine
@@ -37,7 +37,7 @@ def _student_id(request):
     uid = current_user_id(request)
     if uid:
         return f"user:{uid}"
-    pc = request.query.get("participant") or request.cookies.get("participant_code")
+    pc = participant_code(request)
     if pc:
         return f"participant:{pc}"
     return None

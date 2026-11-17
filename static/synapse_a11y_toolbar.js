@@ -30,9 +30,14 @@
   function setActive(id, on) { var b = document.getElementById(id); if (b) b.classList.toggle("active", on); }
 
   // ---------- the navbar markup (identical to index.html) ----------
+  // A public page (/try) sets window.SYNAPSE_PUBLIC_NAV = true before this
+  // script. A visitor there has no account, so Home goes to the public home
+  // and the two buttons that only lead to the sign-in page are left out.
+  var PUBLIC_NAV = window.SYNAPSE_PUBLIC_NAV === true;
+  var HOME_URL = PUBLIC_NAV ? '/' : '/app';
   var NAV_HTML =
     '<nav id="synapseA11yNav" style="position:fixed;top:0;left:0;right:0;height:56px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;align-items:center;justify-content:space-between;padding:0 20px;box-shadow:0 2px 10px rgba(0,0,0,0.1);z-index:10001;">' +
-      '<a href="/app" style="display:flex;align-items:center;gap:12px;text-decoration:none;">' +
+      '<a href="' + HOME_URL + '" style="display:flex;align-items:center;gap:12px;text-decoration:none;">' +
         '<img src="/icons/butterfly_logo_bright.svg" alt="Synapse" style="width:40px;height:40px;" onerror="this.outerHTML=\'<span style=font-size:40px>🧠</span>\';">' +
         '<div style="display:flex;flex-direction:column;">' +
           '<span style="color:white;font-size:18px;font-weight:700;">Synapse</span>' +
@@ -40,9 +45,10 @@
         '</div>' +
       '</a>' +
       '<div style="display:flex;align-items:center;gap:6px;">' +
-        '<button onclick="window.location.href=\'/app\'" title="Home" style="width:38px;height:38px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);cursor:pointer;font-size:20px;color:white;">🏠</button>' +
+        '<button onclick="window.location.href=\'' + HOME_URL + '\'" title="Home" style="width:38px;height:38px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);cursor:pointer;font-size:20px;color:white;">🏠</button>' +
+        (PUBLIC_NAV ? '' :
         '<button onclick="window.location.href=\'/course/java-security\'" title="Java Security" style="width:38px;height:38px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);cursor:pointer;font-size:20px;color:white;">🔒</button>' +
-        '<button onclick="window.location.href=\'/tools\'" title="Graphs" style="width:38px;height:38px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);cursor:pointer;font-size:20px;color:white;">📊</button>' +
+        '<button onclick="window.location.href=\'/tools\'" title="Graphs" style="width:38px;height:38px;border:none;border-radius:50%;background:rgba(255,255,255,0.15);cursor:pointer;font-size:20px;color:white;">📊</button>') +
         '<button onclick="document.getElementById(\'accessBtns\').style.display=document.getElementById(\'accessBtns\').style.display===\'flex\'?\'none\':\'flex\'" title="Accessibility" style="width:40px;height:40px;border:none;border-radius:50%;background:transparent;cursor:pointer;padding:0;">' +
           '<img src="/icons/access.png" alt="Accessibility" style="width:40px;height:40px;" onerror="this.outerHTML=\'🦋\'">' +
         '</button>' +

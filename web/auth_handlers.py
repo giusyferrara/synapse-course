@@ -191,8 +191,13 @@ async def api_register(request):
         display_name = data.get('display_name', '').strip()
         email = data.get('email', '').strip().lower()
         password = data.get('password', '')
-        nd_type = data.get('nd_type')
-        is_neurodivergent = data.get('is_neurodivergent', False)
+        # Registration no longer asks for ADHD / dyslexia / autism (17 Nov
+        # 2026): it is health data and nothing needs it, since every
+        # accessibility tool is open to everyone. Anything a stale page still
+        # sends is ignored. Rows that already hold a value are NOT changed;
+        # what to do with them is a separate decision.
+        nd_type = None
+        is_neurodivergent = False
 
         if not display_name or len(display_name) < 2:
             return web.json_response({'success': False, 'message': 'Display name must be at least 2 characters.'})
