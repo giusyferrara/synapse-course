@@ -995,9 +995,10 @@ def setup_course_routes(app):
     # Route registration
     app.router.add_get("/course", handle_course_page)
     app.router.add_get("/java-security", handle_java_security_page)
-    app.router.add_get("/api/course/structure", handle_get_structure)
-    app.router.add_get("/api/course/content/{topic_id}", handle_get_topic)
-    app.router.add_get("/api/course/topic/{topic_id}", handle_get_topic)
+    # 19 Nov 2026 (Phase 0, package 0.1): /api/course/structure, /content/{id} and
+    # /topic/{id} are no longer registered. No page used them, and content/topic
+    # could make the AI generate a lesson for anyone, outside the spending cap.
+    # handle_get_structure and handle_get_topic are kept: one line each re-enables them.
     app.router.add_get("/api/tfl/lines", handle_tfl_lines)
 
 
@@ -1518,13 +1519,10 @@ or find long abstract text hard.
 
 
 async def handle_java_security_page(request):
-    """Serve the Java Security course page"""
-    try:
-        with open("templates/course_java_security.html", "r", encoding="utf-8") as f:
-            return web.Response(text=f.read(), content_type="text/html")
-    except FileNotFoundError:
-        return web.Response(
-            text="<h1>Error: course_java_security.html not found</h1>",
-            status=500,
-            content_type="text/html"
-        )
+    """Old address of the Java Security course.
+
+    It used to serve the course page without asking who you are. Since
+    19 Nov 2026 it sends you to /course/java-security, which checks the
+    login (app.py), so old links keep working and nothing is open.
+    """
+    raise web.HTTPFound("/course/java-security")
