@@ -11,6 +11,7 @@ is the second lock, so that one forgotten handler cannot open the house again.
 What it does, in order:
 1. Refuses any path that tries to climb out of its folder (`..`, or a slash
    or backslash smuggled in as %2F / %5C).
+1b. Refuses any path that names a backup copy (see _BACKUP_NAME).
 2. Answers 404 for endpoints that are retired. They are listed, not deleted,
    so it is obvious what was switched off and why.
 3. Lets the research and admin endpoints through only for the admin.
@@ -56,6 +57,17 @@ AI_PATHS = {
 
 _CLIMB = re.compile(r"\.\.|%2e%2e|%2f|%5c|\\", re.I)
 
+# Copies left behind by edits and deploys: name.bak, name.bak_20261119_113924,
+# name.BAK, name.orig, name.backup3, name.save.1, name~ and the like. They are
+# old versions of pages and code, and some still hold what was deliberately
+# taken off the site. On 19 Nov 2026, 249 of them could be downloaded under
+# /static/ and /icons/. Checked on the DECODED path, so %2Ebak is caught too,
+# and on every segment, so a backup folder is caught as well as a file.
+# Nothing the site really serves has such a name (checked against git and
+# every registered route), so this costs nothing.
+_BACKUP_NAME = re.compile(
+    r"\.(bak|bk|orig|backup|old|save|swp|swo|rej)(?![a-z])|~(/|$)", re.I)
+
 # nginx already adds X-Frame-Options, nosniff and Referrer-Policy; sending
 # them twice makes some browsers read "nosniff, nosniff" and ignore it.
 HEADERS = {
@@ -81,6 +93,9 @@ async def guard(request, handler):
     path = request.path.rstrip("/") or "/"
 
     if _CLIMB.search(raw_path):
+        return _not_found()
+
+    if _BACKUP_NAME.search(request.path):
         return _not_found()
 
     if path in RETIRED or path.startswith(RETIRED_PREFIXES):
