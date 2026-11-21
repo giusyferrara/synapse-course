@@ -4050,66 +4050,19 @@ addChatMessage('ai', "Cleared. That conversation is closed and I will not refer 
     }
 
     async function checkSolution() {
-      const code = document.getElementById('codeEditor').value;
+      // E1 (Nov 2026): Java code cannot run on Synapse at the moment, so it
+      // cannot be checked automatically. Say so plainly instead of guessing a
+      // verdict, and never mark anything as done.
       addChatMessage('user', '✅ Can you check if my solution is correct?');
-      addChatMessage('ai', '👀 Checking your solution...');
-      try {
-        const response = await fetch('/api/course/evaluate_code', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            topic_id: currentCourse || '',
-            code: code,
-            user_output: (document.getElementById('outputConsole') ? document.getElementById('outputConsole').textContent : ''),
-            exercise: currentExerciseData ? { title: currentExerciseData.title, description: currentExerciseData.description, expected_output: currentExerciseData.expected_output || '' } : {}
-          })
-        });
-        const data = await response.json();
-        if (data.success) {
-          if (data.correct || data.passed) {
-            addChatMessage('ai', '🎉 ' + (data.feedback || 'Excellent work! Your solution looks correct!'));
-            if (typeof trackCourseProgress === 'function' && currentExerciseData) trackCourseProgress(null, currentExerciseData.title || 'Exercise');
-          } else {
-            addChatMessage('ai', '🔍 ' + (data.feedback || 'Not quite right yet. Check the output carefully and try again!'));
-          }
-        } else {
-          addChatMessage('ai', '🔍 I could not evaluate automatically. Check if your output matches the expected output in the exercise description.');
-        }
-      } catch (error) {
-        console.error('Evaluate API error:', error);
-        const output = document.getElementById('outputConsole').textContent;
-        if (currentExerciseData && currentExerciseData.expected_output) {
-          const expected = currentExerciseData.expected_output.trim();
-          if (output.includes(expected)) {
-            addChatMessage('ai', '🎉 Your output matches the expected result! Well done!');
-            if (typeof trackCourseProgress === 'function' && currentExerciseData) trackCourseProgress(null, currentExerciseData.title || 'Exercise');
-          } else {
-            addChatMessage('ai', '🔍 Your output does not match yet. Expected:\n' + expected + '\n\nKeep trying!');
-          }
-        } else {
-          addChatMessage('ai', '🔍 Review the exercise description to check your output. Need a hint? Click Get AI Hint!');
-        }
-      }
-      logInteraction('solution_checked', { exercise: currentExerciseData ? currentExerciseData.title : 'unknown', code_length: code.length });
-      // Check if success message was shown — track exercise completion DIRECTLY
-      var lastMsg = document.querySelector('#chatMessages .chat-message:last-child .chat-bubble');
-      if (lastMsg && lastMsg.textContent.includes('🎉') && currentExerciseData) {
-        var rpCode = new URLSearchParams(window.location.search).get('participant') || sessionStorage.getItem('ss_participant');
-        if (rpCode) {
-          console.log('TRACKING exercise_complete:', currentExerciseData.title, rpCode);
-          fetch('/api/research/log_interaction', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-              participant_code: rpCode,
-              interaction_type: 'exercise_complete',
-              content: currentExerciseData.title || 'Exercise',
-              context: 'java_course',
-              page: window.location.pathname
-            })
-          }).then(function(r){return r.json()}).then(function(d){console.log('Exercise tracked:', d)}).catch(function(e){console.error('Track failed:', e)});
-        }
-      }
+      const expected = currentExerciseData && currentExerciseData.expected_output
+        ? String(currentExerciseData.expected_output).trim() : '';
+      addChatMessage('ai', "ℹ️ Java code can't run on Synapse at the moment, so I can't check it automatically. " +
+        (expected ? ('Compare your result with the expected output:
+' + expected) : 'Compare your result with the exercise description.') +
+        '
+
+You can still ask the tutor to look at your code.');
+      logInteraction('solution_checked', { exercise: currentExerciseData ? currentExerciseData.title : 'unknown', checkable: false });
     }
 
     // ========================================

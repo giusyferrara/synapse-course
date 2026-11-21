@@ -525,6 +525,9 @@ def setup_auth_routes(app):
     app.router.add_post('/api/auth/forgot-password', api_forgot_password)
     app.router.add_post('/api/auth/reset-password', api_reset_password)
     app.router.add_get('/api/auth/progress', api_get_progress)
-    app.router.add_post('/api/auth/progress', api_save_progress)
+    # POST /api/auth/progress is no longer registered (E1, Nov 2026): it let a
+    # signed-in user write "completed" for any exercise. No page used it. Only
+    # the server's own grading (course_handlers.handle_evaluate_code) writes
+    # progress now. The handler is kept below, unregistered, as a record.
 
     print("✅ Auth routes registered (incl. forgot/reset password)")

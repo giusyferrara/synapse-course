@@ -3507,6 +3507,9 @@ addChatMessage('ai', "Cleared. That conversation is closed and I will not refer 
       }
       
       const exercise = exercises[exerciseIndex];
+      // Which exercise "Check Solution" grades. Only the ids go to the server;
+      // the expected output stays on the server (E1).
+      currentGraded = { course_id: courseId, exercise_id: exercise.exercise_id || null };
       
       document.getElementById('codeEditor').value = exercise.starter_code || '# Write your code here...\n';
       document.getElementById('outputConsole').textContent = '✓ Starter code loaded! Click Run Code when ready.';
@@ -3717,6 +3720,7 @@ addChatMessage('ai', "Cleared. That conversation is closed and I will not refer 
         
         const result = await response.json();
         
+        currentGraded = null;   // an AI-made exercise has no fixed answer to grade against
         document.getElementById('codeEditor').value = result.starter_code || result.code || '# AI-generated exercise\n';
         document.getElementById('outputConsole').textContent = result.description || '✓ AI generated a custom exercise!';
         
@@ -3865,34 +3869,47 @@ addChatMessage('ai', "Cleared. That conversation is closed and I will not refer 
       }
     }
 
+    // The exercise "Check Solution" grades: set when one is opened from the
+    // course list, cleared for AI-made exercises.
+    var currentGraded = null;
+
     async function checkSolution() {
       const code = document.getElementById('codeEditor').value;
-      const outEl = document.getElementById('outputConsole');
       addChatMessage('user', '✅ Can you check if my solution is correct?');
-      addChatMessage('ai', '👀 Checking your solution...');
-      const title = ((document.getElementById('lessonTitle') || {}).textContent || '').trim();
+      if (!currentGraded || !currentGraded.exercise_id) {
+        addChatMessage('ai', '🔍 Choose an exercise from the course list first: only those have a fixed answer to check against.');
+        return;
+      }
+      addChatMessage('ai', '👀 Running and checking your solution...');
       try {
+        // The server runs the code itself and compares it with the expected
+        // output it keeps. Nothing the page says about the result is trusted.
         const response = await fetch('/api/course/evaluate_code', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            topic_id: currentCourse || '',
-            code: code,
-            user_output: outEl ? outEl.textContent : '',
-            exercise: { title: title, description: title, expected_output: '' }
+            course_id: currentGraded.course_id,
+            exercise_id: currentGraded.exercise_id,
+            code: code
           })
         });
         const data = await response.json();
-        if (data && data.success && (data.correct || data.passed)) {
-          addChatMessage('ai', '🎉 ' + (data.feedback || 'Your solution looks correct!'));
-        } else if (data && data.success) {
-          addChatMessage('ai', '🔍 ' + (data.feedback || 'Not quite right yet — check the output and try again.'));
+        if (data.status === 'passed') {
+          addChatMessage('ai', '🎉 ' + data.feedback);
+        } else if (data.status === 'failed') {
+          addChatMessage('ai', '🔍 ' + data.feedback);
+        } else if (data.status === 'not_checkable') {
+          addChatMessage('ai', 'ℹ️ ' + data.feedback);
         } else {
-          addChatMessage('ai', '🔍 Run your code first, then compare the output with what the exercise expects.');
+          addChatMessage('ai', '🔍 ' + (data.feedback || 'Checking is not available right now. Please try again in a minute.'));
         }
+        logLearningEvent('solution_checked', {
+          exercise_id: currentGraded.exercise_id,
+          status: data.status || 'error'
+        });
       } catch (error) {
         console.error('Evaluate API error:', error);
-        addChatMessage('ai', '🔍 Run your code first, then compare the output with what the exercise expects.');
+        addChatMessage('ai', '🔍 Checking is not available right now. Please try again in a minute.');
       }
     }
 

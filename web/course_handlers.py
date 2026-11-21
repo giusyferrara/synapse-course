@@ -26,6 +26,7 @@ from ai_response import response_text
 from .ai_budget import budget, client_ip, Refused
 from web.lang import detect_student_language
 from web.session import current_user_id
+from web import grader, sandbox
 
 def _user_id(request):
     """The signed-in learner's id, or None. Set as a cookie at login."""
@@ -46,24 +47,20 @@ def _over_budget(request):
         return refusal
 
 
-def _record_progress(request, topic_id, exercise, passed):
-    """Write one exercise attempt into user_progress, the table the dashboard
-    reads. Best-effort: a learner who is not signed in has no row to write, and
-    a database hiccup must never turn a correct answer into an error, so this
-    swallows everything and never raises into the evaluation path.
+def _record_progress(user_id, course_id, exercise_id, passed):
+    """Write one graded attempt into user_progress, the table the dashboard
+    reads. Called only by handle_evaluate_code, after the SERVER has graded the
+    code: the ids come from the trusted catalogue, and passed is the server's
+    own verdict, never something the browser said. completed only ever turns
+    true on a pass; attempts count every graded try.
 
-    The evaluate payload names the course as topic_id and identifies the
-    exercise by its title, so those become the keys. completed is only ever set
-    true on a pass; attempts count every time.
+    Best-effort: a database hiccup must never turn a graded answer into an
+    error, so this swallows everything and never raises into the grading path.
     """
-    user_id = _user_id(request)
     if not user_id:
         return
-    course = str(topic_id or "general")
-    title = ""
-    if isinstance(exercise, dict):
-        title = str(exercise.get("title") or exercise.get("description") or "").strip()
-    exercise_id = (title or "exercise")[:100]  # column is varchar(100)
+    course = str(course_id)[:100]          # column is varchar(100)
+    exercise_id = str(exercise_id)[:100]
     try:
         from sqlalchemy import text
         with SessionLocal() as db:
@@ -524,27 +521,16 @@ async def handle_run_code(request):
                     'error': 'Tutor not available'
                 }, status=503)
 
-            # Run in Docker sandbox
-            import tempfile as _tf
-            try:
-                # In a thread, so a 12-second program does not freeze every
-                # other visitor's request while it runs.
-                proc = await asyncio.to_thread(
-                    subprocess.run,
-                    ["docker", "run", "--rm", "-i",
-                     "--network", "none", "--memory", "64m",
-                     "--cpus", "0.5", "--pids-limit", "50",
-                     "--read-only", "--tmpfs", "/tmp:size=10m",
-                     "--security-opt", "no-new-privileges",
-                     "synapse-sandbox", "python3", "-"],
-                    input=code, capture_output=True, text=True, timeout=12
-                )
-                if proc.returncode == 0:
-                    return web.json_response({"success": True, "output": proc.stdout or "(No output)"})
-                else:
-                    return web.json_response({"success": False, "output": proc.stderr or proc.stdout or "Error", "error": True})
-            except subprocess.TimeoutExpired:
-                return web.json_response({"success": False, "output": "Timed out after 10s.", "error": True})
+            # In the Docker sandbox (web/sandbox.py), with the output capped and
+            # the container itself killed on a timeout.
+            r = await sandbox.run_python(code)
+            if r["timed_out"]:
+                return web.json_response({"success": False, "output": "Timed out after %ds." % sandbox.RUN_TIMEOUT, "error": True})
+            if r["too_much_output"]:
+                return web.json_response({"success": False, "output": (r["stdout"][-2000:] + "\n\nStopped: your program printed too much (more than %d KB)." % (sandbox.MAX_OUTPUT // 1024)), "error": True})
+            if r["ok"]:
+                return web.json_response({"success": True, "output": r["stdout"] or "(No output)"})
+            return web.json_response({"success": False, "output": r["stderr"] or r["stdout"] or "Error", "error": True})
 
     except Exception as e:
         return web.json_response({
@@ -769,102 +755,77 @@ async def handle_get_hint(request):
         })
 
 
-def _normalize_output(s):
-    """Normalize for forgiving comparison: strip, collapse whitespace, drop blank lines, lowercase."""
-    if not s:
-        return ""
-    import re
-    s = s.replace("\r\n", "\n").replace("\r", "\n")
-    out = [re.sub(r"\s+", " ", ln).strip() for ln in s.split("\n")]
-    out = [ln for ln in out if ln]
-    return "\n".join(out).lower()
+MAX_CODE = 50_000   # characters; a real exercise solution is a few hundred
+
+
+def _verdict(status, feedback, **extra):
+    """One response shape for every outcome. status is one of:
+    passed, failed, not_checkable, sign_in, bad_request, unavailable."""
+    body = {'success': status in ('passed', 'failed', 'not_checkable'),
+            'status': status, 'passed': status == 'passed',
+            'correct': status == 'passed', 'feedback': feedback}
+    body.update(extra)
+    return body
 
 
 async def handle_evaluate_code(request):
-    """Evaluate student code. Deterministic check first, AI fallback second."""
+    """Grade an exercise, deterministically, on the server (E1).
+
+    The browser sends only {course_id, exercise_id, code}. The exercise, its
+    expected output and whether it can be checked at all come from the trusted
+    catalogue (web/grader.py); the code runs in the sandbox (web/sandbox.py);
+    the server compares. No AI is called here, so grading works the same with
+    every model switched off. Anything else in the request (an "expected
+    output", a "user output", a verdict) is ignored.
+    """
+    user_id = _user_id(request)
+    if not user_id:
+        return web.json_response(_verdict('sign_in', 'Sign in to have your solution checked and your progress saved.'), status=401)
     try:
         data = await request.json()
-        code = data.get('code', '')
-        topic_id = data.get('topic_id')
-        exercise = data.get('exercise', {})
-        user_output = data.get('user_output', '') or ''
-        expected = (exercise.get('expected_output') or '').strip()
+        if not isinstance(data, dict):
+            raise ValueError
+    except Exception:
+        return web.json_response(_verdict('bad_request', 'Bad request.'), status=400)
 
-        # 1) Deterministic short-circuit: if output already matches, skip the LLM.
-        if expected and user_output:
-            nu = _normalize_output(user_output)
-            ne = _normalize_output(expected)
-            if ne and (nu == ne or ne in nu):
-                _record_progress(request, topic_id, exercise, True)
-                return web.json_response({
-                    'success': True,
-                    'correct': True,
-                    'passed': True,
-                    'feedback': "Excellent! Your output matches what we expected. Great work!"
-                })
+    course_id = data.get('course_id')
+    exercise_id = data.get('exercise_id')
+    code = data.get('code')
+    if not isinstance(code, str) or not code.strip():
+        return web.json_response(_verdict('bad_request', 'Write some code first, then check it.'), status=400)
+    if len(code) > MAX_CODE:
+        return web.json_response(_verdict('bad_request', 'That code is too long to check.'), status=400)
 
-        # 2) AI fallback
-        if not mcp_coordinator:
-            if expected and user_output:
-                _record_progress(request, topic_id, exercise, False)
-                return web.json_response({
-                    'success': True,
-                    'correct': False,
-                    'passed': False,
-                    'feedback': f"Your output does not match yet. Expected:\n{expected}\n\nYour output:\n{user_output.strip()[:400]}\n\nKeep trying!"
-                })
-            return web.json_response({
-                'success': False,
-                'error': 'AI evaluation not available'
-            }, status=503)
+    exercise = grader.find_exercise(course_id, exercise_id)
+    if exercise is None:
+        return web.json_response(_verdict(
+            'bad_request', 'Choose an exercise from the course list first: only those have a fixed answer to check against.'), status=404)
 
-        evaluation = await mcp_coordinator.openai.evaluate_code(
-            student_code=code,
-            exercise=exercise,
-            topic=topic_id,
-            user_output=user_output
-        )
+    reasons = grader.unchecked_reasons(course_id, exercise)
+    if reasons:
+        why = '; '.join(grader.REASONS[r] for r in reasons)
+        return web.json_response(_verdict(
+            'not_checkable',
+            "This exercise can't be checked automatically yet (%s). Compare your output with the expected one yourself, or ask the tutor." % why,
+            reasons=reasons))
 
-        # 3) Flatten the nested schema so the frontend can read data.correct / data.feedback directly.
-        ev = evaluation.get('evaluation', {}) if isinstance(evaluation, dict) else {}
-        passed = bool(ev.get('passes_tests', False))
-        fb = ev.get('feedback', {})
-        if isinstance(fb, dict):
-            parts = []
-            if fb.get('positive'):
-                parts.append(str(fb['positive']))
-            issues = fb.get('issues') or []
-            if not isinstance(issues, list):
-                issues = [str(issues)]
-            if issues:
-                parts.append("Things to check: " + "; ".join(str(i) for i in issues))
-            sug = fb.get('suggestions') or []
-            if not isinstance(sug, list):
-                sug = [str(sug)]
-            if sug:
-                parts.append("Try: " + "; ".join(str(s) for s in sug))
-            feedback_text = " ".join(parts) if parts else (ev.get('encouragement') or '')
-        else:
-            feedback_text = str(fb) if fb else (ev.get('encouragement') or '')
-
-        if not feedback_text:
-            feedback_text = "Excellent work!" if passed else "Almost there — compare your output with the expected one carefully."
-
-        _record_progress(request, topic_id, exercise, passed)
-        return web.json_response({
-            'success': True,
-            'correct': passed,
-            'passed': passed,
-            'feedback': feedback_text,
-            'score': ev.get('score')
-        })
-
+    try:
+        r = await sandbox.run_python(code)
     except Exception as e:
-        import traceback; traceback.print_exc()
-        return web.json_response({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+        print("evaluate: sandbox unavailable (%s)" % e, flush=True)
+        return web.json_response(_verdict('unavailable', 'Checking is not available right now. Please try again in a minute.'), status=503)
+
+    if r['timed_out']:
+        passed, feedback = False, "Your program was still running after %d seconds, so it was stopped. Look for a loop that never ends." % sandbox.RUN_TIMEOUT
+    elif r['too_much_output']:
+        passed, feedback = False, "Your program printed far more than the exercise expects, so it was stopped."
+    elif not r['ok']:
+        passed, feedback = False, grader.error_feedback(r['stderr'] or r['stdout'])
+    else:
+        passed, feedback = grader.compare(exercise.get('expected_output', ''), r['stdout'])
+
+    _record_progress(user_id, course_id, exercise_id, passed)
+    return web.json_response(_verdict('passed' if passed else 'failed', feedback))
 
 
 async def get_user_progress(student_id):
