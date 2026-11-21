@@ -47,6 +47,31 @@ def _over_budget(request):
         return refusal
 
 
+RATE_LIMITED_MSG = "You've run code a lot in the last minute. Take a breath and try again in %d seconds."
+BUSY_MSG = "Lots of people are running code right now. Please try again in a few seconds."
+
+
+async def _run_learner_code(request, code):
+    """The only way the handlers run a learner's code: the per-learner rate
+    limit first, then a server-wide sandbox slot, then the container.
+
+    Returns (result, None) or (None, (http_status, message, retry_after)).
+    The rate-limit key comes from the signed session, or for a visitor without
+    an account from the address nginx writes; nothing in the request body can
+    change it.
+    """
+    uid = _user_id(request)
+    key = "u:%s" % uid if uid else "ip:%s" % client_ip(request)
+    try:
+        sandbox.limiter.check(key)
+    except sandbox.RateLimited as r:
+        return None, (429, RATE_LIMITED_MSG % r.retry_after, r.retry_after)
+    try:
+        return await sandbox.run_python(code), None
+    except sandbox.Busy:
+        return None, (503, BUSY_MSG, 5)
+
+
 def _record_progress(user_id, course_id, exercise_id, passed):
     """Write one graded attempt into user_progress, the table the dashboard
     reads. Called only by handle_evaluate_code, after the SERVER has graded the
@@ -523,7 +548,11 @@ async def handle_run_code(request):
 
             # In the Docker sandbox (web/sandbox.py), with the output capped and
             # the container itself killed on a timeout.
-            r = await sandbox.run_python(code)
+            r, refused = await _run_learner_code(request, code)
+            if refused:
+                status, msg, retry = refused
+                return web.json_response({"success": False, "error": True, "output": msg},
+                                         status=status, headers={"Retry-After": str(retry)})
             if r["timed_out"]:
                 return web.json_response({"success": False, "output": "Timed out after %ds." % sandbox.RUN_TIMEOUT, "error": True})
             if r["too_much_output"]:
@@ -760,7 +789,8 @@ MAX_CODE = 50_000   # characters; a real exercise solution is a few hundred
 
 def _verdict(status, feedback, **extra):
     """One response shape for every outcome. status is one of:
-    passed, failed, not_checkable, sign_in, bad_request, unavailable."""
+    passed, failed, not_checkable, sign_in, bad_request, unavailable,
+    rate_limited, busy."""
     body = {'success': status in ('passed', 'failed', 'not_checkable'),
             'status': status, 'passed': status == 'passed',
             'correct': status == 'passed', 'feedback': feedback}
@@ -810,10 +840,14 @@ async def handle_evaluate_code(request):
             reasons=reasons))
 
     try:
-        r = await sandbox.run_python(code)
+        r, refused = await _run_learner_code(request, code)
     except Exception as e:
         print("evaluate: sandbox unavailable (%s)" % e, flush=True)
         return web.json_response(_verdict('unavailable', 'Checking is not available right now. Please try again in a minute.'), status=503)
+    if refused:
+        status, msg, retry = refused
+        return web.json_response(_verdict('rate_limited' if status == 429 else 'busy', msg),
+                                 status=status, headers={"Retry-After": str(retry)})
 
     if r['timed_out']:
         passed, feedback = False, "Your program was still running after %d seconds, so it was stopped. Look for a loop that never ends." % sandbox.RUN_TIMEOUT

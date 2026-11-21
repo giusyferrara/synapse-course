@@ -12,12 +12,94 @@ Limits (all of them, every run):
   has been told "timed out".
 """
 import asyncio
+import contextlib
+import os
+import tempfile
+import time
 import uuid
+from collections import defaultdict, deque
 
 IMAGE = "synapse-sandbox"
 RUN_TIMEOUT = 10          # seconds the program may run
 MAX_OUTPUT = 64 * 1024    # bytes kept from stdout and from stderr, each
 DOCKER = ["docker"]       # the tests replace this with a stand-in
+
+# How many sandbox containers may run at once on the WHOLE server. Enforced
+# with one lock file per slot (flock), so it holds across processes, not only
+# inside this one, and a process that dies gives its slot back by itself.
+MAX_CONTAINERS = 4
+SLOT_WAIT = 5.0           # seconds a request waits for a free slot, then "busy"
+SLOT_DIR = os.environ.get("SANDBOX_SLOT_DIR") or os.path.join(tempfile.gettempdir(), "synapse-sandbox-slots")
+
+# Per learner, Run and Check Solution together.
+RUNS_PER_MINUTE = 20
+
+
+class Busy(Exception):
+    """Every slot stayed taken for SLOT_WAIT seconds."""
+
+
+class RateLimited(Exception):
+    def __init__(self, retry_after):
+        super().__init__("rate limited")
+        self.retry_after = max(1, int(retry_after + 0.999))
+
+
+class RunLimiter:
+    """At most `limit` runs per `window` seconds per key. The key is decided
+    by the server (the signed session's user id, or the address nginx wrote),
+    never by anything in the request body. In memory: Synapse runs as ONE
+    process (checked 21 Nov 2026), like the AI budget in web/ai_budget.py."""
+
+    def __init__(self, limit=None, window=60.0, clock=None):
+        self.limit = RUNS_PER_MINUTE if limit is None else limit
+        self.window = window
+        self._clock = clock or time.monotonic
+        self._runs = defaultdict(deque)
+
+    def check(self, key):
+        """Count one run for key, or raise RateLimited without counting it."""
+        now = self._clock()
+        q = self._runs[key]
+        while q and now - q[0] >= self.window:
+            q.popleft()
+        if len(q) >= self.limit:
+            raise RateLimited(self.window - (now - q[0]))
+        q.append(now)
+        if len(self._runs) > 10000:          # forget idle keys, bound the memory
+            for k in [k for k, v in self._runs.items() if not v or now - v[-1] >= self.window]:
+                del self._runs[k]
+
+
+limiter = RunLimiter()
+
+
+@contextlib.asynccontextmanager
+async def slot(wait=None):
+    """Hold one of MAX_CONTAINERS server-wide slots while a container runs."""
+    import fcntl
+    wait = SLOT_WAIT if wait is None else wait
+    os.makedirs(SLOT_DIR, mode=0o700, exist_ok=True)
+    deadline = time.monotonic() + wait
+    fd = None
+    while fd is None:
+        for i in range(MAX_CONTAINERS):
+            f = os.open(os.path.join(SLOT_DIR, "slot-%d" % i), os.O_RDWR | os.O_CREAT, 0o600)
+            try:
+                fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                fd = f
+                break
+            except BlockingIOError:
+                os.close(f)
+        if fd is None:
+            if time.monotonic() >= deadline:
+                raise Busy()
+            await asyncio.sleep(0.1)
+    try:
+        yield
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
 
 
 def docker_args(name):
@@ -43,6 +125,11 @@ async def _read_capped(stream, limit):
         buf += chunk
 
 
+async def _drain(stream):
+    while await stream.read(65536):
+        pass
+
+
 async def _kill(name):
     try:
         p = await asyncio.create_subprocess_exec(
@@ -54,9 +141,15 @@ async def _kill(name):
 
 
 async def run_python(code, timeout=None, max_output=None):
-    """Run code in the sandbox. Returns a dict:
-       ok, stdout, stderr, timed_out, too_much_output, exit_code
-    ok means: exit code 0 and no limit was hit."""
+    """Run code in the sandbox, inside one of the server-wide slots.
+    Returns a dict: ok, stdout, stderr, timed_out, too_much_output, exit_code
+    (ok means: exit code 0 and no limit was hit). Raises Busy if no slot frees
+    up within SLOT_WAIT seconds."""
+    async with slot():
+        return await _run_in_container(code, timeout, max_output)
+
+
+async def _run_in_container(code, timeout=None, max_output=None):
     timeout = RUN_TIMEOUT if timeout is None else timeout
     max_output = MAX_OUTPUT if max_output is None else max_output
     name = "synapse-sbx-" + uuid.uuid4().hex[:16]
@@ -102,8 +195,15 @@ async def run_python(code, timeout=None, max_output=None):
         for t in (out_task, err_task):
             if not t.done():
                 t.cancel()
+        # Read both pipes to their end before waiting. A pipe left half-read
+        # stays open (asyncio pauses it when its buffer is full), and then the
+        # process is never reported finished: on the real server that held the
+        # slot ~20 s after an output overflow and left the pipe for the garbage
+        # collector. The docker client is dead or done, so the end comes at once.
+        await asyncio.gather(*[asyncio.wait_for(_drain(s), timeout=5) for s in (proc.stdout, proc.stderr)],
+                             return_exceptions=True)
         try:
-            await asyncio.wait_for(proc.wait(), timeout=10)
+            await asyncio.wait_for(proc.wait(), timeout=5)
         except Exception:
             pass
 

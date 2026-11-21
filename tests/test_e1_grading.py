@@ -107,6 +107,13 @@ def test_sandbox_flags_are_all_there():
     assert a[-3:] == ["synapse-sandbox", "python3", "-"]
 
 
+@pytest.fixture(autouse=True)
+def fresh_limits(tmp_path, monkeypatch):
+    """Every test gets its own slot folder and an empty rate limiter."""
+    monkeypatch.setattr(sandbox, "SLOT_DIR", str(tmp_path / "slots"))
+    monkeypatch.setattr(sandbox, "limiter", sandbox.RunLimiter())
+
+
 @pytest.fixture
 def fake_docker(tmp_path, monkeypatch):
     log = tmp_path / "docker.log"
@@ -135,10 +142,23 @@ def test_sandbox_timeout_kills_the_container(fake_docker):
     assert "kill synapse-sbx-" in fake_docker.read_text()
 
 
-def test_sandbox_output_cap_kills_the_container(fake_docker):
+def test_sandbox_output_cap_kills_the_container_at_once(fake_docker):
+    import time
+    t0 = time.monotonic()
     r = run(sandbox.run_python("while True: print('x' * 1000)", timeout=10, max_output=4096))
+    elapsed = time.monotonic() - t0
     assert r["too_much_output"] and not r["ok"] and len(r["stdout"]) <= 4096
     assert "kill synapse-sbx-" in fake_docker.read_text()
+    # stopped promptly, and the slot is not held: found on the real server on
+    # 21 Nov 2026, where a half-read pipe kept the run going for 20 s
+    assert elapsed < 4, elapsed
+
+
+def test_sandbox_timeout_returns_promptly(fake_docker):
+    import time
+    t0 = time.monotonic()
+    r = run(sandbox.run_python("while True: pass", timeout=1.0))
+    assert r["timed_out"] and time.monotonic() - t0 < 4
 
 
 # ---------------------------------------------------------------- the endpoint
@@ -331,3 +351,161 @@ def test_run_code_uses_the_hardened_sandbox(fake_docker, monkeypatch):
     body = asyncio.run(go())
     assert body["success"] and body["output"] == "4\n"
     assert "--cap-drop ALL" in fake_docker.read_text()
+
+
+# ---------------------------------------------------------------- limits (concurrency, rate)
+SLOW = "import time\ntime.sleep(0.6)\nprint('done')"
+
+
+def max_overlap(log):
+    """From the fake docker's start/end lines, the most containers alive at once."""
+    ev = []
+    for line in log.read_text().splitlines():
+        if line.startswith(("start ", "end ")):
+            kind, t = line.split()[:2]
+            ev.append((float(t), 1 if kind == "start" else -1))
+    alive = peak = 0
+    for _, d in sorted(ev, key=lambda e: (e[0], e[1])):
+        alive += d
+        peak = max(peak, alive)
+    return peak
+
+
+def test_never_more_than_four_containers_at_once(fake_docker):
+    """Ten simultaneous runs: at most 4 containers alive at any moment, all ten finish."""
+    async def go():
+        return await asyncio.gather(*[sandbox.run_python(SLOW) for _ in range(10)])
+    results = run(go())
+    assert all(r["ok"] and r["stdout"] == "done\n" for r in results)
+    assert sum(l.startswith("run ") for l in fake_docker.read_text().splitlines()) == 10
+    peak = max_overlap(fake_docker)
+    assert peak == 4, peak          # the cap is what limits them, not chance
+
+
+def test_busy_after_a_short_wait_when_all_slots_are_taken(fake_docker, monkeypatch):
+    monkeypatch.setattr(sandbox, "SLOT_WAIT", 0.5)
+
+    async def go():
+        held = [sandbox.slot() for _ in range(4)]
+        for h in held:
+            await h.__aenter__()
+        t0 = asyncio.get_running_loop().time()
+        with pytest.raises(sandbox.Busy):
+            await sandbox.run_python("print(1)")
+        waited = asyncio.get_running_loop().time() - t0
+        for h in held:
+            await h.__aexit__(None, None, None)
+        r = await sandbox.run_python("print(1)")          # free again
+        return waited, r
+    waited, r = run(go())
+    assert 0.4 <= waited < 2 and r["ok"]
+    assert sum(l.startswith("run ") for l in fake_docker.read_text().splitlines()) == 1
+
+
+def test_slots_are_global_across_processes(fake_docker, monkeypatch):
+    """Another PROCESS holding all 4 slots makes this one wait, then busy."""
+    import subprocess
+    monkeypatch.setattr(sandbox, "SLOT_WAIT", 0.5)
+    holder = subprocess.Popen([sys.executable, "-c", (
+        "import fcntl,os,sys,time\n"
+        "d=sys.argv[1]; os.makedirs(d, exist_ok=True); fs=[]\n"
+        "for i in range(4):\n"
+        "    f=os.open(os.path.join(d,'slot-%d'%i), os.O_RDWR|os.O_CREAT, 0o600); fcntl.flock(f, fcntl.LOCK_EX); fs.append(f)\n"
+        "print('held', flush=True); time.sleep(30)\n"), sandbox.SLOT_DIR], stdout=subprocess.PIPE, text=True)
+    try:
+        assert holder.stdout.readline().strip() == "held"
+        with pytest.raises(sandbox.Busy):
+            run(sandbox.run_python("print(1)"))
+    finally:
+        holder.kill()
+        holder.wait()
+    assert run(sandbox.run_python("print(1)"))["ok"]     # the dead process gave its slots back
+
+
+def test_slots_are_released_after_errors_and_timeouts(fake_docker, monkeypatch):
+    async def go():
+        await asyncio.gather(*[sandbox.run_python("1/0") for _ in range(4)])
+        await asyncio.gather(*[sandbox.run_python("while True: pass", timeout=0.8) for _ in range(4)])
+        held = [sandbox.slot(wait=0.3) for _ in range(4)]   # all four must be free now
+        for h in held:
+            await h.__aenter__()
+        for h in held:
+            await h.__aexit__(None, None, None)
+    run(go())
+
+
+def test_rate_limiter_window():
+    now = [0.0]
+    lim = sandbox.RunLimiter(limit=3, window=60, clock=lambda: now[0])
+    for _ in range(3):
+        lim.check("u:1")
+    with pytest.raises(sandbox.RateLimited) as e:
+        lim.check("u:1")
+    assert 1 <= e.value.retry_after <= 60
+    lim.check("u:2")                      # another learner is not affected
+    now[0] = 60.0
+    lim.check("u:1")                      # the window moved on
+
+
+def test_rate_limit_answers_429_and_the_refused_try_is_not_an_attempt(client, db, fake_docker, monkeypatch):
+    monkeypatch.setattr(sandbox, "limiter", sandbox.RunLimiter(limit=3))
+    body = {"course_id": "py_syntax_output", "exercise_id": "ex_01", "code": "print(1)"}
+    for _ in range(3):
+        status, b = client(body)
+        assert status == 200
+    status, b = client(body)
+    assert status == 429 and b["status"] == "rate_limited" and b["passed"] is False and "try again" in b["feedback"]
+    assert sum(l.startswith("run ") for l in fake_docker.read_text().splitlines()) == 3
+    assert rows(db)[0]["attempts"] == 3
+
+
+def test_rate_limit_cannot_be_dodged_by_changing_the_request(client, db, fake_docker, monkeypatch):
+    monkeypatch.setattr(sandbox, "limiter", sandbox.RunLimiter(limit=2))
+    extras = [{}, {"user_id": 999, "student_id": "x"}, {"exercise_id": "ex_02"}]
+    for i, extra in enumerate(extras):
+        body = {"course_id": "py_syntax_output", "exercise_id": "ex_01", "code": "print(1)"}
+        body.update(extra)
+        status, b = client(body)
+        assert status == (200 if i < 2 else 429), (i, b)
+
+
+def test_not_checkable_exercises_do_not_spend_the_limit(client, db, fake_docker, monkeypatch):
+    monkeypatch.setattr(sandbox, "limiter", sandbox.RunLimiter(limit=1))
+    java = next(iter(grader.catalogue()["java_loops"]))
+    for _ in range(3):
+        status, b = client({"course_id": "java_loops", "exercise_id": java, "code": "x"})
+        assert b["status"] == "not_checkable"
+    status, b = client({"course_id": "py_syntax_output", "exercise_id": "ex_01", "code": "print(1)"})
+    assert status == 200
+
+
+def test_busy_answers_503_and_saves_nothing(client, db, fake_docker, monkeypatch):
+    async def busy(code, **kw):
+        raise sandbox.Busy()
+    monkeypatch.setattr(sandbox, "run_python", busy)
+    status, b = client({"course_id": "py_syntax_output", "exercise_id": "ex_01", "code": "print(1)"})
+    assert status == 503 and b["status"] == "busy" and rows(db) == []
+
+
+def test_run_and_check_share_one_limit_and_run_answers_429(fake_docker, monkeypatch):
+    monkeypatch.setattr(sandbox, "limiter", sandbox.RunLimiter(limit=2))
+    monkeypatch.setattr(ch, "_user_id", lambda request: 77)
+    monkeypatch.setattr(ch, "_record_progress", lambda *a: None)
+
+    async def go():
+        app = web.Application()
+        app["tutor"] = object()
+        app.router.add_post("/api/course/run_code", ch.handle_run_code)
+        app.router.add_post("/api/course/evaluate_code", ch.handle_evaluate_code)
+        out = []
+        async with TestClient(TestServer(app)) as c:
+            r = await c.post("/api/course/run_code", json={"code": "print(1)", "topic_id": "py_syntax_output"})
+            out.append((r.status, None, await r.json()))
+            r = await c.post("/api/course/evaluate_code", json={"course_id": "py_syntax_output", "exercise_id": "ex_01", "code": "print(1)"})
+            out.append((r.status, None, await r.json()))
+            r = await c.post("/api/course/run_code", json={"code": "print(1)", "topic_id": "py_syntax_output"})
+            out.append((r.status, r.headers.get("Retry-After"), await r.json()))
+        return out
+    out = run(go())
+    assert [s for s, _, _ in out] == [200, 200, 429]
+    assert out[2][1] and "try again" in out[2][2]["output"]

@@ -20,7 +20,16 @@ if args and args[0] == "run":
     if log:
         with open(log, "a") as f:
             f.write("run %s\n" % " ".join(args[1:]))
+    import time
     code = sys.stdin.read()
-    exec(compile(code, "<learner>", "exec"), {"__name__": "__main__"})
+    if log:
+        with open(log, "a") as f:
+            f.write("start %.6f\n" % time.time())
+    try:
+        exec(compile(code, "<learner>", "exec"), {"__name__": "__main__"})
+    finally:
+        if log:
+            with open(log, "a") as f:
+                f.write("end %.6f\n" % time.time())
     sys.exit(0)
 sys.exit(2)
