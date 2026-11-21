@@ -592,6 +592,8 @@
                 box-shadow: inset 0 0 0 1px rgba(0,0,0,.18); }
   /* Shown only when this page is the whole window. Inside the /try iframe
      a way out would lead the reader out of the page they are reading. */
+  .sr-live { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+             clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 </style>
 
 <div class="wrap">
@@ -634,6 +636,7 @@
 
   <div class="say">
     <div class="txt" id="say"></div>
+    <div id="live" class="sr-live" aria-live="polite" aria-atomic="true"></div>
     <button class="why" id="whylinebtn" type="button" aria-pressed="false">Why this line?</button>
     <button class="why" id="whybtn" type="button" aria-pressed="false">Why?</button>
   </div>
@@ -729,6 +732,61 @@
   "use strict";
 
   var $ = function (id) { return document.getElementById(id); };
+
+  /* Prediction copy (Nov 2026). It used to claim, for EVERY numeric update,
+     that the new value had won a comparison and was not added to the old one: false for
+     total = total + list[i], for lo/hi/mid and for counters. Now it says only
+     what the line about to run shows: whether it uses the old value or not. */
+  function predictCopy(name, was, now, codeLine) {
+    var code = String(codeLine || "").trim().replace(/;\s*$/, "");
+    var esc = String(name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    var m = code.match(new RegExp("(^|[^\\w.])" + esc + "\\s*([-+*/%]?=)(?!=)\\s*(.*)$"));
+    var how = "";
+    if (m) {
+      var usesOld = m[2] !== "=" || new RegExp("(^|[^\\w.])" + esc + "([^\\w]|$)").test(m[3]);
+      how = usesOld
+        ? " The new value is worked out from the old one and stored back in " + name + ": it still holds just one number."
+        : " Whatever " + name + " held before is replaced by the new value.";
+    }
+    return {
+      now: name + " is " + was + " right now. The next line to run is: " + (code || "(this step)") + ".",
+      right: "Yes: " + name + " becomes " + now + "." + how,
+      wrong: "Not quite: after that line, " + name + " becomes " + now + "." + how,
+      options: predictOptions(was, now)
+    };
+  }
+
+  // Three different numbers: the right one and two plausible slips. Never a
+  // duplicate (was = 0 used to show the right answer twice).
+  function predictOptions(was, now) {
+    var out = [now];
+    [was, was + now, now + 1, now - 1, now + 2].forEach(function (v) {
+      if (out.length < 3 && out.indexOf(v) < 0) { out.push(v); }
+    });
+    return out;
+  }
+
+  // Which key does what. Arrows work even when a button has focus (they used
+  // to stop working after any click); Space on a button stays the button's own.
+  function keyAction(tagName, key) {
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(tagName)) { return null; }
+    if (key === "ArrowRight") { return "next"; }
+    if (key === "ArrowLeft") { return "back"; }
+    if (key === " " && tagName !== "BUTTON") { return "play"; }
+    return null;
+  }
+
+  // One polite announcement for screen readers. Never during Play (that would
+  // talk over every step); on a manual step, on pause, and once after scrubbing.
+  var liveTimer = null;
+  function announce(text, wait) {
+    if (liveTimer) { window.clearTimeout(liveTimer); }
+    liveTimer = window.setTimeout(function () {
+      var el = $("live");
+      if (el) { el.textContent = ""; el.textContent = String(text || "").replace(/<[^>]+>/g, ""); }
+    }, wait || 60);
+  }
+  function stepNews() { return "Step " + (at + 1) + " of " + S.length + ". " + (S[at] ? S[at].say[depth] : ""); }
 
   /* ===================================================================
      THE VOCABULARY
@@ -3902,6 +3960,7 @@
     hush();
     if (timer) { window.clearTimeout(timer); timer = null; }
     $("play").textContent = at >= S.length - 1 ? "↺ Again" : "▶ Play";
+    announce("Paused. " + stepNews(), 120);
   }
 
   // Guide me stops just before a value changes. It can ask honestly, because
@@ -3910,9 +3969,10 @@
     var next = S[at + 1];
     if (!next || !next.predict) { return false; }
     var p = next.predict;
-    var opts = [p.now, p.was, p.was + p.now].sort(function () { return Math.random() - 0.5; });
+    var copy = predictCopy(p.name, p.was, p.now, prog.code[next.line]);
+    var opts = copy.options.sort(function () { return Math.random() - 0.5; });
 
-    $("pnow").textContent = p.name + " is " + p.was + " right now, and " + p.now + " has just won the comparison.";
+    $("pnow").textContent = copy.now;
     $("pq").textContent = "What do you think " + p.name + " becomes?";
     $("popts").innerHTML = opts.map(function (o) {
       return '<button type="button" class="chip" data-p="' + o + '">' + o + "</button>";
@@ -3927,11 +3987,11 @@
     if (!b) { return; }
     var p = S[at + 1].predict, v = $("pv");
     if (b.dataset.p === "show") { $("predict").hidden = true; go(at + 1); return; }
-    var right = parseInt(b.dataset.p, 10) === p.now;
+    var right = Number(b.dataset.p) === p.now;
+    var copy = predictCopy(p.name, p.was, p.now, prog.code[S[at + 1].line]);
     v.className = "verdict " + (right ? "right" : "wrong");
-    v.textContent = right
-      ? "Yes — the old value is simply overwritten. " + p.was + " is gone."
-      : "Not quite: it becomes " + p.now + ". The winner replaces the old value outright; it isn't added to it.";
+    v.textContent = right ? copy.right : copy.wrong;
+    announce(v.textContent, 30);
     v.hidden = false;
     window.setTimeout(function () { $("predict").hidden = true; go(at + 1); }, right ? 900 : 2600);
   });
@@ -3952,10 +4012,10 @@
     if (at >= S.length - 1) { go(0); }
     playing = true; $("play").textContent = "❚❚ Pause"; step();
   });
-  $("fwd").addEventListener("click", function () { stop(); go(at + 1); speak(S[at].say[depth], function () {}); });
-  $("back").addEventListener("click", function () { stop(); go(at - 1); speak(S[at].say[depth], function () {}); });
+  $("fwd").addEventListener("click", function () { stop(); go(at + 1); announce(stepNews()); speak(S[at].say[depth], function () {}); });
+  $("back").addEventListener("click", function () { stop(); go(at - 1); announce(stepNews()); speak(S[at].say[depth], function () {}); });
   $("restart").addEventListener("click", function () { stop(); $("predict").hidden = true; go(0); });
-  $("scrub").addEventListener("input", function () { stop(); go(parseInt(this.value, 10)); });
+  $("scrub").addEventListener("input", function () { stop(); go(parseInt(this.value, 10)); announce(stepNews(), 400); });
   function toggleWhy() {
     this.setAttribute("aria-pressed", this.getAttribute("aria-pressed") === "true" ? "false" : "true");
     render();
@@ -3964,10 +4024,10 @@
   $("whylinebtn").addEventListener("click", toggleWhy);
 
   document.addEventListener("keydown", function (e) {
-    if (/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(e.target.tagName)) { return; }
-    if (e.key === "ArrowRight") { stop(); go(at + 1); }
-    else if (e.key === "ArrowLeft") { stop(); go(at - 1); }
-    else if (e.key === " ") { e.preventDefault(); $("play").click(); }
+    var act = keyAction(e.target.tagName, e.key);
+    if (act === "next") { e.preventDefault(); stop(); go(at + 1); announce(stepNews()); }
+    else if (act === "back") { e.preventDefault(); stop(); go(at - 1); announce(stepNews()); }
+    else if (act === "play") { e.preventDefault(); $("play").click(); }
   });
 
   function pressed(sel, b) {
