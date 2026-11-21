@@ -3565,6 +3565,7 @@ addChatMessage('ai', "Cleared. That conversation is closed and I will not refer 
       
       const example = examples[exampleIndex];
       
+      currentGraded = null;   // an example has no fixed answer: Check Solution asks the tutor
       document.getElementById('codeEditor').value = example.code || '# Example code\n';
       document.getElementById('outputConsole').textContent = '✓ Example loaded! Modify the code and click "Run Code" to test it.';
       
@@ -3625,6 +3626,7 @@ addChatMessage('ai', "Cleared. That conversation is closed and I will not refer 
       
       const example = examples[exampleIndex];
       
+      currentGraded = null;   // an example has no fixed answer: Check Solution asks the tutor
       document.getElementById('codeEditor').value = example.code || '# Example code\n';
       
       switchTab('practice');
@@ -3875,12 +3877,30 @@ addChatMessage('ai', "Cleared. That conversation is closed and I will not refer 
 
     async function checkSolution() {
       const code = document.getElementById('codeEditor').value;
-      addChatMessage('user', '✅ Can you check if my solution is correct?');
-      if (!currentGraded || !currentGraded.exercise_id) {
-        addChatMessage('ai', '🔍 Choose an exercise from the course list first: only those have a fixed answer to check against.');
+      const outEl = document.getElementById('outputConsole');
+      if (!code.trim()) {
+        if (outEl) outEl.textContent = '⚠️ Write some code first, then check it.';
         return;
       }
+      if (!currentGraded || !currentGraded.exercise_id) {
+        // Your own code, an example, or an AI-made exercise: there is no fixed
+        // answer to grade against, so the tutor comments instead. Not a grade,
+        // never saved as progress. The tutor sees the code in the editor.
+        const note = 'ℹ️ This is your own code, not a course exercise, so there is no fixed answer to grade. ' +
+                     "Here is the tutor's view instead (not a grade, not saved as progress).";
+        if (outEl) outEl.textContent = note;
+        addChatMessage('ai', note);
+        const input = document.getElementById('chatInput');
+        if (input && typeof sendMessage === 'function') {
+          input.value = 'Please look at the code in my editor: tell me what it does, whether it works as I probably intend, and one thing I could try next.';
+          sendMessage();
+        }
+        logLearningEvent('solution_checked', { exercise_id: null, status: 'tutor_review' });
+        return;
+      }
+      addChatMessage('user', '✅ Can you check if my solution is correct?');
       addChatMessage('ai', '👀 Running and checking your solution...');
+      if (outEl) outEl.textContent = '⏳ Running and checking your solution...';
       try {
         // The server runs the code itself and compares it with the expected
         // output it keeps. Nothing the page says about the result is trusted.
@@ -3894,22 +3914,19 @@ addChatMessage('ai', "Cleared. That conversation is closed and I will not refer 
           })
         });
         const data = await response.json();
-        if (data.status === 'passed') {
-          addChatMessage('ai', '🎉 ' + data.feedback);
-        } else if (data.status === 'failed') {
-          addChatMessage('ai', '🔍 ' + data.feedback);
-        } else if (data.status === 'not_checkable') {
-          addChatMessage('ai', 'ℹ️ ' + data.feedback);
-        } else {
-          addChatMessage('ai', '🔍 ' + (data.feedback || 'Checking is not available right now. Please try again in a minute.'));
-        }
+        const icon = data.status === 'passed' ? '🎉 ' : (data.status === 'not_checkable' ? 'ℹ️ ' : '🔍 ');
+        const text = icon + (data.feedback || 'Checking is not available right now. Please try again in a minute.');
+        addChatMessage('ai', text);
+        if (outEl) outEl.textContent = text;   // the verdict also where the learner is looking
         logLearningEvent('solution_checked', {
           exercise_id: currentGraded.exercise_id,
           status: data.status || 'error'
         });
       } catch (error) {
         console.error('Evaluate API error:', error);
-        addChatMessage('ai', '🔍 Checking is not available right now. Please try again in a minute.');
+        const text = '🔍 Checking is not available right now. Please try again in a minute.';
+        addChatMessage('ai', text);
+        if (outEl) outEl.textContent = text;
       }
     }
 
