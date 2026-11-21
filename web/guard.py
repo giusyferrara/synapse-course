@@ -19,12 +19,13 @@ What it does, in order:
    calls a paid model and does not already check the budget itself.
 5. Adds the security headers to every response.
 """
+import posixpath
 import re
 
 from aiohttp import web
 
 from .ai_budget import budget, client_ip, Refused, UNLIMITED
-from .session import current_user_id, admin_key_ok
+from .session import current_user_id, admin_key_ok, participant_code
 
 # Retired. Nothing on the site uses them any more, or what used them was the
 # danger. 404, as if they had never existed.
@@ -56,6 +57,29 @@ AI_PATHS = {
 }
 
 _CLIMB = re.compile(r"\.\.|%2e%2e|%2f|%5c|\\", re.I)
+
+# The course files hold every exercise's expected output and, in the third
+# hint, its solution. Until E3 stops sending those to the browser at all, they
+# are served only to whoever may open /course (same rule as serve_course in
+# app.py): a signed-in user, a valid research participant, or the admin key.
+# Found 22 Nov 2026: anyone could download them without an account.
+# Checked on the DECODED and NORMALISED path, so /static/./course_content,
+# /static/%63ourse_content, /static//course_content and the like are caught.
+PROTECTED_DIRS = ("/static/course_content",)
+
+
+def _normalised(path):
+    p = posixpath.normpath(re.sub(r"/{2,}", "/", path or "/"))
+    return p.lower()
+
+
+def _protected(path):
+    p = _normalised(path)
+    return any(p == d or p.startswith(d + "/") for d in PROTECTED_DIRS)
+
+
+def _may_open_courses(request):
+    return bool(current_user_id(request)) or bool(participant_code(request)) or admin_key_ok(request)
 
 # Copies left behind by edits and deploys: name.bak, name.bak_20261119_113924,
 # name.BAK, name.orig, name.backup3, name.save.1, name~ and the like. They are
@@ -101,6 +125,10 @@ async def guard(request, handler):
     if path in RETIRED or path.startswith(RETIRED_PREFIXES):
         return _not_found()
 
+    course_file = _protected(request.path)
+    if course_file and not _may_open_courses(request):
+        return _not_found()
+
     if (path in ADMIN_ONLY or path.startswith(ADMIN_PREFIXES)) and not _is_admin(request):
         return _not_found()
 
@@ -115,6 +143,9 @@ async def guard(request, handler):
 
     response = await handler(request)
     try:
+        if course_file:
+            # never kept by a shared cache (Cloudflare, a proxy) for the next visitor
+            response.headers["Cache-Control"] = "private, no-store"
         for k, v in HEADERS.items():
             response.headers.setdefault(k, v)
     except Exception:
