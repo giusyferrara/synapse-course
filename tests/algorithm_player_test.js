@@ -61,4 +61,13 @@ const stepFn = extract('step');
 check('Play does not announce every step (no announce inside step())', !/announce\(/.test(stepFn));
 check('pausing announces once', /announce\("Paused\. "/.test(extract('stop')));
 
+// controls in view, speed, text size (Nov 2026)
+const css = html.slice(html.indexOf('.bar {'), html.indexOf('.bar {') + 400);
+check('the control bar sticks to the bottom of the screen', /position:\s*sticky/.test(css) && /bottom:\s*0/.test(css));
+check('three speeds in the bar: Slow, Normal, Fast', ['0.5', '1', '2'].every((v) => html.includes('data-speed="' + v + '"')) && /Slow<\/button>/.test(html));
+check('Play follows the chosen speed', /setTimeout\(step, \(mode === "run" \? 420 : 1400\) \/ speed\)/.test(extract('step')));
+check('text size buttons exist', /id="bigger"/.test(html) && /id="smaller"/.test(html));
+const setScaleSrc = html.slice(html.indexOf('function setScale('), html.indexOf('\n  }\n', html.indexOf('function setScale(')) + 4);
+check('text size stays between 100% and 200%', /Math\.min\(2, Math\.max\(1, v\)\)/.test(setScaleSrc));
+
 process.exit(results.every(Boolean) ? 0 : 1);

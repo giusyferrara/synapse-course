@@ -454,7 +454,12 @@
 
   /* ---------------------------------------------------------- controls */
 
-  .bar { margin-top: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .bar { margin-top: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+         position: sticky; bottom: 0; z-index: 25; background: var(--paper);
+         padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px));
+         box-shadow: 0 -8px 12px -12px rgba(0, 0, 0, .45); }
+  .bar .set2 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .bar .lbl2 { font-family: var(--ff-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
   button {
     font-family: var(--ff-mono); font-size: 12px; letter-spacing: .07em;
     text-transform: uppercase; font-weight: 700; padding: 10px 13px;
@@ -657,6 +662,17 @@
     <div class="scrub">
       <input type="range" id="scrub" min="0" value="0" step="1" aria-label="Scrub through the execution">
       <span class="at" id="at"></span>
+    </div>
+    <div class="set2" role="group" aria-label="Speed">
+      <span class="lbl2">Speed</span>
+      <button type="button" class="chip" data-speed="0.5" aria-pressed="false">Slow</button>
+      <button type="button" class="chip" data-speed="1" aria-pressed="true">Normal</button>
+      <button type="button" class="chip" data-speed="2" aria-pressed="false">Fast</button>
+    </div>
+    <div class="set2" role="group" aria-label="Text size">
+      <span class="lbl2">Text</span>
+      <button type="button" class="chip" id="smaller" aria-label="Smaller text">A−</button>
+      <button type="button" class="chip" id="bigger" aria-label="Bigger text">A+</button>
     </div>
     <button id="keep" type="button" hidden>☆ Keep this</button>
   </div>
@@ -3430,6 +3446,7 @@
 
   var prog = LIB[0], S = build(prog);
   var mode = "explain", depth = "beginner", at = 0, playing = false, timer = null;
+  var speed = 1, scale = 1;   // Play speed (0.5 / 1 / 2) and text size (1 to 2)
   var solo = false;   // one lesson only: the public demo, embedded in a page
                       // that has its own title - so this one hides its furniture
 
@@ -4004,7 +4021,7 @@
 
     // When it is reading, the sentence sets the pace. Otherwise, the clock.
     if (speak(S[at].say[depth], function () { if (playing) { step(); } })) { return; }
-    timer = window.setTimeout(step, mode === "run" ? 420 : 1400);
+    timer = window.setTimeout(step, (mode === "run" ? 420 : 1400) / speed);
   }
 
   $("play").addEventListener("click", function () {
@@ -4015,6 +4032,30 @@
   $("fwd").addEventListener("click", function () { stop(); go(at + 1); announce(stepNews()); speak(S[at].say[depth], function () {}); });
   $("back").addEventListener("click", function () { stop(); go(at - 1); announce(stepNews()); speak(S[at].say[depth], function () {}); });
   $("restart").addEventListener("click", function () { stop(); $("predict").hidden = true; go(0); });
+
+  // Speed and text size (Nov 2026). Remembered in this browser only; the page works without it.
+  function remember(k, v) { try { window.localStorage.setItem(k, String(v)); } catch (e) {} }
+  function recall(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+  function setSpeed(v) {
+    speed = [0.5, 1, 2].indexOf(v) >= 0 ? v : 1;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-speed]"), function (b) {
+      b.setAttribute("aria-pressed", String(Number(b.dataset.speed) === speed));
+    });
+    remember("synapsePlayerSpeed", speed);
+  }
+  function setScale(v) {
+    scale = Math.round(Math.min(2, Math.max(1, v)) * 100) / 100;
+    document.querySelector(".wrap").style.zoom = scale;
+    $("smaller").disabled = scale <= 1; $("bigger").disabled = scale >= 2;
+    remember("synapsePlayerScale", scale);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-speed]"), function (b) {
+    b.addEventListener("click", function () { setSpeed(Number(b.dataset.speed)); });
+  });
+  $("bigger").addEventListener("click", function () { setScale(scale + 0.25); });
+  $("smaller").addEventListener("click", function () { setScale(scale - 0.25); });
+  setSpeed(Number(recall("synapsePlayerSpeed")) || 1);
+  setScale(Number(recall("synapsePlayerScale")) || 1);
   $("scrub").addEventListener("input", function () { stop(); go(parseInt(this.value, 10)); announce(stepNews(), 400); });
   function toggleWhy() {
     this.setAttribute("aria-pressed", this.getAttribute("aria-pressed") === "true" ? "false" : "true");
