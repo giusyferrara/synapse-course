@@ -52,7 +52,32 @@ REASONS = {
     "variable_output": "the output changes from run to run (random values, time, ids)",
     "needs_network": "the exercise needs the internet, and the sandbox has none",
     "module_not_in_sandbox": "the exercise needs a library the sandbox does not have",
+    "not_auto": "this exercise needs a different kind of assessment than an automatic check",
+    "unknown_grading_mode": "this exercise asks for a way of checking that Synapse does not know yet",
 }
+
+# grading.mode, written in the exercise itself (E2):
+#   absent or "exact"  the expected output is compared exactly (E1)
+#   "not_auto"         never checked automatically; the exercise says why ("why")
+#   anything else      fails SAFE: treated as not checkable, never as a pass
+KNOWN_GRADING_MODES = {"exact", "not_auto"}
+
+
+def grading_mode(exercise):
+    """'exact', 'not_auto' or 'unknown'. A malformed grading field is 'unknown'."""
+    g = exercise.get("grading")
+    if g is None:
+        return "exact"
+    if not isinstance(g, dict):
+        return "unknown"
+    mode = g.get("mode", "exact")
+    return mode if mode in KNOWN_GRADING_MODES else "unknown"
+
+
+def not_auto_why(exercise):
+    g = exercise.get("grading")
+    why = g.get("why") if isinstance(g, dict) else None
+    return why.strip() if isinstance(why, str) and why.strip() else None
 
 
 def valid_id(s):
@@ -139,6 +164,11 @@ def unchecked_reasons(course_id, exercise):
     from the learner's code.
     """
     reasons = []
+    mode = grading_mode(exercise)
+    if mode == "not_auto":
+        return ["not_auto"]
+    if mode == "unknown":
+        return ["unknown_grading_mode"]
     if is_java(course_id, exercise):
         return ["java_not_executable"]
     expected = str(exercise.get("expected_output") or "")

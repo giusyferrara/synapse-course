@@ -832,6 +832,15 @@ async def handle_evaluate_code(request):
             'bad_request', 'Choose an exercise from the course list first: only those have a fixed answer to check against.'), status=404)
 
     reasons = grader.unchecked_reasons(course_id, exercise)
+    if reasons == ['not_auto']:
+        # Nothing runs, nothing is marked as done: the exercise itself says why.
+        why = grader.not_auto_why(exercise) or grader.REASONS['not_auto']
+        return web.json_response(_verdict(
+            'not_checkable',
+            "This exercise isn't checked automatically: it needs a different kind of assessment. %s "
+            "Run your code and look at the result yourself, or ask the tutor what to improve. "
+            "It won't be marked as done automatically." % why,
+            reasons=reasons))
     if reasons:
         why = '; '.join(grader.REASONS[r] for r in reasons)
         return web.json_response(_verdict(

@@ -509,3 +509,48 @@ def test_run_and_check_share_one_limit_and_run_answers_429(fake_docker, monkeypa
     out = run(go())
     assert [s for s, _, _ in out] == [200, 200, 429]
     assert out[2][1] and "try again" in out[2][2]["output"]
+
+
+# ---------------------------------------------------------------- grading.mode (E2 round 1)
+@pytest.mark.parametrize("grading,mode", [
+    (None, "exact"), ({"mode": "exact"}, "exact"), ({"mode": "not_auto", "why": "x"}, "not_auto"),
+    ({"mode": "checks", "checks": []}, "unknown"), ({"mode": "pass"}, "unknown"), ("not_auto", "unknown"),
+    ({"mode": None}, "unknown"), ({}, "exact"),
+])
+def test_grading_mode_reading(grading, mode):
+    ex = {"expected_output": "x", "starter_code": ""}
+    if grading is not None:
+        ex["grading"] = grading
+    assert grader.grading_mode(ex) == mode
+
+
+def test_unknown_or_malformed_grading_never_becomes_checkable():
+    for g in ({"mode": "pass"}, {"mode": "auto"}, ["exact"], "exact", 1):
+        assert grader.unchecked_reasons("py_x", {"expected_output": "x", "starter_code": "", "grading": g}) == ["unknown_grading_mode"]
+
+
+def test_not_auto_runs_nothing_saves_nothing_and_says_why(client, db, fake_docker, monkeypatch):
+    ex = dict(grader.find_exercise("py_syntax_output", "ex_01"), grading={"mode": "not_auto", "why": "Every good answer differs."})
+    monkeypatch.setattr(grader, "find_exercise", lambda c, e, cat=None: ex)
+    status, body = client({"course_id": "py_syntax_output", "exercise_id": "ex_01", "code": 'print("Hello, Python Forensics!")'})
+    assert status == 200 and body["status"] == "not_checkable" and body["passed"] is False
+    assert body["reasons"] == ["not_auto"] and "Every good answer differs." in body["feedback"]
+    assert "won't be marked as done" in body["feedback"]
+    assert not fake_docker.exists() and rows(db) == []
+
+
+def test_unknown_mode_fails_safe(client, db, fake_docker, monkeypatch):
+    ex = dict(grader.find_exercise("py_syntax_output", "ex_01"), grading={"mode": "always_pass"})
+    monkeypatch.setattr(grader, "find_exercise", lambda c, e, cat=None: ex)
+    status, body = client({"course_id": "py_syntax_output", "exercise_id": "ex_01", "code": 'print("Hello, Python Forensics!")'})
+    assert body["status"] == "not_checkable" and body["passed"] is False and body["reasons"] == ["unknown_grading_mode"]
+    assert not fake_docker.exists() and rows(db) == []
+
+
+def test_round1_content_is_classified_as_intended():
+    cat = grader.load_catalogue()
+    assert grader.unchecked_reasons("py_syntax_output", cat["py_syntax_output"]["ex_45"]) == ["not_auto"]
+    assert grader.unchecked_reasons("py_functions_modules", cat["py_functions_modules"]["ex_32"]) == ["not_auto"]
+    ex29 = cat["py_functions_modules"]["ex_29"]
+    assert grader.unchecked_reasons("py_functions_modules", ex29) == []
+    assert "spaces included" in ex29["description"] and 'analyse(\"Hello World\")' in ex29["description"]

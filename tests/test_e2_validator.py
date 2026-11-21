@@ -120,3 +120,17 @@ def test_isolated_runs_are_stopped(monkeypatch):
     assert vc.run_isolated("while True: pass")["timed_out"]
     r = vc.run_isolated("while True: print('x' * 1000)")
     assert (r["too_much_output"] or r["timed_out"]) and not r["ok"]
+
+
+# ---------------------------------------------------------------- E2 round 1 content (needs bwrap)
+@needs_bwrap
+def test_ex29_corrected_solution_matches_and_the_old_one_did_not():
+    from web import grader
+    ex = grader.load_catalogue()["py_functions_modules"]["ex_29"]
+    sol = xs.classify(ex)
+    assert sol["form"] == "code" and "len(t)" in sol["code"]
+    r = vc.run_isolated(sol["code"])
+    assert r["ok"] and grader.compare(ex["expected_output"], r["stdout"])[0]
+    old = sol["code"].replace("len(t)", 'len(t.replace(" ", ""))')
+    r = vc.run_isolated(old)
+    assert r["ok"] and not grader.compare(ex["expected_output"], r["stdout"])[0]
