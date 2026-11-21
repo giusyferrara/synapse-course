@@ -186,8 +186,14 @@ async def _run_in_container(code, timeout=None, max_output=None):
             except asyncio.TimeoutError:
                 timed_out = True
     finally:
-        if timed_out or too_much:
-            await _kill(name)
+        stop = timed_out or too_much
+        # The ORDER matters (seen on the real server, 21 Nov 2026):
+        # 1. kill the docker CLIENT first, so nothing is left attached to the
+        #    container's output. While a client sits on a full, unread pipe the
+        #    daemon waits for that output to be read before it reports the
+        #    container stopped, and `docker kill` hung until its own timeout
+        #    (10 s after an output overflow).
+        if stop:
             try:
                 proc.kill()
             except ProcessLookupError:
@@ -195,13 +201,15 @@ async def _run_in_container(code, timeout=None, max_output=None):
         for t in (out_task, err_task):
             if not t.done():
                 t.cancel()
-        # Read both pipes to their end before waiting. A pipe left half-read
-        # stays open (asyncio pauses it when its buffer is full), and then the
-        # process is never reported finished: on the real server that held the
-        # slot ~20 s after an output overflow and left the pipe for the garbage
-        # collector. The docker client is dead or done, so the end comes at once.
+        # 2. read both pipes to their end. A pipe left half-read stays open
+        #    (asyncio pauses it when its buffer is full) and the process is
+        #    never reported finished. The client is dead or done: the end comes at once.
         await asyncio.gather(*[asyncio.wait_for(_drain(s), timeout=5) for s in (proc.stdout, proc.stderr)],
                              return_exceptions=True)
+        # 3. then the container itself, by name: without its client it would
+        #    keep running (docker run -i does not stop it), and --rm removes it.
+        if stop:
+            await _kill(name)
         try:
             await asyncio.wait_for(proc.wait(), timeout=5)
         except Exception:
